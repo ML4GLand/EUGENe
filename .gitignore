@@ -1,6 +1,9 @@
 # User-defined
 data/
-models/
+gkSVM/
+LR/
+NN/
+RF/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
