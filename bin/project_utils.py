@@ -3,8 +3,8 @@
 """
 Python script for evaluating EUGENE project models
 TODO: 
-    1. 
-    2. 
+    1. Add more to report -- TBD
+    2. Add interpretation functions?
     3. 
 """
 
@@ -16,8 +16,11 @@ import warnings
 
 
 # Libs
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, average_precision_score, roc_auc_score, auc
 from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve
@@ -25,20 +28,94 @@ from copy import deepcopy
 from random import shuffle
 from mdutils.mdutils import MdUtils
 from mdutils import Html
+import torch
+import torch.nn as nn
 
 # Tags
 __author__ = "Adam Klie"
 __data__ = "09/28/2021"
 
 
+# <<< Exploratory data analysis helper functions <<<
+# Function to print useful stats
+def contigency_table_stats(data, col, label):
+    cont_table = pd.crosstab(data[label], data[col])
+    if (not(cont_table.sum(axis=1).values == data["label"].value_counts().values).all()) or (not (np.array(sorted(cont_table.sum(axis=0).values)) == np.array(sorted(data[col].value_counts().values))).all()):
+        print("Something is rotten in the state of Denmark")
+    table = sm.stats.Table(cont_table)
+    diff = table.table_orig - table.fittedvalues
+    resid_pearson = diff / (table.fittedvalues ** 0.5)
+    rslt = table.test_nominal_association()
+    return cont_table, diff, resid_pearson, rslt
+
+# Function
+def odds_ratios(data, col, label, alpha=0.05):
+    cont_table = pd.crosstab(data[label], data[col])
+    # Defnie a CI and an empty dataframe to hold odds-ratio info
+    odds_df = pd.DataFrame(columns=["OR", 
+                                    "OR " + str(alpha * 100) + "%",
+                                    "OR " + str((1 - alpha) * 100) + "%"],
+                           index=cont_table.columns)
+
+    for col in cont_table.columns:
+        tab = pd.concat([cont_table[col], cont_table.drop(col, axis=1).sum(axis=1)], axis=1)
+        tab = tab.loc[[1, 0]]
+        table = sm.stats.Table2x2(tab.values)
+        if not (
+            (
+                table.table_orig.sum(axis=1)
+                == data["label"].value_counts().loc[[1, 0]].values
+            ).all()
+        ):
+            print("Something is rotten in the state of Denmark")
+        odds_df.loc[col]["OR"] = table.oddsratio
+        (
+            odds_df.loc[col]["OR " + str(alpha * 100) + "%"],
+            odds_df.loc[col]["OR " + str((1 - alpha) * 100) + "%"],
+        ) = table.oddsratio_confint(0.05)
+    return odds_df
+
+def plot_odds_ratios(odds_df, col, savefig=None):
+    sns.set_style("white")
+    fig, ax = plt.subplots(figsize=(16, 8))
+    ax.axvline(1, ls="--", linewidth=1, color="black")
+    n = 0
+    for index, i in odds_df.iterrows():
+        x = [i["OR 5.0%"], i["OR 95.0%"]]
+        y = [n, n]
+        ax.plot(x, y, 
+                "|", markersize=25, markeredgewidth=3,linewidth=3, color=sns.color_palette("muted")[n])
+        ax.plot(x, y,
+            "-", markersize=25, markeredgewidth=3, linewidth=3, color=sns.color_palette("muted")[n])
+        y = [n]
+        x = [i["OR"]]
+        ax.plot(x, y, "o", color=sns.color_palette("muted")[n], markersize=15)
+        n += 1
+    ax.set_ylabel("{0} in position {1}".format(col.split("_")[0], col.split("_")[1]), fontsize=30)
+    ax.set_yticks(range(0, n))
+    ax.set_yticklabels(odds_df.index, fontsize=24)
+    ax.set_xlabel("Odds Ratio w/ 95% CI", fontsize=30)
+    ax.tick_params(axis="x", labelsize=24)
+    #ax.text(
+    #    odds_df["OR 95.0%"].max() + 0.05,
+    #    n - 1.5,
+    #    r"$\chi^{2} =$" + str(round(chi2, 2)),
+    #    fontsize=36,
+    #)
+    #ax.text(odds_df["OR 95.0%"].max() + 0.05, n - 2.5, "p = {}".format(p), fontsize=36)
+    if savefig != None:
+        plt.savefig(savefig)
+    
+# >>> Exploratory data analysis helper functions >>>
+
 # <<< Data preprocessing helper functions <<<
 
 # Function to perform train test splitting
-def split_train_test(X_data, y_data, split=0.8, test=False, rand_state=13, shuf=True):
+def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
     train_X, test_X, train_y, test_y = train_test_split(X_data, y_data, train_size=split, random_state=rand_state, shuffle=shuf)
-    if test:
-        num_train = int(len(train_X)/10)
-        num_test = int(len(test_X)/10)
+    if subset != None:
+        num_train = int(len(train_X)*subset)
+        num_test = int(len(test_X)*subset)
         train_X, test_X, train_y, test_y = train_X[:num_train, :], test_X[:num_test, :], train_y[:num_train], test_y[:num_test]
     return train_X, test_X, train_y, test_y
 
@@ -252,3 +329,14 @@ def score(pos_file, neg_file, thresh):
 
 # <<< lsgkm helper functions <<<
 
+# >>> Neural network functions >>>
+def init_weights(m):
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
+        torch.nn.init.kaiming_normal_(m.weight)
+        
+        
+# Function to calcuate accuracy given raw values from classifier and labels
+def accuracy(raw, labels):
+    predictions = torch.round(torch.sigmoid(raw))
+    return sum(predictions.eq(labels)).item()
+# <<< Neural network functions <<<
