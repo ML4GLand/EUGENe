@@ -5,6 +5,7 @@ RF/
 GBM/
 gkSVM/
 NN/
+META/
 *.out
 *.url
 

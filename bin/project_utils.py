@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 """
 Python script for evaluating EUGENE project models
 TODO: 
@@ -7,6 +8,7 @@ TODO:
     2. Add interpretation functions?
     3. 
 """
+
 
 # Built-in/Generic Imports
 import glob
@@ -31,6 +33,7 @@ from mdutils import Html
 import torch
 import torch.nn as nn
 
+
 # Tags
 __author__ = "Adam Klie"
 __data__ = "09/28/2021"
@@ -48,7 +51,8 @@ def contigency_table_stats(data, col, label):
     rslt = table.test_nominal_association()
     return cont_table, diff, resid_pearson, rslt
 
-# Function
+
+# Function to compute odds-rations for a specific column of a dataframe with labels
 def odds_ratios(data, col, label, alpha=0.05):
     cont_table = pd.crosstab(data[label], data[col])
     # Defnie a CI and an empty dataframe to hold odds-ratio info
@@ -75,6 +79,8 @@ def odds_ratios(data, col, label, alpha=0.05):
         ) = table.oddsratio_confint(0.05)
     return odds_df
 
+
+# Function to plot those odds-ratios with CI
 def plot_odds_ratios(odds_df, col, savefig=None):
     sns.set_style("white")
     fig, ax = plt.subplots(figsize=(16, 8))
@@ -105,11 +111,10 @@ def plot_odds_ratios(odds_df, col, savefig=None):
     #ax.text(odds_df["OR 95.0%"].max() + 0.05, n - 2.5, "p = {}".format(p), fontsize=36)
     if savefig != None:
         plt.savefig(savefig)
-    
 # >>> Exploratory data analysis helper functions >>>
 
-# <<< Data preprocessing helper functions <<<
 
+# <<< Data preprocessing helper functions <<<
 # Function to perform train test splitting
 def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
     train_X, test_X, train_y, test_y = train_test_split(X_data, y_data, train_size=split, random_state=rand_state, shuffle=shuf)
@@ -133,11 +138,10 @@ def standardize_features(train_X, test_X, indeces=None):
     test_X[:, indeces] -= means
     test_X[:, indeces] /= stds
     return train_X, test_X
-    
 # >>> Data preprocessing helper functions >>>
 
-# >>> Classification metric helper functions >>>
 
+# >>> Classification metric helper functions >>>
 # Confusion matrix function
 def train_test_confusion_matrix(train_y, train_y_preds, test_y, test_y_preds, figsize=(16,8), savefile=None):
     fig, ax = plt.subplots(1,2,figsize=figsize)
@@ -227,9 +231,8 @@ def train_test_roc_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=
     ax.legend(loc="lower right", fontsize=16)
     if savefile != None:
         plt.savefig(savefile)
-    
-
 # <<< Classification metric helper functions <<<
+
 
 # <<< Classification report function <<<
 def classification_report(filename, md_title, clf, train_X, test_X, train_y, test_y):
@@ -288,11 +291,10 @@ def classification_report(filename, md_title, clf, train_X, test_X, train_y, tes
     #os.remove("tmp.confusion.png")
     #os.remove("tmp.pr_curve.png")
     #os.remove("tmp.roc_curve.png")
-    
 # <<< Classification report function <<<
 
-# >>> lsgkm helper functions >>>
 
+# >>> lsgkm helper functions >>>
 # Function to grab scores from output of gkmtest
 # name => filepath to read from
 def get_scores(fname):
@@ -325,9 +327,8 @@ def score(pos_file, neg_file, thresh):
     print("Accuracy_at_threshold_{}\t{:.4f}\t{:.4f}".format(thresh, acc_thresh0, acc_thresh0_shuf))
     print("AUROC\t{:.4f}\t{:.4f}".format(auroc, auroc_shuf))
     print("AUPRC\t{:.4f}\t{:.4f}".format(auprc, auprc_shuf))
-
-
 # <<< lsgkm helper functions <<<
+
 
 # >>> Neural network functions >>>
 def init_weights(m):
@@ -340,3 +341,45 @@ def accuracy(raw, labels):
     predictions = torch.round(torch.sigmoid(raw))
     return sum(predictions.eq(labels)).item()
 # <<< Neural network functions <<<
+
+
+# >>> Seq utils functions >>>
+def one_hot_encode_along_channel_axis(sequence):
+    to_return = np.zeros((len(sequence),4), dtype=np.int8)
+    seq_to_one_hot_fill_in_array(zeros_array=to_return,
+                                 sequence=sequence, one_hot_axis=1)
+    return to_return
+
+def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
+    assert one_hot_axis==0 or one_hot_axis==1
+    if (one_hot_axis==0):
+        assert zeros_array.shape[1] == len(sequence)
+    elif (one_hot_axis==1): 
+        assert zeros_array.shape[0] == len(sequence)
+    #will mutate zeros_array
+    for (i,char) in enumerate(sequence):
+        if (char=="A" or char=="a"):
+            char_idx = 0
+        elif (char=="C" or char=="c"):
+            char_idx = 1
+        elif (char=="G" or char=="g"):
+            char_idx = 2
+        elif (char=="T" or char=="t"):
+            char_idx = 3
+        elif (char=="N" or char=="n"):
+            continue #leave that pos as all 0's
+        else:
+            raise RuntimeError("Unsupported character: "+str(char))
+        if (one_hot_axis==0):
+            zeros_array[char_idx,i] = 1
+        elif (one_hot_axis==1):
+            zeros_array[i,char_idx] = 1
+            
+
+def get_gksvm_explain_data(explain_file, fasta_file):
+    impscores = [np.array( [[float(z) for z in y.split(",")] for y in x.rstrip().split("\t")[2].split(";")]) for x in open(explain_file)]
+    fasta_seqs = [x.rstrip() for (i,x) in enumerate(open(fasta_file)) if i%2==1]
+    fasta_ids = [x.rstrip().replace(">", "") for (i,x) in enumerate(open(fasta_file)) if i%2==0]
+    onehot_data = np.array([one_hot_encode_along_channel_axis(x) for x in fasta_seqs])
+    return impscores, fasta_seqs, fasta_ids, onehot_data
+# >>> Seq utils functions >>>
