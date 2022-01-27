@@ -4,9 +4,7 @@
 """
 Python script for evaluating EUGENE project models
 TODO: 
-    1. Add more to report -- TBD
-    2. Add interpretation functions?
-    3. 
+    1. 
 """
 
 
@@ -15,9 +13,12 @@ import glob
 import os
 import argparse
 import warnings
+import sys
 
 
 # Libs
+import tqdm
+import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,12 +27,16 @@ import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, average_precision_score, roc_auc_score, auc
 from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from copy import deepcopy
 from random import shuffle
 from mdutils.mdutils import MdUtils
 from mdutils import Html
 import torch
 import torch.nn as nn
+from livelossplot import PlotLosses
+sys.path.append('/cellar/users/aklie/bin/make_it_train/')
+from early_stop import EarlyStop
 
 
 # Tags
@@ -125,19 +130,96 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
     return train_X, test_X, train_y, test_y
 
 
-# Function to standardize features based on passed in indeces
-def standardize_features(train_X, test_X, indeces=None):
+# Function to standardize features based on passed in indeces and optionally save stats
+def standardize_features(train_X, test_X, indeces=None, stats_file=None):
     if type(indeces) == None:
         indeces = range(train_X.shape[1])
     if len(indeces) == 0:
         return train_X, test_X
+    
     means = train_X[:, indeces].mean(axis=0)
     stds = train_X[:, indeces].std(axis=0)
-    train_X[:, indeces] -= means
-    train_X[:, indeces] /= stds
-    test_X[:, indeces] -= means
-    test_X[:, indeces] /= stds
-    return train_X, test_X
+    
+    train_X_scaled = train_X.copy()
+    train_X_scaled[:, indeces] = train_X[:, indeces] - means
+    train_X_scaled[:, indeces] = train_X_scaled[:, indeces] / stds
+    
+    test_X_scaled = test_X.copy()
+    test_X_scaled[:, indeces] = test_X[:, indeces] - means
+    test_X_scaled[:, indeces] = test_X_scaled[:, indeces] / stds
+    
+    if stats_file != None:
+        stats_dict = {"indeces": indeces, "means": means, "stds": stds}
+        with open(stats_file, 'wb') as handle:
+            pickle.dump(stats_dict, handle)
+            
+    return train_X_scaled, test_X_scaled
+
+
+# Function to one-hot encode a set of sequences (array-like)
+def ohe_seqs(seqs):
+    # Define encoders
+    integer_encoder = LabelEncoder()
+    one_hot_encoder = OneHotEncoder(categories=[np.array([0, 1, 2, 3])], handle_unknown="ignore")
+    
+    X_features = []  # will hold one hot encoded sequence
+    for i, seq in enumerate(tqdm.tqdm(seqs)):
+        integer_encoded = integer_encoder.fit_transform(list(seq))  # convert to integer
+        integer_encoded = np.array(integer_encoded).reshape(-1, 1)
+        one_hot_encoder.fit(integer_encoded)  # convert to one hot
+        one_hot_encoded = one_hot_encoder.fit_transform(integer_encoded)
+        X_features.append(one_hot_encoded.toarray())
+        
+    print("Encoded {} seqs".format(len(X_features)))
+        
+    # convert to numpy array
+    X_ohe_seq = np.array(X_features)
+    
+    # Sanity check encoding for randomly chosens sequences  
+    l = len(X_features)
+    if l < 1000:
+        print("Checking all {} seqs for proper encoding".format(l))
+        indeces = np.random.choice(len(X_features), size=len(X_features))
+    else:
+        indeces = np.random.choice(len(X_features), size=1000)
+        print("Checking 1000 random seqs for proper encoding")
+    bad_encoding = False
+    for j, ind in enumerate(indeces):
+        seq = seqs[ind]
+        one_hot_seq = X_features[ind]
+        for i, bp in enumerate(seq):
+            if bp == "A":
+                if (one_hot_seq[i] != [1.0, 0.0, 0.0, 0.0]).all():
+                    print("You one hot encoded wrong dummy!")
+                    print(seq, one_hot_seq)
+                    bad_encoding = True
+            elif bp == "C":
+                if (one_hot_seq[i] != [0.0, 1.0, 0.0, 0.0]).all():
+                    print("You one hot encoded wrong dummy!")
+                    print(seq, one_hot_seq)
+                    bad_encoding = True
+            elif bp == "G":
+                if (one_hot_seq[i] != [0.0, 0.0, 1.0, 0.0]).all():
+                    print("You one hot encoded wrong dummy!")
+                    print(seq, one_hot_seq)
+                    bad_encoding = True
+            elif bp == "T":
+                if (one_hot_seq[i] != [0.0, 0.0, 0.0, 1.0]).all():
+                    print("You one hot encoded wrong dummy!")
+                    print(seq, one_hot_seq)
+                    bad_encoding = True
+            elif bp == "N":
+                if (one_hot_seq[i] != [0.0, 0.0, 0.0, 0.0]).all():
+                    print("You one hot encoded wrong dummy!")
+                    print(seq, one_hot_seq)
+                    bad_encoding = True
+            else:
+                print(bp)
+    if bad_encoding:
+        print("Something is amiss in the state of Denmark, try encoding again")
+    else:
+        print("Sequence encoding was great success")
+    return X_ohe_seq 
 # >>> Data preprocessing helper functions >>>
 
 
@@ -162,8 +244,29 @@ def train_test_confusion_matrix(train_y, train_y_preds, test_y, test_y_preds, fi
     
     if savefile != None:
         plt.savefig(savefile)
-    
+        plt.close()
 
+        
+def cf_plot_from_df(data, label_col="FXN_LABEL", pred_col="PREDS", title="Sequences", xlab="Predicted Activity", ylab="True Activity", threshold=0.5):
+    fig, ax = plt.subplots(1,1,figsize=(6,6))
+    rc = {"font.size": 16}
+    with plt.rc_context(rc):
+        cf_names = ["True Neg","False Pos", "False Neg","True Pos"]
+        cf_mtx = confusion_matrix(data[label_col], data[pred_col])
+        cf_pcts = ["{0:.2%}".format(value) for value in (cf_mtx/cf_mtx.sum(axis=1)[:,None]).flatten()]
+        labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in
+              zip(cf_mtx.flatten(),cf_pcts, cf_names)]
+        labels = np.asarray(labels).reshape(2,2)
+        sns.heatmap(cf_mtx, annot=labels, fmt='s', cmap='Blues', cbar=False, ax=ax)
+        ax.set_xlabel(xlab, fontsize=20)
+        ax.set_ylabel(ylab, fontsize=20)
+        ax.set_title(title, fontsize=24)
+        ax.set_yticklabels(["Inactive", "Active"], fontsize=16)
+        ax.set_xticklabels(["Inactive (Score<{})".format(str(threshold)), "Active (Score>{})".format(str(threshold))], fontsize=16)
+        plt.tight_layout();
+
+        
+        
 # Wrapper function around sklearn accuracy_score to print accuracy score for train and test
 def train_test_metrics(train_y, train_y_preds, test_y, test_y_preds):
     output= ["Metric", "Train", "Test"]
@@ -210,6 +313,7 @@ def train_test_pr_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=N
     ax.legend(loc="lower right", fontsize=16)
     if savefile != None:
         plt.savefig(savefile)
+        plt.close()
     
     
 def train_test_roc_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=None):
@@ -231,66 +335,143 @@ def train_test_roc_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=
     ax.legend(loc="lower right", fontsize=16)
     if savefile != None:
         plt.savefig(savefile)
+        plt.close()
 # <<< Classification metric helper functions <<<
 
 
 # <<< Classification report function <<<
-def classification_report(filename, md_title, clf, train_X, test_X, train_y, test_y):
-    train_y_preds = clf.predict(train_X)
-    test_y_preds = clf.predict(test_X)
-    train_y_probs = clf.predict_proba(train_X)[:, 1]
-    test_y_probs = clf.predict_proba(test_X)[:, 1]
+# NEED TO GENERALIZE TO ANY NUMBER OF PROVIDED SETS
+def classification_report(out_path,
+                          train_X, test_X, 
+                          train_y, test_y,
+                          train_preds=None, test_preds=None,
+                          train_probs=None, test_probs=None,
+                          predict=False, title=None, iters_trained=None):
+    
+    # Quick set-up
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+    if title == None:
+        title = out_path + " Classifier Report"
+        
+    # Generate predictions if needed
+    if predict:
+        train_preds = clf.predict(train_X)
+        test_preds = clf.predict(test_X)
+        train_probs = clf.predict_proba(train_X)[:, 1]
+        test_probs = clf.predict_proba(test_X)[:, 1]
+    else:
+        print("Predictions provided, skipping them")
+        
     print("Generating confusion matrix")
     train_test_confusion_matrix(train_y=train_y, 
-                                train_y_preds=train_y_preds, 
+                                train_y_preds=train_preds, 
                                 test_y=test_y, 
-                                test_y_preds=test_y_preds,
-                                savefile="tmp.confusion.png")
+                                test_y_preds=test_preds,
+                                savefile="{}/confusion.png".format(out_path))
     
     print("Calculating classification metrics")
     clf_metrics = train_test_metrics(train_y=train_y, 
-                                     train_y_preds=train_y_preds, 
+                                     train_y_preds=train_preds, 
                                      test_y=test_y, 
-                                     test_y_preds=test_y_preds)
+                                     test_y_preds=test_preds)
     
     print("Plotting PR Curve")
     train_test_pr_curve(train_y=train_y, 
-                        train_y_probs=train_y_probs, 
+                        train_y_probs=train_probs, 
                         test_y=test_y, 
-                        test_y_probs=test_y_probs,
-                        savefile="tmp.pr_curve.png")
+                        test_y_probs=test_probs,
+                        savefile="{}/pr_curve.png".format(out_path))
     
     print("Plotting ROC Curve")
     train_test_roc_curve(train_y=train_y, 
-                         train_y_probs=train_y_probs, 
+                         train_y_probs=train_probs, 
                          test_y=test_y, 
-                         test_y_probs=test_y_probs,
-                         savefile="tmp.roc_curve.png")
+                         test_y_probs=test_probs,
+                         savefile="{}/roc_curve.png".format(out_path))
     
     print("Generating report")
-    mdFile = MdUtils(file_name=filename, title=md_title)
+    if iters_trained != None:
+        mdFile = MdUtils(file_name="{}/classification-report_{}-iters.md".format(out_path, iters_trained), title=title)
+        mdFile.new_line(text="Model was trained for a total of {} iterations".format(iters_trained))
+    else:
+        mdFile = MdUtils(file_name="{}/classification-report.md".format(out_path), title=title)
     
     mdFile.new_header(level=1, title='Confusion Matrices')
-    mdFile.new_line(mdFile.new_inline_image(text="confusion_matrices", path="tmp.confusion.png"))
+    mdFile.new_line(mdFile.new_inline_image(text="confusion_matrices", path="confusion.png"))
     mdFile.new_line()
 
     mdFile.new_header(level=1, title='Classification Metrics')
     mdFile.new_table(columns=3, rows=9, text=clf_metrics, text_align='center')
 
     mdFile.new_header(level=1, title='Precision-Recall Curve')
-    mdFile.new_line(mdFile.new_inline_image(text="pr_curve", path="tmp.pr_curve.png"))
+    mdFile.new_line(mdFile.new_inline_image(text="pr_curve", path="pr_curve.png"))
     mdFile.new_line()
 
     mdFile.new_header(level=1, title='Reciever Operator Characteristic')
-    mdFile.new_line(mdFile.new_inline_image(text="roc_curve", path="tmp.roc_curve.png"))
+    mdFile.new_line(mdFile.new_inline_image(text="roc_curve", path="roc_curve.png"))
     mdFile.new_line()
 
-    mdFile.new_table_of_contents(table_title='Contents', depth=2)
+    mdFile.new_table_of_contents(table_title='Contents', depth=1)
 
     mdFile.create_md_file()
-    #os.remove("tmp.confusion.png")
-    #os.remove("tmp.pr_curve.png")
-    #os.remove("tmp.roc_curve.png")
+    
+    
+def threshold_plot(data, label_col="FXN_LABEL", score_col="SCORES", threshold=0.5):
+    tns, fps, fns, tps = [], [], [], []
+    threshs = np.arange(data[score_col].min(), data[score_col].max(), 0.1)
+    for i, thresh in tqdm.tqdm(enumerate(threshs)):
+        data["curr_pred"] = (data[score_col] >= thresh).astype(int)
+        data["curr_class"] = ["-".join(list(value)) for value in data[["MPRA_FXN", "curr_pred"]].values.astype(str)]
+        data["curr_class"] = data["curr_class"].replace({"0.0-0.0": "TN", "1.0-0.0": "FN", "0.0-1.0": "FP", "1.0-1.0": "TP"})
+
+        class_results = data["curr_class"].value_counts()
+        if "TN" in class_results:
+            tns.append(class_results["TN"])
+        else:
+            tns.append(0)
+
+        if "FP" in class_results:
+            fps.append(class_results["FP"])
+        else:
+            fps.append(0)
+
+        if "FN" in class_results:
+            fns.append(class_results["FN"])
+        else:
+            fns.append(0)
+
+        if "TP" in class_results:
+            tps.append(class_results["TP"])
+        else:
+            tps.append(0)
+
+    nb_negs = (data[label_col] == 0).sum()
+    nb_pos = (data[label_col] == 1).sum()
+    if (not (np.array([tns, fps, fns, tps]).sum(axis=0) == len(data)).all()) or (not (len(tns) == len(fps) == len(fns) == len(tps) == len(threshs))):
+        print("Something rotten in Denmark")
+
+    fig, ax = plt.subplots(1,1, figsize=(8,8))
+    plt.plot(threshs, tns/nb_negs, color="lightgreen", label="True Negative Rate")
+    plt.plot(threshs, fns/nb_pos, color="lightcoral", label="False Negative Rate")
+    plt.plot(threshs, fps/nb_negs, color="darkred", label="False Positive Rate")
+    plt.plot(threshs, tps/nb_pos, color="darkgreen", label="True Positive Rate")
+    plt.vlines(threshold, 0, 1, color="orange", linestyle="dashed", label="Threshold")
+    plt.legend(bbox_to_anchor=(1,1), fontsize=16)
+    plt.xlabel("Score Threshold")
+    plt.ylabel("Classification Rate")
+    
+    
+def coefficient_plot(classifier, features, xlab="Feature", ylab="Coefficient", title="Model Coefficients"):
+    rc = {"font.size": 14}
+    with plt.rc_context(rc):
+        coefs = pd.DataFrame(classifier.coef_[0], columns=["Coefficients"], index=features)
+        coefs.plot(kind="bar", figsize=(16, 8), legend=None)
+        plt.title(title, fontsize=18)
+        plt.axhline(y=0, color=".5")
+        plt.subplots_adjust(left=0.3)
+        plt.xlabel(xlab, fontsize=16)
+        plt.ylabel(ylab, fontsize=16)
 # <<< Classification report function <<<
 
 
@@ -340,16 +521,93 @@ def init_weights(m):
 def accuracy(raw, labels):
     predictions = torch.round(torch.sigmoid(raw))
     return sum(predictions.eq(labels)).item()
+
+
+# Current livelossplot compatible training script
+def train_binary_classifier(model, 
+                          dataloaders, 
+                          bidirectional=False,
+                          device="cpu",
+                          criterion=torch.nn.BCEWithLogitsLoss(reduction='sum'), 
+                          optimizer=None, 
+                          num_epoch=50, 
+                          early_stop=False, 
+                          patience=3):
+    liveloss = PlotLosses()
+    loss_history, acc_history = {}, {}
+    if early_stop:
+        print("Using early stopping with a patience of {}".format(patience))
+        stop = EarlyStop(patience)
+        e_stop = False
+    if optimizer is None:
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    for epoch in range(num_epoch):
+        logs = {}
+        for phase in ['train', 'validation']:
+
+            if phase == 'train' and epoch > 0:
+                model.train()
+            else:
+                model.eval()
+            
+            running_loss = 0.0
+            running_acc = 0.0
+            for inputs, targets in dataloaders[phase]:
+                if bidirectional:
+                    input_forward = inputs[:, :, :, 0].to(device)
+                    input_reverse = inputs[:, :, :, 1].to(device)
+                    outputs = model(input_forward.float(), input_reverse.float())
+                else:
+                    inputs = inputs.to(device)
+                    outputs = model(inputs.float())
+                targets = targets.unsqueeze(dim=1).to(device)
+                loss = criterion(outputs, targets.float())
+                if phase == 'train' and epoch > 0:
+                    optimizer.zero_grad()
+                    loss.backward()                
+                    optimizer.step()          
+                
+                running_loss += loss.item()
+                running_acc += accuracy(outputs, targets)
+            
+            len_dataset = len(dataloaders[phase].dataset)
+            epoch_loss = running_loss / len_dataset
+            epoch_acc = running_acc / len_dataset
+                
+            prefix = ''
+            if phase == 'validation':
+                prefix = 'val_'
+                if early_stop:
+                    e_stop, best_model = stop(epoch_loss, model)
+                    
+            logs[prefix + 'loss'] = epoch_loss
+            logs[prefix + 'acc'] = epoch_acc
+            
+            loss_history.setdefault(phase, []).append(epoch_loss)
+            acc_history.setdefault(phase, []).append(epoch_acc)
+            
+        liveloss.update(logs)
+        liveloss.send()
+        if early_stop:
+            if e_stop:
+                print("Early stopping occured at epoch {}".format(epoch))
+                break
+        best_model = model
+            
+    return best_model, epoch, loss_history, acc_history, liveloss
 # <<< Neural network functions <<<
 
 
 # >>> Seq utils functions >>>
+# One hot encode a sequence with a loop. From gkmexplain
 def one_hot_encode_along_channel_axis(sequence):
     to_return = np.zeros((len(sequence),4), dtype=np.int8)
     seq_to_one_hot_fill_in_array(zeros_array=to_return,
                                  sequence=sequence, one_hot_axis=1)
     return to_return
 
+
+# One hot encode a sequence with a loop. From gkmexplain
 def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
     assert one_hot_axis==0 or one_hot_axis==1
     if (one_hot_axis==0):
@@ -376,10 +634,37 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
             zeros_array[i,char_idx] = 1
             
 
+# Get all the needed information for viz sequence of gkmexplain result. Returns importance 
+# scores per position along with the sequences, IDs and one-hot sequences
 def get_gksvm_explain_data(explain_file, fasta_file):
     impscores = [np.array( [[float(z) for z in y.split(",")] for y in x.rstrip().split("\t")[2].split(";")]) for x in open(explain_file)]
     fasta_seqs = [x.rstrip() for (i,x) in enumerate(open(fasta_file)) if i%2==1]
     fasta_ids = [x.rstrip().replace(">", "") for (i,x) in enumerate(open(fasta_file)) if i%2==0]
     onehot_data = np.array([one_hot_encode_along_channel_axis(x) for x in fasta_seqs])
     return impscores, fasta_seqs, fasta_ids, onehot_data
+
+
+# Save a list of sequences to separate pos and neg fa files. Must supply target 0 or 1 labels
+def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
+    neg_mask = (ys==0)
+    
+    neg_seqs, neg_ys, neg_IDs = seqs[neg_mask], ys[neg_mask], IDs[neg_mask]
+    neg_file = open("{}-neg.fa".format(name), "w")
+    for i in range(len(neg_seqs)):
+        neg_file.write(">" + neg_IDs[i] + "\n" + neg_seqs[i] + "\n")
+    neg_file.close()
+    
+    pos_seqs, pos_ys, pos_IDs = seqs[~neg_mask], ys[~neg_mask], IDs[~neg_mask]
+    pos_file = open("{}-pos.fa".format(name), "w")
+    for i in range(len(pos_seqs)):
+        pos_file.write(">" + pos_IDs[i] + "\n" + pos_seqs[i] + "\n")
+    pos_file.close()
+    
+
+# Save a list of sequences to fasta
+def seq2Fasta(seqs, IDs, name="seqs"):
+    file = open("{}.fa".format(name), "w")
+    for i in range(len(seqs)):
+        file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
+    file.close()
 # >>> Seq utils functions >>>

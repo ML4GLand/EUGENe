@@ -99,7 +99,7 @@ def main(args):
     joblib.dump(study, os.path.join(OUTDIR, "{}.pickle".format(name)))
     study.trials_dataframe().to_csv(os.path.join(OUTDIR, "{}.tsv".format(name)), sep='\t', index=False)
 
-    
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="2021_OLS_Library", help="Name of folder in 'data'")

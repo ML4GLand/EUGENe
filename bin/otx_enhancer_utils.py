@@ -3,16 +3,19 @@
 """
 Python script for evaluating EUGENE project models
 TODO: 
-    1. Function to scan sequence for GATA, ETS cores
-    2. Function to calc the affinity of each identified 8-mer binding site
-    3. Function to identify the linker distance between each 8-mer binding site
-    4. Function to calculate the hamming distance between each binding site and OLS TFBS
+    1. 
 """
 
 
+# Imports
 import pickle
+import tqdm
+import pandas as pd
 import numpy as np
-
+from vizsequence import viz_sequence
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.patches as mpatches
 
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadEtsAff(file):
@@ -26,6 +29,13 @@ def loadGata6Aff(file):
     ref = file
     Seq2GataAff = {line.split('\t')[0]:float(line.split('\t')[1]) for line in open(ref,'r').readlines()}
     return Seq2GataAff
+
+
+# Define these for use in any other function
+ets_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Ets1_8mers.txt"
+gata_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Gata6_3769_contig8mers.txt"
+ets_aff = loadEtsAff(ets_aff_file)
+gata_aff = loadGata6Aff(gata_aff_file)
 
 
 # Load Otx-a binding site to affinity dictionary
@@ -51,7 +61,7 @@ def loadSiteName2bindingSiteSequence(file="/cellar/users/aklie/projects/EUGENE/d
 # Function to return a dictionary with the position of the first nucleotide of every GATA and ETS core fond in an input sequence. Also includes orientation
 def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE": ["TTCC", "ATCC"], "GATA_FORWARD": ["GATA"], "GATA_REVERSE": ["TATC"]}):
     core_pos = {}
-    for i in range(len(seq)):
+    for i in range(2, len(seq)-5):
         if seq[i:i+4] in cores["ETS_FORWARD"]:
             core_pos.setdefault(i, []).append("ETS")
             core_pos[i].append("F")
@@ -72,8 +82,8 @@ def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE
 
 # Function to add the affinity and sequence of the binding site cores identified by findEtsAndGataCores()
 def findTFBSAffinity(seq, cores, ets_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Ets1_8mers.txt", gata_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Gata6_3769_contig8mers.txt"):
-    ets_aff = loadEtsAff(ets_aff_file)
-    gata_aff = loadGata6Aff(gata_aff_file)
+    #ets_aff = loadEtsAff(ets_aff_file)
+    #gata_aff = loadGata6Aff(gata_aff_file)
     for pos in cores.keys():
         cores[pos].append(seq[pos-2:pos+6])
         if cores[pos][0] == "ETS":
@@ -141,3 +151,305 @@ def defineTFBS(seq, findClosestOLS=True):
     return tfbs
 
 
+# One hot encode a sequence with a loop. From gkmexplain
+def one_hot_encode_along_channel_axis(sequence):
+    to_return = np.zeros((len(sequence),4), dtype=np.int8)
+    seq_to_one_hot_fill_in_array(zeros_array=to_return,
+                                 sequence=sequence, one_hot_axis=1)
+    return to_return
+
+
+# One hot encode a sequence with a loop. From gkmexplain
+def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
+    assert one_hot_axis==0 or one_hot_axis==1
+    if (one_hot_axis==0):
+        assert zeros_array.shape[1] == len(sequence)
+    elif (one_hot_axis==1): 
+        assert zeros_array.shape[0] == len(sequence)
+    #will mutate zeros_array
+    for (i,char) in enumerate(sequence):
+        if (char=="A" or char=="a"):
+            char_idx = 0
+        elif (char=="C" or char=="c"):
+            char_idx = 1
+        elif (char=="G" or char=="g"):
+            char_idx = 2
+        elif (char=="T" or char=="t"):
+            char_idx = 3
+        elif (char=="N" or char=="n"):
+            continue #leave that pos as all 0's
+        else:
+            raise RuntimeError("Unsupported character: "+str(char))
+        if (one_hot_axis==0):
+            zeros_array[char_idx,i] = 1
+        elif (one_hot_axis==1):
+            zeros_array[i,char_idx] = 1
+            
+            
+# Function to plot genome tracks for otxa
+def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, cmap=None, norm=None):
+    # Get the annotations for the seq
+    tfbs_annot = defineTFBS(seq)
+    
+    # Define subplots
+    fig, ax = plt.subplots(2, 1, figsize=(12,4), sharex=True)
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+    # Build the annotations in the first subplot
+    h = 0.1  # height of TFBS rectangles
+    ax[0].set_ylim(0, 1)  # lims of axis
+    ax[0].spines['bottom'].set_visible(False)  #remove axis surrounding, makes it cleaner
+    ax[0].spines['top'].set_visible(False)
+    ax[0].spines['right'].set_visible(False)
+    ax[0].spines['left'].set_visible(False)
+    ax[0].tick_params(left = False)  #remove tick marks on y-axis
+    ax[0].set_yticks([0.25, 0.525, 0.75])  # Add ticklabel positions
+    ax[0].set_yticklabels(["TFBS", "Affinity", "Closest OLS Hamming Distance"], weight="bold")  # Add ticklabels
+    ax[0].hlines(0.2, 1, len(seq), color="black")  #  Backbone to plot boxes on top of
+
+    # Build rectangles for each TFBS into a dictionary
+    tfbs_blocks = {}
+    for pos in tfbs_annot.keys():
+        if tfbs_annot[pos][0] == "GATA":
+            tfbs_blocks[pos] = mpl.patches.Rectangle((pos-2, 0.2-(h/2)), width=8, height=h, facecolor="orange", edgecolor="black")
+        elif tfbs_annot[pos][0] == "ETS":
+            tfbs_blocks[pos] = mpl.patches.Rectangle((pos-2, 0.2-(h/2)), width=8, height=h, facecolor="blue", edgecolor="black")
+
+    # Plot the TFBS with annotations, should be input into function
+    for pos, r in tfbs_blocks.items():
+        ax[0].add_artist(r)
+        rx, ry = r.get_xy()
+        ytop = ry + r.get_height()
+        cx = rx + r.get_width()/2.0
+        tfbs_site = tfbs_annot[pos][0] + tfbs_annot[pos][1]
+        tfbs_aff = round(tfbs_annot[pos][3], 2)
+        closest_match = tfbs_annot[pos][5] + ": " + str(tfbs_annot[pos][7])
+        spacing = tfbs_annot[pos][4]
+        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold', 
+                    fontsize=12, ha='center', va='bottom')
+        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold', 
+                    fontsize=12, ha='center', va='bottom')
+        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold', 
+                    fontsize=12, ha='center', va='bottom')
+        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black", 
+                fontsize=12, ha='center', va='bottom')
+
+    if importance_scores is None:
+        print("No importance scores given, outputting just sequence")
+        ylab = "Sequence"
+        ax[1].spines['left'].set_visible(False)
+        ax[1].set_yticklabels([])
+        ax[1].set_yticks([])
+        importance_scores = one_hot_encode_along_channel_axis(seq)
+    else:
+        ylab = "Importance Score"
+    
+    title = ""
+    if seq_name is not None:
+        title += seq_name
+    if model_pred is not None:
+        color = cmap(norm(model_pred))
+        title += ": {}".format(str(round(model_pred, 3)))
+        
+    # Plot the featue importance scores
+    viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1)
+    ax[1].spines['right'].set_visible(False)
+    ax[1].spines['top'].set_visible(False)
+    ax[1].set_xlabel("Sequence Position")
+    ax[1].set_ylabel(ylab)
+    plt.suptitle(title, fontsize=24, weight="bold", color=color)
+
+# Function to encode a sequence based on nucleotides. Makes use of defineTFBS to find TFBS. Note that the current
+# implementation only keeps sequences with exactly 5 binding sites. Currently supports encoding into mixed 1.0, 2.0 and 3.0
+def encode_seq(seq, encoding):
+    if encoding not in ["mixed1", "mixed2", "mixed3"]:
+        raise ValueError("Specified encoding not supported")
+    enh_tfbs = defineTFBS(seq)
+    if len(enh_tfbs) != 5:
+        return -1
+    enh_encoding = []
+    for pos, tfbs in enh_tfbs.items():
+        if tfbs[0] == "ETS":
+            if encoding == "mixed1":
+                enh_encoding += [tfbs[4], "E", tfbs[1], tfbs[3]]
+            elif encoding == "mixed2":
+                enh_encoding += [tfbs[4], tfbs[3], tfbs[1], 0, 0]
+            elif encoding == "mixed3":
+                enh_encoding += [tfbs[4], tfbs[3], 0, tfbs[1]]
+        elif tfbs[0] == "GATA":
+            if encoding == "mixed1":
+                enh_encoding += [tfbs[4], "G", tfbs[1], tfbs[3]]
+            elif encoding == "mixed2":
+                enh_encoding += [tfbs[4], 0, 0, tfbs[3], tfbs[1]]
+            elif encoding == "mixed3":
+                enh_encoding += [tfbs[4], 0, tfbs[3], tfbs[1]]
+    enh_encoding.append(len(seq)-(pos+5)-1)
+    return enh_encoding
+
+
+# Uses encode_seq to encode an entire dataset (an input dataframe with a column containing the sequence called "SEQ")
+# Currently supports encoding into mixed 1.0, 2.0 and 3.0
+def encode_dataset(data, encode):
+    if encode not in ["mixed1", "mixed2", "mixed3"]:
+        raise ValueError("Specified encoding not supported")
+    mixed_encoding, valid_idx = [], []
+    for i, (row_num, enh_data) in tqdm.tqdm(enumerate(data.iterrows())):
+        sequence = enh_data["SEQ"].upper().strip()
+        encoded_seq = encode_seq(sequence, encoding=encode)
+        if encoded_seq != -1:
+            mixed_encoding.append(encoded_seq)
+            valid_idx.append(i)
+    if encode in ["mixed1", "mixed3"]:
+        X_mixed = (pd.DataFrame(mixed_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    elif encode == "mixed2":
+        X_mixed = (pd.DataFrame(mixed_encoding).replace({"R": -1, "F": 1})).values
+    if X_mixed.shape[1] not in [21,26]:
+        print("Get in shape! Should have 21 or 26 features, but have {}".format(X_mixed.shape[1]))
+        return -1
+    return X_mixed, valid_idx
+
+
+# Wrapper function to genrate mixed 1.0-3.0 encodings
+# Currently supports encoding into mixed 1.0, 2.0 and 3.0
+def mixed_encode(data):
+    mixed1_encoding, mixed2_encoding, mixed3_encoding, valid_idx = [], [], [], []
+    for i, (row_num, enh_data) in tqdm.tqdm(enumerate(data.iterrows())):
+        sequence = enh_data["SEQ"].upper().strip()
+        encoded_seq1 = encode_seq(sequence, encoding="mixed1")
+        encoded_seq2 = encode_seq(sequence, encoding="mixed2")
+        encoded_seq3 = encode_seq(sequence, encoding="mixed3")
+        if encoded_seq1 != -1:
+            mixed1_encoding.append(encoded_seq1)
+            mixed2_encoding.append(encoded_seq2)
+            mixed3_encoding.append(encoded_seq3)
+            valid_idx.append(i)
+    X_mixed1 = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2 = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3 = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1, X_mixed2, X_mixed3, valid_idx
+
+
+# Function to encode a sequence based on sitenames (i.e. S1-G1r...)
+def encode_OLS_seq(OLS_seq, encoding, sitename_dict, affinity_dict):
+    if encoding not in ["mixed1", "mixed2", "mixed3"]:
+        raise ValueError("Specified encoding not supported")
+        
+    enh_enc = []  # Single enhancer encoding
+    
+    # Loop through each position
+    for col_num in range(len(OLS_seq)):
+        # If we have a spacer in the current position we need to check for surrounding GATA-2 sites
+        if "S" in OLS_seq[col_num]:
+
+            # If the spacer is the empty spacer, just add a 0 and go to the next
+            if OLS_seq[col_num] == "S5":
+                enh_enc.append(len(sitename_dict[OLS_seq[col_num]]))
+                continue
+
+            # If the spacer is downstream of a GATA-2 reverse, we need to add a nucleotide to the GATA-2 (subtract one from spacer)
+            if col_num > 0:
+                if OLS_seq[col_num - 1] == "G2R":
+                    enh_enc.append(len(sitename_dict[OLS_seq[col_num]]) - 1)
+                    continue
+
+            # If the spacer is upstream of a GATA-2 forward, we need to add a nucleotide to the GATA-2 (subtract one from spacer)
+            if col_num < len(OLS_seq) - 1:
+                if OLS_seq[col_num + 1] == "G2F":
+                    enh_enc.append(len(sitename_dict[OLS_seq[col_num]]) - 1)
+                    continue
+
+            # Finally if no G2F or S5 is involved, just add the normal len of the spacer
+            enh_enc.append(len(sitename_dict[OLS_seq[col_num]]))
+            continue
+
+        # If we are at a TFBS, add the TFBS type, orientation and affinity
+        else:
+            tfbs = OLS_seq[col_num]
+            tf = tfbs[0]
+            aff = affinity_dict[tfbs[:2]]
+            orient = tfbs[2]
+            if encoding == "mixed1":
+                enh_enc += [tf, orient, aff]
+            elif encoding == "mixed2":
+                if tf == "E":
+                    enh_enc += [aff, orient, 0, 0]
+                elif tf == "G":
+                    enh_enc += [0, 0, aff, orient]
+            elif encoding == "mixed3":
+                if tf == "E":
+                    enh_enc += [aff, 0, orient]
+                elif tf == "G":
+                    enh_enc += [0, aff, orient]
+            
+    return enh_enc
+    
+    
+# Function to encode a dataset of OLS sequences by looping through dataframe 
+# and repeatedly running encode_OLS_seq. Supports mixed 1.0, 2.0 and 3.0
+def encode_OLS_dataset(OLS_dataset, encode):
+    site_dict = loadSiteName2bindingSiteSequence()  # Sitenames to sequence
+    aff_dict = loadBindingSiteName2affinities()  # Sitenames to affinities
+    if encode not in ["mixed1", "mixed2", "mixed3"]:
+        raise ValueError("Specified encoding not supported")
+    mixed_encoding = []
+    for i, (row_num, enh_data) in enumerate(tqdm.tqdm(OLS_dataset.iterrows())):
+        sequence = enh_data.values
+        encoded_seq = encode_OLS_seq(sequence, encode, site_dict, aff_dict)
+        mixed_encoding.append(encoded_seq)
+    if encode in ["mixed1", "mixed3"]:
+        X_mixed = (pd.DataFrame(mixed_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    elif encode == "mixed2":
+        X_mixed = (pd.DataFrame(mixed_encoding).replace({"R": -1, "F": 1})).values
+    if X_mixed.shape[1] not in [21,26]:
+        print("Get in shape! Should have 21 or 26 features, but have {}".format(X_mixed.shape[1]))
+        return -1
+    return X_mixed
+
+
+# Encode all three mixed encodings for the OLS library. Supports mixed 1.0, 2.0 and 3.0
+def mixed_OLS_encode(OLS_dataset):
+    site_dict = loadSiteName2bindingSiteSequence()  # Sitenames to sequence
+    aff_dict = loadBindingSiteName2affinities()  # Sitenames to affinities
+    mixed1_encoding, mixed2_encoding, mixed3_encoding = [], [], []
+    for i, (row_num, enh_data) in enumerate(tqdm.tqdm(OLS_dataset.iterrows())):
+        sequence = enh_data.values
+        encoded_seq1 = encode_OLS_seq(sequence, encoding="mixed1", sitename_dict=site_dict, affinity_dict=aff_dict)
+        encoded_seq2 = encode_OLS_seq(sequence, encoding="mixed2", sitename_dict=site_dict, affinity_dict=aff_dict)
+        encoded_seq3 = encode_OLS_seq(sequence, encoding="mixed3", sitename_dict=site_dict, affinity_dict=aff_dict)
+        mixed1_encoding.append(encoded_seq1)
+        mixed2_encoding.append(encoded_seq2)
+        mixed3_encoding.append(encoded_seq3)
+    X_mixed1s = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2s = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3s = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1s, X_mixed2s, X_mixed3s
+
+
+# PLOTTING
+
+def tile_plot(data, tile_col="TILE", score_col="SCORES", name_col="NAME", label_col=None):
+    rc = {"font.size": 14}
+    with plt.rc_context(rc):
+        fig, ax = plt.subplots(1, 1, figsize=(16,8))
+        cmap = mpl.cm.RdYlGn
+        ax.scatter(x=data[tile_col], y=data[name_col], c=data[score_col], cmap=cmap)
+        cax = fig.add_axes([0.15, 0.0, 0.75, 0.02])
+        norm = mpl.colors.Normalize(vmin=data[score_col].min(), vmax=data[score_col].max())
+        cb = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='horizontal')
+        cb.set_label("Scores")
+        ax.set_ylabel("Sequence")
+        ax.set_xlabel("Start Position")
+        start, end = data[tile_col].astype(int).min(), data[tile_col].astype(int).max()
+        ax.xaxis.set_ticks(np.arange(start, end, 10))
+        ax.set_xticklabels(np.arange(start, end, 10))
+        if label_col != None:
+            red_patch = mpatches.Patch(color='lightgreen', label='Active')
+            green_patch = mpatches.Patch(color='lightcoral', label='Inactive')
+            legend = plt.legend(title='Validated Status', handles=[green_patch, red_patch], bbox_to_anchor=(-0.25,0))
+            plt.gca().add_artist(legend)
+            for label in ax.get_yticklabels():
+                print(label)
+                #if data.set_index(name_col).loc[label.get_text()][label_col] == 1:
+                #    label.set_color("lightgreen")
+                #elif data.set_index(name_col).loc[label.get_text()][label_col] == 0:
+                #    label.set_color("lightcoral")
