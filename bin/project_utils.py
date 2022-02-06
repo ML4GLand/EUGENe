@@ -508,6 +508,79 @@ def score(pos_file, neg_file, thresh):
     print("Accuracy_at_threshold_{}\t{:.4f}\t{:.4f}".format(thresh, acc_thresh0, acc_thresh0_shuf))
     print("AUROC\t{:.4f}\t{:.4f}".format(auroc, auroc_shuf))
     print("AUPRC\t{:.4f}\t{:.4f}".format(auprc, auprc_shuf))
+    
+    
+# Function to generate a gkSVM slurm script
+def generate_slurm_train_script(input_dir,
+                                pos_seqs,
+                                neg_seqs,
+                                val_seqs,
+                                result_dir,
+                                hyperparams,
+                                preprocess,
+                                features="fasta",
+                                architecture="gkSVM"):
+    if not os.path.exists(result_dir):
+        print("{} does not exist, making dir".format(result_dir))
+        os.makedirs(result_dir)
+           
+    # Set up model name
+    model = "{}_{}_{}-clf_{}".format(preprocess, features, architecture, hyperparams)
+    model_name = os.path.join(result_dir, model)
+    
+    # Set up hyperparams
+    hyperparams = hyperparams.split("-")
+    if hyperparams[4]:
+        hyperparams.remove("True")
+        hyperparams = "-t {} -l {} -k {} -d {} -R -c {} -w {}".format(*hyperparams)
+    else:
+        hyperparams.remove("False")
+        hyperparams = "-t {} -l {} -k {} -d -c {} -w {}".format(*hyperparams)
+        
+    # Set up file pointers
+    output = ["#!/bin/bash", "#SBATCH --cpus-per-task=16", "#SBATCH --time=48:00:00",
+              "#SBATCH --partition carter-compute\n"]
+    output += ['date\necho -e "Job ID: $SLURM_JOB_ID\\n"\n']
+    output += ["trainposseqs={}".format(os.path.join(input_dir, pos_seqs)),
+               "trainnegseqs={}".format(os.path.join(input_dir, neg_seqs)),
+               "valseqs={}".format(os.path.join(input_dir, val_seqs)),
+               "resultdir={}".format(result_dir),
+               "modelname={}".format(model_name)]
+    output += ["[ ! -d $resultdir ] && mkdir $resultdir\n"]
+    
+    # Set-up training command
+    train_command = "gkmtrain $trainposseqs $trainnegseqs $modelname {} -v 2 -T $SLURM_CPUS_PER_TASK -m 8000.0".format(hyperparams)
+    output += ["echo -e {}".format(train_command)]
+    output += [train_command]
+    output += ['echo -e "\\n"\n']
+    
+    # Set up positive train seq predict
+    predict_pos_train_command = 'gkmpredict $trainposseqs $modelname".model.txt" $modelname".train-pos.predict.txt"'
+    output += ["echo -e {}".format(predict_pos_train_command)]
+    output += [predict_pos_train_command]
+    output += ['echo -e "\\n"\n']
+    
+    # Set up negative train seq predict
+    predict_neg_train_command = 'gkmpredict $trainnegseqs $modelname".model.txt" $modelname".train-neg.predict.txt"'
+    output += ["echo -e {}".format(predict_neg_train_command)]
+    output += [predict_neg_train_command]
+    output += ['echo -e "\\n"\n']
+    
+    # Set up val seq predict
+    predict_val_command = 'gkmpredict $valseqs $modelname".model.txt" $modelname".test.predict.txt"'
+    output += ["echo -e {}".format(predict_val_command)]
+    output += [predict_val_command]
+    output += ['echo -e "\\n"\n']
+    
+    output += ["date"]
+    
+    # Write to script
+    with open("{}/train_{}.sh".format(result_dir, model), "w") as f:
+        f.write("\n".join(output))
+        print("Successfully generated {}/train_{}.sh".format(result_dir, model))
+        
+    # Bash command to edit
+    print("Usage: sbatch train_{0}.sh --job-name=train_{0} -o {1}/train_{0}.out -e {1}/train_{0}.err --mem=20G".format(model, result_dir))
 # <<< lsgkm helper functions <<<
 
 
@@ -526,13 +599,14 @@ def accuracy(raw, labels):
 # Current livelossplot compatible training script
 def train_binary_classifier(model, 
                           dataloaders, 
-                          bidirectional=False,
+                          double_stranded=False,
                           device="cpu",
                           criterion=torch.nn.BCEWithLogitsLoss(reduction='sum'), 
                           optimizer=None, 
                           num_epoch=50, 
                           early_stop=False, 
-                          patience=3):
+                          patience=3,
+                          plot_frequency=10):
     liveloss = PlotLosses()
     loss_history, acc_history = {}, {}
     if early_stop:
@@ -553,7 +627,7 @@ def train_binary_classifier(model,
             running_loss = 0.0
             running_acc = 0.0
             for inputs, targets in dataloaders[phase]:
-                if bidirectional:
+                if double_stranded:
                     input_forward = inputs[:, :, :, 0].to(device)
                     input_reverse = inputs[:, :, :, 1].to(device)
                     outputs = model(input_forward.float(), input_reverse.float())
@@ -587,7 +661,8 @@ def train_binary_classifier(model,
             acc_history.setdefault(phase, []).append(epoch_acc)
             
         liveloss.update(logs)
-        liveloss.send()
+        if epoch % plot_frequency == 0:
+            liveloss.send()
         if early_stop:
             if e_stop:
                 print("Early stopping occured at epoch {}".format(epoch))
