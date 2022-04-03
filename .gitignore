@@ -1,7 +1,10 @@
 # User-defined
 archive/
 data/
-results/benchmark/
+results/
+bin/err/
+bin/out/
+test/*_test/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
