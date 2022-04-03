@@ -617,7 +617,7 @@ def train_binary_classifier(model,
         optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     for epoch in range(num_epoch):
         logs = {}
-        for phase in ['train', 'validation']:
+        for phase in list(dataloaders.keys()):
 
             if phase == 'train' and epoch > 0:
                 model.train()

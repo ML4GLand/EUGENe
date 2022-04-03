@@ -1,13 +1,7 @@
 # User-defined
+archive/
 data/
-LR/
-RF/
-GBM/
-gkSVM/
-NN/
-META/
-*.out
-*.url
+results/benchmark/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

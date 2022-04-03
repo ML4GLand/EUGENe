@@ -1,6 +1,8 @@
-# EUGENE
+# EUGENE (Elucidating and Understanding Grammar of Enhancers Using Neural Nets)
 
-One Paragraph of project description goes here
+Enhancers are cis-regulatory elements have been shown to act as molecular switches to control the timing and localization of gene expression in animal development. Though it has been shown that the spacing, orientation, and binding affinity of TF binding sites within an enhancer, collectively called **enhancer grammar**, interact to regulate enhancer activity, we have yet to gain a broader understanding of the regulatory code underlying sequence elements of enhancers. 
+
+(MPRAs) offer a high-throughput methodology that directly tests the activity of regulatory sequences in cells. Predicting outcomes of MPRAs using machine learning represents a powerful mechanism for understanding the regulatory features that encode function in different sequences.
 
 ## Getting Started
 

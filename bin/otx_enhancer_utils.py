@@ -250,6 +250,8 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
     if model_pred is not None:
         color = cmap(norm(model_pred))
         title += ": {}".format(str(round(model_pred, 3)))
+    else:
+        color = "black"
         
     # Plot the featue importance scores
     viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1)
