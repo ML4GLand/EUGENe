@@ -1,6 +1,7 @@
-num_trials: 2
+num_trials: 100
 hyperopt_model: True
 hyperopt_data: False
+pruning: True
 
 trainer:
   callbacks:
@@ -13,16 +14,16 @@ trainer:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
       save_dir: "/cellar/users/aklie/projects/EUGENE/results/eugene/hyperopt" 
-      name: "dsEUGENE"
+      name: "dsEUGENE_baseline"
   gpus: 1
   max_epochs: 100
 
 model:
   conv_kwargs:
     input_len: 66
-    channels: [4, 64, 128]
-    conv_kernels: [32, 32]
-    pool_kernels: [16, 16]
+    channels: [4, 32, 64]
+    conv_kernels: [12, 12]
+    pool_kernels: [6, 6]
     dropout_rates: 0.5
     batchnorm: True
   rnn_kwargs: 
@@ -32,7 +33,7 @@ model:
     batch_first: True
   fc_kwargs: 
     output_dim: 1
-    hidden_dims: [512, 512, 512, 512, 512]
+    hidden_dims: [512]
     activation: "relu"
     dropout_rate: 0.5
     batchnorm: True
@@ -41,7 +42,7 @@ model:
 data:
   seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
   batch_size: 512
-  num_workers: 4
+  num_workers: 2
   split: 0.9
   load_kwargs: 
     target_col: "ACTIVITY_SUMRNA_NUMDNA"

@@ -2,6 +2,7 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 from MPRADataModule import MPRADataModule
 from dsEUGENE import dsEUGENE
+import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities.cli import LightningCLI
 
@@ -18,9 +19,9 @@ def objective(trial: optuna.trial.Trial, pl_cli):
             conv_channels.append(trial.suggest_categorical("conv_channels_{}".format(i), 
                                                            [x*4 if x != 0 else 1 for x in range(0, conv_kwgs["channels"][i+1]//4 + 1)]))
             conv_kernels.append(trial.suggest_categorical("conv_kernel_{}".format(i), 
-                                                          [x*8 if x != 0 else 1 for x in range(0, conv_kwgs["conv_kernels"][i]//8 + 1)]))
+                                                          [x*4 if x != 0 else 1 for x in range(0, conv_kwgs["conv_kernels"][i]//4 + 1)]))
             pool_kernels.append(trial.suggest_categorical("pool_kernel_{}".format(i),
-                                                          [x*4 if x != 0 else 1 for x in range(0, conv_kwgs["pool_kernels"][i]//4 + 1)]))
+                                                          [x*2 if x != 0 else 1 for x in range(0, conv_kwgs["pool_kernels"][i]//2 + 1)]))
         conv_dropout = trial.suggest_float("conv_dropout_rate", 0.1, conv_kwgs["dropout_rates"])
         conv_batchnorm = trial.suggest_categorical("conv_batchnorm", [True, False])
         cnn = dict(input_len=conv_kwgs["input_len"], 
@@ -66,9 +67,14 @@ def objective(trial: optuna.trial.Trial, pl_cli):
         mod = MPRADataModule(**data_kwgs)
         
     logger_kwgs = config["trainer"]["logger"]["init_args"]
-    #logger = TensorBoardLogger(logger_kwgs["save_dir"], name=logger_kwgs["name"], version="trial_{}".format(trial.number))
-    pl_cli.trainer.fit(model=eugene, datamodule=mod)  #, logger=logger)
-    return pl_cli.trainer.callback_metrics["hp_metric"].item()
+    logger = TensorBoardLogger(logger_kwgs["save_dir"], name=logger_kwgs["name"], version="trial_{}".format(trial.number))
+    print(logger.version)
+    trainer = pl.Trainer(gpus=config["trainer"]["gpus"],
+                         max_epochs=config["trainer"]["max_epochs"],
+                         logger=logger,
+                         callbacks=pl_cli.trainer.callbacks)
+    trainer.fit(model=eugene, datamodule=mod)  #, logger=logger)
+    return trainer.callback_metrics["hp_metric"].item()
 
 
 class MyLightningCLI(LightningCLI):
