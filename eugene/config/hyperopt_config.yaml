@@ -1,14 +1,18 @@
+num_trials: 2
+hyperopt_model: True
+hyperopt_data: False
+
 trainer:
   callbacks:
     - class_path: pytorch_lightning.callbacks.EarlyStopping
       init_args:
-        patience: 5
+        patience: 3
         monitor: "val_loss"
         mode: "min"
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
-      save_dir: "/cellar/users/aklie/projects/EUGENE/results/eugene/0.18-0.4" 
+      save_dir: "/cellar/users/aklie/projects/EUGENE/results/eugene/hyperopt" 
       name: "dsEUGENE"
   gpus: 1
   max_epochs: 100
@@ -18,13 +22,20 @@ model:
     input_len: 66
     channels: [4, 64, 128]
     conv_kernels: [32, 32]
-    pool_kernels: [4, 4]
+    pool_kernels: [16, 16]
+    dropout_rates: 0.5
+    batchnorm: True
   rnn_kwargs: 
     output_dim: 512
+    unit_type: "lstm"
+    bidirectional: True
     batch_first: True
   fc_kwargs: 
     output_dim: 1
-    hidden_dims: 
+    hidden_dims: [512, 512, 512, 512, 512]
+    activation: "relu"
+    dropout_rate: 0.5
+    batchnorm: True
   learning_rate: 0.001
 
 data:
@@ -36,5 +47,3 @@ data:
     target_col: "ACTIVITY_SUMRNA_NUMDNA"
     low_thresh: 0.18
     high_thresh: 0.4
-    
-num_trials: 50
