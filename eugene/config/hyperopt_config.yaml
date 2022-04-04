@@ -1,0 +1,40 @@
+trainer:
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.EarlyStopping
+      init_args:
+        patience: 5
+        monitor: "val_loss"
+        mode: "min"
+  logger:
+    class_path: pytorch_lightning.loggers.TensorBoardLogger
+    init_args:
+      save_dir: "/cellar/users/aklie/projects/EUGENE/results/eugene/0.18-0.4" 
+      name: "dsEUGENE"
+  gpus: 1
+  max_epochs: 100
+
+model:
+  conv_kwargs:
+    input_len: 66
+    channels: [4, 64, 128]
+    conv_kernels: [32, 32]
+    pool_kernels: [4, 4]
+  rnn_kwargs: 
+    output_dim: 512
+    batch_first: True
+  fc_kwargs: 
+    output_dim: 1
+    hidden_dims: 
+  learning_rate: 0.001
+
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
+  batch_size: 512
+  num_workers: 4
+  split: 0.9
+  load_kwargs: 
+    target_col: "ACTIVITY_SUMRNA_NUMDNA"
+    low_thresh: 0.18
+    high_thresh: 0.4
+    
+num_trials: 50

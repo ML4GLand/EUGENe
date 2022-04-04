@@ -13,6 +13,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.utilities.cli import LightningCLI
 from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
+from claim.utils import init_weights
 import torchmetrics
 import optuna
 
@@ -33,6 +34,7 @@ class dsEUGENE(LightningModule):
         self.auroc = torchmetrics.AUROC()
         
         self.save_hyperparameters()
+        init_weights(self)
         
     def forward(self, x, x_rev_comp):
         batch_size, channels, seq_len = x.size()
@@ -79,30 +81,8 @@ class dsEUGENE(LightningModule):
         return Adam(self.parameters(), lr=self.hparams.learning_rate)
         
 
-# Hyperoptimization objective function
-def objective(trial: optuna.trial.Trial, datamodule, tb_name="test", max_epochs=5):
-    fcn_layers = trial.suggest_int("fcn_n_layers", 1, 3)
-    fcn_dropout = trial.suggest_float("fcn_dropout", 0.2, 0.5)
-    fcn_output_dims = [
-        trial.suggest_int("fcn_n_units_l{}".format(i), 4, 128, log=True) for i in range(fcn_layers)
-    ]
-    cnn=dict(input_len=66, channels=[4, 16], conv_kernels=[15, 5], pool_kernels=[1, 1])
-    rnn=dict(output_dim=32, batch_first=True)
-    fc=dict(output_dim=1, hidden_dims=fcn_output_dims, dropout_rate=fcn_dropout)
-    eugene = dsEUGENE(conv_kwargs=cnn, rnn_kwargs=rnn, fc_kwargs=fc)
-    init_weights(eugene)
-    logger = TensorBoardLogger(tb_name, name="dsEUGENE", version="trial_{}".format(trial.number))
-    trainer = pl.Trainer(
-        logger=logger,
-        checkpoint_callback=False,
-        max_epochs=max_epochs,
-        gpus=1 if torch.cuda.is_available() else None,
-    )
-    hyperparameters = dict(fcn_layers=fcn_layers, fcn_dropout=fcn_dropout, fcn_output_dims=fcn_output_dims)
-    trainer.logger.log_hyperparams(hyperparameters)
-    trainer.fit(eugene, datamodule=datamodule)
-    return trainer.callback_metrics["val_auroc_epoch"].item()
-   
+def interpret():
+    pass
     
 if __name__ == "__main__":
     cli = LightningCLI(dsEUGENE, MPRADataModule)
