@@ -10,8 +10,8 @@ class MPRADataset(Dataset):
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
         """
         Args:
-            names (iterable):
             seqs (iterable): list of sequences to serve as input into models
+            names (iterable, optional): list of identifiers for sequences
             targets (iterable): aligned list of targets for each sequence
             rev_seqs (iterable, optional): Optional reverse complements of seqs
             transform (callable, optional): Optional transform to be applied
@@ -25,6 +25,8 @@ class MPRADataset(Dataset):
         self._init_dataset()
 
     def _init_dataset(self):
+        """Perform any initialization steps on the dataset, currently converts names into ascii if provided
+        """
         if self.names is not None:
             self.ascii_names = np.array([np.array([ord(letter) for letter in name], dtype=int) for name in self.names])
         else:
@@ -34,6 +36,15 @@ class MPRADataset(Dataset):
         return len(self.seqs)
  
     def __getitem__(self, idx):
+        """Get an item from the dataset and return as tuple. Perform any transforms passed in
+
+        Args:
+            idx (int): dataset index to grab
+
+        Returns:
+            tuple: Returns a quadruple of tensors: identifiers, sequences, reverse complement 
+                   sequences, targets. If any are not provided tensor([-1.]) is returned for that sequence
+        """
         if torch.is_tensor(idx):
             idx = idx.tolist()
         

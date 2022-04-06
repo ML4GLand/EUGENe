@@ -1,9 +1,6 @@
-import os
 import numpy as np
 import pandas as pd
 
-import sys
-sys.path.append("/Users/adamklie/Desktop/research/lab/dev/EUGENE/eugene")
 from eugene import seq_utils
 
 seqs = seq_utils.random_seqs(100, 1000)

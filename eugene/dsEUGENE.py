@@ -20,7 +20,7 @@ import optuna
 # MPRADataModule
 from MPRADataModule import MPRADataModule
 from torchvision import transforms
-from transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
+from seq_transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
 
 
 class dsEUGENE(LightningModule):

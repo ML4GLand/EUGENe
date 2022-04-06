@@ -1,8 +1,6 @@
-import pandas as pd
-import numpy as np
 import torch
-from enhancer_utils import randomizeLinkers
-from seq_utils import ohe
+from eugene.enhancer_utils import randomizeLinkers
+from eugene.seq_utils import ohe
 
 
 class ReverseComplement(object):
