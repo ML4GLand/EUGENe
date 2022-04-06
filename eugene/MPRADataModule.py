@@ -21,7 +21,7 @@ class MPRADataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         
     def setup(self, stage: str = None) -> None:
-        seqs, targets = load(self.seq_file, **self.load_kwargs)
+        names, seqs, rev_seqs, targets = load(self.seq_file, **self.load_kwargs)
         dataset = MPRADataset(seqs, targets, transform=self.transform)
         dataset_len = len(dataset)
         train_len = int(dataset_len*0.9)

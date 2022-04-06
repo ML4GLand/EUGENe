@@ -1,52 +1,54 @@
-import re
 import numpy as np
-import logging
 np.random.seed(42)
 
-enhancer_binding_sites = {"Core-otx-a": ["..GGAA..", "..GGAT..", "..TTCC..", "..ATCC..", "..GATA..", "..TATC.."],
-                          "WT-otx-a": ["GTTATCTC", "ACGGAAGT", "AAGGAAAT", "AATATCT", "AAGATAGG", "GAGATAAC", "ACTTCCGT", "ATTTCCTT", "AGATATT", "CCTATCTT"]}
-alphabet = np.array(["A", "G", "C", "T"])
+DEFAULT_NUC_ORDER = {y: x for x, y in enumerate(["A", "T", "C", "G"])}
+NUCLEOTIDES = sorted([x for x in DEFAULT_NUC_ORDER.keys()])
+COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
 
-def is_overlapping(a, b):
-    if b[0] >= a[0] and b[0] <= a[1]:
-        return True
-    else:
-        return False
+def random_base():
+    """
+    Generate a random base.
+    :return: Random base.
+    """
+    return np.random.choice(NUCLEOTIDES)
 
-def merge_intervals(intervals):
-    merged_list= []
-    merged_list.append(intervals[0])
-    for i in range(1, len(intervals)):
-        pop_element = merged_list.pop()
-        if is_overlapping(pop_element, intervals[i]):
-            new_element = pop_element[0], max(pop_element[1], intervals[i][1])
-            merged_list.append(new_element)
-        else:
-            merged_list.append(pop_element)
-            merged_list.append(intervals[i])
-    return merged_list
+def random_seq(seq_len):
+    """
+    Generate a random sequence of length seq_len.
+    :args
+    seq_len (int): length of sequence to return
+    :return: Random sequence.
+    """
+    return "".join([np.random.choice(NUCLEOTIDES) for i in range(seq_len)])
 
-def randomizeLinkers(seq, features=None, enhancer=None):   
-    if features == None:
-        assert enhancer != None
-        features = enhancer_binding_sites[enhancer]
-        
-    transformed_seq = []
-    feature_spans = merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
-    for i, span in enumerate(feature_spans):
-        if i == 0:
-            linker_len = span[0]
-        else:
-            linker_len = feature_spans[i][0]-feature_spans[i-1][1]
-        transformed_seq.append("".join(np.random.choice(alphabet, size=linker_len)))
-        transformed_seq.append(seq[span[0]:span[1]])
-    transformed_seq.append("".join(np.random.choice(alphabet, size=len(seq)-feature_spans[-1][1])))
-    transformed_seq = "".join(transformed_seq)
-    if len(transformed_seq) != len(seq):
-        logging.warning('Transformed sequence is length {}'.format(len(transformed_seq)))
-    return transformed_seq
+def random_seqs(seq_num, seq_len):
+    """
+    Generate seq_num random sequences of length seq_len
+    :args
+    seq_num (int): number of sequences to return
+    seq_len (int): length of sequence to return
+    :return: numpy array of random sequences.
+    """
+    return np.array([random_seq(seq_len) for i in range(seq_num)])
 
+def random_seqs_to_file(file, ext="csv", **kwargs):
+    """
+    Generate a random sequence of length seq_len and save to file
+    :args
+    seq_len (int): length of sequence to return
+    :return: Random sequence.
+    """
+    pass
+
+def reverse_complement(seq):
+    return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
+
+def seq2Fasta(seqs, IDs, name="seqs"):
+    file = open("{}.fa".format(name), "w")
+    for i in range(len(seqs)):
+        file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
+    file.close()
 
 def ohe(sequence, one_hot_axis=1):
     zeros_array = np.zeros((len(sequence),4), dtype=np.int8)

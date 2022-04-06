@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import torch
-from seq_utils import randomizeLinkers, ohe
+from enhancer_utils import randomizeLinkers
+from seq_utils import ohe
 
 
 class ReverseComplement(object):
@@ -11,15 +12,11 @@ class ReverseComplement(object):
         self.ohe = ohe_encoded
         
     def __call__(self, sample):
-        sequence, target = sample["sequence"], sample["target"]
-        if self.ohe:
-            complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-            reverse_complement = "".join(complement.get(base, base) for base in reversed(sequence))
-        else:
-            complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-            reverse_complement = "".join(complement.get(base, base) for base in reversed(sequence))
-        #print(reverse_complement)
-        return {'sequence': sequence, 'reverse_complement': reverse_complement, 'target': target}
+        seq = sample[1]
+        complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+        rev_seq = "".join(complement.get(base, base) for base in reversed(seq))
+        sample[2] = rev_seq
+        return sample
             
 
 class Augment(object):
@@ -31,31 +28,28 @@ class Augment(object):
         self.enhancer = enhancer
     
     def __call__(self, sample):
-        sequence, target = sample["sequence"], sample["target"]
+        sequence = sample[1]
         seq_len = len(sequence)
         if torch.rand(1).item() < self.randomize_linker_p:
             tsfm_sequence = randomizeLinkers(sequence, enhancer=self.enhancer)
             if len(tsfm_sequence) == seq_len:
                 sequence = tsfm_sequence
-        #print(sequence)
-        return {'sequence': sequence, 'target': target}
+        sample[1] = sequence
+        return sample
             
         
 class OneHotEncode(object):
     """OneHotEncode the input sequence"""
 
     def __call__(self, sample, ohe_axis=1):
-        sequence, target = sample["sequence"], sample["target"]
-        ohe_sequence = ohe(sequence, one_hot_axis=ohe_axis)
-        if "reverse_complement" in sample:
-            reverse_complement = sample["reverse_complement"]
-            ohe_reverse_complement = ohe(reverse_complement, one_hot_axis=ohe_axis)
-            #print(ohe_sequence, ohe_reverse_complement)
-            return {'sequence': ohe_sequence,
-                    'reverse_complement': ohe_reverse_complement,
-                    'target': target}
-        else:
-            return {'sequence': ohe_sequence, 'target': target}
+        sequence = sample[1]
+        ohe_seq = ohe(sequence, one_hot_axis=ohe_axis)
+        sample[1] = ohe_seq
+        if sample[2] is not None:
+            rev_seq = sample[2]
+            ohe_rev_seq = ohe(rev_seq, one_hot_axis=ohe_axis)
+            sample[2] = ohe_rev_seq
+        return sample
 
     
 class ToTensor(object):
@@ -65,19 +59,8 @@ class ToTensor(object):
         self.T = transpose
     
     def __call__(self, sample):
-        sequence, target = sample["sequence"], sample["target"]    
         if self.T:
-            sequence = sequence.transpose((1, 0))      
-        if "reverse_complement" in sample:
-            #print("here")
-            reverse_complement = sample["reverse_complement"]
-            #print(reverse_complement)
-            if self.T:
-                reverse_complement = reverse_complement.transpose((1, 0))
-            #print(sequence)
-            return {'sequence': torch.from_numpy(sequence).float(),
-                    'reverse_complement': torch.from_numpy(reverse_complement).float(),
-                    'target': torch.tensor(target, dtype=torch.float)}
-        else:
-            return {'sequence': torch.from_numpy(sequence).float(),
-                    'target': torch.tensor(target, dtype=torch.float)}
+            sample[1] = sample[1].transpose((1, 0))      
+        if sample[2] is not None and self.T:
+                sample[2] = sample[2].transpose((1, 0))
+        return torch.from_numpy(sample[0]).float(), torch.from_numpy(sample[1]).float(), torch.from_numpy(sample[2]).float(), torch.tensor(sample[3], dtype=torch.float)      
