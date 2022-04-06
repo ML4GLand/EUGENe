@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import sys
-sys.path.append("/Users/adamklie/Desktop/research/lab/dev/EUGENE/eugene")
-import seq_utils
+from eugene import seq_utils
 
 def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=False, low_thresh=None, high_thresh=None, low_memory=False):
     dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory)

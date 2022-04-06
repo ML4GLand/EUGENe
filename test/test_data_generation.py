@@ -4,7 +4,7 @@ import pandas as pd
 
 import sys
 sys.path.append("/Users/adamklie/Desktop/research/lab/dev/EUGENE/eugene")
-import seq_utils
+from eugene import seq_utils
 
 seqs = seq_utils.random_seqs(100, 1000)
 ohe_seqs = np.array([seq_utils.ohe(seq) for seq in seqs])

@@ -5,6 +5,7 @@ results/
 bin/err/
 bin/out/
 test/*_test/
+test_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
