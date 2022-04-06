@@ -15,6 +15,8 @@ def is_overlapping(a, b):
         return False
 
 def merge_intervals(intervals):
+    if len(intervals) == 0:
+        return None
     merged_list= []
     merged_list.append(intervals[0])
     for i in range(1, len(intervals)):
@@ -34,6 +36,8 @@ def randomizeLinkers(seq, features=None, enhancer=None):
         
     transformed_seq = []
     feature_spans = merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
+    if feature_spans is None:
+        return seq
     for i, span in enumerate(feature_spans):
         if i == 0:
             linker_len = span[0]

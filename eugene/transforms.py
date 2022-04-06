@@ -45,7 +45,7 @@ class OneHotEncode(object):
         sequence = sample[1]
         ohe_seq = ohe(sequence, one_hot_axis=ohe_axis)
         sample[1] = ohe_seq
-        if sample[2] is not None:
+        if len(sample[2]) != 1:
             rev_seq = sample[2]
             ohe_rev_seq = ohe(rev_seq, one_hot_axis=ohe_axis)
             sample[2] = ohe_rev_seq
@@ -61,6 +61,6 @@ class ToTensor(object):
     def __call__(self, sample):
         if self.T:
             sample[1] = sample[1].transpose((1, 0))      
-        if sample[2] is not None and self.T:
+        if len(sample[2]) != 1 and self.T:
                 sample[2] = sample[2].transpose((1, 0))
         return torch.from_numpy(sample[0]).float(), torch.from_numpy(sample[1]).float(), torch.from_numpy(sample[2]).float(), torch.tensor(sample[3], dtype=torch.float)      
