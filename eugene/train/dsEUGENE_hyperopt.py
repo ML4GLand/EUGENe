@@ -1,10 +1,16 @@
+# Optuna
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from MPRADataModule import MPRADataModule
-from dsEUGENE import dsEUGENE
+
+# PL
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities.cli import LightningCLI
+
+# EUGENE
+from eugene.dataloading.SeqDataModule import SeqDataModule
+from eugene.models.dsEUGENE import dsEUGENE
+
 
 # Hyperoptimization objective function
 def objective(trial: optuna.trial.Trial, pl_cli):
@@ -58,13 +64,13 @@ def objective(trial: optuna.trial.Trial, pl_cli):
         low = trial.suggest_float("low_threshold", 0, data_kwgs["load_kwargs"]["low_thresh"])
         high = trial.suggest_float("high_threshold", data_kwgs["load_kwargs"]["high_thresh"], 1)
         load = dict(target_col=data_kwgs["load_kwargs"]["target_col"], low_thresh=low, high_thresh=high)
-        mod = MPRADataModule(seq_file=data_kwgs["seq_file"],
+        mod = SeqDataModule(seq_file=data_kwgs["seq_file"],
                              batch_size=batch_size,
                              num_workers=data_kwgs["num_workers"],
                              split=data_kwgs["split"],
                              load_kwargs=load)
     else:
-        mod = MPRADataModule(**data_kwgs)
+        mod = SeqDataModule(**data_kwgs)
         
     logger_kwgs = config["trainer"]["logger"]["init_args"]
     logger = TensorBoardLogger(logger_kwgs["save_dir"], name=logger_kwgs["name"], version="trial_{}".format(trial.number))
@@ -86,7 +92,7 @@ class MyLightningCLI(LightningCLI):
                             help="Activate the pruning feature. `MedianPruner` stops unpromising trials at the early stages of training.")
         
 if __name__ == "__main__":
-    cli = MyLightningCLI(dsEUGENE, MPRADataModule, run=False)
+    cli = MyLightningCLI(dsEUGENE, SeqDataModule, run=False)
     print(cli.config["model"])
     print(cli.config["num_trials"])
     

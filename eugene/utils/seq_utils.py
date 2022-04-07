@@ -1,6 +1,7 @@
 import numpy as np
 np.random.seed(42)
 
+# Definitions
 DEFAULT_NUC_ORDER = {y: x for x, y in enumerate(["A", "T", "C", "G"])}
 NUCLEOTIDES = sorted([x for x in DEFAULT_NUC_ORDER.keys()])
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
@@ -71,7 +72,8 @@ def ohe(sequence, one_hot_axis=1):
         elif (char=="N" or char=="n"):
             continue #leave that pos as all 0's
         else:
-            raise RuntimeError("Unsupported character: "+str(char))
+            continue
+            #raise RuntimeError("Unsupported character: "+str(char))
         if (one_hot_axis==0):
             zeros_array[char_idx,i] = 1
         elif (one_hot_axis==1):

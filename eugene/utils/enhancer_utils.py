@@ -3,6 +3,7 @@ import numpy as np
 import logging
 np.random.seed(42)
 
+# Definitions
 enhancer_binding_sites = {"Core-otx-a": ["..GGAA..", "..GGAT..", "..TTCC..", "..ATCC..", "..GATA..", "..TATC.."],
                           "WT-otx-a": ["GTTATCTC", "ACGGAAGT", "AAGGAAAT", "AATATCT", "AAGATAGG", "GAGATAAC", "ACTTCCGT", "ATTTCCTT", "AGATATT", "CCTATCTT"]}
 alphabet = np.array(["A", "G", "C", "T"])

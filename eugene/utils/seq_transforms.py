@@ -1,8 +1,11 @@
+# PyTorch
 import torch
-from eugene.enhancer_utils import randomizeLinkers
-from eugene.seq_utils import ohe
 
+# EUGENE
+from eugene.utils.enhancer_utils import randomizeLinkers
+from eugene.utils.seq_utils import ohe
 
+# Suite of sequence transforms that can be composed using torchvision
 class ReverseComplement(object):
     """Reverse complement an input sequence"""
     

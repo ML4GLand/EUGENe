@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
-from eugene import seq_utils
+
+# EUGENE
+from eugene.utils import seq_utils
 
 def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=False, low_thresh=None, high_thresh=None, low_memory=False):
     """Function for loading sequences into numpy objects from csv/tsv files
@@ -22,7 +24,6 @@ def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=F
     """
     # Load as pandas dataframe
     dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory)
-    seqs = dataframe[seq_col].to_numpy(dtype=str)
 
     # Add names if available
     if name_col is not None:
@@ -37,10 +38,12 @@ def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=F
         dataframe.loc[dataframe[target_col] <= low_thresh, "FXN_LABEL"] = 0
         dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
         dataframe = dataframe[~dataframe["FXN_LABEL"].isna()]
+        seqs = dataframe[seq_col].to_numpy(dtype=str)
         targets =  dataframe["FXN_LABEL"].to_numpy()
     
     # Otherwise use passed in column if there
     else:
+        seqs = dataframe[seq_col].to_numpy(dtype=str)
         if target_col is not None:
             targets = dataframe[target_col].to_numpy(float)
         else:

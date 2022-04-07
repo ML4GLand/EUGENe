@@ -4,8 +4,8 @@ import torch
 from torch.utils.data import Dataset
 
 
-class MPRADataset(Dataset):
-    """MPRA Dataset definition"""
+class SeqDataset(Dataset):
+    """Sequence based PyTorch dataset definition"""
     
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
         """
