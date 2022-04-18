@@ -4,7 +4,7 @@ import pandas as pd
 # EUGENE
 from eugene.utils import seq_utils
 
-def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=False, low_thresh=None, high_thresh=None, low_memory=False):
+def load_csv(file, seq_col, name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -31,23 +31,27 @@ def load_csv(file, seq_col, name_col=None, target_col=None, sep="\t", rev_comp=F
     else:
         ids = None
 
-    # Create own target column if thresholds passed in
+    # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
-        assert low_thresh != None and high_thresh != None
+        assert low_thresh != None and high_thresh != None and target_col != None
         dataframe["FXN_LABEL"] = np.nan
         dataframe.loc[dataframe[target_col] <= low_thresh, "FXN_LABEL"] = 0
         dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
         dataframe = dataframe[~dataframe["FXN_LABEL"].isna()]
-        seqs = dataframe[seq_col].to_numpy(dtype=str)
-        targets =  dataframe["FXN_LABEL"].to_numpy()
     
-    # Otherwise use passed in column if there
-    else:
-        seqs = dataframe[seq_col].to_numpy(dtype=str)
-        if target_col is not None:
-            targets = dataframe[target_col].to_numpy(float)
+    # Grab sequences
+    seqs = dataframe[seq_col].to_numpy(dtype=str)
+        
+    # Grab targets if column is provided
+    if target_col is not None:
+        if binarize:
+            assert low_thresh != None and high_thresh != None
+            targets = dataframe["FXN_LABEL"].to_numpy(float)
         else:
-           targets = None 
+            targets = dataframe[target_col].to_numpy(float)
+            targets = targets[~np.isnan(targets) & ~np.isinf(targets)]
+    else:
+        targets = None 
 
     # Grab reverse complement if asked for 
     if rev_comp:
@@ -112,7 +116,7 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
     if is_seq_text:
         seqs = np.loadtxt(seq_file, dtype=str, delim=delim)
         if rev_seq_file != None:
-            rev_seqs = np.loadtxt(rev_seq_file, dtype=str, delim=delim)
+            rev_seqs = np.loadtxt(rev_seq_file, dtype=str)
         else:
             rev_seqs = None
     else:
@@ -124,7 +128,7 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
 
     if names_file is not None:
         if is_names_text:
-            ids = np.loadtxt(names_file, dtype=str, delim=delim)
+            ids = np.loadtxt(names_file, dtype=str)
         else:
             ids = np.load(names_file) 
     else:
@@ -132,7 +136,7 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
     
     if target_file is not None:
         if is_target_text:
-            targets = np.loadtxt(target_file, dtype=float, delim=delim)
+            targets = np.loadtxt(target_file, dtype=float)
         else:
             targets = np.load(target_file)
     else:

@@ -1,0 +1,14 @@
+model:
+  ds: False
+  classification: True
+  conv_kwargs:
+    input_len: 66
+    channels: [4, 32, 64]
+    conv_kernels: [15, 5]
+    pool_kernels: [2, 1]
+    dropout_rates: 0.2
+    batchnorm: True
+  fc_kwargs: 
+    hidden_dims: [32]
+    batchnorm: True
+    output_dim: 1

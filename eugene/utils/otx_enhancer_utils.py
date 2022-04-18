@@ -185,9 +185,21 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
         elif (one_hot_axis==1):
             zeros_array[i,char_idx] = 1
             
-            
+# Collapse neighbor positions of array to ranges
+def collapse_pos(positions):
+    ranges = []
+    start = positions[0]
+    for i in range(1, len(positions)):
+        if positions[i-1] == positions[i]-1:
+            continue
+        else:
+            ranges.append((start, positions[i-1]+2))
+            start = positions[i]
+    ranges.append((start, positions[-1]+2))
+    return ranges
+
 # Function to plot genome tracks for otxa
-def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, cmap=None, norm=None):
+def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, highlight=[], cmap=None, norm=None):
     # Get the annotations for the seq
     tfbs_annot = defineTFBS(seq)
     
@@ -254,11 +266,14 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         color = "black"
         
     # Plot the featue importance scores
-    viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1)
+    to_highlight = {"red": collapse_pos(highlight)}
+    print(to_highlight)
+    viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
     ax[1].spines['right'].set_visible(False)
     ax[1].spines['top'].set_visible(False)
     ax[1].set_xlabel("Sequence Position")
     ax[1].set_ylabel(ylab)
+    #ax[1].hlines(1, len(seq), threshold/10, color="red")
     plt.suptitle(title, fontsize=24, weight="bold", color=color)
 
 # Function to encode a sequence based on nucleotides. Makes use of defineTFBS to find TFBS. Note that the current

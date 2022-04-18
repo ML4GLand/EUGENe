@@ -26,12 +26,10 @@ class SeqDataModule(pl.LightningDataModule):
         self.seq_file = seq_file
         self.batch_size = batch_size
         if transform == None:
-            self.transform = transforms.Compose([Augment(randomize_linker_p=0.1, enhancer="WT-otx-a"),
-                                                 ReverseComplement(ohe_encoded=False), 
+            self.transform = transforms.Compose([ReverseComplement(ohe_encoded=False), 
                                                  OneHotEncode(), 
                                                  ToTensor(transpose=True)])
         elif isinstance(transform, list):
-            print(transform)
             transform_classes = []
             for t in transform:
                 kwargs = t.get("init_args", {})
@@ -40,9 +38,7 @@ class SeqDataModule(pl.LightningDataModule):
                 args_class = getattr(module, class_name)
                 transform_classes.append(args_class(**kwargs))
             self.transform = transforms.Compose(transform_classes)
-            print(self.transform)
         else:
-            print(transform)
             self.transform = transform
         self.load_kwargs = load_kwargs
         self.num_workers = num_workers
