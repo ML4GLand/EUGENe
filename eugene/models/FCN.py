@@ -10,29 +10,27 @@ from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 
 # CLAIM
-from claim.modules import BasicFullyConnectedModule, BasicRecurrent
+from claim.modules import BasicFullyConnectedModule
 
 # EUGENE
 from eugene.dataloading.SeqDataModule import SeqDataModule
 
-class RNN(LightningModule):
-    def __init__(self, input_len, strand="ss", task="regression", aggr=None, rnn_kwargs={}, fc_kwargs={}):
+class FCN(LightningModule):
+    def __init__(self, input_len, strand="ss", task="regression", aggr=None, fc_kwargs={}):
         super().__init__()
+        self.flattened_input_dims = 4*input_len
         self.strand = strand
         self.task = task
         self.aggr = aggr
         
         # Add strand specific modules
         if self.strand == "ss":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim, **fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
         elif self.strand == "ds":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim*2, **fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims*2, **fc_kwargs)
         elif self.strand == "ts":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.reverse_rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim*2, **fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
+            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)   
             
         # Add task specific metrics
         if self.task == "regression":
@@ -45,17 +43,18 @@ class RNN(LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x, x_rev_comp):
-        x, _ = self.rnn(x)
-        x = x[:, -1, :]
-        if self.strand == "ds":
-            x_rev_comp, _ = self.rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
+        x = x.flatten(start_dim=1)
+        if self.strand == "ss":
+            x = self.fcn(x)
+        elif self.strand == "ds":
+            x_rev_comp = x_rev_comp.flatten(start_dim=1)
             x = torch.cat((x, x_rev_comp), dim=1)
+            x = self.fcn(x)
         elif self.strand == "ts":
-            x_rev_comp, _ = self.reverse_rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
-            x = torch.cat((x, x_rev_comp), dim=1)
-        x = self.fcnet(x)
+            x = self.fcn(x)
+            x_rev_comp = x_rev_comp.flatten(start_dim=1)
+            x_rev_comp = self.reverse_fcn(x_rev_comp)
+            x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         return x
 
     def training_step(self, batch, batch_idx):
@@ -111,4 +110,4 @@ class RNN(LightningModule):
         return Adam(self.parameters(), lr=1e-3)
 
 if __name__ == "__main__":
-    cli = LightningCLI(RNN, SeqDataModule, save_config_overwrite=True)
+    cli = LightningCLI(FCN, SeqDataModule, save_config_overwrite=True)

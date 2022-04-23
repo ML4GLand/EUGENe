@@ -16,35 +16,45 @@ from claim.modules import BasicConv1D, BasicFullyConnectedModule
 from eugene.dataloading.SeqDataModule import SeqDataModule
 
 class CNN(LightningModule):
-    def __init__(self, ds=False, classification=False, conv_kwargs={}, fc_kwargs={}):
+    def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, fc_kwargs={}):
         super().__init__()
-        self.convnet = BasicConv1D(**conv_kwargs)
+        self.strand = strand
+        self.task = task
+        self.aggr = aggr
         
-        self.ds = ds
-        if self.ds:
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, **fc_kwargs)
-        else:
+        # Add strand specific modules
+        if self.strand == "ss":
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim, **fc_kwargs)
+        elif self.strand == "ds":
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, **fc_kwargs)
+        elif self.strand == "ts":
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.reverse_convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, **fc_kwargs)
         
-        self.classification = classification
-        if self.classification:
+        # Add task specific metrics
+        if self.task == "regression":
+            self.r_squared = torchmetrics.R2Score()
+        elif self.task == "binary_classification":
             self.accuracy = torchmetrics.Accuracy()
             self.auroc = torchmetrics.AUROC()
-        else:
-            self.r_squared = torchmetrics.R2Score()
-            
+       
+        # Save hyperparameters
         self.save_hyperparameters()
 
     def forward(self, x, x_rev_comp):
-        batch_size, channels, seq_len = x.size()
         x = self.convnet(x)
         x = x.view(x.size(0), self.convnet.flatten_dim)
-
-        if self.ds:
+        if self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
             x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
             x = torch.cat([x, x_rev_comp], dim=1)
-
+        elif self.strand == "ts":
+            x_rev_comp = self.reverse_convnet(x_rev_comp)
+            x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
+            x = torch.cat([x, x_rev_comp], dim=1)
         x = self.fcnet(x)
         return x
 
@@ -65,7 +75,7 @@ class CNN(LightningModule):
         _, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
         
-        if self.classification:
+        if self.task == "binary_classification":
             # Get the loss
             loss = F.binary_cross_entropy_with_logits(outs, y)
             
@@ -79,7 +89,7 @@ class CNN(LightningModule):
             auroc = self.auroc(probs, y.long())
             self.log(f"{stage}_auroc", auroc, on_epoch=True)
         
-        else:
+        elif self.task == "regression":
             # Get the loss
             loss = F.mse_loss(outs, y)
             
@@ -90,9 +100,9 @@ class CNN(LightningModule):
         self.log(f"{stage}_loss", loss, on_epoch=True)
         
         if stage == "val":
-            if self.classification:
+            if self.task == "binary_classification":
                 self.log("hp_metric", auroc, on_epoch=True)
-            else:
+            elif self.task == "regression":
                 self.log("hp_metric", r_squared, on_epoch=True)
         
         return loss

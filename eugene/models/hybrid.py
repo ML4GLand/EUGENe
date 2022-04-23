@@ -10,13 +10,13 @@ from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 
 # CLAIM
-from claim.modules import BasicFullyConnectedModule, BasicRecurrent
+from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
 
 # EUGENE
 from eugene.dataloading.SeqDataModule import SeqDataModule
 
-class RNN(LightningModule):
-    def __init__(self, input_len, strand="ss", task="regression", aggr=None, rnn_kwargs={}, fc_kwargs={}):
+class hybrid(LightningModule):
+    def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, rnn_kwargs={}, fc_kwargs={}):
         super().__init__()
         self.strand = strand
         self.task = task
@@ -24,16 +24,19 @@ class RNN(LightningModule):
         
         # Add strand specific modules
         if self.strand == "ss":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim, **fc_kwargs)
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels, **rnn_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
         elif self.strand == "ds":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim*2, **fc_kwargs)
+            self.convnet = BasicConv1D(input_len=input_len,**conv_kwargs)
+            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels*2, **rnn_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
         elif self.strand == "ts":
-            self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.reverse_rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim*2, **fc_kwargs)
-            
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.reverse_convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels*2, **rnn_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
+        
         # Add task specific metrics
         if self.task == "regression":
             self.r_squared = torchmetrics.R2Score()
@@ -43,20 +46,21 @@ class RNN(LightningModule):
        
         # Save hyperparameters
         self.save_hyperparameters()
-
+        
     def forward(self, x, x_rev_comp):
-        x, _ = self.rnn(x)
-        x = x[:, -1, :]
+        x = self.convnet(x)
+        x = x.transpose(1, 2)
         if self.strand == "ds":
-            x_rev_comp, _ = self.rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
-            x = torch.cat((x, x_rev_comp), dim=1)
+            x_rev_comp = self.convnet(x_rev_comp)
+            x_rev_comp = x_rev_comp.transpose(1, 2)
+            x = torch.cat([x, x_rev_comp], dim=2)
         elif self.strand == "ts":
-            x_rev_comp, _ = self.reverse_rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
-            x = torch.cat((x, x_rev_comp), dim=1)
-        x = self.fcnet(x)
-        return x
+            x_rev_comp = self.reverse_convnet(x_rev_comp)
+            x_rev_comp = x_rev_comp.transpose(1, 2)
+            x = torch.cat([x, x_rev_comp], dim=2)
+        out, _ = self.recurrentnet(x)
+        out = self.fcnet(out[:, -1, :])
+        return out
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
@@ -111,4 +115,4 @@ class RNN(LightningModule):
         return Adam(self.parameters(), lr=1e-3)
 
 if __name__ == "__main__":
-    cli = LightningCLI(RNN, SeqDataModule, save_config_overwrite=True)
+    cli = LightningCLI(hybrid, SeqDataModule, save_config_overwrite=True)

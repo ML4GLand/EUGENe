@@ -132,20 +132,23 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
 
 # Function to standardize features based on passed in indeces and optionally save stats
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
-    if type(indeces) == None:
-        indeces = range(train_X.shape[1])
-    if len(indeces) == 0:
+    if indeces == None:
+        indeces = np.array(range(train_X.shape[1]))
+    elif len(indeces) == 0:
         return train_X, test_X
     
+    #train_X_scaled = train_X.copy()
+    #test_X_scaled = test_X.copy()
+    
     means = train_X[:, indeces].mean(axis=0)
+    train_X_scaled = train_X[:, indeces] - means
+    test_X_scaled = test_X[:, indeces] - means
+    
     stds = train_X[:, indeces].std(axis=0)
-    
-    train_X_scaled = train_X.copy()
-    train_X_scaled[:, indeces] = train_X[:, indeces] - means
+    valid_std_idx = np.where(stds != 0)[0]
+    indeces = indeces[valid_std_idx]
+    stds = stds[valid_std_idx]
     train_X_scaled[:, indeces] = train_X_scaled[:, indeces] / stds
-    
-    test_X_scaled = test_X.copy()
-    test_X_scaled[:, indeces] = test_X[:, indeces] - means
     test_X_scaled[:, indeces] = test_X_scaled[:, indeces] / stds
     
     if stats_file != None:
@@ -462,10 +465,17 @@ def threshold_plot(data, label_col="FXN_LABEL", score_col="SCORES", threshold=0.
     plt.ylabel("Classification Rate")
     
     
-def coefficient_plot(classifier, features, xlab="Feature", ylab="Coefficient", title="Model Coefficients"):
+def coefficient_plot(classifier, features, top=None, sort=True, xlab="Feature", ylab="Coefficient", title="Model Coefficients"):
     rc = {"font.size": 14}
+    coefficients = classifier.coef_[0]
+    if top != None:
+        top_idx = np.argsort(np.abs(coefficients))[::-1][:top]
+        coefficients = coefficients[top_idx]
+        features = features[top_idx]
     with plt.rc_context(rc):
-        coefs = pd.DataFrame(classifier.coef_[0], columns=["Coefficients"], index=features)
+        coefs = pd.DataFrame(coefficients, columns=["Coefficients"], index=features)
+        if sort:
+            coefs = coefs.sort_values("Coefficients", ascending=False)
         coefs.plot(kind="bar", figsize=(16, 8), legend=None)
         plt.title(title, fontsize=18)
         plt.axhline(y=0, color=".5")
