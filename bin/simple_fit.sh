@@ -1,13 +1,23 @@
-model=/cellar/users/aklie/projects/EUGENE/eugene/models/CNN.py
-data=/cellar/users/aklie/projects/EUGENE/config/data/2021_OLS_Library_NPY_Baseline_Classification.yaml
+model_dir=/cellar/users/aklie/projects/EUGENE/eugene/models
+data=/cellar/users/aklie/projects/EUGENE/config/data/2021_OLS_Library_NPY-T_bin_clf.yaml
+rnn_data=/cellar/users/aklie/projects/EUGENE/config/data/2021_OLS_Library_NPY_bin_clf.yaml
 configs=/cellar/users/aklie/projects/EUGENE/config
+strands=("ss" "ds" "ts")
+models=("fcn" "cnn" "rnn" "hybrid")
 
-# ssCNN
-sbatch --job-name=simple_ssCNN fit.sh $model $data $configs/trainers/Trainer_ssCNN_Baseline_Classification.yaml $configs/models/Model_ssCNN_Baseline_Classification.yaml
-
-# dsCNN
-sbatch --job-name=simple_dsCNN fit.sh $model $data $configs/trainers/Trainer_dsCNN_Baseline_Classification.yaml $configs/models/Model_dsCNN_Baseline_Classification.yaml
-
-# ssRNN
-
-# dsRNN
+for strand in "${strands[@]}"
+do
+    for model in "${models[@]}"
+    do
+        yml_file=${strand}_bin-clf_${model}.yaml
+        if [ $model == "rnn" ]
+        then
+            CMD="sbatch --job-name=simple_$strand$model fit.sh $model_dir/$model.py $rnn_data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
+        else
+            CMD="sbatch --job-name=simple_$strand$model fit.sh $model_dir/$model.py $data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
+            
+        fi
+        echo $CMD
+        $CMD
+    done
+done

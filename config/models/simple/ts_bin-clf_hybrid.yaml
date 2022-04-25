@@ -1,14 +1,19 @@
 model:
-  ds: False
-  classification: True
+  input_len: 66
+  strand: "ts"
+  task: "binary_classification"
+  aggr: None
   conv_kwargs:
-    input_len: 66
     channels: [4, 32, 64]
     conv_kernels: [15, 5]
     pool_kernels: [2, 1]
     dropout_rates: 0.2
     batchnorm: True
+  rnn_kwargs: 
+    output_dim: 128
+    batch_first: True
   fc_kwargs: 
     hidden_dims: [32]
+    dropout_rate: 0.2
     batchnorm: True
     output_dim: 1

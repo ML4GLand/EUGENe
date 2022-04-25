@@ -41,6 +41,7 @@ class EUGENE(LightningModule):
         
     def test_step(self, batch, batch_idx):
         self._common_step(batch, batch_idx, "test")
+        self.predict_step(batch, batch_idx,)
     
     def predict_step(self, batch, batch_idx):
         ID, x, x_rev_comp, y = batch

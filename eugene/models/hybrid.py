@@ -1,3 +1,5 @@
+import numpy as np
+
 # PyTorch
 import torch
 from torch import nn
@@ -14,6 +16,7 @@ from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
 
 # EUGENE
 from eugene.dataloading.SeqDataModule import SeqDataModule
+from eugene.utils.seq_utils import ascii_decode
 
 class hybrid(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, rnn_kwargs={}, fc_kwargs={}):
@@ -72,7 +75,11 @@ class hybrid(LightningModule):
         self._common_step(batch, batch_idx, "test")
     
     def predict_step(self, batch, batch_idx):
-        pass
+        ID, x, x_rev_comp, y = batch
+        ID = np.array([ascii_decode(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()])
+        y = y.detach().cpu().numpy()
+        outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()
+        return np.stack([ID, outs, y], axis=-1)
         
     def _common_step(self, batch, batch_idx, stage: str):
         # Get and log loss

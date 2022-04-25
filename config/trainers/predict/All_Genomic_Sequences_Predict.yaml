@@ -1,0 +1,11 @@
+ckpt_path: "/cellar/users/aklie/projects/EUGENE/results/simple/classification/sshybrid/2022_04_23_NPY_Baseline/checkpoints/epoch=25-step=4523.ckpt"
+
+trainer:
+  logger: False
+  callbacks:
+    - class_path: eugene.utils.custom_callbacks.PredictionWriter
+      init_args:
+        output_dir: "/cellar/users/aklie/projects/EUGENE/results/simple/classification/sshybrid/2022_04_23_NPY_Baseline/predictions"
+        write_interval: "epoch"
+        prefix: "All_Genomic_Sequnces_"
+  gpus: 1

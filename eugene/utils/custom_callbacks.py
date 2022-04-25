@@ -16,7 +16,6 @@ class PredictionWriter(BasePredictionWriter):
         np.save(os.path.join(self.output_dir, dataloader_idx, "{}_predictions".format(str(batch_idx))), predictions)
 
     def write_on_epoch_end(self, trainer, pl_module: 'LightningModule', predictions, batch_indices):
-        print(len(predictions), len(predictions[0]), predictions[0][0].shape)
         predictions = np.concatenate(predictions[0], axis=0)
         pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
         pred_df.to_csv(os.path.join(self.output_dir, self.prefix + "predictions.tsv"), sep="\t", index=False)

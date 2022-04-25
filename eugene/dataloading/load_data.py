@@ -120,9 +120,9 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
         else:
             rev_seqs = None
     else:
-        seqs = np.load(seq_file)
+        seqs = np.load(seq_file, allow_pickle=True)
         if rev_seq_file != None:
-            rev_seqs = np.load(rev_seq_file)
+            rev_seqs = np.load(rev_seq_file, allow_pickle=True)
         else:
             rev_seqs = None
 

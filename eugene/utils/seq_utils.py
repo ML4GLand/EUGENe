@@ -79,3 +79,12 @@ def ohe(sequence, one_hot_axis=1):
         elif (one_hot_axis==1):
             zeros_array[i,char_idx] = 1
     return zeros_array
+
+def ascii_encode(seq, pad=0):
+    encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
+    if pad > 0:
+        encode_seq = np.pad(encode_seq, pad_width=(0, pad), mode="constant", constant_values=36)
+    return encode_seq
+
+def ascii_decode(seq):
+    return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
