@@ -7,5 +7,5 @@ trainer:
       init_args:
         output_dir: "/cellar/users/aklie/projects/EUGENE/results/simple/classification/ssCNN/2022_04_23_NPY_Baseline/predictions"
         write_interval: "epoch"
-        prefix: "2021_OLS_Holdout_"
+        prefix: "2021_OLS_Training_"
   gpus: 1

@@ -17,6 +17,10 @@ from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
 # EUGENE
 from eugene.dataloading.SeqDataModule import SeqDataModule
 from eugene.utils.seq_utils import ascii_decode
+from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
+from eugene.utils.custom_callbacks import PredictionWriter
+
+#CALLBACK_REGISTRY(PredictionWriter)
 
 class hybrid(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, rnn_kwargs={}, fc_kwargs={}):

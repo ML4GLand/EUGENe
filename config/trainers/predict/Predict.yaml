@@ -1,0 +1,3 @@
+trainer:
+  logger: False
+  gpus: 1

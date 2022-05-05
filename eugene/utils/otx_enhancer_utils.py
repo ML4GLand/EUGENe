@@ -266,9 +266,12 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         color = "black"
         
     # Plot the featue importance scores
-    to_highlight = {"red": collapse_pos(highlight)}
-    print(to_highlight)
-    viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
+    if len(highlight) > 0:
+        to_highlight = {"red": collapse_pos(highlight)}
+        print(to_highlight)
+        viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
+    else:
+        viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1)
     ax[1].spines['right'].set_visible(False)
     ax[1].spines['top'].set_visible(False)
     ax[1].set_xlabel("Sequence Position")

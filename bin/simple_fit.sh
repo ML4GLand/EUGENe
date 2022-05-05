@@ -12,9 +12,9 @@ do
         yml_file=${strand}_bin-clf_${model}.yaml
         if [ $model == "rnn" ]
         then
-            CMD="sbatch --job-name=simple_$strand$model fit.sh $model_dir/$model.py $rnn_data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
+            CMD="sbatch --job-name=simple_fit_$strand$model fit.sh $model_dir/$model.py $rnn_data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
         else
-            CMD="sbatch --job-name=simple_$strand$model fit.sh $model_dir/$model.py $data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
+            CMD="sbatch --job-name=simple_fit_$strand$model fit.sh $model_dir/$model.py $data $configs/trainers/$yml_file $configs/models/simple/$yml_file"
             
         fi
         echo $CMD
