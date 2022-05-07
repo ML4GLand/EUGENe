@@ -1,0 +1,107 @@
+seed_everything: 13
+trainer:
+  logger: false
+  checkpoint_callback: null
+  enable_checkpointing: true
+  callbacks:
+  - class_path: eugene.utils.custom_callbacks.PredictionWriter
+    init_args:
+      output_dir: ../../results/simple/classification/sshybrid/2022_04_23_NPY_Baseline/predictions/All_Genomic_Sequences_
+      write_interval: epoch
+  default_root_dir: null
+  gradient_clip_val: null
+  gradient_clip_algorithm: null
+  process_position: 0
+  num_nodes: 1
+  num_processes: 1
+  devices: null
+  gpus: 1
+  auto_select_gpus: false
+  tpu_cores: null
+  ipus: null
+  log_gpu_memory: null
+  progress_bar_refresh_rate: null
+  enable_progress_bar: true
+  overfit_batches: 0.0
+  track_grad_norm: -1
+  check_val_every_n_epoch: 1
+  fast_dev_run: false
+  accumulate_grad_batches: null
+  max_epochs: null
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  limit_test_batches: 1.0
+  limit_predict_batches: 1.0
+  val_check_interval: 1.0
+  flush_logs_every_n_steps: null
+  log_every_n_steps: 50
+  accelerator: null
+  strategy: null
+  sync_batchnorm: false
+  precision: 32
+  enable_model_summary: true
+  weights_summary: top
+  weights_save_path: null
+  num_sanity_val_steps: 2
+  resume_from_checkpoint: null
+  profiler: null
+  benchmark: false
+  deterministic: false
+  reload_dataloaders_every_n_epochs: 0
+  reload_dataloaders_every_epoch: false
+  auto_lr_find: false
+  replace_sampler_ddp: true
+  detect_anomaly: false
+  auto_scale_batch_size: false
+  prepare_data_per_node: null
+  plugins: null
+  amp_backend: native
+  amp_level: null
+  move_metrics_to_cpu: false
+  multiple_trainloader_mode: max_size_cycle
+  stochastic_weight_avg: false
+  terminate_on_nan: null
+model:
+  input_len: 66
+  strand: ss
+  task: binary_classification
+  aggr: None
+  conv_kwargs:
+    channels:
+    - 4
+    - 32
+    - 64
+    conv_kernels:
+    - 15
+    - 5
+    pool_kernels:
+    - 2
+    - 1
+    dropout_rates: 0.2
+    batchnorm: true
+  rnn_kwargs:
+    output_dim: 64
+    batch_first: true
+  fc_kwargs:
+    hidden_dims:
+    - 32
+    dropout_rate: 0.2
+    batchnorm: true
+    output_dim: 1
+data:
+  seq_file: /cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/All_Genomic_Sequences.tsv
+  batch_size: 1
+  num_workers: 4
+  transform: null
+  test: true
+  split: 0.9
+  load_kwargs:
+    seq_col: SEQ
+    target_col: FXN_LABEL
+    name_col: NAME
+return_predictions: null
+ckpt_path: ../../results/simple/classification/sshybrid/2022_04_23_NPY_Baseline/checkpoints/epoch=25-step=4523.ckpt

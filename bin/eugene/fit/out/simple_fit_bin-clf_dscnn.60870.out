@@ -1,0 +1,14 @@
+Sat May  7 13:04:25 PDT 2022
+Job ID: 60870
+python /cellar/users/aklie/projects/EUGENE/eugene/models/cnn.py fit
+    --seed_everything 13
+    --config /cellar/users/aklie/projects/EUGENE/config/models/simple/binary_classification/dscnn_bin-clf.yaml
+    --config /cellar/users/aklie/projects/EUGENE/config/data/train/2021_OLS_Library_Training_NPY-T_bin-clf.yaml
+    --trainer.callbacks=EarlyStopping
+    --trainer.callbacks.monitor val_loss
+    --trainer.logger.class_path pytorch_lightning.loggers.TensorBoardLogger
+    --trainer.logger.init_args.save_dir /cellar/users/aklie/projects/EUGENE/results/simple/binary_classification
+    --trainer.logger.init_args.name dscnn
+    --trainer.logger.init_args.version 2022_05_07_NPY_Baseline
+    --trainer.max_epochs 100
+    --trainer.gpus 1

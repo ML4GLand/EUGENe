@@ -1,0 +1,9 @@
+input_len: 66
+strand: ss
+task: regression
+aggr: None
+fc_kwargs:
+  input_dim: 66
+  output_dim: 1
+  hidden_dims:
+  - 32

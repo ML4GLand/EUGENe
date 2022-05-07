@@ -1,0 +1,2 @@
+rename bin-clf act-reg *
+for i in *; do sed -i 's/binary_classification/regression/g' $i; done
