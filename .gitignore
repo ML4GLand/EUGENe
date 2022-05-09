@@ -2,12 +2,14 @@
 archive/
 data/
 results/
-bin/err/
-bin/out/
+bin/*/err/
+bin/*/out/
 test/*_test/
 test/*_logs/
 test/test_*seqs*/
 test/tf_modisco/
+*.err
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
