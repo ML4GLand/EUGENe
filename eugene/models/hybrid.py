@@ -20,8 +20,6 @@ from eugene.utils.seq_utils import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 from eugene.utils.custom_callbacks import PredictionWriter
 
-#CALLBACK_REGISTRY(PredictionWriter)
-
 class hybrid(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, rnn_kwargs={}, fc_kwargs={}):
         super().__init__()
@@ -124,6 +122,7 @@ class hybrid(LightningModule):
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-3)
+    
 
 if __name__ == "__main__":
     cli = LightningCLI(hybrid, SeqDataModule, save_config_overwrite=True)

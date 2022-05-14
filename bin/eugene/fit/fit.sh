@@ -23,6 +23,7 @@ echo -e "python $model fit
     --config $model_config
     --config $data_config
     --trainer.callbacks=EarlyStopping
+    --trainer.callbacks.patience 5
     --trainer.callbacks.monitor "val_loss"
     --trainer.logger.class_path pytorch_lightning.loggers.TensorBoardLogger
     --trainer.logger.init_args.save_dir "$output_dir"
@@ -36,6 +37,7 @@ python $model fit \
     --config $model_config \
     --config $data_config \
     --trainer.callbacks=EarlyStopping \
+    --trainer.callbacks.patience 5 \
     --trainer.callbacks.monitor "val_loss" \
     --trainer.logger.class_path pytorch_lightning.loggers.TensorBoardLogger \
     --trainer.logger.init_args.save_dir "$output_dir" \

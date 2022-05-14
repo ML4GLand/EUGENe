@@ -1,4 +1,8 @@
+import os
+import numpy as np
+
 # PL
+import torch
 import pytorch_lightning as pl
 
 # PyTorch
@@ -11,7 +15,7 @@ from eugene.dataloading.load_data import load
 from eugene.dataloading.SeqDataset import SeqDataset
 
 class SeqDataModule(pl.LightningDataModule):
-    def __init__(self, seq_file: str, batch_size: int = 32, num_workers: int = 0, transform=None, test=False, split=0.9, load_kwargs={}):
+    def __init__(self, seq_file: str, batch_size: int = 32, num_workers: int = 0, transform=None, test=False, shuffle=True, split=0.9, seed=13, save_names=None, load_kwargs={}):
         """Sequence PyTorch Lightning DataModule definition
 
         Args:
@@ -43,6 +47,11 @@ class SeqDataModule(pl.LightningDataModule):
         self.load_kwargs = load_kwargs
         self.num_workers = num_workers
         self.test = test
+        self.shuffle = shuffle
+        self.split = split
+        self.seed = seed
+        self.save_names = save_names
+        
         
     def setup(self, stage: str = None) -> None:
         names, seqs, rev_seqs, targets = load(self.seq_file, **self.load_kwargs)
@@ -51,13 +60,16 @@ class SeqDataModule(pl.LightningDataModule):
             self.test = dataset
         else:
             dataset_len = len(dataset)
-            train_len = int(dataset_len*0.9)
+            train_len = int(dataset_len*self.split)
             val_len = dataset_len - train_len
-            self.train, self.val = random_split(dataset, [train_len, val_len])
+            self.train, self.val = random_split(dataset, [train_len, val_len], generator=torch.Generator().manual_seed(self.seed))
+            if self.save_names != None:
+                np.savetxt(os.path.join(self.save_names, "train.txt"), self.train.dataset.names[self.train.indices], fmt="%s")
+                np.savetxt(os.path.join(self.save_names, "val.txt"), self.val.dataset.names[self.val.indices], fmt="%s")
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
-            self.train, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=self.num_workers
+            self.train, batch_size=self.batch_size, shuffle=self.shuffle, pin_memory=True, num_workers=self.num_workers
         )
 
     def val_dataloader(self) -> DataLoader:

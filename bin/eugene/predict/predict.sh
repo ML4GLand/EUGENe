@@ -17,7 +17,7 @@ data_config=$4
 output=$5
 
 source activate /cellar/users/aklie/opt/miniconda3/envs/pytorch_dev
-echo -e "python $1 predict \
+echo -e "python $model predict \
     --seed_everything 13 \
     --config $model_path \
     --ckpt_path $ckt_path \
@@ -27,7 +27,7 @@ echo -e "python $1 predict \
     --trainer.logger False \
     --traner.gpus 1"
 
-python $1 predict \
+python $model predict \
     --seed_everything 13 \
     --config $model_config \
     --ckpt_path $ckt_path \
