@@ -1,0 +1,11 @@
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
+  batch_size: 1024
+  num_workers: 4
+  split: 0.9
+  load_kwargs: 
+    seq_col: "SEQ"
+    target_col: "ACTIVITY_SUMRNA_NUMDNA"
+    binarize: True
+    low_thresh: 0.09
+    high_thresh: 0.4

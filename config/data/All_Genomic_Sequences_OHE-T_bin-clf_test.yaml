@@ -1,0 +1,15 @@
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/ohe_seq/X_ohe-seq.npy"
+  batch_size: 1
+  num_workers: 4
+  transform:
+    - class_path: eugene.utils.seq_transforms.ToTensor
+      init_args:
+        transpose: True
+  test: True
+  load_kwargs: 
+    names_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/id/id.txt"
+    target_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/binary/y_binary.txt"
+    rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/ohe_seq/X_ohe-seq-rev.npy"
+    is_target_text: True
+    is_names_text: True

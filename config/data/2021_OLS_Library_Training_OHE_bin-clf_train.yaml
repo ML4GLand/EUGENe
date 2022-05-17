@@ -1,0 +1,17 @@
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-training_ohe-seq.npy"
+  batch_size: 1024
+  num_workers: 4
+  transform:
+    - class_path: eugene.utils.seq_transforms.ToTensor
+      init_args:
+        transpose: False
+  split: 0.9
+  save_names: "/cellar/users/aklie/projects/EUGENE/results/simple/regression/sshybrid/2022_05_14_NPY_Full_Test/names"
+  seed: 13
+  load_kwargs: 
+    names_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-training.txt"
+    rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-training_ohe-seq-rev.npy"
+    target_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/binary/0.09-0.4_y-training_binary.txt"
+    is_target_text: True
+    is_names_text: True

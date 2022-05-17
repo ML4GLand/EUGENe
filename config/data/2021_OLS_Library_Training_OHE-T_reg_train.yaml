@@ -1,0 +1,13 @@
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq.npy"
+  batch_size: 1024
+  num_workers: 4
+  transform:
+    - class_path: eugene.utils.seq_transforms.ToTensor
+      init_args:
+        transpose: True
+  split: 0.9
+  load_kwargs: 
+    rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq-rev.npy"
+    target_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/activity/0.09-0.4_y-all_activity.txt"
+    is_target_text: True

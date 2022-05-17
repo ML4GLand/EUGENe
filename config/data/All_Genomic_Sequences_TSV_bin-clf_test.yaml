@@ -1,0 +1,9 @@
+data:
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/All_Genomic_Sequences.tsv"
+  batch_size: 1
+  num_workers: 4
+  test: True
+  load_kwargs: 
+    seq_col: "SEQ"
+    target_col: "FXN_LABEL"
+    name_col: "NAME"
