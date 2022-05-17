@@ -10,21 +10,21 @@
 date
 echo -e "Job ID: $SLURM_JOB_ID"
 
-model=$1
+model="/cellar/users/aklie/projects/EUGENE/eugene/models/$1.py"
 model_config=$2
 ckt_path=$3
 data_config=$4
 output=$5
 
 source activate /cellar/users/aklie/opt/miniconda3/envs/pytorch_dev
-echo -e "python $model predict \
-    --seed_everything 13 \
-    --config $model_path \
-    --ckpt_path $ckt_path \
-    --config $data_config \
-    --trainer.callbacks=PredictionWriter \
-    --trainer.callbacks.output_dir $output \
-    --trainer.logger False \
+echo -e "python $model predict
+    --seed_everything 13
+    --config $model_path
+    --ckpt_path $ckt_path
+    --config $data_config
+    --trainer.callbacks=PredictionWriter
+    --trainer.callbacks.output_dir $output
+    --trainer.logger False
     --traner.gpus 1"
 
 python $model predict \

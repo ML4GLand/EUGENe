@@ -1,3 +1,4 @@
+# Classics
 import os
 import numpy as np
 
@@ -50,8 +51,7 @@ class SeqDataModule(pl.LightningDataModule):
         self.shuffle = shuffle
         self.split = split
         self.seed = seed
-        self.save_names = save_names
-        
+        self.save_names = save_names 
         
     def setup(self, stage: str = None) -> None:
         names, seqs, rev_seqs, targets = load(self.seq_file, **self.load_kwargs)
@@ -64,6 +64,8 @@ class SeqDataModule(pl.LightningDataModule):
             val_len = dataset_len - train_len
             self.train, self.val = random_split(dataset, [train_len, val_len], generator=torch.Generator().manual_seed(self.seed))
             if self.save_names != None:
+                if not os.path.exists(self.save_names):
+                    os.makedirs(self.save_names)
                 np.savetxt(os.path.join(self.save_names, "train.txt"), self.train.dataset.names[self.train.indices], fmt="%s")
                 np.savetxt(os.path.join(self.save_names, "val.txt"), self.val.dataset.names[self.val.indices], fmt="%s")
 

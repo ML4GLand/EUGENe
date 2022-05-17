@@ -71,6 +71,8 @@ def score(args):
     model.eval()
     dataloader = load_data(args.data)
     imps = get_importances(model, dataloader, device=device)
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
     np.save(os.path.join(args.out, "nt_importances"), imps)
 
 @subcommand([argument("--model", type=str, help="The model to interpret"),
@@ -81,6 +83,8 @@ def pwm(args):
     model = load_model(args.model, args.model_type)
     model.eval()
     pwms = get_first_conv_layer(model).detach().numpy()
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
     np.save(os.path.join(args.out, "pwms"), pwms)
      
 if __name__ == "__main__":   

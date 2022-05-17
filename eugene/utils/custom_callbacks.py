@@ -3,8 +3,10 @@ import pandas as pd
 import numpy as np
 import torch
 
+from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.callbacks import BasePredictionWriter
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
+
 
 @CALLBACK_REGISTRY
 class PredictionWriter(BasePredictionWriter):
@@ -19,4 +21,33 @@ class PredictionWriter(BasePredictionWriter):
     def write_on_epoch_end(self, trainer, pl_module: 'LightningModule', predictions, batch_indices):
         predictions = np.concatenate(predictions[0], axis=0)
         pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
+        #if not os.path.exists(self.output_dir):
+        #    os.makedirs(self.output_dir)
         pred_df.to_csv(os.path.join(self.output_dir + "predictions.tsv"), sep="\t", index=False)
+
+        
+@CALLBACK_REGISTRY
+class TrainAndValPredictionWriter(Callback):
+    def __init__(self):
+        self.train_preds = []
+        self.val_preds = []
+
+    def on_train_batch_end(self, trainer, pl_module, outputs, *args, **kwargs):
+        if trainer.current_epoch == trainer.max_epochs - 1:
+            self.train_preds.append(outputs)
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        if trainer.current_epoch == trainer.max_epochs - 1:
+            predictions = np.concatenate(self.train_preds, axis=0)
+            pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
+            pred_df.to_csv(os.path.join(self.output_dir + "train_predictions.tsv"), sep="\t", index=False)
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, *args, **kwargs):
+         if trainer.current_epoch == trainer.max_epochs - 1:
+             self.val_preds.append(outputs)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+         if trainer.current_epoch == trainer.max_epochs - 1:
+            predictions = np.concatenate(self.val_preds, axis=0)
+            pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
+            pred_df.to_csv(os.path.join(self.output_dir + "val_predictions.tsv"), sep="\t", index=False)

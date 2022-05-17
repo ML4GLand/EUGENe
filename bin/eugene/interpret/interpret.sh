@@ -14,7 +14,7 @@ ckt_path=$1
 model_type=$2
 data=$3
 output=$4
-
+script=/cellar/users/aklie/projects/EUGENE/eugene/interpret/interpret.py
 
 source activate /cellar/users/aklie/opt/miniconda3/envs/pytorch_dev
 echo -e "$ckt_path"
@@ -24,19 +24,19 @@ echo -e "$output"
 
 if [ $model_type == "rnn" ] || [ $model_type == "fcn" ]
     then
-        python interpret.py score \
+        python $script score \
             --model $ckt_path \
             --model_type $model_type \
             --data $data \
             --out $output
     else
-        python interpret.py score \
+        python $script score \
             --model $ckt_path \
             --model_type $model_type \
             --data $data \
             --out $output
             
-        python interpret.py pwm \
+        python $script pwm \
             --model $ckt_path \
             --model_type $model_type \
             --out $output

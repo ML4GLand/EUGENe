@@ -1,0 +1,15 @@
+trainer:
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.EarlyStopping
+      init_args:
+        patience: 5
+        monitor: "val_loss"
+        mode: "min"
+  logger:
+    class_path: pytorch_lightning.loggers.TensorBoardLogger
+    init_args:
+      save_dir: "" 
+      name: ""
+      version: ""
+  gpus: 1
+  max_epochs: 100

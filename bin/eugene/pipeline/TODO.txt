@@ -1,1 +1,0 @@
-Eventually want a pipeline that trains, tests, predicts and interprets a model in one sbatch

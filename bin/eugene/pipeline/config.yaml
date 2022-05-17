@@ -6,7 +6,7 @@ trainer:
   callbacks:
   - class_path: eugene.utils.custom_callbacks.PredictionWriter
     init_args:
-      output_dir: /cellar/users/aklie/projects/EUGENE/results/simple/regression/sshybrid/2022_05_14_NPY_Full_Test/predictions/2021_OLS_Library_Training_
+      output_dir: /cellar/users/aklie/projects/EUGENE/results/simple/binary_classification/sscnn/2022_05_16_Pipeline_Test/predictions/All_Genomic_Sequences_
       write_interval: epoch
   default_root_dir: null
   gradient_clip_val: null
@@ -68,7 +68,7 @@ trainer:
 model:
   input_len: 66
   strand: ss
-  task: regression
+  task: binary_classification
   aggr: None
   conv_kwargs:
     channels:
@@ -83,33 +83,25 @@ model:
     - 1
     dropout_rates: 0.2
     batchnorm: true
-  rnn_kwargs:
-    output_dim: 64
-    batch_first: true
   fc_kwargs:
     hidden_dims:
-    - 32
+    - 768
     dropout_rate: 0.2
     batchnorm: true
     output_dim: 1
 data:
-  seq_file: /cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq.npy
-  batch_size: 1024
+  seq_file: /cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/All_Genomic_Sequences.tsv
+  batch_size: 1
   num_workers: 4
-  transform:
-  - class_path: eugene.utils.seq_transforms.ToTensor
-    init_args:
-      transpose: true
+  transform: null
   test: true
   shuffle: true
   split: 0.9
   seed: 13
   save_names: null
   load_kwargs:
-    names_file: /cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-all.txt
-    rev_seq_file: /cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq-rev.npy
-    target_file: /cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/activity/0.09-0.4_y-all_activity.txt
-    is_target_text: true
-    is_names_text: true
+    seq_col: SEQ
+    target_col: FXN_LABEL
+    name_col: NAME
 return_predictions: null
-ckpt_path: /cellar/users/aklie/projects/EUGENE/results/simple/regression/sshybrid/2022_05_14_NPY_Full_Test/checkpoints/epoch=24-step=10124.ckpt
+ckpt_path: /cellar/users/aklie/projects/EUGENE/results/simple/binary_classification/sscnn/2022_05_16_Pipeline_Test/checkpoints/epoch=12-step=2261.ckpt
