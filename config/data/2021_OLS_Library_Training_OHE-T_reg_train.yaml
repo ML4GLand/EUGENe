@@ -1,5 +1,5 @@
 data:
-  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq.npy"
+  seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-training_ohe-seq.npy"
   batch_size: 1024
   num_workers: 4
   transform:
@@ -7,7 +7,11 @@ data:
       init_args:
         transpose: True
   split: 0.9
+  save_names: "/cellar/users/aklie/projects/EUGENE/results/benchmark/benchmark2/reg/names"
+  seed: 13
   load_kwargs: 
-    rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq-rev.npy"
-    target_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/activity/0.09-0.4_y-all_activity.txt"
+    names_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-training.txt"
+    rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-training_ohe-seq-rev.npy"
+    target_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/activity/0.09-0.4_y-training_activity.txt"
     is_target_text: True
+    is_names_text: True

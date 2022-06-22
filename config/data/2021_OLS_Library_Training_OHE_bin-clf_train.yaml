@@ -7,7 +7,7 @@ data:
       init_args:
         transpose: False
   split: 0.9
-  save_names: "/cellar/users/aklie/projects/EUGENE/results/simple/regression/sshybrid/2022_05_14_NPY_Full_Test/names"
+  save_names: "/cellar/users/aklie/projects/EUGENE/results/benchmark/benchmark2/names"
   seed: 13
   load_kwargs: 
     names_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-training.txt"

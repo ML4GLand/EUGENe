@@ -21,7 +21,7 @@ def generate_slurm_train_script(input_dir,
     
     # Set up hyperparams
     hyperparams = hyperparams.split("-")
-    if hyperparams[4]:
+    if hyperparams[5]:
         hyperparams.remove("True")
         hyperparams = "-t {} -l {} -k {} -d {} -R -c {} -w {}".format(*hyperparams)
     else:

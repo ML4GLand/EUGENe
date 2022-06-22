@@ -8,6 +8,7 @@ DEFAULT_NUC_ORDER = {y: x for x, y in enumerate(["A", "T", "C", "G"])}
 NUCLEOTIDES = sorted([x for x in DEFAULT_NUC_ORDER.keys()])
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
+### Random sequence generations
 
 def random_base():
     """
@@ -44,15 +45,36 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
     """
     pass
 
+### Useful functions on sequences
+
 def reverse_complement(seq):
     return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
 
+
+### File io
 def seq2Fasta(seqs, IDs, name="seqs"):
     file = open("{}.fa".format(name), "w")
     for i in range(len(seqs)):
         file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
     file.close()
+    
+def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
+    neg_mask = (ys==0)
+    
+    neg_seqs, neg_ys, neg_IDs = seqs[neg_mask], ys[neg_mask], IDs[neg_mask]
+    neg_file = open("{}-neg.fa".format(name), "w")
+    for i in range(len(neg_seqs)):
+        neg_file.write(">" + neg_IDs[i] + "\n" + neg_seqs[i] + "\n")
+    neg_file.close()
+    
+    pos_seqs, pos_ys, pos_IDs = seqs[~neg_mask], ys[~neg_mask], IDs[~neg_mask]
+    pos_file = open("{}-pos.fa".format(name), "w")
+    for i in range(len(pos_seqs)):
+        pos_file.write(">" + pos_IDs[i] + "\n" + pos_seqs[i] + "\n")
+    pos_file.close()
+    
 
+# My own ohe function
 def ohe(sequence, one_hot_axis=1):
     zeros_array = np.zeros((len(sequence),4), dtype=np.int8)
     assert one_hot_axis==0 or one_hot_axis==1
@@ -82,16 +104,8 @@ def ohe(sequence, one_hot_axis=1):
             zeros_array[i,char_idx] = 1
     return zeros_array
 
-def ascii_encode(seq, pad=0):
-    encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
-    if pad > 0:
-        encode_seq = np.pad(encode_seq, pad_width=(0, pad), mode="constant", constant_values=36)
-    return encode_seq
 
-def ascii_decode(seq):
-    return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
-
-# code from concise tool
+# Code from concice
 
 # vocabularies:
 DNA = ["A", "C", "G", "T"]

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from eugene.utils.seq_utils import ascii_encode
+from eugene.preprocessing import ascii_encode
 
 
 class SeqDataset(Dataset):

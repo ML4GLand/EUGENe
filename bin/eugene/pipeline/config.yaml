@@ -6,7 +6,7 @@ trainer:
   callbacks:
   - class_path: eugene.utils.custom_callbacks.PredictionWriter
     init_args:
-      output_dir: /cellar/users/aklie/projects/EUGENE/results/simple/binary_classification/sscnn/2022_05_16_Pipeline_Test/predictions/All_Genomic_Sequences_
+      output_dir: /cellar/users/aklie/projects/EUGENE/results/benchmark/benchmark2/bin-clf/sshybrid/2022_05_19_Pipeline_Test2/predictions/All_Genomic_Sequences_
       write_interval: epoch
   default_root_dir: null
   gradient_clip_val: null
@@ -83,9 +83,12 @@ model:
     - 1
     dropout_rates: 0.2
     batchnorm: true
+  rnn_kwargs:
+    output_dim: 64
+    batch_first: true
   fc_kwargs:
     hidden_dims:
-    - 768
+    - 32
     dropout_rate: 0.2
     batchnorm: true
     output_dim: 1
@@ -104,4 +107,4 @@ data:
     target_col: FXN_LABEL
     name_col: NAME
 return_predictions: null
-ckpt_path: /cellar/users/aklie/projects/EUGENE/results/simple/binary_classification/sscnn/2022_05_16_Pipeline_Test/checkpoints/epoch=12-step=2261.ckpt
+ckpt_path: /cellar/users/aklie/projects/EUGENE/results/benchmark/benchmark2/bin-clf/sshybrid/2022_05_19_Pipeline_Test2/checkpoints/epoch=22-step=4001.ckpt

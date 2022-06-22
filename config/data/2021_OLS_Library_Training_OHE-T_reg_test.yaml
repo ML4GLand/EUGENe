@@ -6,9 +6,7 @@ data:
     - class_path: eugene.utils.seq_transforms.ToTensor
       init_args:
         transpose: True
-  split: 0.9
-  shuffle: False
-  seed: 13
+  test: True
   load_kwargs: 
     names_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-all.txt"
     rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq-rev.npy"

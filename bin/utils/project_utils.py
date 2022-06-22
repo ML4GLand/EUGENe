@@ -132,7 +132,7 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
 
 # Function to standardize features based on passed in indeces and optionally save stats
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
-    if indeces == None:
+    if indeces not None:
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
         return train_X, test_X
@@ -529,23 +529,24 @@ def generate_slurm_train_script(input_dir,
                                 hyperparams,
                                 preprocess,
                                 features="fasta",
-                                architecture="gkSVM"):
+                                architecture="gkmSVM"):
     if not os.path.exists(result_dir):
         print("{} does not exist, making dir".format(result_dir))
         os.makedirs(result_dir)
            
     # Set up model name
-    model = "{}_{}_{}-clf_{}".format(preprocess, features, architecture, hyperparams)
+    task = "clf" if hyperparams.split("-")[0] == "2" else "reg"
+    model = "{}_{}_{}-{}_{}".format(preprocess, features, architecture, task, hyperparams)
     model_name = os.path.join(result_dir, model)
     
     # Set up hyperparams
     hyperparams = hyperparams.split("-")
-    if hyperparams[4]:
+    if hyperparams[5] == "True":
         hyperparams.remove("True")
-        hyperparams = "-t {} -l {} -k {} -d {} -R -c {} -w {}".format(*hyperparams)
+        hyperparams = "-y {} -t {} -l {} -k {} -d {} -R -c {} -w {}".format(*hyperparams)
     else:
         hyperparams.remove("False")
-        hyperparams = "-t {} -l {} -k {} -d -c {} -w {}".format(*hyperparams)
+        hyperparams = "-y {} -t {} -l {} -k {} -d {} -c {} -w {}".format(*hyperparams)
         
     # Set up file pointers
     output = ["#!/bin/bash", "#SBATCH --cpus-per-task=16", "#SBATCH --time=48:00:00",
@@ -570,11 +571,12 @@ def generate_slurm_train_script(input_dir,
     output += [predict_pos_train_command]
     output += ['echo -e "\\n"\n']
     
+    if hyperparams[1] == "2":
     # Set up negative train seq predict
-    predict_neg_train_command = 'gkmpredict $trainnegseqs $modelname".model.txt" $modelname".train-neg.predict.txt"'
-    output += ["echo -e {}".format(predict_neg_train_command)]
-    output += [predict_neg_train_command]
-    output += ['echo -e "\\n"\n']
+        predict_neg_train_command = 'gkmpredict $trainnegseqs $modelname".model.txt" $modelname".train-neg.predict.txt"'
+        output += ["echo -e {}".format(predict_neg_train_command)]
+        output += [predict_neg_train_command]
+        output += ['echo -e "\\n"\n']
     
     # Set up val seq predict
     predict_val_command = 'gkmpredict $valseqs $modelname".model.txt" $modelname".test.predict.txt"'
@@ -582,15 +584,19 @@ def generate_slurm_train_script(input_dir,
     output += [predict_val_command]
     output += ['echo -e "\\n"\n']
     
-    output += ["date"]
+    output += ["date\n"]
+    
+    # Bash command to edit
+    usage = "Usage: sbatch --job-name=train_{0} -o {1}/train_{0}.out -e {1}/train_{0}.err --mem=20G train_{0}.sh".format(model, result_dir)
+    print(usage)
+    output += [usage]
     
     # Write to script
     with open("{}/train_{}.sh".format(result_dir, model), "w") as f:
         f.write("\n".join(output))
         print("Successfully generated {}/train_{}.sh".format(result_dir, model))
-        
-    # Bash command to edit
-    print("Usage: sbatch train_{0}.sh --job-name=train_{0} -o {1}/train_{0}.out -e {1}/train_{0}.err --mem=20G".format(model, result_dir))
+
+
 # <<< lsgkm helper functions <<<
 
 

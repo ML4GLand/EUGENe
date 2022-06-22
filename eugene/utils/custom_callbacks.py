@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 import torch
-
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.callbacks import BasePredictionWriter
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
@@ -21,8 +20,10 @@ class PredictionWriter(BasePredictionWriter):
     def write_on_epoch_end(self, trainer, pl_module: 'LightningModule', predictions, batch_indices):
         predictions = np.concatenate(predictions[0], axis=0)
         pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
-        #if not os.path.exists(self.output_dir):
-        #    os.makedirs(self.output_dir)
+        out = self.output_dir.rsplit("/", maxsplit=1)[0]
+        print(out)
+        if not os.path.exists(out):
+            os.makedirs(out)
         pred_df.to_csv(os.path.join(self.output_dir + "predictions.tsv"), sep="\t", index=False)
 
         
