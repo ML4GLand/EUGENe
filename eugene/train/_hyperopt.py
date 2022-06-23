@@ -8,8 +8,8 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities.cli import LightningCLI
 
 # EUGENE
-from eugene.dataloading.SeqDataModule import SeqDataModule
-from eugene.models.dsEUGENE import dsEUGENE
+from ..dataloading.dataloaders import SeqDataModule
+from ..models import CNN
 
 
 # Hyperoptimization objective function

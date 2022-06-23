@@ -13,16 +13,16 @@ from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 
 # CLAIM
-from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
+from claim.modules import BasicConv1D, BasicFullyConnectedModule
 
 # EUGENE
-from eugene.dataloading.SeqDataModule import SeqDataModule
-from eugene.preprocessing import ascii_decode
+from ..dataloading.dataloaders import SeqDataModule
+from ..preprocessing import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
-from eugene.utils.custom_callbacks import PredictionWriter
+from ..train import PredictionWriter
 
-class hybrid(LightningModule):
-    def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, rnn_kwargs={}, fc_kwargs={}):
+class CNN(LightningModule):
+    def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, fc_kwargs={}):
         super().__init__()
         self.strand = strand
         self.task = task
@@ -31,17 +31,14 @@ class hybrid(LightningModule):
         # Add strand specific modules
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
-            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim, **fc_kwargs)
         elif self.strand == "ds":
-            self.convnet = BasicConv1D(input_len=input_len,**conv_kwargs)
-            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels*2, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
+            self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, **fc_kwargs)
         elif self.strand == "ts":
             self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.reverse_convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
-            self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels*2, **rnn_kwargs)
-            self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, **fc_kwargs)
+            self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, **fc_kwargs)
         
         # Add task specific metrics
         if self.task == "regression":
@@ -52,21 +49,20 @@ class hybrid(LightningModule):
        
         # Save hyperparameters
         self.save_hyperparameters()
-        
+
     def forward(self, x, x_rev_comp):
         x = self.convnet(x)
-        x = x.transpose(1, 2)
+        x = x.view(x.size(0), self.convnet.flatten_dim)
         if self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.transpose(1, 2)
-            x = torch.cat([x, x_rev_comp], dim=2)
+            x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
+            x = torch.cat([x, x_rev_comp], dim=1)
         elif self.strand == "ts":
             x_rev_comp = self.reverse_convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.transpose(1, 2)
-            x = torch.cat([x, x_rev_comp], dim=2)
-        out, _ = self.recurrentnet(x)
-        out = self.fcnet(out[:, -1, :])
-        return out
+            x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
+            x = torch.cat([x, x_rev_comp], dim=1)
+        x = self.fcnet(x)
+        return x
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
@@ -124,6 +120,5 @@ class hybrid(LightningModule):
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-3)
     
-
 if __name__ == "__main__":
-    cli = LightningCLI(hybrid, SeqDataModule, save_config_overwrite=True)
+    cli = LightningCLI(CNN, SeqDataModule, save_config_overwrite=True)

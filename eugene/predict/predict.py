@@ -27,7 +27,7 @@ def load_data(path):
         data_yml = parse_config(path)
         datamod = SeqDataModule(**data_yml["data"])
         datamod.setup()
-        from eugene.utils.seq_utils import ascii_decode
+        from archive.seq_utils import ascii_decode
         print(ascii_decode(datamod.val_dataloader().dataset[0][0]))
         return datamod
             

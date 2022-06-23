@@ -1,3 +1,4 @@
+# Classics
 import argparse
 import numpy as np
 import importlib
@@ -22,8 +23,8 @@ from claim.modules import BasicConv1D, BasicRecurrent, BasicFullyConnectedModule
 from claim.utils import init_weights
 
 # EUGENE
-from eugene.dataloading.SeqDataModule import SeqDataModule
-from eugene.utils.seq_transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
+from ..dataloading.dataloaders import SeqDataModule
+from ..preprocessing import ReverseComplement, Augment, OneHotEncode, ToTensor
 
 class EUGENE(LightningModule):
     def __init__(self, model, learning_rate=1e-3, **kwargs):

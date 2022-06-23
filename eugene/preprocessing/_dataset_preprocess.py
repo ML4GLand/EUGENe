@@ -11,7 +11,6 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
         train_X, test_X, train_y, test_y = train_X[:num_train, :], test_X[:num_test, :], train_y[:num_train], test_y[:num_test]
     return train_X, test_X, train_y, test_y
 
-
 # Function to standardize features based on passed in indeces and optionally save stats
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
     if indeces is not None:

@@ -1,3 +1,4 @@
+# Classics
 import os
 import sys
 import numpy as np
@@ -7,10 +8,8 @@ import pandas as pd
 from ..preprocessing import random_seqs, reverse_complement, encodeDNA
 
 # Simple script tp generate commonly used file types for testing EUGENE models
-if __name__ == "__main__":
-    args = sys.argv
-    num_seqs, seq_len = int(args[1]), int(args[2])
-    out_dir = "test_{0}seqs_{1}/".format(num_seqs, seq_len)
+def generate_random_data(num_seqs, seq_len, out_dir="./test_data/"):
+    out_dir = os.path.join(out_dir, "test_{0}seqs_{1}/".format(num_seqs, seq_len))
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     

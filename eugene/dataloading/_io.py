@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 # EUGENE
-from eugene.utils import seq_utils
+from ..preprocessing import reverse_complement
 
 def load_csv(file, seq_col, name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False):
     """Function for loading sequences into numpy objects from csv/tsv files
@@ -55,7 +55,7 @@ def load_csv(file, seq_col, name_col=None, target_col=None, binarize=False, rev_
 
     # Grab reverse complement if asked for 
     if rev_comp:
-       rev_seqs = [seq_utils.reverse_complement(seq) for seq in seqs]
+       rev_seqs = [reverse_complement(seq) for seq in seqs]
     else:
         rev_seqs = None
 
@@ -67,7 +67,7 @@ def load_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False)
 
     Args:
         seq_file (str): fasta file path to read 
-        target_file (str): .npy file path containing sequences. Defaults to None.
+        target_file (str): .npy or .txt file path containing targets. Defaults to None.
         rev_comp (bool, optional): whether to generate reverse complements for sequences. Defaults to False.
         is_target_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
 
@@ -88,7 +88,7 @@ def load_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False)
         targets = None
 
     if rev_comp:
-        rev_seqs =  [seq_utils.reverse_complement(seq) for seq in seqs]
+        rev_seqs =  [reverse_complement(seq) for seq in seqs]
     else:
         rev_seqs = None
 
@@ -101,13 +101,13 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
 
     Args:
         seq_file (str): .npy file path containing sequences
-        names_file (str): .npy file path containing identifiers. Defaults to None.
-        target_file (str): .npy file path containing sequences. Defaults to None.
-        rev_seq_file (str, optional):  .npy file path containing reverse complement sequences. Defaults to None.
-        is_names_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
-        is_seq_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
-        is_target_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
-        delim (str, optional): _description_. Defaults to "\n".
+        names_file (str): .npy or .txt file path containing identifiers. Defaults to None.
+        target_file (str): .npy or .txt file path containing targets. Defaults to None.
+        rev_seq_file (str, optional): .npy or .txt file path containing reverse complement sequences. Defaults to None.
+        is_names_text (bool, optional): whether the file is compressed (.npy) or plaintext (.txt). Defaults to False.
+        is_seq_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
+        is_target_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
+        delim (str, optional):  Defaults to "\n".
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets. 
@@ -149,7 +149,7 @@ def load(seq_file, *args, **kwargs):
 
     Args:
         seq_file (str): file path containing sequences 
-        *args: positional arguments from load_csv, load_fasta, load_numpy
+        args: positional arguments from load_csv, load_fasta, load_numpy
         kwargs: keyword arguments from load_csv, load_fasta, load_numpy 
 
     Returns:
@@ -166,3 +166,40 @@ def load(seq_file, *args, **kwargs):
     else:
         print("Sequence file type not currently supported")
         return
+
+def seq2Fasta(seqs, IDs, name="seqs"):
+    """Utility function to generate a fasta file from a list of sequences and identifiers
+
+    Args:
+        seqs (list-like): list of sequences
+        IDs (list-like):  list of identifiers
+        name (str, optional): name of file. Defaults to "seqs".
+    """
+    file = open("{}.fa".format(name), "w")
+    for i in range(len(seqs)):
+        file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
+    file.close()
+    
+def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
+    """Utility function to generate a fasta file from a list of sequences, identifiers and targets but splits into
+         two files, one for positive label and one for negative label. Useful for running gkm-SVM.
+
+    Args:
+        seqs (_type_): _description_
+        IDs (_type_): _description_
+        ys (_type_): _description_
+        name (str, optional): _description_. Defaults to "seqs".
+    """
+    neg_mask = (ys==0)
+    
+    neg_seqs, neg_ys, neg_IDs = seqs[neg_mask], ys[neg_mask], IDs[neg_mask]
+    neg_file = open("{}-neg.fa".format(name), "w")
+    for i in range(len(neg_seqs)):
+        neg_file.write(">" + neg_IDs[i] + "\n" + neg_seqs[i] + "\n")
+    neg_file.close()
+    
+    pos_seqs, pos_ys, pos_IDs = seqs[~neg_mask], ys[~neg_mask], IDs[~neg_mask]
+    pos_file = open("{}-pos.fa".format(name), "w")
+    for i in range(len(pos_seqs)):
+        pos_file.write(">" + pos_IDs[i] + "\n" + pos_seqs[i] + "\n")
+    pos_file.close()

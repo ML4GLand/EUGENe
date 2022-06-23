@@ -6,13 +6,10 @@ import numpy as np
 from argparse import ArgumentParser
 
 # Model defs
-from eugene.models.hybrid import hybrid
-from eugene.models.cnn import CNN
-from eugene.models.fcn import FCN
-from eugene.models.rnn import RNN
+from ..models import FCN, CNN, RNN, Hybrid
 
 # Data def
-from eugene.dataloading.SeqDataModule import SeqDataModule
+from ..dataloading.dataloaders import SeqDataModule
 
 # Define the cli
 cli = ArgumentParser()
@@ -66,7 +63,7 @@ def load_model(path, model_type):
              argument("--model_type", type=str, default="hybrid", help="The model type (e.g. CNN)"),
              argument("--out", type=str, default="./", help="Output directory")])
 def score(args):  
-    from eugene.interpret.nn_explain import get_importances
+    from ._nn_explain import get_importances
     model = load_model(args.model, args.model_type)
     model.eval()
     dataloader = load_data(args.data)
@@ -79,7 +76,7 @@ def score(args):
              argument("--model_type", type=str, default="hybrid", help="The model type (e.g. CNN)"),
              argument("--out", type=str, default="./", help="Output directory")])
 def pwm(args):
-    from eugene.interpret.nn_explain import get_first_conv_layer
+    from ._nn_explain import get_first_conv_layer
     model = load_model(args.model, args.model_type)
     model.eval()
     pwms = get_first_conv_layer(model).detach().numpy()

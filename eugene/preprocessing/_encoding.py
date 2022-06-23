@@ -1,22 +1,17 @@
 import tqdm
-import pickle
 import pandas as pd
 import numpy as np
-from eugene.utils.otx_enhancer_utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities
-from eugene.utils.otx_enhancer_utils import encode_seq, encode_OLS_seq
-from eugene.utils.seq_utils import _get_index_dict, tokenize, token2one_hot, one_hot2token, pad_sequences 
+from ._utils import _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences 
+from ..utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq
 
 ### One-hot feature encoding (not sequence)
 
 # Fit to overall dataframe
 def encodeBlock():
-    pass
-    #ohe_block = OneHotEncoder(sparse=False)
-    #X = OLS_data[block_features]
-    #ohe_block.fit(X)
-
-    # Transform
-    #X_block = ohe_block.fit_transform(X)
+    ohe_block = OneHotEncoder(sparse=False)
+    X = OLS_data[block_features]
+    ohe_block.fit(X)
+    X_block = ohe_block.fit_transform(X)
     
     
 ### Mixed encodings 
@@ -121,7 +116,6 @@ def encodeSequence(seq_vec, vocab, neutral_vocab, maxlen=None,
 
     return np.stack(arr_list)
 
-
 def encodeDNA(seq_vec, maxlen=None, seq_align="start"):
     """Convert the DNA sequence into 1-hot-encoding numpy array
     # Arguments
@@ -168,7 +162,6 @@ def encodeDNA(seq_vec, maxlen=None, seq_align="start"):
                           pad_value="N",
                           encode_type="one_hot")
 
-# TODO - take into account the neutral vocab
 def decodeDNA(arr, vocab=DNA):
     """Convert a one-hot encoded array back to string
     """

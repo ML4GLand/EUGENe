@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from captum.attr import Saliency, DeepLift
-from eugene.utils.seq_utils import dinuc_shuffle
+from ..preprocessing import dinuc_shuffle
 
 def vanilla_explain(model, inputs, ref_type=None, target=None, device="cpu"):
     model.train()

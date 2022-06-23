@@ -1,3 +1,4 @@
+# Classics
 import numpy as np
 
 # PyTorch
@@ -15,10 +16,10 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from claim.modules import BasicFullyConnectedModule, BasicRecurrent
 
 # EUGENE
-from eugene.dataloading.SeqDataModule import SeqDataModule
-from eugene.utils.seq_utils import ascii_decode
+from ..dataloading.dataloaders import SeqDataModule
+from ..preprocessing._encoding import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
-from eugene.utils.custom_callbacks import PredictionWriter
+from ..train import PredictionWriter
 
 class RNN(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, rnn_kwargs={}, fc_kwargs={}):

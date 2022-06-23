@@ -11,9 +11,9 @@ from torch.utils.data import random_split, DataLoader
 from torchvision import transforms
 
 # EUGENE
-from eugene.utils.seq_transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
-from eugene.dataloading.load_data import load
-from eugene.dataloading.SeqDataset import SeqDataset
+from .._io import load
+from ._SeqDataset import SeqDataset
+from ...preprocessing._transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
 
 class SeqDataModule(pl.LightningDataModule):
     def __init__(self, seq_file: str, batch_size: int = 32, num_workers: int = 0, transform=None, test=False, shuffle=True, split=0.9, seed=13, save_names=None, load_kwargs={}):
