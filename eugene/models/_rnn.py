@@ -12,10 +12,8 @@ import torchmetrics
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 
-# CLAIM
-from claim.modules import BasicFullyConnectedModule, BasicRecurrent
-
 # EUGENE
+from .base import BasicFullyConnectedModule, BasicRecurrent
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
