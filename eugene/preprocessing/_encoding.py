@@ -1,7 +1,7 @@
 import tqdm
 import pandas as pd
 import numpy as np
-from ._utils import _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences 
+from ._utils import _get_vocab_dict, _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences 
 from ..utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq
 
 ### One-hot feature encoding (not sequence)
@@ -53,6 +53,24 @@ def mixed_OLS_encode(OLS_dataset):
     X_mixed2s = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
     X_mixed3s = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
     return X_mixed1s, X_mixed2s, X_mixed3s
+
+# Wrapper function to encode all three mixed encodings for the OLS library. \
+# Currrently supports mixed 1.0, 2.0 and 3.0
+def otx_encode(seqs):
+    mixed1_encoding, mixed2_encoding, mixed3_encoding, valid_idx = [], [], [], []
+    for i, sequence in tqdm.tqdm(enumerate(seqs)):
+        encoded_seq1 = encode_seq(sequence, encoding="mixed1")
+        encoded_seq2 = encode_seq(sequence, encoding="mixed2")
+        encoded_seq3 = encode_seq(sequence, encoding="mixed3")
+        if encoded_seq1 != -1:
+            mixed1_encoding.append(encoded_seq1)
+            mixed2_encoding.append(encoded_seq2)
+            mixed3_encoding.append(encoded_seq3)
+            valid_idx.append(i)
+    X_mixed1 = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2 = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3 = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1, X_mixed2, X_mixed3, valid_idx
 
 
 ### One-hot encodings
@@ -115,6 +133,14 @@ def encodeSequence(seq_vec, vocab, neutral_vocab, maxlen=None,
         # indexes > 0, 0 = padding element
 
     return np.stack(arr_list)
+
+def oheDNA(seq, vocab=DNA, neutral_vocab="N"):
+    return token2one_hot(tokenize(seq, vocab, neutral_vocab), len(vocab))
+
+def decodeOHE(arr, vocab=DNA, neutral_vocab="N"):
+    tokens = arr.argmax(axis=1)
+    indexToLetter = _get_index_dict(vocab)
+    return ''.join([indexToLetter[x] for x in tokens])
 
 def encodeDNA(seq_vec, maxlen=None, seq_align="start"):
     """Convert the DNA sequence into 1-hot-encoding numpy array

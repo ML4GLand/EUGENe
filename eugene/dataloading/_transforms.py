@@ -2,8 +2,8 @@
 import torch
 
 # EUGENE
-from ._utils import randomizeLinkers
-from ._encoding import encodeDNA
+from ..preprocessing._utils import randomizeLinkers
+from ..preprocessing._encoding import encodeDNA
 
 # Suite of sequence transforms that can be composed using torchvision
 class ReverseComplement(object):

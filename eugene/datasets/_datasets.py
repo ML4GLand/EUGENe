@@ -9,9 +9,9 @@ from .._compat import Literal
 from .._settings import settings
 from ._utils import check_datasetdir_exists
 
-from ..dataloading import load
+from ._io import load
 HERE = Path(__file__).parent
-
+pkg_resources = None
 
 def get_dataset_info():
     """Return DataFrame with info about builtin datasets.

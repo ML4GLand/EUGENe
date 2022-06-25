@@ -10,6 +10,9 @@ COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
 ### Sequence encoding from concise
 
+def _get_vocab_dict(vocab):
+    return {l: i for i, l in enumerate(vocab)}
+
 def _get_index_dict(vocab):
     return {i: l for i, l in enumerate(vocab)}
 
@@ -83,7 +86,7 @@ def pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
 
     # neutral element type checking
     assert isinstance(value, list) or isinstance(value, str)
-    assert isinstance(value, type(sequence_vec[0]))
+    assert isinstance(value, type(sequence_vec[0])) or type(sequence_vec[0]) is np.str_
     assert not isinstance(sequence_vec, str)
     assert isinstance(sequence_vec[0], list) or isinstance(sequence_vec[0], str)
 
@@ -158,7 +161,7 @@ def random_base():
     Generate a random base.
     :return: Random base.
     """
-    return np.random.choice(NUCLEOTIDES)
+    return np.random.choice(alphabet)
 
 def random_seq(seq_len):
     """
@@ -167,7 +170,7 @@ def random_seq(seq_len):
     seq_len (int): length of sequence to return
     :return: Random sequence.
     """
-    return "".join([np.random.choice(NUCLEOTIDES) for i in range(seq_len)])
+    return "".join([np.random.choice(alphabet) for i in range(seq_len)])
 
 def random_seqs(seq_num, seq_len):
     """
@@ -177,7 +180,7 @@ def random_seqs(seq_num, seq_len):
     seq_len (int): length of sequence to return
     :return: numpy array of random sequences.
     """
-    return np.array([random_seq(seq_len) for i in range(seq_num)])
+    return [random_seq(seq_len) for i in range(seq_num)]
 
 def random_seqs_to_file(file, ext="csv", **kwargs):
     """
@@ -193,6 +196,9 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
 
 def reverse_complement(seq):
     return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
+
+def reverse_complement_seqs(seqs):
+    return [reverse_complement(seq) for seq in seqs]
 
 
 ### Dinuc shuffle from Kundaje lab
@@ -249,7 +255,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
     of N will not be present (i.e. a single string will be returned, or an L x D
     array).
     """
-    if type(seq) is str:
+    if type(seq) is str or type(seq) is np.str_:
         arr = string_to_char_array(seq)
     elif type(seq) is np.ndarray and len(seq.shape) == 2:
         seq_len, one_hot_dim = seq.shape
@@ -272,7 +278,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
         inds = np.where(mask)[0]
         shuf_next_inds.append(inds + 1)  # Add 1 for next token
  
-    if type(seq) is str:
+    if type(seq) is str or type(seq) is np.str_:
         all_results = []
     else:
         all_results = np.empty(
@@ -299,7 +305,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
             counters[t] += 1
             result[j] = tokens[ind]
 
-        if type(seq) is str:
+        if type(seq) is str or type(seq) is np.str_:
             all_results.append(char_array_to_string(chars[result]))
         else:
             all_results[i] = tokens_to_one_hot(chars[result], one_hot_dim)
