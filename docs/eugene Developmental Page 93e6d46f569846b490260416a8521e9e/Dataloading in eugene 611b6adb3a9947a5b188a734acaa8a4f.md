@@ -28,9 +28,9 @@ Use anndata to create a object to work with?
 - Builds a `SeqDataset` object from a file or set of files
 - Composes passed in transforms (expects them to be of class transforms)
 - Freakin split finally works:
-    
+
     https://github.com/PyTorchLightning/pytorch-lightning/issues/1565
-    
+
 
 ### `AnnDataset`?
 

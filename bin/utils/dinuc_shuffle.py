@@ -67,7 +67,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
 
     if not rng:
         rng = np.random.RandomState()
-   
+
     # Get the set of all characters, and a mapping of which positions have which
     # characters; use `tokens`, which are integer representations of the
     # original characters
@@ -79,7 +79,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
         mask = tokens[:-1] == t  # Excluding last char
         inds = np.where(mask)[0]
         shuf_next_inds.append(inds + 1)  # Add 1 for next token
- 
+
     if type(seq) is str:
         all_results = []
     else:
@@ -96,7 +96,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
             shuf_next_inds[t] = shuf_next_inds[t][inds]
 
         counters = [0] * len(chars)
-       
+
         # Build the resulting array
         ind = 0
         result = np.empty_like(tokens)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     ):
         rng = np.random.RandomState(seed)
         times = []
-    
+
         if one_hot:
             seqs = [
                 tokens_to_one_hot(rng.choice(4, seq_len), 4)
@@ -134,7 +134,7 @@ if __name__ == "__main__":
                 "".join(rng.choice(["A", "C", "T", "G"], seq_len))
                 for _ in range(num_seqs)
             ]
-    
+
         total_start = datetime.now()
         results = []
         for seq in seqs:
@@ -171,9 +171,9 @@ if __name__ == "__main__":
 
     def test_dinuc_content(seq_len=1001, num_shufs=5, seed=1234, one_hot=False):
         rng = np.random.RandomState(seed)
-  
+
         orig = "".join(rng.choice(["A", "C", "T", "G"], seq_len))
-        if one_hot: 
+        if one_hot:
             orig_one_hot = dna_to_one_hot(orig)
             shufs = [
                 one_hot_to_dna(one_hot) for one_hot in
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             ]
         else:
             shufs = dinuc_shuffle(orig, num_shufs, rng)
- 
+
         # Get percent match matrix
         matches = np.zeros((num_shufs + 1, num_shufs + 1))
         char_arrays = [string_to_char_array(s) for s in [orig] + shufs]
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             for j in range(i + 1, num_shufs + 1):
                 matches[i, j] = np.sum(char_arrays[i] == char_arrays[j])
         matches = matches / seq_len * 100
-     
+
         names = ["Orig"] + ["Shuf%d" % i for i in range(1, num_shufs + 1)]
         print("% nucleotide matches")
         print("\t" + "\t".join(names))
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             contents = [nuc, orig_nuc_cont[nuc]] + \
                 [shuf_dict[nuc] for shuf_dict in shuf_nuc_conts]
             print(format_str % tuple(contents))
-        
+
         # Get dinucleotide contents
         orig_dinuc_cont = dinuc_content(orig)
         shuf_dinuc_conts = [dinuc_content(shuf) for shuf in shufs]

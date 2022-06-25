@@ -33,10 +33,10 @@ def deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
     return attrs.to("cpu").detach().numpy()
 
 
-def nn_explain(model, 
-               inputs, 
-               saliency_type, 
-               target=None, 
+def nn_explain(model,
+               inputs,
+               saliency_type,
+               target=None,
                ref_type="zero",
                device="cpu",
                abs_value=False):

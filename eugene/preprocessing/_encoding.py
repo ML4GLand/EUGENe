@@ -1,7 +1,7 @@
 import tqdm
 import pandas as pd
 import numpy as np
-from ._utils import _get_vocab_dict, _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences 
+from ._utils import _get_vocab_dict, _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences
 from ..utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq
 
 ### One-hot feature encoding (not sequence)
@@ -12,9 +12,9 @@ def encodeBlock():
     X = OLS_data[block_features]
     ohe_block.fit(X)
     X_block = ohe_block.fit_transform(X)
-    
-    
-### Mixed encodings 
+
+
+### Mixed encodings
 
 # Wrapper function to generate mixed 1.0-3.0 encodings
 # Currently supports encoding into mixed 1.0, 2.0 and 3.0

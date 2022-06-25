@@ -2,8 +2,8 @@
 
 """
 Python script for evaluating EUGENE project models
-TODO: 
-    1. 
+TODO:
+    1.
 """
 
 
@@ -19,7 +19,7 @@ import matplotlib.patches as mpatches
 
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadEtsAff(file):
-    ref = file        
+    ref = file
     Seq2EtsAff  = {line.split('\t')[0]:float(line.split('\t')[1]) for line in open(ref,'r').readlines()}
     return Seq2EtsAff
 
@@ -46,8 +46,8 @@ def loadBindingSiteName2affinities(file="/cellar/users/aklie/projects/EUGENE/dat
         return b
     else:
         print("Only pickles at this time")
-    
-    
+
+
 # Load Otx-a binding site name to sequence dictionary
 def loadSiteName2bindingSiteSequence(file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/siteName2bindingSiteSequence.pkl", pickle_obj=True):
     if pickle_obj:
@@ -65,18 +65,18 @@ def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE
         if seq[i:i+4] in cores["ETS_FORWARD"]:
             core_pos.setdefault(i, []).append("ETS")
             core_pos[i].append("F")
-            
+
         elif seq[i:i+4] in cores["ETS_REVERSE"]:
             core_pos.setdefault(i, []).append("ETS")
             core_pos[i].append("R")
-            
+
         elif seq[i:i+4] in cores["GATA_FORWARD"]:
             core_pos.setdefault(i, []).append("GATA")
             core_pos[i].append("F")
-            
+
         elif seq[i:i+4] in cores["GATA_REVERSE"]:
             core_pos.setdefault(i, []).append("GATA")
-            core_pos[i].append("R")    
+            core_pos[i].append("R")
     return core_pos
 
 
@@ -107,7 +107,7 @@ def findSpacingBetweenTFBS(cores):
 
 
 # Find hamming distance between two strings. Returns inf if they are different lengths
-def hamming_distance(string1, string2): 
+def hamming_distance(string1, string2):
     distance = 0
     L = len(string1)
     if L != len(string2):
@@ -164,7 +164,7 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
     assert one_hot_axis==0 or one_hot_axis==1
     if (one_hot_axis==0):
         assert zeros_array.shape[1] == len(sequence)
-    elif (one_hot_axis==1): 
+    elif (one_hot_axis==1):
         assert zeros_array.shape[0] == len(sequence)
     #will mutate zeros_array
     for (i,char) in enumerate(sequence):
@@ -184,7 +184,7 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
             zeros_array[char_idx,i] = 1
         elif (one_hot_axis==1):
             zeros_array[i,char_idx] = 1
-            
+
 # Collapse neighbor positions of array to ranges
 def collapse_pos(positions):
     ranges = []
@@ -202,7 +202,7 @@ def collapse_pos(positions):
 def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, highlight=[], cmap=None, norm=None):
     # Get the annotations for the seq
     tfbs_annot = defineTFBS(seq)
-    
+
     # Define subplots
     fig, ax = plt.subplots(2, 1, figsize=(12,4), sharex=True)
     plt.subplots_adjust(wspace=0, hspace=0)
@@ -237,13 +237,13 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         tfbs_aff = round(tfbs_annot[pos][3], 2)
         closest_match = tfbs_annot[pos][5] + ": " + str(tfbs_annot[pos][7])
         spacing = tfbs_annot[pos][4]
-        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold', 
+        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold', 
+        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold', 
+        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black", 
+        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black",
                 fontsize=12, ha='center', va='bottom')
 
     if importance_scores is None:
@@ -255,7 +255,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         importance_scores = one_hot_encode_along_channel_axis(seq)
     else:
         ylab = "Importance Score"
-    
+
     title = ""
     if seq_name is not None:
         title += seq_name
@@ -264,7 +264,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         title += ": {}".format(str(round(model_pred, 3)))
     else:
         color = "black"
-        
+
     # Plot the featue importance scores
     if len(highlight) > 0:
         to_highlight = {"red": collapse_pos(highlight)}
@@ -353,9 +353,9 @@ def mixed_encode(data):
 def encode_OLS_seq(OLS_seq, encoding, sitename_dict, affinity_dict):
     if encoding not in ["mixed1", "mixed2", "mixed3"]:
         raise ValueError("Specified encoding not supported")
-        
+
     enh_enc = []  # Single enhancer encoding
-    
+
     # Loop through each position
     for col_num in range(len(OLS_seq)):
         # If we have a spacer in the current position we need to check for surrounding GATA-2 sites
@@ -400,11 +400,11 @@ def encode_OLS_seq(OLS_seq, encoding, sitename_dict, affinity_dict):
                     enh_enc += [aff, 0, orient]
                 elif tf == "G":
                     enh_enc += [0, aff, orient]
-            
+
     return enh_enc
-    
-    
-# Function to encode a dataset of OLS sequences by looping through dataframe 
+
+
+# Function to encode a dataset of OLS sequences by looping through dataframe
 # and repeatedly running encode_OLS_seq. Supports mixed 1.0, 2.0 and 3.0
 def encode_OLS_dataset(OLS_dataset, encode):
     site_dict = loadSiteName2bindingSiteSequence()  # Sitenames to sequence

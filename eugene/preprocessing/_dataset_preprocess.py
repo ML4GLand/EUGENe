@@ -17,21 +17,21 @@ def standardize_features(train_X, test_X, indeces=None, stats_file=None):
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
         return train_X, test_X
-    
+
     means = train_X[:, indeces].mean(axis=0)
     train_X_scaled = train_X[:, indeces] - means
     test_X_scaled = test_X[:, indeces] - means
-    
+
     stds = train_X[:, indeces].std(axis=0)
     valid_std_idx = np.where(stds != 0)[0]
     indeces = indeces[valid_std_idx]
     stds = stds[valid_std_idx]
     train_X_scaled[:, indeces] = train_X_scaled[:, indeces] / stds
     test_X_scaled[:, indeces] = test_X_scaled[:, indeces] / stds
-    
+
     if stats_file != None:
         stats_dict = {"indeces": indeces, "means": means, "stds": stds}
         with open(stats_file, 'wb') as handle:
             pickle.dump(stats_dict, handle)
-            
+
     return train_X_scaled, test_X_scaled

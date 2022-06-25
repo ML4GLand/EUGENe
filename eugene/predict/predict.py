@@ -30,7 +30,7 @@ def load_data(path):
         from archive.seq_utils import ascii_decode
         print(ascii_decode(datamod.val_dataloader().dataset[0][0]))
         return datamod
-            
+
 def load_from_pl_ckt(ckt_pth, model_type):
     from eugene.models.hybrid import hybrid
     from eugene.models.cnn import CNN
@@ -45,7 +45,7 @@ def load_from_pl_ckt(ckt_pth, model_type):
 
 def load_model(path, model_type):
     if "ckpt" in path:
-        return load_from_pl_ckt(path, model_type) 
+        return load_from_pl_ckt(path, model_type)
 
 def predict(args):
     from pytorch_lightning.utilities.seed import seed_everything
@@ -66,8 +66,8 @@ def predict(args):
         preds = np.concatenate(preds)
         pred_df = pd.DataFrame(data=preds, columns=["NAME", "PREDICTION", "TARGET"])
         pred_df.to_csv(os.path.join(args.out, loader + "_preds.tsv"), sep="\t", index=False)
-     
-    
+
+
 if __name__ == "__main__":
     cli.add_argument("--model", type=str, help="The model to use")
     cli.add_argument("--data", type=str, help="The data to make predictions on")
@@ -76,4 +76,3 @@ if __name__ == "__main__":
     cli.add_argument("--out", type=str, default="./", help="Output directory")
     args = cli.parse_args()
     predict(args)
-    

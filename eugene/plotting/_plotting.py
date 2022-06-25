@@ -24,8 +24,8 @@ def cf_plot_from_df(data, label_col="FXN_LABEL", pred_col="PREDS", title="Sequen
         ax.set_yticklabels(["Inactive", "Active"], fontsize=16)
         ax.set_xticklabels(["Inactive (Score<{})".format(str(threshold)), "Active (Score>{})".format(str(threshold))], fontsize=16)
         plt.tight_layout()
-            
-        
+
+
 ###  Dim reduction plots
 
 # Function to make a Skree plot from a sklearn pca object
@@ -103,7 +103,7 @@ def umap(umap_data, umap1=0, umap2=1, color="b", loadings=None, labels=None, n=5
 def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, highlight=[], cmap=None, norm=None):
     # Get the annotations for the seq
     tfbs_annot = defineTFBS(seq)
-    
+
     # Define subplots
     fig, ax = plt.subplots(2, 1, figsize=(12,4), sharex=True)
     plt.subplots_adjust(wspace=0, hspace=0)
@@ -138,13 +138,13 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         tfbs_aff = round(tfbs_annot[pos][3], 2)
         closest_match = tfbs_annot[pos][5] + ": " + str(tfbs_annot[pos][7])
         spacing = tfbs_annot[pos][4]
-        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold', 
+        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold', 
+        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold', 
+        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold',
                     fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black", 
+        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black",
                 fontsize=12, ha='center', va='bottom')
 
     if importance_scores is None:
@@ -156,7 +156,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         importance_scores = one_hot_encode_along_channel_axis(seq)
     else:
         ylab = "Importance Score"
-    
+
     title = ""
     if seq_name is not None:
         title += seq_name
@@ -165,7 +165,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         title += ": {}".format(str(round(model_pred, 3)))
     else:
         color = "black"
-        
+
     # Plot the featue importance scores
     if len(highlight) > 0:
         to_highlight = {"red": collapse_pos(highlight)}

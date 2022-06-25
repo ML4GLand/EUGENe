@@ -10,7 +10,7 @@ do
     do
         model_yml=${strand}_bin-clf_${model}.yaml
         model_cp=$outputs/${strand}${model}/2022_04_23_NPY_Baseline/checkpoints/*
-        
+
         # 2021 OLS Training Sequences
         output=$outputs/${strand}${model}/2022_04_23_NPY_Baseline/predictions/2021_OLS_Training_
         if [ $model == "rnn" ]
@@ -27,7 +27,7 @@ do
             $output"
         echo $CMD
         $CMD
-        
+
         # 2021 OLS Holdout Sequences
         output=$outputs/${strand}${model}/2022_04_23_NPY_Baseline/predictions/2021_OLS_Holdout_
         if [ $model == "rnn" ]
@@ -44,7 +44,7 @@ do
             $output"
         echo $CMD
         $CMD
-        
+
         # TODO: All Genomic Sequences
     done
 done

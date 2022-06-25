@@ -7,7 +7,7 @@ data:
       init_args:
         transpose: True
   test: True
-  load_kwargs: 
+  load_kwargs:
     names_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/id/0.09-0.4_id-all.txt"
     rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/ohe_seq/0.09-0.4_X-all_ohe-seq-rev.npy"
     target_file: "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/activity/0.09-0.4_y-all_activity.txt"

@@ -3,7 +3,7 @@ model:
   strand: "ss"
   task: "binary_classification"
   aggr: None
-  fc_kwargs: 
+  fc_kwargs:
     hidden_dims: [128, 64]
     dropout_rate: 0.2
     batchnorm: True

@@ -7,7 +7,7 @@ from ...preprocessing._encoding import ascii_encode
 
 class SeqDataset(Dataset):
     """Sequence based PyTorch dataset definition"""
-    
+
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
         """
         Args:
@@ -28,7 +28,7 @@ class SeqDataset(Dataset):
     def _init_dataset(self):
         """Perform any initialization steps on the dataset, currently converts names into ascii if provided
         """
-        
+
         if self.names is not None:
             self.name_lengths = np.array([len(i) for i in self.names])
             if np.any(self.name_lengths != self.name_lengths[0]):
@@ -47,7 +47,7 @@ class SeqDataset(Dataset):
 
     def __len__(self):
         return len(self.seqs)
- 
+
     def __getitem__(self, idx):
         """Get an item from the dataset and return as tuple. Perform any transforms passed in
 
@@ -55,14 +55,14 @@ class SeqDataset(Dataset):
             idx (int): dataset index to grab
 
         Returns:
-            tuple: Returns a quadruple of tensors: identifiers, sequences, reverse complement 
+            tuple: Returns a quadruple of tensors: identifiers, sequences, reverse complement
                    sequences, targets. If any are not provided tensor([-1.]) is returned for that sequence
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        
+
         seq = self.seqs[idx]
-        
+
         if self.ascii_names is not None:
             name = self.ascii_names[idx]
         else:
@@ -77,12 +77,9 @@ class SeqDataset(Dataset):
             rev_seq = self.rev_seqs[idx]
         else:
             rev_seq = np.array([-1.0])
-        
+
         sample = np.array([name, seq, rev_seq, target], dtype=object)
-        
+
         if self.transform:
             sample = self.transform(sample)
         return sample
-        
-        
-

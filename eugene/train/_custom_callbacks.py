@@ -26,7 +26,7 @@ class PredictionWriter(BasePredictionWriter):
             os.makedirs(out)
         pred_df.to_csv(os.path.join(self.output_dir + "predictions.tsv"), sep="\t", index=False)
 
-        
+
 @CALLBACK_REGISTRY
 class TrainAndValPredictionWriter(Callback):
     def __init__(self):

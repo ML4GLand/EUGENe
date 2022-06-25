@@ -40,7 +40,7 @@ for i, file in enumerate(files):
         #data["LABEL"] = np.nan
         #data["LABEL"] = np.where(data["NONFUNC-<0.625"]=="True", 0, np.nan)
         #data["LABEL"] = np.where(data["FUNC->0.685"]=="True", 1, data["LABEL"])
-        
+
         # Use my own
         data["LABEL"] = np.nan
         data['ACT_SumRNA_LenDNA_LOG2_NORM'] = data['ACT_SumRNA_LenDNA_LOG2_NORM'].replace({"ND":np.nan})
@@ -83,7 +83,7 @@ for i, file in enumerate(files):
 
         # Generate a report
         classification_report(out_path=outdir,
-            train_X=X_train, test_X=X_test, 
+            train_X=X_train, test_X=X_test,
             train_y=y_train, test_y=y_test,
             train_preds=y_tr_preds, test_preds=y_preds,
             train_probs=y_tr_probs, test_probs=y_probs)

@@ -3,7 +3,7 @@ data:
   batch_size: 1024
   num_workers: 4
   split: 0.9
-  load_kwargs: 
+  load_kwargs:
     seq_col: "SEQ"
     target_col: "ACTIVITY_SUMRNA_NUMDNA"
     binarize: True

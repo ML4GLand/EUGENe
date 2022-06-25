@@ -16,7 +16,7 @@ do
         then
             CMD="sbatch --job-name=simple_fit_reg_$name fit.sh $model $model_yml $rnn_data $result_dir $name $version"
         else
-            CMD="sbatch --job-name=simple_fit_reg_$name fit.sh $model $model_yml $data $result_dir $name $version"     
+            CMD="sbatch --job-name=simple_fit_reg_$name fit.sh $model $model_yml $data $result_dir $name $version"
         fi
         echo $CMD
         $CMD

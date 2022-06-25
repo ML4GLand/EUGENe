@@ -31,7 +31,7 @@ echo -e "python $model fit
     --trainer.logger.init_args.version "$output_version"
     --trainer.max_epochs 100
     --trainer.gpus 1"
-    
+
 python $model fit \
     --seed_everything 13 \
     --config $model_config \

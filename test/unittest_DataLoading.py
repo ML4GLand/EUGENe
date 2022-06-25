@@ -14,7 +14,7 @@ class Test_load_data(unittest.TestCase):
         self.assertTrue(names == None)
         self.assertTrue(rev_seqs == None)
         self.assertTrue(targets == None)
-        
+
         # Maximum functionality
         names, seqs, rev_seqs, targets = load_data.load_csv("test_seqs.tsv", seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", rev_comp=True)
         self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
@@ -27,7 +27,7 @@ class Test_load_data(unittest.TestCase):
         self.assertTrue(targets == None)
 
         names, seqs, rev_seqs, targets = load_data.load_fasta("test_seqs.fa", target_file="test_labels.npy", rev_comp=True)
-        self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets)) 
+        self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
 
     def test_load_numpy(self):
         names, seqs, rev_seqs, targets = load_data.load_numpy("test_seqs.npy")
@@ -38,14 +38,14 @@ class Test_load_data(unittest.TestCase):
 
         names, seqs, rev_seqs, targets = load_data.load_numpy("test_ohe_seqs.npy", names_file="test_ids.npy", target_file="test_labels.npy", rev_seq_file="test_rev_ohe_seqs.npy")
         self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
-        
+
     def test_load(self):
         names, seqs, rev_seqs, targets = load_data.load("test_seqs.tsv", seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", rev_comp=True)
         self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
-        
+
         names, seqs, rev_seqs, targets = load_data.load("test_ohe_seqs.npy", names_file="test_ids.npy", target_file="test_labels.npy", rev_seq_file="test_rev_ohe_seqs.npy")
         self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
-        
+
         names, seqs, rev_seqs, targets = load_data.load("test_seqs.fa", target_file="test_labels.npy", rev_comp=True)
         self.assertTrue(len(names) == len(seqs) == len(rev_seqs) == len(targets))
 

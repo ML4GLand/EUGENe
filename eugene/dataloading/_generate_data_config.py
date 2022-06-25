@@ -6,7 +6,7 @@ import importlib
 def infer_type(user_input):
     if "[" in user_input:
         try:
-            return [int(i) for i in user_input.strip('][').split(', ')] 
+            return [int(i) for i in user_input.strip('][').split(', ')]
         except:
             pass
     if "." in user_input:

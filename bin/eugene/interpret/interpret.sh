@@ -35,7 +35,7 @@ if [ $model_type == "rnn" ] || [ $model_type == "fcn" ]
             --model_type $model_type \
             --data $data \
             --out $output
-            
+
         python $script pwm \
             --model $ckt_path \
             --model_type $model_type \

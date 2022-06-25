@@ -265,7 +265,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
 
     if not rng:
         rng = np.random.RandomState()
-   
+
     # Get the set of all characters, and a mapping of which positions have which
     # characters; use `tokens`, which are integer representations of the
     # original characters
@@ -277,7 +277,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
         mask = tokens[:-1] == t  # Excluding last char
         inds = np.where(mask)[0]
         shuf_next_inds.append(inds + 1)  # Add 1 for next token
- 
+
     if type(seq) is str or type(seq) is np.str_:
         all_results = []
     else:
@@ -294,7 +294,7 @@ def dinuc_shuffle(seq, num_shufs=None, rng=None):
             shuf_next_inds[t] = shuf_next_inds[t][inds]
 
         counters = [0] * len(chars)
-       
+
         # Build the resulting array
         ind = 0
         result = np.empty_like(tokens)
@@ -338,11 +338,11 @@ def merge_intervals(intervals):
             merged_list.append(intervals[i])
     return merged_list
 
-def randomizeLinkers(seq, features=None, enhancer=None):   
+def randomizeLinkers(seq, features=None, enhancer=None):
     if features == None:
         assert enhancer != None
         features = enhancer_binding_sites[enhancer]
-        
+
     transformed_seq = []
     feature_spans = merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
     if feature_spans is None:
@@ -359,5 +359,3 @@ def randomizeLinkers(seq, features=None, enhancer=None):
     if len(transformed_seq) != len(seq):
         logging.warning('Transformed sequence is length {}'.format(len(transformed_seq)))
     return transformed_seq
-
-

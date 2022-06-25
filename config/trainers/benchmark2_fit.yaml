@@ -8,7 +8,7 @@ trainer:
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
-      save_dir: "" 
+      save_dir: ""
       name: ""
       version: ""
   gpus: 1

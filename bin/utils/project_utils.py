@@ -3,8 +3,8 @@
 
 """
 Python script for evaluating EUGENE project models
-TODO: 
-    1. 
+TODO:
+    1.
 """
 
 
@@ -61,7 +61,7 @@ def contigency_table_stats(data, col, label):
 def odds_ratios(data, col, label, alpha=0.05):
     cont_table = pd.crosstab(data[label], data[col])
     # Defnie a CI and an empty dataframe to hold odds-ratio info
-    odds_df = pd.DataFrame(columns=["OR", 
+    odds_df = pd.DataFrame(columns=["OR",
                                     "OR " + str(alpha * 100) + "%",
                                     "OR " + str((1 - alpha) * 100) + "%"],
                            index=cont_table.columns)
@@ -94,7 +94,7 @@ def plot_odds_ratios(odds_df, col, savefig=None):
     for index, i in odds_df.iterrows():
         x = [i["OR 5.0%"], i["OR 95.0%"]]
         y = [n, n]
-        ax.plot(x, y, 
+        ax.plot(x, y,
                 "|", markersize=25, markeredgewidth=3,linewidth=3, color=sns.color_palette("muted")[n])
         ax.plot(x, y,
             "-", markersize=25, markeredgewidth=3, linewidth=3, color=sns.color_palette("muted")[n])
@@ -136,26 +136,26 @@ def standardize_features(train_X, test_X, indeces=None, stats_file=None):
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
         return train_X, test_X
-    
+
     #train_X_scaled = train_X.copy()
     #test_X_scaled = test_X.copy()
-    
+
     means = train_X[:, indeces].mean(axis=0)
     train_X_scaled = train_X[:, indeces] - means
     test_X_scaled = test_X[:, indeces] - means
-    
+
     stds = train_X[:, indeces].std(axis=0)
     valid_std_idx = np.where(stds != 0)[0]
     indeces = indeces[valid_std_idx]
     stds = stds[valid_std_idx]
     train_X_scaled[:, indeces] = train_X_scaled[:, indeces] / stds
     test_X_scaled[:, indeces] = test_X_scaled[:, indeces] / stds
-    
+
     if stats_file != None:
         stats_dict = {"indeces": indeces, "means": means, "stds": stds}
         with open(stats_file, 'wb') as handle:
             pickle.dump(stats_dict, handle)
-            
+
     return train_X_scaled, test_X_scaled
 
 
@@ -164,7 +164,7 @@ def ohe_seqs(seqs):
     # Define encoders
     integer_encoder = LabelEncoder()
     one_hot_encoder = OneHotEncoder(categories=[np.array([0, 1, 2, 3])], handle_unknown="ignore")
-    
+
     X_features = []  # will hold one hot encoded sequence
     for i, seq in enumerate(tqdm.tqdm(seqs)):
         integer_encoded = integer_encoder.fit_transform(list(seq))  # convert to integer
@@ -172,13 +172,13 @@ def ohe_seqs(seqs):
         one_hot_encoder.fit(integer_encoded)  # convert to one hot
         one_hot_encoded = one_hot_encoder.fit_transform(integer_encoded)
         X_features.append(one_hot_encoded.toarray())
-        
+
     print("Encoded {} seqs".format(len(X_features)))
-        
+
     # convert to numpy array
     X_ohe_seq = np.array(X_features)
-    
-    # Sanity check encoding for randomly chosens sequences  
+
+    # Sanity check encoding for randomly chosens sequences
     l = len(X_features)
     if l < 1000:
         print("Checking all {} seqs for proper encoding".format(l))
@@ -222,7 +222,7 @@ def ohe_seqs(seqs):
         print("Something is amiss in the state of Denmark, try encoding again")
     else:
         print("Sequence encoding was great success")
-    return X_ohe_seq 
+    return X_ohe_seq
 # >>> Data preprocessing helper functions >>>
 
 
@@ -244,12 +244,12 @@ def train_test_confusion_matrix(train_y, train_y_preds, test_y, test_y_preds, fi
         ax[1].set_title('Test Set')
 
         plt.tight_layout()
-    
+
     if savefile != None:
         plt.savefig(savefile)
         plt.close()
 
-        
+
 def cf_plot_from_df(data, label_col="FXN_LABEL", pred_col="PREDS", title="Sequences", xlab="Predicted Activity", ylab="True Activity", threshold=0.5):
     fig, ax = plt.subplots(1,1,figsize=(6,6))
     rc = {"font.size": 16}
@@ -268,8 +268,8 @@ def cf_plot_from_df(data, label_col="FXN_LABEL", pred_col="PREDS", title="Sequen
         ax.set_xticklabels(["Inactive (Score<{})".format(str(threshold)), "Active (Score>{})".format(str(threshold))], fontsize=16)
         plt.tight_layout();
 
-        
-        
+
+
 # Wrapper function around sklearn accuracy_score to print accuracy score for train and test
 def train_test_metrics(train_y, train_y_preds, test_y, test_y_preds):
     output= ["Metric", "Train", "Test"]
@@ -277,11 +277,11 @@ def train_test_metrics(train_y, train_y_preds, test_y, test_y_preds):
     train_acc, test_acc = accuracy_score(y_true=train_y, y_pred=train_y_preds), accuracy_score(y_true=test_y, y_pred=test_y_preds)
     train_prec, test_prec = precision_score(y_true=train_y, y_pred=train_y_preds), precision_score(y_true=test_y, y_pred=test_y_preds)
     train_recall, test_recall = recall_score(y_true=train_y, y_pred=train_y_preds), recall_score(y_true=test_y, y_pred=test_y_preds)
-    
+
     def fbeta_score(pr, rec, beta):
         return (1+(beta**2))*((pr*rec)/(((beta**2)*pr)+rec))
     fbeta_train_scores, fbeta_test_scores = [], []
-    
+
     for b in [0.1, 0.5, 1, 2, 10]:
         fbeta_train_scores.append(fbeta_score(train_prec, train_recall, b))
         fbeta_test_scores.append(fbeta_score(test_prec, test_recall, b))
@@ -295,15 +295,15 @@ def train_test_metrics(train_y, train_y_preds, test_y, test_y_preds):
         print("F{:s}-Score\t{:.4f}\t{:.4f}".format(str(b), fbeta_train_scores[i], fbeta_test_scores[i]))
         output.extend(["F" + str(b), fbeta_train_scores[i], fbeta_test_scores[i]])
     return output
-        
-        
+
+
 def train_test_pr_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=None):
     precs_train, recs_train, threshs_train = precision_recall_curve(y_true=train_y, probas_pred=train_y_probs)
     avg_prec_train = average_precision_score(y_true=train_y, y_score=train_y_probs)
-    
+
     precs_test, recs_test, threshs_test = precision_recall_curve(y_true=test_y, probas_pred=test_y_probs)
     avg_prec_test = average_precision_score(y_true=test_y, y_score=test_y_probs)
-    
+
     fig, ax = plt.subplots(1,1, figsize=(8,8))
     ax.step(recs_train, precs_train, where='post', lw=3, alpha=0.4, label='Training auPRC = %0.4f' % (avg_prec_train))
     ax.step(recs_test, precs_test, where='post', lw=3, alpha=0.4, label='Testing auPRC = %0.4f' % (avg_prec_test))
@@ -317,8 +317,8 @@ def train_test_pr_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=N
     if savefile != None:
         plt.savefig(savefile)
         plt.close()
-    
-    
+
+
 def train_test_roc_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=None):
     fprs_train, tprs_train, threshs_train = roc_curve(y_true=train_y, y_score=train_y_probs)
     roc_auc_train = auc(fprs_train, tprs_train)
@@ -345,18 +345,18 @@ def train_test_roc_curve(train_y, train_y_probs, test_y, test_y_probs, savefile=
 # <<< Classification report function <<<
 # NEED TO GENERALIZE TO ANY NUMBER OF PROVIDED SETS
 def classification_report(out_path,
-                          train_X, test_X, 
+                          train_X, test_X,
                           train_y, test_y,
                           train_preds=None, test_preds=None,
                           train_probs=None, test_probs=None,
                           predict=False, title=None, iters_trained=None):
-    
+
     # Quick set-up
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     if title == None:
         title = out_path + " Classifier Report"
-        
+
     # Generate predictions if needed
     if predict:
         train_preds = clf.predict(train_X)
@@ -365,41 +365,41 @@ def classification_report(out_path,
         test_probs = clf.predict_proba(test_X)[:, 1]
     else:
         print("Predictions provided, skipping them")
-        
+
     print("Generating confusion matrix")
-    train_test_confusion_matrix(train_y=train_y, 
-                                train_y_preds=train_preds, 
-                                test_y=test_y, 
+    train_test_confusion_matrix(train_y=train_y,
+                                train_y_preds=train_preds,
+                                test_y=test_y,
                                 test_y_preds=test_preds,
                                 savefile="{}/confusion.png".format(out_path))
-    
+
     print("Calculating classification metrics")
-    clf_metrics = train_test_metrics(train_y=train_y, 
-                                     train_y_preds=train_preds, 
-                                     test_y=test_y, 
+    clf_metrics = train_test_metrics(train_y=train_y,
+                                     train_y_preds=train_preds,
+                                     test_y=test_y,
                                      test_y_preds=test_preds)
-    
+
     print("Plotting PR Curve")
-    train_test_pr_curve(train_y=train_y, 
-                        train_y_probs=train_probs, 
-                        test_y=test_y, 
+    train_test_pr_curve(train_y=train_y,
+                        train_y_probs=train_probs,
+                        test_y=test_y,
                         test_y_probs=test_probs,
                         savefile="{}/pr_curve.png".format(out_path))
-    
+
     print("Plotting ROC Curve")
-    train_test_roc_curve(train_y=train_y, 
-                         train_y_probs=train_probs, 
-                         test_y=test_y, 
+    train_test_roc_curve(train_y=train_y,
+                         train_y_probs=train_probs,
+                         test_y=test_y,
                          test_y_probs=test_probs,
                          savefile="{}/roc_curve.png".format(out_path))
-    
+
     print("Generating report")
     if iters_trained != None:
         mdFile = MdUtils(file_name="{}/classification-report_{}-iters.md".format(out_path, iters_trained), title=title)
         mdFile.new_line(text="Model was trained for a total of {} iterations".format(iters_trained))
     else:
         mdFile = MdUtils(file_name="{}/classification-report.md".format(out_path), title=title)
-    
+
     mdFile.new_header(level=1, title='Confusion Matrices')
     mdFile.new_line(mdFile.new_inline_image(text="confusion_matrices", path="confusion.png"))
     mdFile.new_line()
@@ -418,8 +418,8 @@ def classification_report(out_path,
     mdFile.new_table_of_contents(table_title='Contents', depth=1)
 
     mdFile.create_md_file()
-    
-    
+
+
 def threshold_plot(data, label_col="FXN_LABEL", score_col="SCORES", threshold=0.5):
     tns, fps, fns, tps = [], [], [], []
     threshs = np.arange(data[score_col].min(), data[score_col].max(), 0.1)
@@ -463,8 +463,8 @@ def threshold_plot(data, label_col="FXN_LABEL", score_col="SCORES", threshold=0.
     plt.legend(bbox_to_anchor=(1,1), fontsize=16)
     plt.xlabel("Score Threshold")
     plt.ylabel("Classification Rate")
-    
-    
+
+
 def coefficient_plot(classifier, features, top=None, sort=True, xlab="Feature", ylab="Coefficient", title="Model Coefficients"):
     rc = {"font.size": 14}
     coefficients = classifier.coef_[0]
@@ -518,8 +518,8 @@ def score(pos_file, neg_file, thresh):
     print("Accuracy_at_threshold_{}\t{:.4f}\t{:.4f}".format(thresh, acc_thresh0, acc_thresh0_shuf))
     print("AUROC\t{:.4f}\t{:.4f}".format(auroc, auroc_shuf))
     print("AUPRC\t{:.4f}\t{:.4f}".format(auprc, auprc_shuf))
-    
-    
+
+
 # Function to generate a gkSVM slurm script
 def generate_slurm_train_script(input_dir,
                                 pos_seqs,
@@ -533,12 +533,12 @@ def generate_slurm_train_script(input_dir,
     if not os.path.exists(result_dir):
         print("{} does not exist, making dir".format(result_dir))
         os.makedirs(result_dir)
-           
+
     # Set up model name
     task = "clf" if hyperparams.split("-")[0] == "2" else "reg"
     model = "{}_{}_{}-{}_{}".format(preprocess, features, architecture, task, hyperparams)
     model_name = os.path.join(result_dir, model)
-    
+
     # Set up hyperparams
     hyperparams = hyperparams.split("-")
     if hyperparams[5] == "True":
@@ -547,7 +547,7 @@ def generate_slurm_train_script(input_dir,
     else:
         hyperparams.remove("False")
         hyperparams = "-y {} -t {} -l {} -k {} -d {} -c {} -w {}".format(*hyperparams)
-        
+
     # Set up file pointers
     output = ["#!/bin/bash", "#SBATCH --cpus-per-task=16", "#SBATCH --time=48:00:00",
               "#SBATCH --partition carter-compute\n"]
@@ -558,39 +558,39 @@ def generate_slurm_train_script(input_dir,
                "resultdir={}".format(result_dir),
                "modelname={}".format(model_name)]
     output += ["[ ! -d $resultdir ] && mkdir $resultdir\n"]
-    
+
     # Set-up training command
     train_command = "gkmtrain $trainposseqs $trainnegseqs $modelname {} -v 2 -T $SLURM_CPUS_PER_TASK -m 8000.0".format(hyperparams)
     output += ["echo -e {}".format(train_command)]
     output += [train_command]
     output += ['echo -e "\\n"\n']
-    
+
     # Set up positive train seq predict
     predict_pos_train_command = 'gkmpredict $trainposseqs $modelname".model.txt" $modelname".train-pos.predict.txt"'
     output += ["echo -e {}".format(predict_pos_train_command)]
     output += [predict_pos_train_command]
     output += ['echo -e "\\n"\n']
-    
+
     if hyperparams[1] == "2":
     # Set up negative train seq predict
         predict_neg_train_command = 'gkmpredict $trainnegseqs $modelname".model.txt" $modelname".train-neg.predict.txt"'
         output += ["echo -e {}".format(predict_neg_train_command)]
         output += [predict_neg_train_command]
         output += ['echo -e "\\n"\n']
-    
+
     # Set up val seq predict
     predict_val_command = 'gkmpredict $valseqs $modelname".model.txt" $modelname".test.predict.txt"'
     output += ["echo -e {}".format(predict_val_command)]
     output += [predict_val_command]
     output += ['echo -e "\\n"\n']
-    
+
     output += ["date\n"]
-    
+
     # Bash command to edit
     usage = "Usage: sbatch --job-name=train_{0} -o {1}/train_{0}.out -e {1}/train_{0}.err --mem=20G train_{0}.sh".format(model, result_dir)
     print(usage)
     output += [usage]
-    
+
     # Write to script
     with open("{}/train_{}.sh".format(result_dir, model), "w") as f:
         f.write("\n".join(output))
@@ -604,8 +604,8 @@ def generate_slurm_train_script(input_dir,
 def init_weights(m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
         torch.nn.init.kaiming_normal_(m.weight)
-        
-        
+
+
 # Function to calcuate accuracy given raw values from classifier and labels
 def accuracy(raw, labels):
     predictions = torch.round(torch.sigmoid(raw))
@@ -613,14 +613,14 @@ def accuracy(raw, labels):
 
 
 # Current livelossplot compatible training script
-def train_binary_classifier(model, 
-                          dataloaders, 
+def train_binary_classifier(model,
+                          dataloaders,
                           double_stranded=False,
                           device="cpu",
-                          criterion=torch.nn.BCEWithLogitsLoss(reduction='sum'), 
-                          optimizer=None, 
-                          num_epoch=50, 
-                          early_stop=False, 
+                          criterion=torch.nn.BCEWithLogitsLoss(reduction='sum'),
+                          optimizer=None,
+                          num_epoch=50,
+                          early_stop=False,
                           patience=3,
                           plot_frequency=10):
     liveloss = PlotLosses()
@@ -639,7 +639,7 @@ def train_binary_classifier(model,
                 model.train()
             else:
                 model.eval()
-            
+
             running_loss = 0.0
             running_acc = 0.0
             for inputs, targets in dataloaders[phase]:
@@ -654,28 +654,28 @@ def train_binary_classifier(model,
                 loss = criterion(outputs, targets.float())
                 if phase == 'train' and epoch > 0:
                     optimizer.zero_grad()
-                    loss.backward()                
-                    optimizer.step()          
-                
+                    loss.backward()
+                    optimizer.step()
+
                 running_loss += loss.item()
                 running_acc += accuracy(outputs, targets)
-            
+
             len_dataset = len(dataloaders[phase].dataset)
             epoch_loss = running_loss / len_dataset
             epoch_acc = running_acc / len_dataset
-                
+
             prefix = ''
             if phase == 'validation':
                 prefix = 'val_'
                 if early_stop:
                     e_stop, best_model = stop(epoch_loss, model)
-                    
+
             logs[prefix + 'loss'] = epoch_loss
             logs[prefix + 'acc'] = epoch_acc
-            
+
             loss_history.setdefault(phase, []).append(epoch_loss)
             acc_history.setdefault(phase, []).append(epoch_acc)
-            
+
         liveloss.update(logs)
         if epoch % plot_frequency == 0:
             liveloss.send()
@@ -684,7 +684,7 @@ def train_binary_classifier(model,
                 print("Early stopping occured at epoch {}".format(epoch))
                 break
         best_model = model
-            
+
     return best_model, epoch, loss_history, acc_history, liveloss
 # <<< Neural network functions <<<
 
@@ -703,7 +703,7 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
     assert one_hot_axis==0 or one_hot_axis==1
     if (one_hot_axis==0):
         assert zeros_array.shape[1] == len(sequence)
-    elif (one_hot_axis==1): 
+    elif (one_hot_axis==1):
         assert zeros_array.shape[0] == len(sequence)
     #will mutate zeros_array
     for (i,char) in enumerate(sequence):
@@ -723,9 +723,9 @@ def seq_to_one_hot_fill_in_array(zeros_array, sequence, one_hot_axis):
             zeros_array[char_idx,i] = 1
         elif (one_hot_axis==1):
             zeros_array[i,char_idx] = 1
-            
 
-# Get all the needed information for viz sequence of gkmexplain result. Returns importance 
+
+# Get all the needed information for viz sequence of gkmexplain result. Returns importance
 # scores per position along with the sequences, IDs and one-hot sequences
 def get_gksvm_explain_data(explain_file, fasta_file):
     impscores = [np.array( [[float(z) for z in y.split(",")] for y in x.rstrip().split("\t")[2].split(";")]) for x in open(explain_file)]
@@ -738,19 +738,19 @@ def get_gksvm_explain_data(explain_file, fasta_file):
 # Save a list of sequences to separate pos and neg fa files. Must supply target 0 or 1 labels
 def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
     neg_mask = (ys==0)
-    
+
     neg_seqs, neg_ys, neg_IDs = seqs[neg_mask], ys[neg_mask], IDs[neg_mask]
     neg_file = open("{}-neg.fa".format(name), "w")
     for i in range(len(neg_seqs)):
         neg_file.write(">" + neg_IDs[i] + "\n" + neg_seqs[i] + "\n")
     neg_file.close()
-    
+
     pos_seqs, pos_ys, pos_IDs = seqs[~neg_mask], ys[~neg_mask], IDs[~neg_mask]
     pos_file = open("{}-pos.fa".format(name), "w")
     for i in range(len(pos_seqs)):
         pos_file.write(">" + pos_IDs[i] + "\n" + pos_seqs[i] + "\n")
     pos_file.close()
-    
+
 
 # Save a list of sequences to fasta
 def seq2Fasta(seqs, IDs, name="seqs"):

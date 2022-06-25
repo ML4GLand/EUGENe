@@ -31,8 +31,8 @@ class SeqDataModule(pl.LightningDataModule):
         self.seq_file = seq_file
         self.batch_size = batch_size
         if transform == None:
-            self.transform = transforms.Compose([ReverseComplement(ohe_encoded=False), 
-                                                 OneHotEncode(), 
+            self.transform = transforms.Compose([ReverseComplement(ohe_encoded=False),
+                                                 OneHotEncode(),
                                                  ToTensor(transpose=True)])
         elif isinstance(transform, list):
             transform_classes = []
@@ -51,8 +51,8 @@ class SeqDataModule(pl.LightningDataModule):
         self.shuffle = shuffle
         self.split = split
         self.seed = seed
-        self.save_names = save_names 
-        
+        self.save_names = save_names
+
     def setup(self, stage: str = None) -> None:
         names, seqs, rev_seqs, targets = load(self.seq_file, **self.load_kwargs)
         dataset = SeqDataset(seqs, names, targets, rev_seqs, transform=self.transform)
@@ -78,12 +78,12 @@ class SeqDataModule(pl.LightningDataModule):
         return DataLoader(
             self.val, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=self.num_workers
         )
-    
+
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
             self.test, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=self.num_workers
         )
-    
+
     def predict_dataloader(self) -> DataLoader:
         return DataLoader(
             self.test, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=self.num_workers

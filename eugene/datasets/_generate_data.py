@@ -13,7 +13,7 @@ def generate_random_data(num_seqs, seq_len, out_dir="./random_data/"):
     out_dir = os.path.join(out_dir, "random{0}seqs_{1}bp/".format(num_seqs, seq_len))
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    
+
     seqs = random_seqs(num_seqs, seq_len)
     ohe_seqs = encodeDNA(seqs)
     rev_seqs = [reverse_complement(seq) for seq in seqs]

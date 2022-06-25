@@ -13,11 +13,11 @@
 ## Synthetic dataset generation
 
 - Build a simulation framework
-    
+
     ![EUGENE-46.jpg](Developing%20in%20eugene%203686611d69e94676b2544cbda180228b/EUGENE-46.jpg)
-    
+
     ![EUGENE-47.jpg](Developing%20in%20eugene%203686611d69e94676b2544cbda180228b/EUGENE-47.jpg)
-    
+
     1. Start by defining your regulatory grammars (e.g. two ETS in a row)
         1. How many regulatory grammars to generate?
         2. How complex? Layers of complexity? Different simulations with different amounts of complexity?

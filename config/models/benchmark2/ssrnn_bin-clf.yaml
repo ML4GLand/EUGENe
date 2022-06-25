@@ -6,7 +6,7 @@ model:
   rnn_kwargs:
     output_dim: 32
     batch_first: True
-  fc_kwargs: 
+  fc_kwargs:
     hidden_dims: [32]
     dropout_rate: 0.2
     batchnorm: True

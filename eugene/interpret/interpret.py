@@ -45,7 +45,7 @@ def load_data(path):
         datamod.setup()
         dataloader = datamod.test_dataloader()
         return dataloader
-            
+
 def load_from_pl_ckt(ckt_pth, model_type):
     if model_type in ["fcn", "cnn", "rnn"]:
         module = getattr(importlib.import_module(f"eugene.models.{model_type}"), model_type.upper())
@@ -56,13 +56,13 @@ def load_from_pl_ckt(ckt_pth, model_type):
 
 def load_model(path, model_type):
     if "ckpt" in path:
-        return load_from_pl_ckt(path, model_type) 
-            
+        return load_from_pl_ckt(path, model_type)
+
 @subcommand([argument("--model", type=str, help="The model to interpret"),
              argument("--data", type=str, help="The data to score importances"),
              argument("--model_type", type=str, default="hybrid", help="The model type (e.g. CNN)"),
              argument("--out", type=str, default="./", help="Output directory")])
-def score(args):  
+def score(args):
     from ._nn_explain import get_importances
     model = load_model(args.model, args.model_type)
     model.eval()
@@ -83,8 +83,8 @@ def pwm(args):
     if not os.path.exists(args.out):
         os.makedirs(args.out)
     np.save(os.path.join(args.out, "pwms"), pwms)
-     
-if __name__ == "__main__":   
+
+if __name__ == "__main__":
     args = cli.parse_args()
     print(f"Executing on {device}")
     if args.subcommand is None:

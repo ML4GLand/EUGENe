@@ -9,10 +9,10 @@ model:
     pool_kernels: [2, 1]
     dropout_rates: 0.2
     batchnorm: True
-  rnn_kwargs: 
+  rnn_kwargs:
     output_dim: 128
     batch_first: True
-  fc_kwargs: 
+  fc_kwargs:
     hidden_dims: [32]
     dropout_rate: 0.2
     batchnorm: True

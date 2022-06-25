@@ -7,7 +7,7 @@ data:
       init_args:
         transpose: True
   test: True
-  load_kwargs: 
+  load_kwargs:
     names_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/id/id.txt"
     target_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/binary/y_binary.txt"
     rev_seq_file: "/cellar/users/aklie/projects/EUGENE/data/All_Genomic_Sequences/ohe_seq/X_ohe-seq-rev.npy"

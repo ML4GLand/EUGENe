@@ -28,7 +28,7 @@ fit_cmd="sbatch --job-name=fit_${task}_${strand}${model}_2021_OLS_Library_Traini
     $version"
 echo $fit_cmd
 $fit_cmd
-    
+
 ################
 ### PREDICT
 ################
@@ -38,8 +38,8 @@ model_results=$results_dir/${strand}${model}/$version
 [ -d $model_results/predictions ] && echo "Directory $model_results exists." || echo "Error: Directory $model_results does not exists. making directory"
 [ ! -d $model_results/predictions ] && mkdir -p $model_results/predictions
 model_ckpt=$model_results/checkpoints/*
-    
-# Grab predictions on all the all 2021 OLS Sequences 
+
+# Grab predictions on all the all 2021 OLS Sequences
 predict_cmd="sbatch --job-name=predict_${task}_${strand}${model}_2021_OLS_Library_All $scripts_dir/predict/predict.sh \
     $model \
     $model_cfg \
@@ -48,7 +48,7 @@ predict_cmd="sbatch --job-name=predict_${task}_${strand}${model}_2021_OLS_Librar
     $model_results/predictions/2021_OLS_Library_All_"
 echo $predict_cmd
 $predict_cmd
-    
+
 # Get predictions on genomic enhancers
 predict_cmd="sbatch --job-name=predict_${task}_${strand}${model}_All_Genomic_Sequences $scripts_dir/predict/predict.sh \
     $model \
@@ -58,7 +58,7 @@ predict_cmd="sbatch --job-name=predict_${task}_${strand}${model}_All_Genomic_Seq
     $model_results/predictions/All_Genomic_Sequences_"
 echo $predict_cmd
 $predict_cmd
-    
+
 ################
 ### INTERPRET
 ################

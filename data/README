@@ -17,7 +17,7 @@ This dataset is from the recently sequenced Otx-a MPRA library from the Farley l
 Data recieved from Joe after preprocessing and filtering the sequencing data. From what I currently understand, this is just enhancer and a binary label of 1 (active) or 0 (not active)
 
 20210728-3.EnhancerTable.ForAdam.FunctionalEnhancers.WT-detected.ABL-notDetected.10R-20U-0.1P.tsv
-1. NAME - Site list 
+1. NAME - Site list
 2. SEQUENCE - Sequence
 3. MPRA_FXN - Functional by MPRA (see slide 2)
     - Activity >.4 = functional (1)
