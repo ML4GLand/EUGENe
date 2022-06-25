@@ -1,20 +1,5 @@
-# eugene
-
-Cluster Path (if applicable): /cellar/users/aklie/projects/EUGENE
-Concept(s): neural networks
-Created: May 4, 2022 10:03 AM
-Data type(s): MPRA
-Developer: https://www.notion.so/0fe2c37754e54a75bf940150de1779b3 
-Domain(s): sequence classification/regression
-Environment(s): https://www.notion.so/seqtools-py37-9fb9e31c952e4b3d86a14bd324cabd66, https://www.notion.so/eugene_benchmarks-a6da09e2b46a4eb89d6e9ea710608510
-Language (if applicable): Python
-Last Edited Time: June 25, 2022 10:30 AM
-Status: Developing
-Type: model, tool
-URL: https://github.com/adamklie/EUGENE
-
 <aside>
-👋 Welcome to the official `eugene` toolkit Notion page! This page is designed to be a one stop shop for developing and documenting the framework for biological sequence based predictive tasks.
+👋 Welcome to the official eugene toolkit Notion page! This page is designed to be a one stop shop for developing and documenting the framework for biological sequence based predictive tasks.
 
 </aside>
 
