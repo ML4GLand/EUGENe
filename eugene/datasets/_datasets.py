@@ -57,6 +57,6 @@ def random1000(**kwargs: dict) -> pd.DataFrame:
     """
     Loads the random1000 dataset.
     """
-    filename = "/cellar/users/aklie/projects/EUGENE/tests/_data/test1000seqs_66.tsv"
+    filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
     data = load(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
     return data

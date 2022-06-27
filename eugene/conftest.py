@@ -38,11 +38,10 @@ def pytest_collection_modifyitems(config, items):
 # without having to hit the disk or recompute normalization.
 # The private fixture creates the object while the public one returns a deep copy.
 @pytest.fixture(scope="session")
-def _pbmc3k_normalized():
+def _random1000():
     import eugene as eu
     return eu.datasets.random1000()
 
-
 @pytest.fixture
-def pbmc3k_normalized(_pbmc3k_normalized):
-    return _pbmc3k_normalized.copy()
+def random1000(_random1000):
+    return _random1000.copy()
