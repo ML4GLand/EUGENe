@@ -135,6 +135,7 @@ def encodeSequence(seq_vec, vocab, neutral_vocab, maxlen=None,
     return np.stack(arr_list)
 
 def oheDNA(seq, vocab=DNA, neutral_vocab="N"):
+    seq = seq.strip().upper()
     return token2one_hot(tokenize(seq, vocab, neutral_vocab), len(vocab))
 
 def decodeOHE(arr, vocab=DNA, neutral_vocab="N"):

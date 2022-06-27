@@ -4,10 +4,8 @@ data/
 results/
 bin/*/err/
 bin/*/out/
-test/*_test/
-test/*_logs/
-test/test_*seqs*/
-test/tf_modisco/
+eugene/tests/_data/
+eugene/tests/_logs/
 *.err
 *.out
 

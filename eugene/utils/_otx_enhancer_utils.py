@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Imports
+import os
 import pickle
 import tqdm
 import pandas as pd
@@ -41,13 +42,10 @@ def collapse_pos(positions):
 ### Otx-a defintions ###
 
 # Define these for use in any other function
-import os
-
 file_abs_path = os.path.abspath(os.path.dirname(__file__))
 database_path = os.path.join(file_abs_path, '..', 'datasets/auxiliary')
 ets_aff_file=f"{database_path}/parsed_Ets1_8mers.txt"
 gata_aff_file=f"{database_path}/parsed_Gata6_3769_contig8mers.txt"
-print(gata_aff_file)
 
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadEtsAff(file):
