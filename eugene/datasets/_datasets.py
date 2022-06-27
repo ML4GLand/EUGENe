@@ -52,3 +52,11 @@ def Khoueiry10(**kwargs: dict) -> pd.DataFrame:
     filename = "/cellar/users/aklie/projects/EUGENE/data/2010_Khoueiry_CellPress/2010_Khoueiry_CellPress.tsv"
     data = load(filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs)
     return data
+
+def random1000(**kwargs: dict) -> pd.DataFrame:
+    """
+    Loads the random1000 dataset.
+    """
+    filename = "/cellar/users/aklie/projects/EUGENE/tests/_data/test1000seqs_66.tsv"
+    data = load(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    return data

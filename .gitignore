@@ -4,10 +4,12 @@ data/
 results/
 bin/*/err/
 bin/*/out/
-eugene/tests/_data/
-eugene/tests/_logs/
+tests/_data/tf_modisco/
+tests/_logs/
 *.err
 *.out
+
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
