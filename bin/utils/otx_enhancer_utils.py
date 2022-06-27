@@ -32,14 +32,14 @@ def loadGata6Aff(file):
 
 
 # Define these for use in any other function
-ets_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Ets1_8mers.txt"
-gata_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Gata6_3769_contig8mers.txt"
+ets_aff_file="../datasets/parsed_Ets1_8mers.txt"
+gata_aff_file="../datasets/parsed_Gata6_3769_contig8mers.txt"
 ets_aff = loadEtsAff(ets_aff_file)
 gata_aff = loadGata6Aff(gata_aff_file)
 
 
 # Load Otx-a binding site to affinity dictionary
-def loadBindingSiteName2affinities(file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/bindingSiteName2affinities.pkl", pickle_obj=True):
+def loadBindingSiteName2affinities(file="../datasets/bindingSiteName2affinities.pkl", pickle_obj=True):
     if pickle_obj:
         with open(file, 'rb') as handle:
             b = pickle.load(handle)
@@ -49,7 +49,7 @@ def loadBindingSiteName2affinities(file="/cellar/users/aklie/projects/EUGENE/dat
 
 
 # Load Otx-a binding site name to sequence dictionary
-def loadSiteName2bindingSiteSequence(file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/siteName2bindingSiteSequence.pkl", pickle_obj=True):
+def loadSiteName2bindingSiteSequence(file="../datasets/siteName2bindingSiteSequence.pkl", pickle_obj=True):
     if pickle_obj:
         with open(file, 'rb') as handle:
             b = pickle.load(handle)
@@ -81,7 +81,7 @@ def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE
 
 
 # Function to add the affinity and sequence of the binding site cores identified by findEtsAndGataCores()
-def findTFBSAffinity(seq, cores, ets_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Ets1_8mers.txt", gata_aff_file="/cellar/users/aklie/projects/EUGENE/data/auxiliary/parsed_Gata6_3769_contig8mers.txt"):
+def findTFBSAffinity(seq, cores, ets_aff_file="../datasets/parsed_Ets1_8mers.txt", gata_aff_file="../datasets/parsed_Gata6_3769_contig8mers.txt"):
     #ets_aff = loadEtsAff(ets_aff_file)
     #gata_aff = loadGata6Aff(gata_aff_file)
     for pos in cores.keys():

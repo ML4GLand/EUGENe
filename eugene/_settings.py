@@ -54,7 +54,7 @@ class EugeneConfig:
         progress_bar_style: Literal["rich", "tqdm"] = "tqdm",
         batch_size: int = 128,
         seed: int = 13,
-        datasetdir = "./data/",
+        datasetdir = "./datasets/",
         logging_dir: str = "./eugene_log/",
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,

@@ -3,7 +3,7 @@ import torch
 
 # EUGENE
 from ..preprocessing._utils import randomizeLinkers
-from ..preprocessing._encoding import encodeDNA
+from ..preprocessing._encoding import oheDNA
 
 # Suite of sequence transforms that can be composed using torchvision
 class ReverseComplement(object):
@@ -44,11 +44,11 @@ class OneHotEncode(object):
 
     def __call__(self, sample, ohe_axis=1):
         sequence = sample[1]
-        ohe_seq = encodeDNA(sequence)
+        ohe_seq = oheDNA(sequence)
         sample[1] = ohe_seq
         if len(sample[2]) != 1:
             rev_seq = sample[2]
-            ohe_rev_seq = encodeDNA(rev_seq)
+            ohe_rev_seq = oheDNA(rev_seq)
             sample[2] = ohe_rev_seq
         return sample
 
