@@ -29,7 +29,7 @@ class DeepBind(LightningModule):
         self.aggr = aggr
         self.max_pool = nn.MaxPool1d(**motif_kwargs)
         self.avg_pool = nn.AvgPool1d(**motif_kwargs)
-        
+
         # Add strand specific modules
         if self.strand == "ss":
             self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
@@ -59,19 +59,20 @@ class DeepBind(LightningModule):
         
         x_max = self.max_pool(x)
         x_avg = self.avg_pool(x)
+        x = torch.cat(x_max, x_avg)
 
-        # if self.strand == "ss":
-        #     x = self.fcn(x)
-        # elif self.strand == "ds":
-        #     x_rev_comp = x_rev_comp.flatten(start_dim=1)
-        #     x = torch.cat((x, x_rev_comp), dim=1)
-        #     x = self.fcn(x)
-        # elif self.strand == "ts":
-        #     x = self.fcn(x)
-        #     x_rev_comp = x_rev_comp.flatten(start_dim=1)
-        #     x_rev_comp = self.reverse_fcn(x_rev_comp)
-        #     x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        # return x
+        if self.strand == "ss":
+            x = self.fcn(x)
+        elif self.strand == "ds":
+            x_rev_comp = x_rev_comp.flatten(start_dim=1)
+            x = torch.cat((x, x_rev_comp), dim=1)
+            x = self.fcn(x)
+        elif self.strand == "ts":
+            x = self.fcn(x)
+            x_rev_comp = x_rev_comp.flatten(start_dim=1)
+            x_rev_comp = self.reverse_fcn(x_rev_comp)
+            x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
+        return x
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
