@@ -43,7 +43,7 @@ The core functionality of EUGENE is built off of several established packages in
 This package would not have been possible without the functionality of tools past:
 
 - [`deepRAM`](https://www.notion.so/deepRAM-97fb05adf27b40878e7d68d5fd876665)
-- [`kipoi](https://www.notion.so/kipoi-f2ac6048f0e14ae0ad27aa6cb8f9e9a2)
+- [`kipoi`](https://www.notion.so/kipoi-f2ac6048f0e14ae0ad27aa6cb8f9e9a2)
 - [`Selene`](https://www.notion.so/Selene-0cacf462544041f2af0766fb2f9f1132)
 - [`DeepLift`](https://www.notion.so/DeepLift-1e2102bf3e8c45a4bfd30439e6f941ca)
 - [`ExplaiNN`](https://www.notion.so/ExplaiNN-f022f066356e454a85105272791d0021)
