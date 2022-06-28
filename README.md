@@ -1,4 +1,4 @@
-# EUGENE (*E*lucidating and *U*nderstanding *G*rammar of *E*nhancers with *Ne*uralnets)
+# EUGENE (**E**lucidating and **U**nderstanding **G**rammar of **E**nhancers with **Ne**uralnets)
 
 EUGENE represents a computational framework for building models of regulatory sequences as input. It is designed after the scverse framework for single cell analysis in Python and is meant to make the developments in the deep learning genomics field more accessible. EUGENE consists of a codebase for building, training, validating and interpreting several deep learners that model sequence-based data. EUGENE is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. Jupyter), however we have also implemented several key functions via the command line.
 
@@ -15,27 +15,29 @@ pip install -e eugene
 
 # Core Functionality
 
-### **Load commonly used datasets and your own data**
+**Load commonly used datasets or your own data**
 
-### **Prepare data for training a model**
+**Prepare data for training a model**
 
-### **Build a LightningModule**
+**Build a LightningModule**
 
-### **Train a LightningModule from the command line or through the API**
+**Train a LightningModule from the through the API or the command line**
 
-### **Validate the model on unseen test data**
+**Validate the model by making predictions on unseen test data**
 
-### **Interpret the model through a suite of tools**
+**Interpret the model through a suite of tools**
 
-### **Visualize it all**
+**Visualize it all**
 
-### **Benchmark against other common methods**
+**Benchmark against other common methods**
 
 The core functionality of EUGENE is built off of several established packages in the neural nets and gene regulation fields. These include but are not limited to:
 
-- `pytorch_lightning`(with CLI add-ons*)
+- `pytorch_lightning`(with CLI add-ons)
 - `pytorch`
 - `seqlogo`
+
+---
 
 # Integrated Functionality
 This package would not have been possible without the functionality of tools past:
@@ -45,19 +47,17 @@ This package would not have been possible without the functionality of tools pas
 - [`Selene`](https://www.notion.so/Selene-0cacf462544041f2af0766fb2f9f1132)
 - [`DeepLift`](https://www.notion.so/DeepLift-1e2102bf3e8c45a4bfd30439e6f941ca)
 - [`ExplaiNN`](https://www.notion.so/ExplaiNN-f022f066356e454a85105272791d0021)
-- `concise`/ziga
-- stein methods
-- [GraphReg](https://www.notion.so/GraphReg-049a876f3bf44b319025985b695d9bb1)
-- [scvi-tools](https://www.notion.so/scvi-tools-7e8e41d13e2b415485dcf75fd5dfff90): inspiration for structure
-- [TF-MoDisCo](https://www.notion.so/TF-MoDisCo-a08046f50fc64befaaaf567800c62123)
+- [`concise`](https://github.com/gagneurlab/concise/tree/master/concise)
+- [`GraphReg`](https://www.notion.so/GraphReg-049a876f3bf44b319025985b695d9bb1)
+- [`scvi-tools`](https://www.notion.so/scvi-tools-7e8e41d13e2b415485dcf75fd5dfff90)
+- [`TF-MoDisCo`](https://www.notion.so/TF-MoDisCo-a08046f50fc64befaaaf567800c62123)
 
 We have worked hard to abstract away as much of the technical details of these packages to allow the user a very smooth experience with their analyses. For power users looking to develop we recommend you check out more details of each package at the above links
 
 ---
 
-## Help Wanted
-eugene Team Page
+# Help Wanted
+
+I am [actively recruiting](https://www.notion.so/eugene-Team-Page-8d31da75046049fa86264be57e5711bf) for this project! If you are interested in software development for building predictive models in sequence based genomics send me [an email](aklie@eng.ucsd.edu). All collaborators and developers will of course be included on all publications. See the end of this page for more info on expected skills and qualifications. Contact aklie@ucsd.eng.edu if you are interested in contributing to the project.
 
 ---
-
-I am actively recruiting to help me with this project. If you are interested in software development for building predictive models in sequence based genomics send me an
