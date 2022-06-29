@@ -1,10 +1,14 @@
+import h5py
 import numpy as np
 import pandas as pd
+from typing import Any, Union, Optional
+from os import PathLike
 
 # EUGENE
 from ..preprocessing import reverse_complement
+from .dataloaders import SeqData
 
-def load_csv(file, seq_col, name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False):
+def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -60,9 +64,13 @@ def load_csv(file, seq_col, name_col=None, target_col=None, binarize=False, rev_
         rev_seqs = None
 
     # Return it all
-    return ids, seqs, rev_seqs, targets
+    if return_numpy:
+        return ids, seqs, rev_seqs, targets
+    else:
+        return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
 
-def load_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False):
+
+def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False):
     """Function for loading sequences into numpy objects from fasta
 
     Args:
@@ -92,9 +100,13 @@ def load_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False)
     else:
         rev_seqs = None
 
-    return ids, seqs, rev_seqs, targets
+    if return_numpy:
+        return ids, seqs, rev_seqs, targets
+    else:
+        return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
 
-def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, is_names_text=False, is_seq_text=False, is_target_text=False, delim="\n"):
+
+def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, is_names_text=False, is_seq_text=False, is_target_text=False, delim="\n", ohe_encoded=False, return_numpy=False):
     """Function for loading sequences into numpy objects from numpy compressed files.
        Note if you pass one hot encoded sequences in, you must pass in reverse complements
        if you want them to be included
@@ -142,15 +154,51 @@ def load_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
     else:
         targets = None
 
-    return ids, seqs, rev_seqs, targets
+    if return_numpy:
+        return ids, seqs, rev_seqs, targets
+    elif ohe_encoded:
+        return SeqData(names=ids, ohe_seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+    else:
+        return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
 
-def load(seq_file, *args, **kwargs):
-    """Wrapper function around load_csv, load_fasta, load_numpy to read sequence based input
+
+def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
+    """Read SeqData object from h5sd file."""
+    with h5py.File(filename, "r") as f:
+        d = {}
+        for k in f.keys():
+            if "seqs" in f:
+                d["seqs"] = np.array([n.decode("ascii", "ignore") for n in f["seqs"][:]])
+            if "names" in f:
+                d["names"] = np.array([n.decode("ascii", "ignore") for n in f["names"][:]])
+            if "ohe_seqs" in f:
+                d["ohe_seqs"] = f["ohe_seqs"][:]
+            if "ohe_rev_seqs" in f:
+                d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
+            if "rev_seqs" in f:
+                d["rev_seqs"] = f["rev_seqs"][:]
+            if "ohe_rev_seqs" in f:
+                d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
+            if "seqs_annot" in f:
+                out_dict = {}
+                for key in f["seqs_annot"].keys():
+                    out_dict[key] = f["seqs_annot"][key][()]
+                    d["seqs_annot"] = pd.DataFrame(out_dict)
+            if "pos_annot" in f:
+                d["pos_annot"] = f["pos_annot"].attrs
+            if "seqsm" in f:
+                d["seqsm"] = f["seqsm"].attrs
+        print(d)
+    return SeqData(**d)
+
+
+def read(seq_file, *args, **kwargs):
+    """Wrapper function around read_csv, read_fasta, read_numpy to read sequence based input
 
     Args:
         seq_file (str): file path containing sequences
-        args: positional arguments from load_csv, load_fasta, load_numpy
-        kwargs: keyword arguments from load_csv, load_fasta, load_numpy
+        args: positional arguments from read_csv, read_fasta, read_numpy
+        kwargs: keyword arguments from read_csv, read_fasta, read_numpy
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
@@ -158,14 +206,39 @@ def load(seq_file, *args, **kwargs):
     """
     seq_file_extension = seq_file.split(".")[-1]
     if seq_file_extension in ["csv", "tsv"]:
-        return load_csv(seq_file, *args, **kwargs)
+        return read_csv(seq_file, *args, **kwargs)
     elif seq_file_extension in ["npy"]:
-        return load_numpy(seq_file, *args, **kwargs)
+        return read_numpy(seq_file, *args, **kwargs)
     elif seq_file_extension in ["fasta", "fa"]:
-        return load_fasta(seq_file, *args, **kwargs)
+        return read_fasta(seq_file, *args, **kwargs)
     else:
         print("Sequence file type not currently supported")
         return
+
+
+def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
+    """Write SeqData object to h5sd file."""
+    with h5py.File(filename, mode) as f:
+        f = f["/"]
+        f.attrs.setdefault("encoding-type", "SeqData")
+        f.attrs.setdefault("encoding-version", "0.0.0")
+        if sdata.seqs is not None:
+            f.create_dataset("seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.seqs]))
+        if sdata.names is not None:
+            f.create_dataset("names", data=np.array([n.encode("ascii", "ignore") for n in sdata.names]))
+        if sdata.ohe_seqs is not None:
+            f.create_dataset("ohe_seqs", data=sdata.ohe_seqs)
+        if sdata.ohe_rev_seqs is not None:
+            f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
+        if sdata.rev_seqs is not None:
+            f.create_dataset("rev_seqs", data=sdata.rev_seqs)
+        if sdata.ohe_rev_seqs is not None:
+            f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
+        if sdata.seqs_annot is not None:
+           for key, item in dict(sdata.seqs_annot).items():
+                # note that not all variable types are supported but string and int are
+                f["seqs_annot/" + key] = item
+
 
 def seq2Fasta(seqs, IDs, name="seqs"):
     """Utility function to generate a fasta file from a list of sequences and identifiers
@@ -179,6 +252,7 @@ def seq2Fasta(seqs, IDs, name="seqs"):
     for i in range(len(seqs)):
         file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
     file.close()
+
 
 def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
     """Utility function to generate a fasta file from a list of sequences, identifiers and targets but splits into

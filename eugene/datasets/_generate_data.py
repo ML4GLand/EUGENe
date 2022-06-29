@@ -6,7 +6,7 @@ import pandas as pd
 
 # EUGENE
 from ..preprocessing import random_seqs, reverse_complement, encodeDNA
-from ._io import seq2Fasta
+from ..dataloading._io import seq2Fasta
 
 # Simple script tp generate commonly used file types for testing EUGENE models
 def generate_random_data(num_seqs, seq_len, out_dir="./random_data/"):

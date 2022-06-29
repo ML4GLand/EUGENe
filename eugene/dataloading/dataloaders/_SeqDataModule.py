@@ -11,7 +11,7 @@ from torch.utils.data import random_split, DataLoader
 from torchvision import transforms
 
 # EUGENE
-from ...datasets._io import load
+from .._io import read
 from ._SeqDataset import SeqDataset
 from .._transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
 

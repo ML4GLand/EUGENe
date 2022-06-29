@@ -9,7 +9,7 @@ from .._compat import Literal
 from .._settings import settings
 from ._utils import check_datasetdir_exists
 
-from ._io import load
+from ..dataloading._io import read
 HERE = Path(__file__).parent
 pkg_resources = None
 
@@ -31,32 +31,32 @@ def get_dataset_info():
 #@check_datasetdir_exists
 def ols(**kwargs: dict) -> pd.DataFrame:
     """
-    Loads the OLS dataset.
+    reads the OLS dataset.
     """
     filename = "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
-    data = load(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY_SUMRNA_NUMDNA", **kwargs)
+    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY_SUMRNA_NUMDNA", **kwargs)
     return data
 
 def binary_ols(**kwargs: dict) -> pd.DataFrame:
     """
-    Loads the OLS dataset.
+    reads the OLS dataset.
     """
     filename = "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
-    data = load(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY_SUMRNA_NUMDNA", binarize=True, **kwargs)
+    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY_SUMRNA_NUMDNA", binarize=True, **kwargs)
     return data
 
 def Khoueiry10(**kwargs: dict) -> pd.DataFrame:
     """
-    Loads the Khoueiry10 dataset.
+    reads the Khoueiry10 dataset.
     """
     filename = "/cellar/users/aklie/projects/EUGENE/data/2010_Khoueiry_CellPress/2010_Khoueiry_CellPress.tsv"
-    data = load(filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs)
+    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs)
     return data
 
 def random1000(**kwargs: dict) -> pd.DataFrame:
     """
-    Loads the random1000 dataset.
+    reads the random1000 dataset.
     """
     filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
-    data = load(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
     return data
