@@ -2,7 +2,7 @@ import tqdm
 import pandas as pd
 import numpy as np
 from ._utils import _get_vocab_dict, _get_index_dict, one_hot2token, tokenize, token2one_hot, pad_sequences
-from ..utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq
+from ._otx_enhancer_utils import loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq
 
 ### One-hot feature encoding (not sequence)
 
@@ -143,7 +143,7 @@ def decodeOHE(arr, vocab=DNA, neutral_vocab="N"):
     indexToLetter = _get_index_dict(vocab)
     return ''.join([indexToLetter[x] for x in tokens])
 
-def encodeDNA(seq_vec, maxlen=None, seq_align="start"):
+def encodeDNA(seq_vec, maxlen=None, seq_align="start", copy=False):
     """Convert the DNA sequence into 1-hot-encoding numpy array
     # Arguments
         seq_vec: list of chars

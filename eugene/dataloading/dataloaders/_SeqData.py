@@ -64,6 +64,111 @@ class SeqData():
         self.seqsm = convert_to_dict(seqsm)
 
 
+    @property
+    def seqs(self) -> np.ndarray:
+        """Sequences."""
+        return self._seqs
+
+
+    @seqs.setter
+    def seqs(self, seqs: np.ndarray):
+        self._seqs = seqs
+
+
+    @property
+    def names(self) -> np.ndarray:
+        """Names of sequences."""
+        return self._names
+
+
+    @names.setter
+    def names(self, names: np.ndarray):
+        self._names = names
+
+
+    @property
+    def n_obs(self) -> int:
+        """Number of observations."""
+        return self._n_obs
+
+
+    @property
+    def rev_seqs(self) -> np.ndarray:
+        """Reverse complement of sequences."""
+        return self._rev_seqs
+
+
+    @rev_seqs.setter
+    def rev_seqs(self, rev_seqs: np.ndarray):
+        self._rev_seqs = rev_seqs
+
+
+    @property
+    def ohe_seqs(self) -> np.ndarray:
+        """One-hot encoded sequences."""
+        return self._ohe_seqs
+
+
+    @ohe_seqs.setter
+    def ohe_seqs(self, ohe_seqs: np.ndarray):
+        self._ohe_seqs = ohe_seqs
+
+
+    @property
+    def seqs_annot(self) -> pd.DataFrame:
+        """Sequences annotations."""
+        return self._seqs_annot
+
+
+    @seqs_annot.setter
+    def seqs_annot(self, seqs_annot: Union[pd.DataFrame, Mapping[str, Iterable[Any]]]):
+        self._seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])
+
+
+    @property
+    def pos_annot(self) -> pr.PyRanges:
+        """Positional annotations."""
+        return self._pos_annot
+
+
+    @pos_annot.setter
+    def pos_annot(self, pos_annot: pr.PyRanges):
+        self._pos_annot = pos_annot
+
+
+    @property
+    def ohe_rev_seqs(self) -> np.ndarray:
+        """One-hot encoded reverse complement sequences."""
+        return self._ohe_rev_seqs
+
+
+    @ohe_rev_seqs.setter
+    def ohe_rev_seqs(self, ohe_rev_seqs: np.ndarray):
+        self._ohe_rev_seqs = ohe_rev_seqs
+
+
+    @property
+    def seqsm(self) -> Mapping[str, Sequence[Any]]:
+        """Sequences metadata."""
+        return self._seqsm
+
+
+    @seqsm.setter
+    def seqsm(self, seqsm: Mapping[str, Sequence[Any]]):
+        self._seqsm = seqsm
+
+
+    @property
+    def uns(self) -> Mapping[str, Any]:
+        """Unstructured data."""
+        return self._uns
+
+
+    @uns.setter
+    def uns(self, uns: Mapping[str, Any]):
+        self._uns = uns
+
+
     def __repr__(self):
         descr = f"SeqData object with = {self._n_obs} seqs"
         for attr in [
@@ -74,7 +179,6 @@ class SeqData():
             "ohe_rev_seqs",
             "seqs_annot",
             "pos_annot",
-
             "seqsm",
         ]:
             if attr in [
@@ -85,6 +189,7 @@ class SeqData():
             "ohe_rev_seqs"
             ]:
                 if getattr(self, attr) is not None:
+                    #print(attr)
                     descr += f"\n{attr} = {getattr(self, attr).shape}"
                 else:
                     descr += f"\n{attr} = None"
@@ -94,6 +199,7 @@ class SeqData():
                     descr += f"\n    {attr}: {str(list(keys))[1:-1]}"
         return descr
 
+
     def write_h5sd(self, path: PathLike, mode: str = "w"):
         """Write SeqData object to h5sd file.
 
@@ -101,11 +207,8 @@ class SeqData():
             path: Path to h5sd file.
             mode: Mode to open h5sd file.
         """
-        from .._io.write import write_h5sd
+        from .._io import write_h5sd
         write_h5sd(self, path, mode)
-
-
-
 
 
 @singledispatch
@@ -160,37 +263,3 @@ def convert_to_dict_ndarray(obj: np.ndarray):
 @convert_to_dict.register(type(None))
 def convert_to_dict_nonetype(obj: None):
     return dict()
-
-'''
-with h5py.File(filepath, mode) as f:
-        # TODO: Use spec writing system for this
-        f = f["/"]
-        f.attrs.setdefault("encoding-type", "anndata")
-        f.attrs.setdefault("encoding-version", "0.1.0")
-
-        if "X" in as_dense and isinstance(adata.X, (sparse.spmatrix, SparseDataset)):
-            write_sparse_as_dense(f, "X", adata.X, dataset_kwargs=dataset_kwargs)
-        elif not (adata.isbacked and Path(adata.filename) == Path(filepath)):
-            # If adata.isbacked, X should already be up to date
-            write_elem(f, "X", adata.X, dataset_kwargs=dataset_kwargs)
-        if "raw/X" in as_dense and isinstance(
-            adata.raw.X, (sparse.spmatrix, SparseDataset)
-        ):
-            write_sparse_as_dense(
-                f, "raw/X", adata.raw.X, dataset_kwargs=dataset_kwargs
-            )
-            write_elem(f, "raw/var", adata.raw.var, dataset_kwargs=dataset_kwargs)
-            write_elem(
-                f, "raw/varm", dict(adata.raw.varm), dataset_kwargs=dataset_kwargs
-            )
-        elif adata.raw is not None:
-            write_elem(f, "raw", adata.raw, dataset_kwargs=dataset_kwargs)
-        write_elem(f, "obs", adata.obs, dataset_kwargs=dataset_kwargs)
-        write_elem(f, "var", adata.var, dataset_kwargs=dataset_kwargs)
-        write_elem(f, "obsm", dict(adata.obsm), dataset_kwargs=dataset_kwargs)
-        write_elem(f, "varm", dict(adata.varm), dataset_kwargs=dataset_kwargs)
-        write_elem(f, "obsp", dict(adata.obsp), dataset_kwargs=dataset_kwargs)
-        write_elem(f, "varp", dict(adata.varp), dataset_kwargs=dataset_kwargs)
-        write_elem(f, "layers", dict(adata.layers), dataset_kwargs=dataset_kwargs)
-        write_elem(f, "uns", dict(adata.uns), dataset_kwargs=dataset_kwargs)
-'''

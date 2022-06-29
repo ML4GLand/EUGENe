@@ -1,11 +1,11 @@
+# Absolute imports
 import h5py
 import numpy as np
 import pandas as pd
-from typing import Any, Union, Optional
+from typing import Optional
 from os import PathLike
 
-# EUGENE
-from ..preprocessing import reverse_complement
+# Relative imports
 from .dataloaders import SeqData
 
 def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False):
@@ -21,6 +21,7 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         low_thresh (float, optional): if specified all activities under this threshold are considered inactive. Defaults to None.
         high_thresh (float, optional): if specified all activities above this threshold are considered inactive. Defaults to None.
         low_memory (bool, optional): whether to read file in low_memory mode. Defaults to False.
+        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
@@ -59,7 +60,8 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
 
     # Grab reverse complement if asked for
     if rev_comp:
-       rev_seqs = [reverse_complement(seq) for seq in seqs]
+        from ..preprocessing import reverse_complement
+        rev_seqs = [reverse_complement(seq) for seq in seqs]
     else:
         rev_seqs = None
 
@@ -78,14 +80,15 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
         target_file (str): .npy or .txt file path containing targets. Defaults to None.
         rev_comp (bool, optional): whether to generate reverse complements for sequences. Defaults to False.
         is_target_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
+        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
                if any are not provided they are set to none
     """
 
-    seqs = [x.rstrip() for (i,x) in enumerate(open(seq_file)) if i%2==1]
-    ids = [x.rstrip().replace(">", "") for (i,x) in enumerate(open(seq_file)) if i%2==0]
+    seqs = np.array([x.rstrip() for (i,x) in enumerate(open(seq_file)) if i%2==1])
+    ids = np.array([x.rstrip().replace(">", "") for (i,x) in enumerate(open(seq_file)) if i%2==0])
 
     if target_file is not None:
         if is_target_text:
@@ -120,6 +123,8 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
         is_seq_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
         is_target_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
         delim (str, optional):  Defaults to "\n".
+        ohe_encoded (bool, optional): whether the sequences are one hot encoded. Defaults to False.
+        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
@@ -163,7 +168,16 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
 
 
 def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
-    """Read SeqData object from h5sd file."""
+    """Function for loading sequences into SeqData objects from h5sd files.
+
+    Args:
+        filename (str): .h5sd file path to read
+        sdata (SeqData, optional): SeqData object to load data into. Defaults to None.
+        mode (str, optional): mode to open file. Defaults to "r".
+
+    Returns:
+        SeqData: SeqData object containing sequences and identifiers
+    """
     with h5py.File(filename, "r") as f:
         d = {}
         for k in f.keys():
@@ -188,7 +202,6 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
                 d["pos_annot"] = f["pos_annot"].attrs
             if "seqsm" in f:
                 d["seqsm"] = f["seqsm"].attrs
-        print(d)
     return SeqData(**d)
 
 
@@ -197,8 +210,8 @@ def read(seq_file, *args, **kwargs):
 
     Args:
         seq_file (str): file path containing sequences
-        args: positional arguments from read_csv, read_fasta, read_numpy
-        kwargs: keyword arguments from read_csv, read_fasta, read_numpy
+        args: positional arguments from read_csv, read_fasta, read_numpy, read_h5sd
+        kwargs: keyword arguments from read_csv, read_fasta, read_numpy, read_h5sd
 
     Returns:
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
@@ -211,6 +224,8 @@ def read(seq_file, *args, **kwargs):
         return read_numpy(seq_file, *args, **kwargs)
     elif seq_file_extension in ["fasta", "fa"]:
         return read_fasta(seq_file, *args, **kwargs)
+    elif seq_file_extension in ["h5sd", "h5"]:
+        return read_h5sd(seq_file, *args, **kwargs)
     else:
         print("Sequence file type not currently supported")
         return

@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import re
 import logging
 import numpy as np
-np.random.seed(42)
+np.random.seed(13)
 
 # Define a few constants:
 alphabet = np.array(["A", "G", "C", "T"])
