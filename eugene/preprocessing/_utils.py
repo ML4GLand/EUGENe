@@ -194,11 +194,11 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
 
 ### Useful functions on sequences
 
-def reverse_complement(seq):
+def reverse_complement(seq, copy=False):
     return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
 
-def reverse_complement_seqs(seqs):
-    return [reverse_complement(seq) for seq in seqs]
+def reverse_complement_seqs(seqs, copy=False):
+    return np.array([reverse_complement(seq) for seq in seqs])
 
 
 ### Dinuc shuffle from Kundaje lab
