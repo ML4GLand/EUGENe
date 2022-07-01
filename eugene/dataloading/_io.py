@@ -246,13 +246,13 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
         if sdata.ohe_rev_seqs is not None:
             f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
         if sdata.rev_seqs is not None:
-            f.create_dataset("rev_seqs", data=sdata.rev_seqs)
+            f.create_dataset("rev_seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.rev_seqs]))
         if sdata.ohe_rev_seqs is not None:
             f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
         if sdata.seqs_annot is not None:
            for key, item in dict(sdata.seqs_annot).items():
                 # note that not all variable types are supported but string and int are
-                f["seqs_annot/" + key] = item
+                f["seqs_annot/" + str(key)] = item
 
 
 def seq2Fasta(seqs, IDs, name="seqs"):

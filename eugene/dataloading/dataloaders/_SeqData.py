@@ -28,6 +28,7 @@ except ImportError:
         class Literal(metaclass=LiteralMeta):
             pass
 
+
 class SeqData():
 
     def __init__(self,
