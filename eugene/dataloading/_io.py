@@ -99,6 +99,7 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
         targets = None
 
     if rev_comp:
+        from ..preprocessing import reverse_complement
         rev_seqs =  [reverse_complement(seq) for seq in seqs]
     else:
         rev_seqs = None

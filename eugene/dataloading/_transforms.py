@@ -9,7 +9,7 @@ from ..preprocessing._encoding import oheDNA
 class ReverseComplement(object):
     """Reverse complement an input sequence"""
 
-    def __init__(self, ohe_encoded=False):
+    def __init__(self, ohe_encoded=False, **kwargs):
         self.ohe = ohe_encoded
 
     def __call__(self, sample):
@@ -23,7 +23,7 @@ class ReverseComplement(object):
 class Augment(object):
     """Perform augmentation of the MPRA dataset using a set of predfined parameters"""
 
-    def __init__(self, randomize_linker_p=0.1, modify_features_p=0, enhancer=None):
+    def __init__(self, randomize_linker_p=0.1, modify_features_p=0, enhancer=None, **kwargs):
         self.randomize_linker_p = randomize_linker_p
         self.modify_features_p = modify_features_p
         self.enhancer = enhancer
@@ -41,8 +41,10 @@ class Augment(object):
 
 class OneHotEncode(object):
     """OneHotEncode the input sequence"""
+    def __init__(self, **kwargs):
+        pass
 
-    def __call__(self, sample, ohe_axis=1):
+    def __call__(self, sample):
         sequence = sample[1]
         ohe_seq = oheDNA(sequence)
         sample[1] = ohe_seq
@@ -56,7 +58,7 @@ class OneHotEncode(object):
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
-    def __init__(self, transpose=False):
+    def __init__(self, transpose=False, **kwargs):
         self.T = transpose
 
     def __call__(self, sample):

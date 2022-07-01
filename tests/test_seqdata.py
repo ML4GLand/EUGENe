@@ -31,3 +31,22 @@ def test_print(sdata):
 
 def test_write_h5sd(sdata):
     sdata.write_h5sd(f"{HERE}/_data/test_1000seqs_66/test_seqs.h5sd")
+
+
+def test_to_dataset(sdata):
+    sdataset = sdata.to_dataset(label=0, seq_transforms = ["augment", "one_hot_encode"], transform_kwargs={"enhancer": "Core-otx-a"})
+    assert(sdataset[0])
+
+    # Instantiate a DataLoader
+    import torch
+    from torch.utils.data import DataLoader
+
+    test_dataloader = DataLoader(sdataset, batch_size=32, shuffle=True, num_workers=0)
+    # Check the DataLoader
+    for i_batch, sample_batched in enumerate(test_dataloader):
+        assert(sample_batched[0].size() == torch.Size([32, 7]))
+        assert(sample_batched[1].size() ==  torch.Size([32, 66, 4]))
+        assert(sample_batched[2].size() ==  torch.Size([32, 66, 4]))
+        assert(sample_batched[3].size() ==  torch.Size([32]))
+        if i_batch == 3:
+            break

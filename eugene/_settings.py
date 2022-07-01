@@ -32,7 +32,7 @@ class EugeneConfig:
     Examples
     --------
     To set the seed
-    >>> eugene.settings.seed = 42
+    >>> eugene.settings.seed = 13
     To set the batch size for functions like `eugene.get_latent_representation`
     >>> eugene.settings.batch_size = 1024
     To set the progress bar style, choose one of "rich", "tqdm"

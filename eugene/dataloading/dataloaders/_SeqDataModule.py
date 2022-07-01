@@ -16,7 +16,7 @@ from ._SeqDataset import SeqDataset
 from .._transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
 
 class SeqDataModule(pl.LightningDataModule):
-    def __init__(self, seq_file: str, batch_size: int = 32, num_workers: int = 0, transform=None, test=False, shuffle=True, split=0.9, seed=13, save_names=None, load_kwargs={}):
+    def __init__(self, seq_file: str, batch_size: int = 32, num_workers: int = 0, transform=None, test=False, shuffle=True, split=0.9, seed=13, save_names=None, read_kwargs={}):
         """Sequence PyTorch Lightning DataModule definition
 
         Args:
@@ -45,7 +45,7 @@ class SeqDataModule(pl.LightningDataModule):
             self.transform = transforms.Compose(transform_classes)
         else:
             self.transform = transform
-        self.load_kwargs = load_kwargs
+        self.read_kwargs = read_kwargs
         self.num_workers = num_workers
         self.test = test
         self.shuffle = shuffle
@@ -54,7 +54,7 @@ class SeqDataModule(pl.LightningDataModule):
         self.save_names = save_names
 
     def setup(self, stage: str = None) -> None:
-        names, seqs, rev_seqs, targets = load(self.seq_file, **self.load_kwargs)
+        names, seqs, rev_seqs, targets = read(self.seq_file, **self.read_kwargs)
         dataset = SeqDataset(seqs, names, targets, rev_seqs, transform=self.transform)
         if self.test:
             self.test = dataset

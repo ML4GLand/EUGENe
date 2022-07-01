@@ -1,3 +1,4 @@
+from ast import Raise
 from nbformat import write
 import numpy as np
 import pandas as pd
@@ -10,6 +11,8 @@ from functools import partial, singledispatch
 from pandas.api.types import infer_dtype, is_string_dtype, is_categorical_dtype
 import h5py
 import warnings
+
+from ._SeqDataset import SeqDataset
 
 
 try:
@@ -210,6 +213,46 @@ class SeqData():
         """
         from .._io import write_h5sd
         write_h5sd(self, path, mode)
+
+
+    def to_dataset(self, label: str = "labels", seq_transforms = None, transform_kwargs = {}) -> SeqDataset:
+        """Convert SeqData object to SeqDataset."""
+        from .._transforms import Augment, ReverseComplement, OneHotEncode, ToTensor
+        from torchvision import transforms as torch_transforms
+        transforms = []
+
+        if seq_transforms is None:
+            print("No transforms given, assuming default transforms (reverse complement, one hot encode and tensorize).")
+            transforms = [Augment(**transform_kwargs), ReverseComplement(**transform_kwargs), OneHotEncode(**transform_kwargs), ToTensor()]
+            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+
+        if "augment" in seq_transforms:
+            if self.seqs is not None:
+                transforms.append(Augment(**transform_kwargs))
+            else:
+                Raise(ValueError("Cannot augment sequences if seqs is None"))
+
+        if "reverse_complement" in seq_transforms:
+            if self.seqs is not None:
+                transforms.append(ReverseComplement(**transform_kwargs))
+            else:
+                Raise(ValueError("Cannot reverse complement sequences if seqs is None"))
+
+        ohe_flag = True
+        if "one_hot_encode" in seq_transforms:
+            if self.seqs is not None:
+                transforms.append(OneHotEncode(**transform_kwargs))
+            else:
+                Raise(ValueError("Cannot one hot encode sequences if seqs is None"))
+            ohe_flag = False
+
+        transforms.append(ToTensor(**transform_kwargs))
+
+        if ohe_flag:
+            return SeqDataset(self.ohe_seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
+        else:
+            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+
 
 
 @singledispatch
