@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 from ..models import FCN, CNN, RNN, Hybrid
 
 # Data def
-from ..dataloading.dataloaders import SeqDataModule
+from ..dataloading import SeqDataModule
 
 # Define the cli
 cli = ArgumentParser()

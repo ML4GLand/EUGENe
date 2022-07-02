@@ -1,3 +1,4 @@
 name,n_seqs,url,description
+random1000,1000,NA,A randomly generated set of 1000 sequences
 ols,460800,TBD,This library is a collection of sequences from the OLS database.
 Khouiery,10,https://www.sciencedirect.com/science/article/pii/S096098221000432X?via%3Dihub#mmc2,This data comes from genomic sequences of Ciona intestinalis and Ciona savignyi that were tested in a 2010 CellPress paper by Khoueiry et al

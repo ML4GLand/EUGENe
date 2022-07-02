@@ -4,6 +4,7 @@ from tqdm.auto import tqdm
 
 from ..utils._decorators import track
 from ..dataloading import SeqData
+from ._dataset_preprocess import split_train_test
 from ._encoding import encodeDNA
 from ._utils import reverse_complement_seqs
 
@@ -42,4 +43,17 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
         sdata.ohe_seqs = encodeDNA(sdata.seqs)
     if sdata.rev_seqs is not None:
         sdata.ohe_rev_seqs = encodeDNA(sdata.rev_seqs)
+    return sdata if copy else None
+
+
+@track
+def train_test_split_data(sdata: SeqData, copy=False, kwargs={}) -> SeqData:
+    """Train test split.
+    Parameters
+    ----------
+    sdata : SeqData"""
+    sdata = sdata.copy() if copy else sdata
+    train_indeces, _, _, _ = split_train_test(X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs)
+    print(len(train_indeces))
+    sdata.seqs_annot["TRAIN"] = sdata.seqs_annot.index.isin(train_indeces)
     return sdata if copy else None

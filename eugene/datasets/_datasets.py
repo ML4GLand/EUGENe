@@ -28,6 +28,16 @@ def get_dataset_info():
     stream = pkg_resources.resource_stream(__name__, "datasets.csv")
     return pd.read_csv(stream, index_col=0)
 
+
+def random1000(**kwargs: dict) -> pd.DataFrame:
+    """
+    reads the random1000 dataset.
+    """
+    filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
+    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    return data
+
+
 #@check_datasetdir_exists
 def ols(**kwargs: dict) -> pd.DataFrame:
     """
@@ -51,12 +61,4 @@ def Khoueiry10(**kwargs: dict) -> pd.DataFrame:
     """
     filename = "/cellar/users/aklie/projects/EUGENE/data/2010_Khoueiry_CellPress/2010_Khoueiry_CellPress.tsv"
     data = read(filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs)
-    return data
-
-def random1000(**kwargs: dict) -> pd.DataFrame:
-    """
-    reads the random1000 dataset.
-    """
-    filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
-    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
     return data
