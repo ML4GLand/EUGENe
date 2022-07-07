@@ -10,6 +10,7 @@ tests/_logs/
 *.out
 
 .vscode/
+tests/notebooks/lightning_logs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
