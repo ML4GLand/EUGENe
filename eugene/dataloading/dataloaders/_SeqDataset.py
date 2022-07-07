@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from ...preprocessing._encoding import ascii_encode
 
 
@@ -83,3 +83,8 @@ class SeqDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
         return sample
+
+
+    def to_dataloader(self, batch_size=32, pin_memory=True, shuffle=False, num_workers=0):
+        """Convert the dataset to a PyTorch DataLoader"""
+        return DataLoader(self, batch_size=batch_size, pin_memory=True, shuffle=shuffle, num_workers=num_workers)

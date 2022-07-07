@@ -23,7 +23,7 @@ def infer_type(user_input):
 
 def generate_model_config(model_type):
     config_params = {}
-    questionary.print("Extracting model parameters")
+    questionary.print(f"Extracting hyperparameters for {model_type} architecture")
     if model_type in ["fcn", "cnn", "rnn"]:
         module = getattr(importlib.import_module(f"eugene.models.{model_type}"), model_type.upper())
     elif model_type in ["hybrid"]:
@@ -68,12 +68,11 @@ def generate_model_config(model_type):
     return config_params
 
 
-def generate_data_config():
-    pass
-
-
-model_type = questionary.select("Select model", choices=["fcn", "cnn", "rnn", "hybrid"]).ask()
-yml_dict = generate_model_config(model_type)
-print(yml_dict)
-with open('config.yaml', 'w') as yaml_file:
-    yaml.dump(yml_dict, yaml_file, sort_keys=False, default_flow_style=False)
+def load_config(arch, model_config):
+    from pytorch_lightning.utilities.cli import LightningArgumentParser
+    parser = LightningArgumentParser()
+    model_type = getattr(importlib.import_module("eugene.models"), arch)
+    parser.add_lightning_class_args(model_type, nested_key="model")
+    model_yml = parser.parse_path(cfg_path=model_config)
+    model = model_type(**model_yml["model"])
+    return model
