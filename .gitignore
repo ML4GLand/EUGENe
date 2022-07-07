@@ -4,13 +4,13 @@ data/
 results/
 bin/*/err/
 bin/*/out/
-tests/_data/tf_modisco/
-tests/_logs/
 *.err
 *.out
-
 .vscode/
 tests/notebooks/lightning_logs
+tests/_configs/
+tests/_data/tf_modisco/
+tests/_logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
