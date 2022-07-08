@@ -14,10 +14,10 @@ class PredictionWriter(BasePredictionWriter):
         super().__init__(write_interval)
         self.output_dir = output_dir
 
-    def write_on_batch_end(self, trainer, pl_module: 'LightningModule', prediction, batch_indices, batch, batch_idx: int, dataloader_idx: int):
+    def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx: int, dataloader_idx: int):
         np.save(os.path.join(self.output_dir, dataloader_idx, "{}_predictions".format(str(batch_idx))), predictions)
 
-    def write_on_epoch_end(self, trainer, pl_module: 'LightningModule', predictions, batch_indices):
+    def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
         predictions = np.concatenate(predictions[0], axis=0)
         pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTION", "TARGET"])
         out = self.output_dir.rsplit("/", maxsplit=1)[0]

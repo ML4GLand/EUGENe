@@ -1,0 +1,26 @@
+aggr: null
+conv_kwargs:
+  batchnorm: false
+  channels:
+  - 4
+  - 16
+  conv_kernels:
+  - 4
+  dropout_rates: 0.2
+  omit_final_pool: true
+  pool_kernels:
+  - 4
+fc_kwargs:
+  batchnorm: false
+  dropout_rate: 0.2
+  hidden_dims:
+  - 256
+  - 64
+  - 16
+  - 4
+  output_dim: 1
+input_len: 66
+mp_kwargs:
+  kernel_size: 4
+strand: ss
+task: regression
