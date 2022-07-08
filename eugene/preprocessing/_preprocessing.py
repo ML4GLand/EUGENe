@@ -54,6 +54,24 @@ def train_test_split_data(sdata: SeqData, copy=False, kwargs={}) -> SeqData:
     sdata : SeqData"""
     sdata = sdata.copy() if copy else sdata
     train_indeces, _, _, _ = split_train_test(X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs)
-    print(len(train_indeces))
     sdata.seqs_annot["TRAIN"] = sdata.seqs_annot.index.isin(train_indeces)
+    return sdata if copy else None
+
+
+@track
+def prepare_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
+    """Prepare data.
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    Returns
+    -------
+    SeqData
+        SeqData object with prepared data.
+    """
+    sdata = sdata.copy() if copy else sdata
+    sdata = one_hot_encode_data(sdata, copy=True)
+    sdata = reverse_complement_data(sdata, copy=True)
+    sdata = train_test_split_data(sdata, copy=True, **kwargs)
     return sdata if copy else None

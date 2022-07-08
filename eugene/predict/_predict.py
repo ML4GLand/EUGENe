@@ -34,9 +34,10 @@ def predictions(
    if out_dir is not None:
       from ..utils import PredictionWriter
       trainer = Trainer(logger=False, callbacks=PredictionWriter(out_dir, write_interval="epoch"))
+      return
    else:
       trainer = Trainer(logger=False)
-   return trainer.predict(model, sdataloader)
+      return trainer.predict(model, sdataloader)
 
 def train_val_predictions(model: LightningModule,
    sdata: SeqData = None,
@@ -68,4 +69,4 @@ def train_val_predictions(model: LightningModule,
       trainer = Trainer(logger=False, callbacks=TrainAndValWriter(out_dir, write_interval="epoch"))
    else:
       trainer = Trainer(logger=False)
-   return trainer.predict(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+   trainer.predict(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
