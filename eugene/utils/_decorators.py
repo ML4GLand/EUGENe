@@ -22,14 +22,12 @@ def track(func):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
 
-        '''
-        print(type(args[0]))
+        #print(kwargs)
         if type(args[0]) == SeqData:
             sdata = args[0]
         else:
-            sdata = args[1]
-        '''
-        sdata = args[0]
+            sdata = kwargs["sdata"]
+
         old_attr = list_attributes(sdata)
 
         if kwargs["copy"]:

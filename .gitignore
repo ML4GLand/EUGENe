@@ -11,6 +11,7 @@ tests/notebooks/lightning_logs
 tests/_configs/
 tests/_data/tf_modisco/
 tests/_logs/
+tests/_out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
