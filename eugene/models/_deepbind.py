@@ -17,7 +17,6 @@ from .base import BasicFullyConnectedModule, BasicConv1D
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
-from ..train import PredictionWriter
 
 # omit_final_pool should be set to True in conv_kwargs
 class DeepBind(LightningModule):
@@ -34,7 +33,7 @@ class DeepBind(LightningModule):
         self.avg_pool = nn.AvgPool1d(**self.mp_kwargs)
 
         # Add strand specific modules
-        if self.strand == "ss":        
+        if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
             self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2), **self.fc_kwargs)
         elif self.strand == "ds":
@@ -68,7 +67,7 @@ class DeepBind(LightningModule):
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
             x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
             x = torch.cat((x, x_rev_comp), dim=1)
-            
+
             x = self.fcn(x)
         elif self.strand == "ts":
             x_rev_comp = self.reverse_convnet(x_rev_comp)
@@ -141,7 +140,7 @@ class DeepBind(LightningModule):
     def kwarg_handler(self, mp_kwargs, conv_kwargs, fc_kwargs):
         mp_kwargs.setdefault("kernel_size", 4)
         # Add mp_kwargs for stride
-        
+
         conv_kwargs.setdefault("channels", [4, 16])
         conv_kwargs.setdefault("conv_kernels", [4])
         conv_kwargs.setdefault("pool_kernels", [4])
