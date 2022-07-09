@@ -56,7 +56,7 @@ def fit(model: LightningModule,
    if sdata is not None and save_preds:
       if out_dir is not None:
          from ..utils._custom_callbacks import PredictionWriter
-         train_predictor= Trainer(logger=False, callbacks=PredictionWriter(out_dir + "train_"))
+         train_predictor = Trainer(logger=False, callbacks=PredictionWriter(out_dir + "train_"))
          val_predictor = Trainer(logger=False, callbacks=PredictionWriter(out_dir + "val_"))
       else:
          train_predictor = Trainer(logger=False)
