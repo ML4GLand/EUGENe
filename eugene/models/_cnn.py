@@ -16,7 +16,6 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from .base import BasicFullyConnectedModule, BasicConv1D
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
-from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 
 class CNN(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, conv_kwargs={}, fc_kwargs={}):

@@ -16,7 +16,6 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from .base import BasicFullyConnectedModule, BasicConv1D
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
-from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 
 # omit_final_pool should be set to True in conv_kwargs
 class DeepBind(LightningModule):

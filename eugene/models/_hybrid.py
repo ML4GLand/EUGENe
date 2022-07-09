@@ -16,7 +16,6 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from .base import BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
-from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 
 
 class Hybrid(LightningModule):

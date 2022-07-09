@@ -16,7 +16,6 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from .base import BasicFullyConnectedModule, BasicRecurrent
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
-from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 
 class RNN(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, rnn_kwargs={}, fc_kwargs={}):
