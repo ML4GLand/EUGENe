@@ -12,6 +12,7 @@ tests/_configs/
 tests/_data/tf_modisco/
 tests/_logs/
 tests/_out/
+tests/_data/datasets/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
