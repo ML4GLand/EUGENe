@@ -4,3 +4,4 @@ from ._cnn import CNN
 from ._rnn import RNN
 from ._hybrid import Hybrid
 from ._deepbind import DeepBind
+from ._utils import load_config

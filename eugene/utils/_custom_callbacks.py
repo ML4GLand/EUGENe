@@ -13,6 +13,13 @@ class PredictionWriter(BasePredictionWriter):
     def __init__(self, output_dir: str, write_interval="epoch"):
         super().__init__(write_interval)
         self.output_dir = output_dir
+
+    def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx: int, dataloader_idx: int):
+        np.save(os.path.join(self.output_dir, dataloader_idx, "{}_predictions".format(str(batch_idx))), predictions)
+
+    def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
+        predictions = np.concatenate(predictions[0], axis=0)
+        pred_df = pd.DataFrame(data=predictions, columns=["NAME", "PREDICTIONS", "TARGET"])
         out = self.output_dir.rsplit("/", maxsplit=1)[0]
         if not os.path.exists(out):
             os.makedirs(out)

@@ -1,7 +1,9 @@
-import yaml
+import sys
 import inspect
-import questionary
 import importlib
+import questionary
+import yaml
+
 
 def infer_type(user_input):
     if "[" in user_input:
@@ -21,13 +23,11 @@ def infer_type(user_input):
             pass
     return user_input
 
-def generate_model_config(model_type):
+
+def _generate_model_config(model_type):
     config_params = {}
-    questionary.print("Extracting model parameters")
-    if model_type in ["fcn", "cnn", "rnn"]:
-        module = getattr(importlib.import_module(f"eugene.models.{model_type}"), model_type.upper())
-    elif model_type in ["hybrid"]:
-        module = getattr(importlib.import_module(f"eugene.models.{model_type.lower()}"), model_type.lower())
+    questionary.print(f"Extracting hyperparameters for {model_type} architecture")
+    module = getattr(importlib.import_module("eugene.models"), model_type)
     higher_params = []
     init_params = inspect.signature(module.__init__).parameters
     for key in init_params.keys():
@@ -39,13 +39,13 @@ def generate_model_config(model_type):
             module_config = {}
             questionary.print(f"Extracting {param_name} parameters")
             if param_name == "fc_kwargs":
-                mod = getattr(importlib.import_module("claim.modules._base_modules"), "BasicFullyConnectedModule")
+                mod = getattr(importlib.import_module("eugene.models.base"), "BasicFullyConnectedModule")
                 module_params = inspect.signature(mod.__init__).parameters
             elif param_name == "conv_kwargs":
-                mod = getattr(importlib.import_module("claim.modules._base_modules"), "BasicConv1D")
+                mod = getattr(importlib.import_module("eugene.models.base"), "BasicConv1D")
                 module_params = inspect.signature(mod.__init__).parameters
             elif param_name == "rnn_kwargs":
-                mod = getattr(importlib.import_module("claim.modules._base_modules"), "BasicRecurrent")
+                mod = getattr(importlib.import_module("eugene.models.base"), "BasicRecurrent")
                 module_params = inspect.signature(mod.__init__).parameters
             for module_key in module_params:
                 module_name = module_params[module_key].name
@@ -68,12 +68,11 @@ def generate_model_config(model_type):
     return config_params
 
 
-def generate_data_config():
-    pass
-
-
-model_type = questionary.select("Select model", choices=["fcn", "cnn", "rnn", "hybrid"]).ask()
-yml_dict = generate_model_config(model_type)
-print(yml_dict)
-with open('config.yaml', 'w') as yaml_file:
-    yaml.dump(yml_dict, yaml_file, sort_keys=False, default_flow_style=False)
+if __name__ == "__main__":
+    out = sys.argv[1]
+    model_type = questionary.select("Model type", choices=["FCN", "CNN", "RNN", "Hybrid", "DeepBind"]).ask()
+    config_params = _generate_model_config(model_type)
+    final_config = {"model": config_params}
+    print(final_config)
+    with open(out, 'w') as yaml_file:
+        yaml.dump(final_config, yaml_file, sort_keys=False, default_flow_style=False)

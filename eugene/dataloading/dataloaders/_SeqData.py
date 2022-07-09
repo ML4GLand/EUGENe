@@ -12,6 +12,9 @@ from pandas.api.types import infer_dtype, is_string_dtype, is_categorical_dtype
 import h5py
 import warnings
 
+
+Index1D = Union[slice, int, str, np.int64, np.ndarray]
+
 from ._SeqDataset import SeqDataset
 
 
@@ -43,13 +46,16 @@ class SeqData():
         ohe_seqs: np.ndarray = None,
         ohe_rev_seqs: np.ndarray = None,
         seqsm: Optional[Union[np.ndarray, Mapping[str, Sequence[Any]]]] = None,
-        uns: Optional[Mapping[str, Any]] = None
+        uns: Optional[Mapping[str, Any]] = None,
+        seqidx: Index1D = None
     ):
-        self.seqs = seqs
-        self.names = names
-        self.rev_seqs = rev_seqs
-        self.ohe_seqs = ohe_seqs
-        self.ohe_rev_seqs = ohe_rev_seqs
+
+        self.seqidx = range(seqs.shape[0]) if seqidx is None else seqidx
+        self.seqs = seqs[self.seqidx] if seqs is not None else None
+        self.names = names[self.seqidx] if names is not None else None
+        self.rev_seqs = rev_seqs[self.seqidx] if rev_seqs is not None else None
+        self.ohe_seqs = ohe_seqs[self.seqidx] if ohe_seqs is not None else None
+        self.ohe_rev_seqs = ohe_rev_seqs[self.seqidx] if ohe_rev_seqs is not None else None
 
         if self.seqs is not None:
             self._n_obs = len(self.seqs)
@@ -118,6 +124,7 @@ class SeqData():
         self._ohe_seqs = ohe_seqs
 
 
+
     @property
     def seqs_annot(self) -> pd.DataFrame:
         """Sequences annotations."""
@@ -171,6 +178,20 @@ class SeqData():
     @uns.setter
     def uns(self, uns: Mapping[str, Any]):
         self._uns = uns
+
+
+    def __getitem__(self, index):
+        """Get item from data."""
+        return SeqData(seqs = self.seqs,
+                        names = self.names,
+                        rev_seqs = self.rev_seqs,
+                        seqs_annot = self.seqs_annot,
+                        pos_annot = self.pos_annot,
+                        ohe_seqs = self.ohe_seqs,
+                        ohe_rev_seqs = self.ohe_rev_seqs,
+                        seqsm = self.seqsm,
+                        uns = self.uns,
+                        seqidx = index)
 
 
     def __repr__(self):
