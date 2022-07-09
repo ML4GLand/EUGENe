@@ -17,13 +17,16 @@ def check_datasetdir_exists(f):
 
 def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
     if index == 5:
-        # 
+        # Remove upper title row, keep only expression column
+        file = file.drop(index=0, columns=[0,3,4])
         return file
     elif index == 6:
         # Remove upper title row, keep only 1 of 4 data columns
+        file = file.drop(index=0, columns=[1,2,3,4])
         return file
     elif index == 7:
-        # Remove upper title row, data potentially means something different because its the only single data csv with a title?
+        # Remove upper title row
+        file = file.drop(index=0)
         return file
     else:
         return file
@@ -46,7 +49,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool
                 print("Processing gzip file...")
                 with gzip.open(path) as gz:
                     with io.TextIOWrapper(gz, encoding="utf-8") as file:
-                        file = pd.read_csv(file, delimiter=r"\t", engine="python")
+                        file = pd.read_csv(file, delimiter=r"\t", engine="python", header=None)
 
                         if ds_name == "deBoer20":
                             file = deBoerCleanup(file, i)
