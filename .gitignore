@@ -4,8 +4,11 @@ data/
 results/
 bin/*/err/
 bin/*/out/
+tests/_data/datasets/
 tests/_data/tf_modisco/
 tests/_logs/
+tests/_out/
+tests/_configs/
 *.err
 *.out
 

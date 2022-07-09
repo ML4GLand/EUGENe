@@ -39,7 +39,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool
             ds_path = os.path.join(HERE.parent, settings.datasetdir, ds_name)
             if not os.path.isdir(ds_path):
                 print(f"Path {ds_path} does not exist, creating new folder.")
-                os.mkdir(ds_path)
+                os.makedirs(ds_path)
 
             print(f"Downloading {ds_name} {os.path.basename(url_list[i])} to {ds_path}...")
             path = wget.download(url_list[i], os.path.relpath(ds_path))
