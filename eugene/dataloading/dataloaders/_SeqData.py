@@ -124,6 +124,7 @@ class SeqData():
         self._ohe_seqs = ohe_seqs
 
 
+
     @property
     def seqs_annot(self) -> pd.DataFrame:
         """Sequences annotations."""

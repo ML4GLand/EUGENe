@@ -70,7 +70,7 @@ class Hybrid(LightningModule):
         return self._common_step(batch, batch_idx, "train")
 
     def validation_step(self, batch, batch_idx):
-        self._common_step(batch, batch_idx, "val")
+        return self._common_step(batch, batch_idx, "val")
 
     def test_step(self, batch, batch_idx):
         self._common_step(batch, batch_idx, "test")
@@ -84,7 +84,7 @@ class Hybrid(LightningModule):
 
     def _common_step(self, batch, batch_idx, stage: str):
         # Get and log loss
-        _, x, x_rev_comp, y = batch
+        ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
 
         if self.task == "binary_classification":
@@ -117,7 +117,9 @@ class Hybrid(LightningModule):
             elif self.task == "regression":
                 self.log("hp_metric", r_squared, on_epoch=True)
 
-        return loss
+        return {'loss': loss, 'predictions': np.stack([np.array([ascii_decode(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]),
+                                                       outs.detach().cpu().numpy(),
+                                                       y.detach().cpu().numpy()], axis=-1)}
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-3)
