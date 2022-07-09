@@ -8,7 +8,7 @@ from os import PathLike
 # Relative imports
 from .dataloaders import SeqData
 
-def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False):
+def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, **kwargs):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -27,8 +27,25 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
                if any are not provided they are set to none
     """
+
+    try:
+        if len(file) == 1 and type(file) is list:
+            file = file[0]
+    except:
+        pass
+
     # Load as pandas dataframe
-    dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory)
+    if type(file) is list:
+        dataframe = None
+        for i in range(len(file) - 1):
+            if dataframe is None:
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names)], ignore_index=True)
+            else:
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), dataframe], ignore_index=True)
+        # Clear previous default None headers
+        dataframe = dataframe.drop(0)
+    else:
+        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0)
 
     # Add names if available
     if name_col is not None:
