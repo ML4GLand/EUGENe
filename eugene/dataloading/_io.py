@@ -42,11 +42,10 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
                 dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names)], ignore_index=True)
             else:
                 dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), dataframe], ignore_index=True)
+        # Clear previous default None headers
+        dataframe = dataframe.drop(0)
     else:
-        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names)
-
-    # Clear previous default None headers
-    dataframe = dataframe.drop(0)
+        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0)
 
     # Add names if available
     if name_col is not None:
