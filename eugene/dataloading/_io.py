@@ -69,7 +69,7 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     else:
-        return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+        return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["TARGETS"]))
 
 
 def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False):
