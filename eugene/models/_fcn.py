@@ -17,7 +17,6 @@ from .base import BasicFullyConnectedModule
 from ..dataloading.dataloaders import SeqDataModule
 from ..preprocessing._encoding import ascii_decode
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
-from ..train import PredictionWriter
 
 class FCN(LightningModule):
     def __init__(self, input_len, strand="ss", task="regression", aggr=None, fc_kwargs={}):
