@@ -22,11 +22,14 @@ def track(func):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
 
-        #print(kwargs)
-        if type(args[0]) == SeqData:
+        #print(kwargs, args, type(args[0]))
+        if isinstance(args[0], SeqData):
             sdata = args[0]
         else:
-            sdata = kwargs["sdata"]
+            if "sdata" in kwargs:
+                sdata = kwargs["sdata"]
+            else:
+                sdata = args[1]
 
         old_attr = list_attributes(sdata)
 

@@ -59,7 +59,7 @@ def train_test_split_data(sdata: SeqData, copy=False, kwargs={}) -> SeqData:
 
 
 @track
-def prepare_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
+def prepare_data(sdata: SeqData, steps=["reverse_complement", "one_hot_encode", "train_test_split"], copy=False) -> SeqData:
     """Prepare data.
     Parameters
     ----------
@@ -70,8 +70,19 @@ def prepare_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
     SeqData
         SeqData object with prepared data.
     """
-    sdata = sdata.copy() if copy else sdata
-    sdata = one_hot_encode_data(sdata, copy=True)
-    sdata = reverse_complement_data(sdata, copy=True)
-    sdata = train_test_split_data(sdata, copy=True, **kwargs)
+    if not isinstance(steps, list):
+        steps = [steps]
+
+    steps = list(set(steps))
+
+    for f in tqdm(steps):
+        preprocessing_steps[f].__wrapped__(sdata)
+
     return sdata if copy else None
+
+
+preprocessing_steps = dict(
+    reverse_complement=reverse_complement_data,
+    one_hot_encode=one_hot_encode_data,
+    train_test_split=train_test_split_data,
+)

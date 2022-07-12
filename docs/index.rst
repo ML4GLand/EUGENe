@@ -10,8 +10,7 @@ Welcome to eugene's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-   modules
+   source/api
 
 Indices and tables
 ==================

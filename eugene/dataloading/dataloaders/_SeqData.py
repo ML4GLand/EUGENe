@@ -245,7 +245,7 @@ class SeqData():
         if seq_transforms is None:
             print("No transforms given, assuming default transforms (reverse complement, one hot encode and tensorize).")
             transforms = [Augment(**transform_kwargs), ReverseComplement(**transform_kwargs), OneHotEncode(**transform_kwargs), ToTensor()]
-            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
 
         if "augment" in seq_transforms:
             if self.seqs is not None:
@@ -270,9 +270,9 @@ class SeqData():
         transforms.append(ToTensor(**transform_kwargs))
 
         if ohe_flag:
-            return SeqDataset(self.ohe_seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(self.ohe_seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
         else:
-            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label], rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
 
 
 

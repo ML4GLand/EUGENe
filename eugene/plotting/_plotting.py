@@ -1,8 +1,25 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import seqlogo
 from sklearn.metrics import confusion_matrix
+import vizsequence as viz_sequence
 from ..utils import defineTFBS
+
+
+def plot_logo(matrix, **kwargs):
+    cpm = seqlogo.CompletePm(pfm = matrix)
+    logo = seqlogo.seqlogo(cpm, ic_scale = True, format = 'png', size = 'medium')
+    display(logo)
+
+
+def filter_viz(filters, n_filters=-1):
+    if n_filters == -1:
+        n_filters = filters.shape[1]
+    plt.figure(figsize=(10, 10))
+
+
+
 
 # Performance plots
 

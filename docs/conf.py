@@ -64,8 +64,8 @@ html_static_path = ['_static']
 
 autosummary_generate = True
 autodoc_docstring_signature = True
-napoleon_google_docstring = False
-napoleon_numpy_docstring = True
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
 napoleon_use_param = False
 napoleon_use_rtype = False
 numpydoc_show_class_members = False
