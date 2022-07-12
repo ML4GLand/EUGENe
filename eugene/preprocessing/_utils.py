@@ -8,6 +8,7 @@ np.random.seed(13)
 alphabet = np.array(["A", "G", "C", "T"])
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
+
 ### Sequence encoding from concise
 
 def _get_vocab_dict(vocab):

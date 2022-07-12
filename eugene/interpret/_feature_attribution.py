@@ -1,8 +1,10 @@
 import numpy as np
 import torch
 from captum.attr import InputXGradient, DeepLift
+from ..utils import track
 from ..preprocessing import dinuc_shuffle
 from tqdm.auto import tqdm
+
 
 def grad_explain(model, inputs, ref_type=None, target=None, device="cpu"):
     model.train()
@@ -51,7 +53,10 @@ def nn_explain(model,
     return attrs
 
 
-def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGradient", device="cpu"):
+@track
+def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGradient", device="cpu", copy=False):
+
+    sdata = sdata.copy() if copy else sdata
     sdataset = sdata.to_dataset(label=None, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
     sdataloader = sdataset.to_dataloader(batch_size=batch_size)
 
@@ -69,4 +74,5 @@ def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGrad
         else:
             #print(i_batch*BATCH_SIZE, dataset_len)
             all_explanations[i_batch*batch_size:dataset_len] = curr_explanations
-    return all_explanations
+    sdata.uns[f"{saliency_method}_imps"] = all_explanations
+    return sdata if copy else None
