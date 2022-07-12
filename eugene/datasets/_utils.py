@@ -31,12 +31,15 @@ def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
     else:
         return file
 
-def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool = False) -> list:
+def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression: str = "") -> list:
+    ds_path = os.path.join(HERE.parent, settings.datasetdir, ds_name)
     paths = []
+    if compression != "":
+        compression = "." + compression
     for i in data_idxs:
-        csv_name = os.path.basename(url_list[i]).split(".")[0] + ".csv"
-        if not os.path.exists(os.path.join(HERE.parent, settings.datasetdir, ds_name, csv_name)):
-            ds_path = os.path.join(HERE.parent, settings.datasetdir, ds_name)
+        base_name = os.path.basename(url_list[i]).split(".")[0] + f".csv{compression}"
+        search_path = os.path.join(HERE.parent, settings.datasetdir, ds_name, base_name)
+        if not os.path.exists(search_path):
             if not os.path.isdir(ds_path):
                 print(f"Path {ds_path} does not exist, creating new folder.")
                 os.makedirs(ds_path)
@@ -45,7 +48,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool
             path = wget.download(url_list[i], os.path.relpath(ds_path))
             print(f"Finished downloading {os.path.basename(url_list[i])}")
 
-            if is_gz:
+            if compression == ".gz":
                 print("Processing gzip file...")
                 with gzip.open(path) as gz:
                     with io.TextIOWrapper(gz, encoding="utf-8") as file:
@@ -54,16 +57,16 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool
                         if ds_name == "deBoer20":
                             file = deBoerCleanup(file, i)
 
-                        save_path = os.path.join(ds_path, csv_name)
-                        print(f"Saving csv file to {save_path}...")
-                        file.to_csv(save_path, index = False)
-                        print(f"Saved csv file to {save_path}")
+                        save_path = os.path.join(ds_path, base_name)
+                        print(f"Saving file to {save_path}...")
+                        file.to_csv(save_path, index = False, compression="gzip")
+                        print(f"Saved file to {save_path}")
                         paths.append(save_path)
                 os.remove(os.path.join(ds_path, os.path.basename(url_list[i])))
             else:
-                # If file is not packed, same logic but without gzip, implement when needed
+                # Implement when needed
                 pass
         else:
-            print(f"Dataset {ds_name} {csv_name} has already been dowloaded.")
-            paths.append(os.path.join(HERE.parent, settings.datasetdir, ds_name, csv_name))
+            print(f"Dataset {ds_name} {base_name} has already been dowloaded.")
+            paths.append(os.path.join(ds_path, base_name))
     return paths

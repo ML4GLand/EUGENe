@@ -80,10 +80,10 @@ def deBoer20(datasets: list, **kwargs: dict) -> pd.DataFrame:
     if type(datasets) is int:
         datasets = [datasets]
 
-    paths = try_download_urls(datasets, urls_list, "deBoer20", is_gz = True)
+    paths = try_download_urls(datasets, urls_list, "deBoer20", compression = "gz")
 
     seq_col="SEQ"
     target_col="TARGET"
 
-    data = read_csv(paths, seq_col=seq_col, target_col=target_col, sep=",", col_names=[seq_col,target_col], **kwargs)
+    data = read_csv(paths, sep=",", seq_col=seq_col, target_col=target_col, col_names=[seq_col,target_col], auto_name=True, compression="gzip", **kwargs)
     return data
