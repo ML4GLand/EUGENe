@@ -14,6 +14,7 @@ from eugene import settings
 
 ### General utils
 
+
 # Find hamming distance between two strings. Returns inf if they are different lengths
 def hamming_distance(string1, string2):
     distance = 0
@@ -24,6 +25,7 @@ def hamming_distance(string1, string2):
         if string1[i] != string2[i]:
             distance += 1
     return distance
+
 
 # Collapse neighbor positions of array to ranges
 def collapse_pos(positions):
@@ -47,11 +49,13 @@ database_path = os.path.join(file_abs_path, '..', 'datasets/auxiliary')
 ets_aff_file=f"{database_path}/parsed_Ets1_8mers.txt"
 gata_aff_file=f"{database_path}/parsed_Gata6_3769_contig8mers.txt"
 
+
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadEtsAff(file):
     ref = file
     Seq2EtsAff  = {line.split('\t')[0]:float(line.split('\t')[1]) for line in open(ref,'r').readlines()}
     return Seq2EtsAff
+
 
 # Load Gata6 Badis 2009 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadGata6Aff(file):
@@ -59,12 +63,19 @@ def loadGata6Aff(file):
     Seq2GataAff = {line.split('\t')[0]:float(line.split('\t')[1]) for line in open(ref,'r').readlines()}
     return Seq2GataAff
 
+
 # Load the affinities
 ets_aff = loadEtsAff(ets_aff_file)
 gata_aff = loadGata6Aff(gata_aff_file)
 
+
+# Define for use in next two functions
+BindingSiteName2affinities_file=f"{database_path}/bindingSiteName2affinities.pkl"
+SiteName2bindingSiteSequence_file=f"{database_path}/siteName2bindingSiteSequence.pkl"
+
+
 # Load Otx-a binding site to affinity dictionary
-def loadBindingSiteName2affinities(file="../datasets/bindingSiteName2affinities.pkl", pickle_obj=True):
+def loadBindingSiteName2affinities(file=BindingSiteName2affinities_file, pickle_obj=True):
     if pickle_obj:
         with open(file, 'rb') as handle:
             b = pickle.load(handle)
@@ -72,8 +83,9 @@ def loadBindingSiteName2affinities(file="../datasets/bindingSiteName2affinities.
     else:
         print("Only pickles at this time")
 
+
 # Load Otx-a binding site name to sequence dictionary
-def loadSiteName2bindingSiteSequence(file="../datasets/siteName2bindingSiteSequence.pkl", pickle_obj=True):
+def loadSiteName2bindingSiteSequence(file=SiteName2bindingSiteSequence_file, pickle_obj=True):
     if pickle_obj:
         with open(file, 'rb') as handle:
             b = pickle.load(handle)
@@ -84,8 +96,9 @@ def loadSiteName2bindingSiteSequence(file="../datasets/siteName2bindingSiteSeque
 
 ### Sequence annotation ###
 
+
 # Function to return a dictionary with the position of the first nucleotide of every GATA and ETS core fond in an input sequence. Also includes orientation
-def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE": ["TTCC", "ATCC"], "GATA_FORWARD": ["GATA"], "GATA_REVERSE": ["TATC"]}):
+def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA", "GGAT"], "ETS_REVERSE": ["TTCC", "ATCC"], "GATA_FORWARD": ["GATA"], "GATA_REVERSE": ["TATC"]}):
     core_pos = {}
     for i in range(2, len(seq)-5):
         if seq[i:i+4] in cores["ETS_FORWARD"]:
@@ -105,6 +118,7 @@ def findEtsAndGataCores(seq, cores={"ETS_FORWARD": ["GGAA","GGAT"], "ETS_REVERSE
             core_pos[i].append("R")
     return core_pos
 
+
 # Function to add the affinity and sequence of the binding site cores identified by findEtsAndGataCores()
 def findTFBSAffinity(seq, cores, ets_aff_file="../datasets/parsed_Ets1_8mers.txt", gata_aff_file="../datasets/parsed_Gata6_3769_contig8mers.txt"):
     #ets_aff = loadEtsAff(ets_aff_file)
@@ -117,6 +131,7 @@ def findTFBSAffinity(seq, cores, ets_aff_file="../datasets/parsed_Ets1_8mers.txt
             cores[pos].append(gata_aff[seq[pos-2:pos+6]])
     return cores
 
+
 # Function to add the spacing between binding sites given a core dictionary. Specifically adds the distance from the start of each binding site to the last binding site
 def findSpacingBetweenTFBS(cores):
     sorted_core_pos = sorted(list(cores.keys()))
@@ -128,6 +143,7 @@ def findSpacingBetweenTFBS(cores):
             cores[pos].append((pos-2)-(previous_pos)-1)
         previous_pos = pos+5
     return cores
+
 
 # Function to loop through the identifed cores and find the closes match to a binding site in the OLS library using the hamming distance
 def findClosestOLSMatch(tfbs_dict, match_dict):
@@ -150,6 +166,7 @@ def findClosestOLSMatch(tfbs_dict, match_dict):
         tfbs_dict[pos].append(min_distance)
     return tfbs_dict
 
+
 # Collates a TFBS dictionary for a given input sequence. Assumes there are GATA and ETS cores to find
 def defineTFBS(seq, findClosestOLS=True):
     tfbs = findEtsAndGataCores(seq)
@@ -161,7 +178,21 @@ def defineTFBS(seq, findClosestOLS=True):
     return tfbs
 
 
+def convert2pyRangesDict(names, seqs):
+    d = {"Chromosome": [], "Start": [], "End": [], "Strand": [], "Name": []}
+    for i, seq in tqdm(enumerate(seqs)):
+        tfbs_def = defineTFBS(seq)
+        name = names[i]
+        for key in tfbs_def.keys():
+            d["Chromosome"].append(name)
+            d["Start"].append(int(key-2))
+            d["End"].append(int(key-2) + len(tfbs_def[key][2])-1)
+            d["Strand"].append("+" if tfbs_def[key][1] == "F" else "-")
+            d["Name"].append(tfbs_def[key][0])
+    return d
+
 ### Feature encodings ###
+
 
 # Function to encode a sequence based on nucleotides. Makes use of defineTFBS to find TFBS. Note that the current
 # implementation only keeps sequences with exactly 5 binding sites. Currently supports encoding into mixed 1.0, 2.0 and 3.0
@@ -190,6 +221,7 @@ def encode_seq(seq, encoding):
     enh_encoding.append(len(seq)-(pos+5)-1)
     return enh_encoding
 
+
 # Uses encode_seq to encode an entire dataset (an input dataframe with a column containing the sequence called "SEQ")
 # Currently supports encoding into mixed 1.0, 2.0 and 3.0
 def encode_dataset(data, encode):
@@ -210,6 +242,7 @@ def encode_dataset(data, encode):
         print("Get in shape! Should have 21 or 26 features, but have {}".format(X_mixed.shape[1]))
         return -1
     return X_mixed, valid_idx
+
 
 # Function to encode a sequence based on sitenames (i.e. S1-G1r...)
 def encode_OLS_seq(OLS_seq, encoding, sitename_dict, affinity_dict):
@@ -265,6 +298,7 @@ def encode_OLS_seq(OLS_seq, encoding, sitename_dict, affinity_dict):
 
     return enh_enc
 
+
 # Function to encode a dataset of OLS sequences by looping through dataframe
 # and repeatedly running encode_OLS_seq. Supports mixed 1.0, 2.0 and 3.0
 def encode_OLS_dataset(OLS_dataset, encode):
@@ -288,6 +322,7 @@ def encode_OLS_dataset(OLS_dataset, encode):
 
 
 ### Plotting ###
+
 
 # Function to plot genome tracks for otxa
 def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, highlight=[], cmap=None, norm=None):
@@ -369,6 +404,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
     ax[1].set_ylabel(ylab)
     #ax[1].hlines(1, len(seq), threshold/10, color="red")
     plt.suptitle(title, fontsize=24, weight="bold", color=color)
+
 
 def tile_plot(data, tile_col="TILE", score_col="SCORES", name_col="NAME", label_col=None):
     rc = {"font.size": 14}

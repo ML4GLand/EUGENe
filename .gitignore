@@ -4,17 +4,10 @@ data/
 results/
 bin/*/err/
 bin/*/out/
-<<<<<<< HEAD
-tests/_data/datasets/
-tests/_data/tf_modisco/
-tests/_logs/
-tests/_out/
-tests/_configs/
-=======
->>>>>>> main
 *.err
 *.out
 .vscode/
+tests/_data/datasets
 tests/notebooks/lightning_logs
 tests/_configs/
 tests/_data/tf_modisco/

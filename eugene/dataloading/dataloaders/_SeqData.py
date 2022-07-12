@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 import pyranges as pr
 from typing import Any, Union, Optional
-from typing import Iterable, Sequence, Mapping, MutableMapping  # Generic ABCs
+from typing import Dict, Iterable, Sequence, Mapping, MutableMapping  # Generic ABCs
 from os import PathLike
 from collections import OrderedDict
 from functools import partial, singledispatch
 from pandas.api.types import infer_dtype, is_string_dtype, is_categorical_dtype
 import h5py
 import warnings
+import pyranges as pr
 
 
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
@@ -42,7 +43,7 @@ class SeqData():
         names: np.ndarray = None,
         rev_seqs: np.ndarray = None,
         seqs_annot: Optional[Union[pd.DataFrame, Mapping[str, Iterable[Any]]]] = None,
-        pos_annot: pr.PyRanges = None,
+        pos_annot: Union[pr.PyRanges, Dict, str] = None,
         ohe_seqs: np.ndarray = None,
         ohe_rev_seqs: np.ndarray = None,
         seqsm: Optional[Union[np.ndarray, Mapping[str, Sequence[Any]]]] = None,
@@ -62,12 +63,18 @@ class SeqData():
         else:
             self._n_obs = len(self.ohe_seqs)
 
-        # annotations
+        # seq annotations (handled by gen dataframe)
         self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])
-        #self.pos_annot = _gen_dataframe(var, self._n_vars, ["var_names", "col_names"])
-        self.pos_annot = pos_annot
 
-        # unstructured
+        # pos annotations
+        if isinstance(pos_annot, dict):
+            self.pos_annot = pr.from_dict(pos_annot)
+        elif isinstance(pos_annot, str):
+            self.pos_annot = pr.read_bed(pos_annot)
+        else:
+            self.pos_annot = pos_annot
+
+        # unstructured metadata/data
         self.uns = uns or OrderedDict()
 
         # TODO: Think about consequences of making obsm a group in hdf
@@ -221,7 +228,12 @@ class SeqData():
             elif attr in ["seqs_annot"]:
                 keys = getattr(self, attr).keys()
                 if len(keys) > 0:
-                    descr += f"\n    {attr}: {str(list(keys))[1:-1]}"
+                    descr += f"\n{attr}: {str(list(keys))[1:-1]}"
+            elif attr in ["pos_annot"]:
+                if getattr(self, attr) is not None:
+                    descr += f"\n{attr}: PyRanges object with {len(getattr(self, attr))} features"
+                else:
+                    descr += f"\n{attr}: None"
         return descr
 
 

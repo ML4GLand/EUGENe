@@ -4,6 +4,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import pyranges as pr
 
 from .._compat import Literal
 from .._settings import settings
@@ -12,7 +13,7 @@ from ._utils import check_datasetdir_exists, try_download_urls
 from ..dataloading._io import read, read_csv
 HERE = Path(__file__).parent
 pkg_resources = None
-        
+
 def get_dataset_info():
     """Return DataFrame with info about builtin datasets.
     Returns
@@ -34,6 +35,7 @@ def random1000(**kwargs: dict) -> pd.DataFrame:
     """
     filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
     data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    data.pos_annot = pr.read_bed(f"{HERE}/test_1000seqs_66/test_seq_features.bed")
     return data
 
 

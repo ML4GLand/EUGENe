@@ -6,14 +6,14 @@ import eugene as eu
 import numpy as np
 import pytest
 from pathlib import Path
+import pyranges as pr
 
 HERE = Path(__file__).parent
 
 def test_init():
     names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/_data/test_1000seqs_66/test_seqs.npy", names_file=f"{HERE}/_data/test_1000seqs_66/test_ids.npy", target_file=f"{HERE}/_data/test_1000seqs_66/test_labels.npy", rev_seq_file=f"{HERE}/_data/test_1000seqs_66/test_rev_seqs.npy", return_numpy=True)
     assert(len(names) == len(seqs) == len(rev_seqs) == len(targets))
-    sdata = eu.dl.SeqData(names=names, seqs=seqs, seqs_annot=targets, rev_seqs=rev_seqs)
-
+    sdata = eu.dl.SeqData(names=names, seqs=seqs, seqs_annot=targets, rev_seqs=rev_seqs, pos_annot=f"{HERE}/_data/test_1000seqs_66/test_seq_features.bed")
 
 @pytest.fixture
 def sdata():
@@ -27,7 +27,8 @@ def sdata():
 
 def test_print(sdata):
     print(sdata)
-
+    sdata.pos_annot = pr.read_bed(f"{HERE}/_data/test_1000seqs_66/test_seq_features.bed")
+    print(sdata)
 
 def test_write_h5sd(sdata):
     sdata.write_h5sd(f"{HERE}/_data/test_1000seqs_66/test_seqs.h5sd")
