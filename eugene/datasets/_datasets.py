@@ -29,12 +29,15 @@ def get_dataset_info():
     stream = pkg_resources.resource_stream(__name__, "datasets.csv")
     return pd.read_csv(stream, index_col=0)
 
-def random1000(**kwargs: dict) -> pd.DataFrame:
+def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     """
     reads the random1000 dataset.
     """
     filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
-    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    if binary:
+        data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+    else:
+        data = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", **kwargs)
     data.pos_annot = pr.read_bed(f"{HERE}/test_1000seqs_66/test_seq_features.bed")
     return data
 
