@@ -63,7 +63,7 @@ def load_model(path, model_type):
              argument("--model_type", type=str, default="hybrid", help="The model type (e.g. CNN)"),
              argument("--out", type=str, default="./", help="Output directory")])
 def score(args):
-    from ._nn_explain import get_importances
+    from ...archive._nn_explain import get_importances
     model = load_model(args.model, args.model_type)
     model.eval()
     dataloader = load_data(args.data)
@@ -76,7 +76,7 @@ def score(args):
              argument("--model_type", type=str, default="hybrid", help="The model type (e.g. CNN)"),
              argument("--out", type=str, default="./", help="Output directory")])
 def pwm(args):
-    from ._nn_explain import get_first_conv_layer
+    from ...archive._nn_explain import get_first_conv_layer
     model = load_model(args.model, args.model_type)
     model.eval()
     pwms = get_first_conv_layer(model).detach().numpy()

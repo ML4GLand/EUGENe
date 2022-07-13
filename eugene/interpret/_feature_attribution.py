@@ -4,9 +4,19 @@ from captum.attr import InputXGradient, DeepLift
 from ..utils import track
 from ..preprocessing import dinuc_shuffle
 from tqdm.auto import tqdm
+from yuzu.naive_ism import naive_ism
 
 
-def grad_explain(model, inputs, ref_type=None, target=None, device="cpu"):
+def _ism_explain(model, inputs, ism_type="naive", device="cpu", batch_size=1):
+    if ism_type == "naive":
+        inputs = inputs[0].requires_grad_().detach().cpu().numpy()
+        attrs = naive_ism(model=model, X_0=inputs, device=device, batch_size=batch_size)
+    else:
+        raise ValueError("ISM type not supported")
+    return attrs
+
+
+def _grad_explain(model, inputs, ref_type=None, target=None, device="cpu"):
     model.train()
     model.to(device)
     grad_explainer = InputXGradient(model)
@@ -16,7 +26,7 @@ def grad_explain(model, inputs, ref_type=None, target=None, device="cpu"):
     return attrs.to("cpu").detach().numpy()
 
 
-def deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
+def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
     model.train()
     model.to(device)
     deep_lift = DeepLift(model)
@@ -43,11 +53,14 @@ def nn_explain(model,
                target=None,
                ref_type="zero",
                device="cpu",
+               batch_size=1,
                abs_value=False):
     if saliency_type == "DeepLift":
-        attrs = deeplift_explain(model=model, inputs=inputs, ref_type=ref_type, device=device, target=target)
+        attrs = _deeplift_explain(model=model, inputs=inputs, ref_type=ref_type, device=device, target=target)
     elif saliency_type == "InputXGradient":
-        attrs = grad_explain(model=model, inputs=inputs, ref_type=ref_type, device=device, target=target)
+        attrs = _grad_explain(model=model, inputs=inputs, ref_type=ref_type, device=device, target=target)
+    elif saliency_type == "NaiveISM":
+        attrs = _ism_explain(model=model, inputs=inputs, ism_type="naive", device=device, batch_size=batch_size)
     if abs_value:
         attrs = np.abs(attrs)
     return attrs
@@ -55,11 +68,11 @@ def nn_explain(model,
 
 @track
 def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGradient", device="cpu", copy=False):
-
+    if saliency_method == "NaiveISM":
+        print("Note: NaiveISM is not implemented yet for models other than single stranded ones")
     sdata = sdata.copy() if copy else sdata
     sdataset = sdata.to_dataset(label=None, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
     sdataloader = sdataset.to_dataloader(batch_size=batch_size)
-
     dataset_len = len(sdataloader.dataset)
     example_shape = sdataloader.dataset[0][1].numpy().shape
     all_explanations = np.zeros((dataset_len, *example_shape))
@@ -67,12 +80,10 @@ def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGrad
         batch_size = sdataloader.batch_size
     for i_batch, batch in tqdm(enumerate(sdataloader), total=int(dataset_len / batch_size)):
         ID, x, x_rev_comp, y = batch
-        curr_explanations = nn_explain(model, (x, x_rev_comp), saliency_type=saliency_method, device=device)
+        curr_explanations = nn_explain(model, (x, x_rev_comp), saliency_type=saliency_method, device=device, batch_size=batch_size)
         if (i_batch+1)*batch_size < dataset_len:
-            #print(i_batch*BATCH_SIZE, (i_batch+1)*BATCH_SIZE)
             all_explanations[i_batch*batch_size: (i_batch+1)*batch_size] = curr_explanations
         else:
-            #print(i_batch*BATCH_SIZE, dataset_len)
             all_explanations[i_batch*batch_size:dataset_len] = curr_explanations
     sdata.uns[f"{saliency_method}_imps"] = all_explanations
     return sdata if copy else None
