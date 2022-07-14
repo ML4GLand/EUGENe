@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# Imports
 import os
 import pickle
 import tqdm
@@ -10,44 +7,15 @@ from vizsequence import viz_sequence
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.patches as mpatches
-from eugene import settings
 
-### General utils
-
-
-# Find hamming distance between two strings. Returns inf if they are different lengths
-def hamming_distance(string1, string2):
-    distance = 0
-    L = len(string1)
-    if L != len(string2):
-        return np.inf
-    for i in range(L):
-        if string1[i] != string2[i]:
-            distance += 1
-    return distance
-
-
-# Collapse neighbor positions of array to ranges
-def collapse_pos(positions):
-    ranges = []
-    start = positions[0]
-    for i in range(1, len(positions)):
-        if positions[i-1] == positions[i]-1:
-            continue
-        else:
-            ranges.append((start, positions[i-1]+2))
-            start = positions[i]
-    ranges.append((start, positions[-1]+2))
-    return ranges
-
-
-### Otx-a defintions ###
 
 # Define these for use in any other function
 file_abs_path = os.path.abspath(os.path.dirname(__file__))
 database_path = os.path.join(file_abs_path, '..', 'datasets/auxiliary')
 ets_aff_file=f"{database_path}/parsed_Ets1_8mers.txt"
 gata_aff_file=f"{database_path}/parsed_Gata6_3769_contig8mers.txt"
+enhancer_binding_sites = {"Core-otx-a": ["..GGAA..", "..GGAT..", "..TTCC..", "..ATCC..", "..GATA..", "..TATC.."],
+                          "WT-otx-a": ["GTTATCTC", "ACGGAAGT", "AAGGAAAT", "AATATCT", "AAGATAGG", "GAGATAAC", "ACTTCCGT", "ATTTCCTT", "AGATATT", "CCTATCTT"]}
 
 
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
@@ -95,6 +63,35 @@ def loadSiteName2bindingSiteSequence(file=SiteName2bindingSiteSequence_file, pic
 
 
 ### Sequence annotation ###
+def randomizeLinkers(seq, features=None, enhancer=None):
+    if features == None:
+        assert enhancer != None
+        features = enhancer_binding_sites[enhancer]
+
+    transformed_seq = []
+    feature_spans = merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
+    if feature_spans is None:
+        return seq
+    for i, span in enumerate(feature_spans):
+        if i == 0:
+            linker_len = span[0]
+        else:
+            linker_len = feature_spans[i][0]-feature_spans[i-1][1]
+        transformed_seq.append("".join(np.random.choice(alphabet, size=linker_len)))
+        transformed_seq.append(seq[span[0]:span[1]])
+    transformed_seq.append("".join(np.random.choice(alphabet, size=len(seq)-feature_spans[-1][1])))
+    transformed_seq = "".join(transformed_seq)
+    if len(transformed_seq) != len(seq):
+        logging.warning('Transformed sequence is length {}'.format(len(transformed_seq)))
+    return transformed_seq
+
+
+# Fit to overall dataframe
+def encodeBlock():
+    ohe_block = OneHotEncoder(sparse=False)
+    X = OLS_data[block_features]
+    ohe_block.fit(X)
+    X_block = ohe_block.fit_transform(X)
 
 
 # Function to return a dictionary with the position of the first nucleotide of every GATA and ETS core fond in an input sequence. Also includes orientation
@@ -179,6 +176,7 @@ def defineTFBS(seq, findClosestOLS=True):
 
 
 def convert2pyRangesDict(names, seqs):
+    """Convert a list of names and sequences to a dictionary of pyRanges objects"""
     d = {"Chromosome": [], "Start": [], "End": [], "Strand": [], "Name": []}
     for i, seq in tqdm(enumerate(seqs)):
         tfbs_def = defineTFBS(seq)
@@ -190,8 +188,6 @@ def convert2pyRangesDict(names, seqs):
             d["Strand"].append("+" if tfbs_def[key][1] == "F" else "-")
             d["Name"].append(tfbs_def[key][0])
     return d
-
-### Feature encodings ###
 
 
 # Function to encode a sequence based on nucleotides. Makes use of defineTFBS to find TFBS. Note that the current
@@ -321,9 +317,6 @@ def encode_OLS_dataset(OLS_dataset, encode):
     return X_mixed
 
 
-### Plotting ###
-
-
 # Function to plot genome tracks for otxa
 def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None, threshold=0.5, highlight=[], cmap=None, norm=None):
     # Get the annotations for the seq
@@ -432,3 +425,62 @@ def tile_plot(data, tile_col="TILE", score_col="SCORES", name_col="NAME", label_
                 #    label.set_color("lightgreen")
                 #elif data.set_index(name_col).loc[label.get_text()][label_col] == 0:
                 #    label.set_color("lightcoral")
+
+
+# Wrapper function to generate mixed 1.0-3.0 encodings
+# Currently supports encoding into mixed 1.0, 2.0 and 3.0
+def mixed_encode(data):
+    mixed1_encoding, mixed2_encoding, mixed3_encoding, valid_idx = [], [], [], []
+    for i, (row_num, enh_data) in tqdm.tqdm(enumerate(data.iterrows())):
+        sequence = enh_data["SEQ"].upper().strip()
+        encoded_seq1 = encode_seq(sequence, encoding="mixed1")
+        encoded_seq2 = encode_seq(sequence, encoding="mixed2")
+        encoded_seq3 = encode_seq(sequence, encoding="mixed3")
+        if encoded_seq1 != -1:
+            mixed1_encoding.append(encoded_seq1)
+            mixed2_encoding.append(encoded_seq2)
+            mixed3_encoding.append(encoded_seq3)
+            valid_idx.append(i)
+    X_mixed1 = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2 = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3 = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1, X_mixed2, X_mixed3, valid_idx
+
+
+# Wrapper function to encode all three mixed encodings for the OLS library. \
+# Currrently supports mixed 1.0, 2.0 and 3.0
+def mixed_OLS_encode(OLS_dataset):
+    site_dict = loadSiteName2bindingSiteSequence()  # Sitenames to sequence
+    aff_dict = loadBindingSiteName2affinities()  # Sitenames to affinities
+    mixed1_encoding, mixed2_encoding, mixed3_encoding = [], [], []
+    for i, (row_num, enh_data) in enumerate(tqdm.tqdm(OLS_dataset.iterrows())):
+        sequence = enh_data.values
+        encoded_seq1 = encode_OLS_seq(sequence, encoding="mixed1", sitename_dict=site_dict, affinity_dict=aff_dict)
+        encoded_seq2 = encode_OLS_seq(sequence, encoding="mixed2", sitename_dict=site_dict, affinity_dict=aff_dict)
+        encoded_seq3 = encode_OLS_seq(sequence, encoding="mixed3", sitename_dict=site_dict, affinity_dict=aff_dict)
+        mixed1_encoding.append(encoded_seq1)
+        mixed2_encoding.append(encoded_seq2)
+        mixed3_encoding.append(encoded_seq3)
+    X_mixed1s = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2s = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3s = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1s, X_mixed2s, X_mixed3s
+
+
+# Wrapper function to encode all three mixed encodings for the OLS library. \
+# Currrently supports mixed 1.0, 2.0 and 3.0
+def otx_encode(seqs):
+    mixed1_encoding, mixed2_encoding, mixed3_encoding, valid_idx = [], [], [], []
+    for i, sequence in tqdm.tqdm(enumerate(seqs)):
+        encoded_seq1 = encode_seq(sequence, encoding="mixed1")
+        encoded_seq2 = encode_seq(sequence, encoding="mixed2")
+        encoded_seq3 = encode_seq(sequence, encoding="mixed3")
+        if encoded_seq1 != -1:
+            mixed1_encoding.append(encoded_seq1)
+            mixed2_encoding.append(encoded_seq2)
+            mixed3_encoding.append(encoded_seq3)
+            valid_idx.append(i)
+    X_mixed1 = (pd.DataFrame(mixed1_encoding).replace({"G": 0, "E": 1, "R": 0, "F": 1})).values
+    X_mixed2 = (pd.DataFrame(mixed2_encoding).replace({"R": -1, "F": 1})).values
+    X_mixed3 = (pd.DataFrame(mixed3_encoding).replace({"R": 0, "F": 1})).values
+    return X_mixed1, X_mixed2, X_mixed3, valid_idx

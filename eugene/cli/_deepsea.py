@@ -15,7 +15,7 @@ from pytorch_lightning.utilities.cli import LightningCLI
 # EUGENE
 from .base import BasicFullyConnectedModule, BasicConv1D
 from ..dataloading.dataloaders import SeqDataModule
-from ..preprocessing._encoding import ascii_decode
+from ..preprocessing._seq_preprocess import ascii_decode
 
 # omit_
 from .base._utils import GetFlattenDim

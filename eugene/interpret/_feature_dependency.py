@@ -5,8 +5,9 @@ import numpy as np
 def _get_penultimate_layer(model):
     pass
 
+
 def _get_activations_from_layer(layer, sdataloader):
-    from ..preprocessing import decodeDNA
+    from ..preprocessing import decode_DNA_seq
     activations = []
     sequences = []
     for i_batch, batch in tqdm(enumerate(sdataloader)):

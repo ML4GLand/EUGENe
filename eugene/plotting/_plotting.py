@@ -6,7 +6,7 @@ import seqlogo
 from vizsequence import viz_sequence
 from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_recall_curve, average_precision_score
 from sklearn.preprocessing import binarize
-from ..utils import collapse_pos, defineTFBS
+from ..preprocessing._utils import collapse_pos, defineTFBS
 
 
 def seq(sdata, seq_idx=None, **kwargs):

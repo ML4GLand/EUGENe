@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 from ..utils._decorators import track
 from ..dataloading import SeqData
 from ._dataset_preprocess import split_train_test
-from ._encoding import encodeDNA
+from ._seq_preprocess import encodeDNA
 from ._utils import reverse_complement_seqs
 
 

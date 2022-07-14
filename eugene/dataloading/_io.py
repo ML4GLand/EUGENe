@@ -77,8 +77,8 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
 
     # Grab reverse complement if asked for
     if rev_comp:
-        from ..preprocessing import reverse_complement
-        rev_seqs = [reverse_complement(seq) for seq in seqs]
+        from ..preprocessing import reverse_complement_seq
+        rev_seqs = [reverse_complement_seq(seq) for seq in seqs]
     else:
         rev_seqs = None
 
@@ -116,8 +116,8 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
         targets = None
 
     if rev_comp:
-        from ..preprocessing import reverse_complement
-        rev_seqs =  [reverse_complement(seq) for seq in seqs]
+        from ..preprocessing import reverse_complement_seq
+        rev_seqs =  [reverse_complement_seq(seq) for seq in seqs]
     else:
         rev_seqs = None
 
