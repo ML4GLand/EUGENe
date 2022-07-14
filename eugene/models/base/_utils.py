@@ -15,7 +15,7 @@ def BuildFullyConnected(layers, activation="relu", dropout_rate=0.0, batchnorm=F
     for i in range(1, len(layers)-1):
         net.append(nn.Linear(layers[i-1], layers[i]))
         if activation=="relu":
-            net.append(nn.ReLU(inplace=True))
+            net.append(nn.ReLU(inplace=False))
         elif activation=="sigmoid":
             net.append(nn.Sigmoid())
         if dropout_rate != 0.0:

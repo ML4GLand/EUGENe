@@ -49,7 +49,7 @@ class BasicConv1D(nn.Module):
         for i in range(1, len(channels)):
             net.append(nn.Conv1d(channels[i-1], channels[i], kernel_size=conv_kernels[i-1]))
             if activation=="relu":
-                net.append(nn.ReLU(inplace=True))
+                net.append(nn.ReLU(inplace=False))
             elif activation=="sigmoid":
                 net.append(nn.Sigmoid())
             if not (omit_final_pool and (len(channels) - i == 1)): # Only omit max pool on final iteration
