@@ -9,6 +9,31 @@ alphabet = np.array(["A", "G", "C", "T"])
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
 
+# Find hamming distance between two strings. Returns inf if they are different lengths
+def hamming_distance(string1, string2):
+    distance = 0
+    L = len(string1)
+    if L != len(string2):
+        return np.inf
+    for i in range(L):
+        if string1[i] != string2[i]:
+            distance += 1
+    return distance
+
+
+# Collapse neighbor positions of array to ranges
+def collapse_pos(positions):
+    ranges = []
+    start = positions[0]
+    for i in range(1, len(positions)):
+        if positions[i-1] == positions[i]-1:
+            continue
+        else:
+            ranges.append((start, positions[i-1]+2))
+            start = positions[i]
+    ranges.append((start, positions[-1]+2))
+    return ranges
+
 ### Sequence encoding from concise
 
 def _get_vocab_dict(vocab):

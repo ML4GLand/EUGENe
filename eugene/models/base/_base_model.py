@@ -3,36 +3,27 @@ import numpy as np
 
 # PyTorch
 import torch
-from torch import nn
 import torch.nn.functional as F
 from torch.optim import Adam
 import torchmetrics
 
 # PyTorch Lightning
 from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.utilities.cli import LightningCLI
 
 # EUGENE
-from .base import BasicFullyConnectedModule
-from ..dataloading.dataloaders import SeqDataModule
-from ..preprocessing._encoding import ascii_decode
+from ...preprocessing._encoding import ascii_decode
 
-class FCN(LightningModule):
-    def __init__(self, input_len, strand="ss", task="regression", aggr=None, fc_kwargs={}):
+# omit_final_pool should be set to True in conv_kwargs
+class BaseModel(LightningModule):
+    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, **kwargs):
         super().__init__()
-        self.flattened_input_dims = 4*input_len
+
+        # Instance variables
+        self.input_len = input_len
         self.strand = strand
         self.task = task
         self.aggr = aggr
-
-        # Add strand specific modules
-        if self.strand == "ss":
-            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
-        elif self.strand == "ds":
-            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims*2, **fc_kwargs)
-        elif self.strand == "ts":
-            self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
-            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, **fc_kwargs)
+        self.kwargs = kwargs
 
         # Add task specific metrics
         if self.task == "regression":
@@ -44,20 +35,8 @@ class FCN(LightningModule):
         # Save hyperparameters
         self.save_hyperparameters()
 
-    def forward(self, x, x_rev_comp):
-        x = x.flatten(start_dim=1)
-        if self.strand == "ss":
-            x = self.fcn(x)
-        elif self.strand == "ds":
-            x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x = torch.cat((x, x_rev_comp), dim=1)
-            x = self.fcn(x)
-        elif self.strand == "ts":
-            x = self.fcn(x)
-            x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x_rev_comp = self.reverse_fcn(x_rev_comp)
-            x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        return x
+    def forward(self, x, x_rev_comp = None) -> torch.Tensor:
+        raise NotImplementedError()
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
@@ -77,7 +56,7 @@ class FCN(LightningModule):
 
     def _common_step(self, batch, batch_idx, stage: str):
         # Get and log loss
-        _, x, x_rev_comp, y = batch
+        ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
 
         if self.task == "binary_classification":
@@ -110,10 +89,9 @@ class FCN(LightningModule):
             elif self.task == "regression":
                 self.log("hp_metric", r_squared, on_epoch=True)
 
-        return loss
+        return {'loss': loss, 'predictions': np.stack([np.array([ascii_decode(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]),
+                                                       outs.detach().cpu().numpy(),
+                                                       y.detach().cpu().numpy()], axis=-1)}
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-3)
-
-if __name__ == "__main__":
-    cli = LightningCLI(FCN, SeqDataModule, save_config_overwrite=True)

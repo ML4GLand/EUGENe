@@ -1,6 +1,4 @@
-import torch
 import torch.nn as nn
-
 from ._utils import GetFlattenDim, BuildFullyConnected
 
 # Fully connected modules
@@ -43,7 +41,7 @@ class BasicConv1D(nn.Module):
             if type(dropout_rates) == float:
                 dropout_rates = [dropout_rates] * len(channels)
             else:
-                assert len(dropout_rates) == len(channels)
+                assert len(dropout_rates) == len(channels)-1
         net = []
 
         for i in range(1, len(channels)):
@@ -58,7 +56,7 @@ class BasicConv1D(nn.Module):
             if len(channels) == 2 and not omit_final_pool:
                 net.append(nn.MaxPool1d(kernel_size=pool_kernels[i-1], stride=pool_strides[i-1]))
             if dropout_rates != 0.0:
-                net.append(nn.Dropout(dropout_rates[i]))
+                net.append(nn.Dropout(dropout_rates[i-1]))
             if batchnorm:
                 net.append(nn.BatchNorm1d(channels[i]))
         self.module = nn.Sequential(*net)
@@ -71,6 +69,9 @@ class BasicConv1D(nn.Module):
 
 # Recurrent modules
 class BasicRecurrent(nn.Module):
+    """
+    This function is used to get the output dimension of the recurrent module.
+    """
     def __init__(self, input_dim, output_dim, unit_type="lstm", bidirectional=False, **kwargs):
         super(BasicRecurrent, self).__init__()
         if unit_type == "lstm":

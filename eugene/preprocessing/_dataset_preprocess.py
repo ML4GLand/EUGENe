@@ -2,8 +2,9 @@ import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-# Function to perform train test splitting with added bonus of defining a subset for testing
+
 def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
+    """Function to perform train test splitting with added bonus of defining a subset for testing"""
     train_X, test_X, train_y, test_y = train_test_split(X_data, y_data, train_size=split, random_state=rand_state, shuffle=shuf)
     if subset != None:
         num_train = int(len(train_X)*subset)
@@ -11,8 +12,9 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
         train_X, test_X, train_y, test_y = train_X[:num_train, :], test_X[:num_test, :], train_y[:num_train], test_y[:num_test]
     return train_X, test_X, train_y, test_y
 
-# Function to standardize features based on passed in indeces and optionally save stats
+
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
+    """Function to standardize features based on passed in indeces and optionally save stats"""
     if indeces is not None:
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
