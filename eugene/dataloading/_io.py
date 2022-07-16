@@ -9,7 +9,7 @@ from os import PathLike
 # Relative imports
 from .dataloaders import SeqData
 
-def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, auto_name=False, compression="infer", **kwargs):
+def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, auto_name=True, compression="infer", **kwargs):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -33,20 +33,19 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         if len(file) == 1 and type(file) is list:
             file = file[0]
     except:
-        pass
+        raise ValueError("file must be a list of files or a single file")
 
     # Load as pandas dataframe
     if type(file) is list:
         dataframe = None
         for i in range(len(file) - 1):
             if dataframe is None:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)], ignore_index=True)
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)], ignore_index=True)
             else:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0), dataframe], ignore_index=True)
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), dataframe], ignore_index=True)
     else:
-        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)
+        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0, compression=compression)
         dataframe.reset_index(inplace=True, drop=True)
-
 
     # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
@@ -54,18 +53,14 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         dataframe["FXN_LABEL"] = np.nan
         dataframe.loc[dataframe[target_col] <= low_thresh, "FXN_LABEL"] = 0
         dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
-        dataframe = dataframe[~dataframe["FXN_LABEL"].isna()]
+        target_col = "FXN_LABEL"
 
     # Grab targets if column is provided
     if target_col is not None:
-        if binarize:
-            assert low_thresh != None and high_thresh != None
-            targets = dataframe["FXN_LABEL"].to_numpy(float)
-        else:
-            targets = dataframe[target_col].to_numpy(float)
-            keep = np.where(~np.isnan(targets) & ~np.isinf(targets))[0]
-            print(f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets")
-            targets = targets[keep]
+        targets = dataframe[target_col].to_numpy(float)
+        keep = np.where(~np.isnan(targets) & ~np.isinf(targets))[0]
+        print(f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets")
+        targets = targets[keep]
     else:
         targets = None
         keep = range(len(dataframe))
@@ -80,14 +75,12 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         ids = ids[keep]
     else:
         if auto_name:
-            dataframe.reset_index(inplace=True)
-            dataframe.rename(columns={"index":"NAME"}, inplace=True)
-            dataframe["NAME"] = "seq" + dataframe['NAME'].astype(str)
+            n_digits = len(str(len(dataframe)-1))
+            dataframe.index = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(dataframe))])
             ids = dataframe.index.to_numpy()
             ids = ids[keep]
         else:
             ids = None
-
 
     # Grab reverse complement if asked for
     if rev_comp:

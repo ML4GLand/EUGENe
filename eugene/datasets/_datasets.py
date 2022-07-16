@@ -25,12 +25,12 @@ def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     """
     Reads the random1000 dataset.
     """
-    filename = f"{HERE}/test_1000seqs_66/test_seqs.tsv"
+    filename = f"{HERE}/random1000/random_seqs.tsv"
     if binary:
         data = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
     else:
         data = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", **kwargs)
-    data.pos_annot = pr.read_bed(f"{HERE}/test_1000seqs_66/test_seq_features.bed")
+    data.pos_annot = pr.read_bed(f"{HERE}/random1000/random_seq_features.bed")
     return data
 
 
