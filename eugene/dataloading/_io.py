@@ -1,4 +1,5 @@
 # Absolute imports
+from enum import auto
 import h5py
 import numpy as np
 import pandas as pd
@@ -8,7 +9,7 @@ from os import PathLike
 # Relative imports
 from .dataloaders import SeqData
 
-def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, **kwargs):
+def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, auto_name=False, compression="infer", **kwargs):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -39,13 +40,13 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         dataframe = None
         for i in range(len(file) - 1):
             if dataframe is None:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names)], ignore_index=True)
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)], ignore_index=True)
             else:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names), dataframe], ignore_index=True)
-        # Clear previous default None headers
-        dataframe = dataframe.drop(0)
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0), dataframe], ignore_index=True)
     else:
-        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0)
+        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)
+        dataframe.reset_index(inplace=True, drop=True)
+
 
     # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
@@ -78,7 +79,14 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         ids = dataframe[name_col].to_numpy(dtype=str)
         ids = ids[keep]
     else:
-        ids = None
+        if auto_name:
+            dataframe.reset_index(inplace=True)
+            dataframe.rename(columns={"index":"NAME"}, inplace=True)
+            dataframe["NAME"] = "seq" + dataframe['NAME'].astype(str)
+            ids = dataframe.index.to_numpy()
+            ids = ids[keep]
+        else:
+            ids = None
 
 
     # Grab reverse complement if asked for
