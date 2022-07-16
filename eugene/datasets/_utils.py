@@ -31,6 +31,7 @@ def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
     else:
         return file
 
+
 def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression: str = "") -> list:
     ds_path = os.path.join(HERE.parent, settings.datasetdir, ds_name)
     paths = []
