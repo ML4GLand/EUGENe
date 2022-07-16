@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from captum.attr import InputXGradient, DeepLift
 from ..utils import track
-from ..preprocessing import dinuc_shuffle
+from ..preprocessing import dinuc_shuffle_seq
 from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
 
@@ -39,8 +39,8 @@ def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu")
     elif ref_type == "shuffle":
         forward_shuffled = forward_inputs.detach().to("cpu").squeeze(dim=0).numpy()
         forward_shuffled = reverse_inputs.detach().to("cpu").squeeze(dim=0).numpy()
-        forward_ref = torch.tensor(dinuc_shuffle(forward_shuffled)).unsqueeze(dim=0).requires_grad_().to(device)
-        reverse_ref = torch.tensor(dinuc_shuffle(reverse_ref)).unsqueeze(dim=0).requires_grad_().to(device)
+        forward_ref = torch.tensor(dinuc_shuffle_seq(forward_shuffled)).unsqueeze(dim=0).requires_grad_().to(device)
+        reverse_ref = torch.tensor(dinuc_shuffle_seq(reverse_ref)).unsqueeze(dim=0).requires_grad_().to(device)
     elif ref_type == "gc":
         ref = torch.tensor([0.3, 0.2, 0.2, 0.3]).expand(forward_inputs.size()[1], 4).unsqueeze(dim=0).to(device)
     attrs = deep_lift.attribute(inputs=forward_inputs, baselines=forward_ref, additional_forward_args=reverse_inputs)

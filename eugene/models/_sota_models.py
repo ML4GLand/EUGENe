@@ -1,8 +1,6 @@
-from tkinter import FALSE
 import torch
 import torch.nn as nn
 from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D
-from . import CNN
 
 
 class DeepBind(BaseModel):

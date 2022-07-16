@@ -6,7 +6,8 @@ import seqlogo
 from vizsequence import viz_sequence
 from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_recall_curve, average_precision_score
 from sklearn.preprocessing import binarize
-from ..preprocessing._utils import collapse_pos, defineTFBS
+from ..preprocessing._utils import _collapse_pos
+from ..preprocessing._otx_preprocess import defineTFBS
 
 
 def seq(sdata, seq_idx=None, **kwargs):
@@ -95,14 +96,14 @@ def _plot_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None, hi
                 fontsize=12, ha='center', va='bottom')
 
     if uns_key is None:
-        from ..preprocessing import oheDNA
+        from ..preprocessing import ohe_DNA_seq
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence"
         ax[1].spines['left'].set_visible(False)
         ax[1].set_yticklabels([])
         ax[1].set_yticks([])
         print(seq)
-        importance_scores = oheDNA(seq)
+        importance_scores = ohe_DNA_seq(seq)
     else:
         importance_scores = sdata.uns[uns_key][seq_idx]
         ylab = "Importance Score"
@@ -116,7 +117,7 @@ def _plot_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None, hi
 
     # Plot the featue importance scores
     if len(highlight) > 0:
-        to_highlight = {"red": collapse_pos(highlight)}
+        to_highlight = {"red": _collapse_pos(highlight)}
         print(to_highlight)
         viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
     else:

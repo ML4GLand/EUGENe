@@ -2,7 +2,7 @@
 import torch
 
 # EUGENE
-from ..preprocessing._utils import randomizeLinkers
+from ..preprocessing._otx_preprocess import randomizeLinkers
 from ..preprocessing._seq_preprocess import ohe_DNA_seq
 
 # Suite of sequence transforms that can be composed using torchvision

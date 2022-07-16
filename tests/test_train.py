@@ -25,7 +25,7 @@ def model():
     """
     model
     """
-    model = eu.models.DeepBind(input_len=66)
+    model = eu.models.DeepBind(input_len=66, output_dim=1)
     return model
 
 

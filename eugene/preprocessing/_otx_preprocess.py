@@ -1,12 +1,17 @@
 import os
+import re
 import pickle
-import tqdm
+from tqdm.auto import tqdm
 import pandas as pd
 import numpy as np
+import logging
 from vizsequence import viz_sequence
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.patches as mpatches
+from sklearn.preprocessing import OneHotEncoder
+from ._seq_preprocess import ohe_DNA_seq
+from ._utils import _merge_intervals, _hamming_distance, _collapse_pos
 
 
 # Define these for use in any other function
@@ -16,7 +21,7 @@ ets_aff_file=f"{database_path}/parsed_Ets1_8mers.txt"
 gata_aff_file=f"{database_path}/parsed_Gata6_3769_contig8mers.txt"
 enhancer_binding_sites = {"Core-otx-a": ["..GGAA..", "..GGAT..", "..TTCC..", "..ATCC..", "..GATA..", "..TATC.."],
                           "WT-otx-a": ["GTTATCTC", "ACGGAAGT", "AAGGAAAT", "AATATCT", "AAGATAGG", "GAGATAAC", "ACTTCCGT", "ATTTCCTT", "AGATATT", "CCTATCTT"]}
-
+alphabet = np.array(["A", "G", "C", "T"])
 
 # Load Ets1 affinities into a dictionary with keys being all possible 8-mers and values being binding affinities (consensus=1)
 def loadEtsAff(file):
@@ -69,7 +74,7 @@ def randomizeLinkers(seq, features=None, enhancer=None):
         features = enhancer_binding_sites[enhancer]
 
     transformed_seq = []
-    feature_spans = merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
+    feature_spans = _merge_intervals([x.span() for x in re.finditer(r"("+'|'.join(features)+r")", seq)])
     if feature_spans is None:
         return seq
     for i, span in enumerate(feature_spans):
@@ -87,9 +92,9 @@ def randomizeLinkers(seq, features=None, enhancer=None):
 
 
 # Fit to overall dataframe
-def encodeBlock():
+def encodeBlock(dataset, block_features):
     ohe_block = OneHotEncoder(sparse=False)
-    X = OLS_data[block_features]
+    X = dataset[block_features]
     ohe_block.fit(X)
     X_block = ohe_block.fit_transform(X)
 
@@ -150,11 +155,11 @@ def findClosestOLSMatch(tfbs_dict, match_dict):
         min_distance = np.inf
         for key, val in match_dict.items():
             if key == "G2F":
-                dist = hamming_distance(seq[1:], match_dict[key])
+                dist = _hamming_distance(seq[1:], match_dict[key])
             elif key == "G2R":
-                dist = hamming_distance(seq[:-1], match_dict[key])
+                dist = _hamming_distance(seq[:-1], match_dict[key])
             else:
-                dist = hamming_distance(seq, match_dict[key])
+                dist = _hamming_distance(seq, match_dict[key])
             if dist < min_distance:
                 min_distance = dist
                 closest_match = key
@@ -371,7 +376,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         ax[1].spines['left'].set_visible(False)
         ax[1].set_yticklabels([])
         ax[1].set_yticks([])
-        importance_scores = one_hot_encode_along_channel_axis(seq)
+        importance_scores = ohe_DNA_seq(seq)
     else:
         ylab = "Importance Score"
 
@@ -386,7 +391,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
 
     # Plot the featue importance scores
     if len(highlight) > 0:
-        to_highlight = {"red": collapse_pos(highlight)}
+        to_highlight = {"red": _collapse_pos(highlight)}
         print(to_highlight)
         viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
     else:

@@ -1,4 +1,11 @@
+# Data and sequences
+from ._random_data import generate_random_data
+
+# Training and prediction
 from ._custom_callbacks import PredictionWriter
+
+# Decorators
 from ._decorators import track
+
+# Other
 from ._hpc import gkmsvm_slurm_train_script
-from ..preprocessing._otx_preprocess import collapse_pos, loadSiteName2bindingSiteSequence, loadBindingSiteName2affinities, encode_seq, encode_OLS_seq, defineTFBS

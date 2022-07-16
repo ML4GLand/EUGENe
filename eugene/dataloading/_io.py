@@ -47,12 +47,6 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     else:
         dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0)
 
-    # Add names if available
-    if name_col is not None:
-        ids = dataframe[name_col].to_numpy(dtype=str)
-    else:
-        ids = None
-
     # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
         assert low_thresh != None and high_thresh != None and target_col != None
@@ -61,9 +55,6 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
         dataframe = dataframe[~dataframe["FXN_LABEL"].isna()]
 
-    # Grab sequences
-    seqs = dataframe[seq_col].to_numpy(dtype=str)
-
     # Grab targets if column is provided
     if target_col is not None:
         if binarize:
@@ -71,14 +62,30 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
             targets = dataframe["FXN_LABEL"].to_numpy(float)
         else:
             targets = dataframe[target_col].to_numpy(float)
-            targets = targets[~np.isnan(targets) & ~np.isinf(targets)]
+            keep = np.where(~np.isnan(targets) & ~np.isinf(targets))[0]
+            print(f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets")
+            targets = targets[keep]
     else:
         targets = None
+        keep = range(len(dataframe))
+
+    # Grab sequences
+    seqs = dataframe[seq_col].to_numpy(dtype=str)
+    seqs = seqs[keep]
+
+    # Add names if available
+    if name_col is not None:
+        ids = dataframe[name_col].to_numpy(dtype=str)
+        ids = ids[keep]
+    else:
+        ids = None
+
 
     # Grab reverse complement if asked for
     if rev_comp:
-        from ..preprocessing import reverse_complement_seq
-        rev_seqs = [reverse_complement_seq(seq) for seq in seqs]
+        from ..preprocessing import reverse_complement_seqs
+        rev_seqs = reverse_complement_seqs(seqs)
+        rev_seqs = rev_seqs[keep]
     else:
         rev_seqs = None
 
@@ -116,8 +123,8 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
         targets = None
 
     if rev_comp:
-        from ..preprocessing import reverse_complement_seq
-        rev_seqs =  [reverse_complement_seq(seq) for seq in seqs]
+        from ..preprocessing import reverse_complement_seqs
+        rev_seqs =  reverse_complement_seqs(seqs)
     else:
         rev_seqs = None
 
@@ -176,7 +183,6 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
             targets = np.load(target_file)
     else:
         targets = None
-
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif ohe_encoded:
@@ -249,6 +255,42 @@ def read(seq_file, *args, **kwargs):
         return
 
 
+def write_csv(sdata, filename, delim=","):
+    """Function for writing sequences to csv files.
+
+    Args:
+        sdata (SeqData): SeqData object containing sequences and identifiers
+        filename (str): file path to write to
+        delim (str, optional): delimiter to use. Defaults to ",".
+    """
+    with open(filename, "w") as f:
+        for i in range(len(sdata.seqs)):
+            f.write(sdata.names[i] + delim + sdata.seqs[i] + "\n")
+
+
+def write_fasta(sdata, filename):
+    """Function for writing sequences to fasta files.
+
+    Args:
+        sdata (SeqData): SeqData object containing sequences and identifiers
+        filename (str): file path to write to
+    """
+    with open(filename, "w") as f:
+        for i in range(len(sdata.seqs)):
+            f.write(">" + sdata.names[i] + "\n")
+            f.write(sdata.seqs[i] + "\n")
+
+
+def write_numpy(sdata, filename):
+    """Function for writing sequences to numpy files.
+
+    Args:
+        sdata (SeqData): SeqData object containing sequences and identifiers
+        filename (str): file path to write to
+    """
+    np.save(filename, sdata.seqs)
+
+
 def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
     """Write SeqData object to h5sd file."""
     with h5py.File(filename, mode) as f:
@@ -273,40 +315,24 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
                 f["seqs_annot/" + str(key)] = item
 
 
-def seq2Fasta(seqs, IDs, name="seqs"):
-    """Utility function to generate a fasta file from a list of sequences and identifiers
+def write(sdata, filename, *args, **kwargs):
+    """Wrapper function around write_csv, write_fasta, write_numpy to write sequence based input
 
     Args:
-        seqs (list-like): list of sequences
-        IDs (list-like):  list of identifiers
-        name (str, optional): name of file. Defaults to "seqs".
+        sdata (SeqData): SeqData object containing sequences and identifiers
+        filename (str): file path to write to
+        args: positional arguments from write_csv, write_fasta, write_numpy, write_h5sd
+        kwargs: keyword arguments from write_csv, write_fasta, write_numpy, write_h5sd
     """
-    file = open("{}.fa".format(name), "w")
-    for i in range(len(seqs)):
-        file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
-    file.close()
-
-
-def gkmSeq2Fasta(seqs, IDs, ys, name="seqs"):
-    """Utility function to generate a fasta file from a list of sequences, identifiers and targets but splits into
-         two files, one for positive label and one for negative label. Useful for running gkm-SVM.
-
-    Args:
-        seqs (_type_): _description_
-        IDs (_type_): _description_
-        ys (_type_): _description_
-        name (str, optional): _description_. Defaults to "seqs".
-    """
-    neg_mask = (ys==0)
-
-    neg_seqs, neg_ys, neg_IDs = seqs[neg_mask], ys[neg_mask], IDs[neg_mask]
-    neg_file = open("{}-neg.fa".format(name), "w")
-    for i in range(len(neg_seqs)):
-        neg_file.write(">" + neg_IDs[i] + "\n" + neg_seqs[i] + "\n")
-    neg_file.close()
-
-    pos_seqs, pos_ys, pos_IDs = seqs[~neg_mask], ys[~neg_mask], IDs[~neg_mask]
-    pos_file = open("{}-pos.fa".format(name), "w")
-    for i in range(len(pos_seqs)):
-        pos_file.write(">" + pos_IDs[i] + "\n" + pos_seqs[i] + "\n")
-    pos_file.close()
+    seq_file_extension = filename.split(".")[-1]
+    if seq_file_extension in ["csv", "tsv"]:
+        write_csv(sdata, filename, *args, **kwargs)
+    elif seq_file_extension in ["npy"]:
+        write_numpy(sdata, filename, *args, **kwargs)
+    elif seq_file_extension in ["fasta", "fa"]:
+        write_fasta(sdata, filename, *args, **kwargs)
+    elif seq_file_extension in ["h5sd", "h5"]:
+        write_h5sd(sdata, filename, *args, **kwargs)
+    else:
+        print("Sequence file type not currently supported")
+        return

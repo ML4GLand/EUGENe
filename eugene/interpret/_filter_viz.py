@@ -34,12 +34,12 @@ def _get_first_conv_layer(model):
 
 
 def _get_activations_from_layer(layer, sdataloader):
-    from ..preprocessing import decodeDNA
+    from ..preprocessing import decode_DNA_seq
     activations = []
     sequences = []
     for i_batch, batch in tqdm(enumerate(sdataloader)):
         ID, x, x_rev_comp, y = batch
-        sequences.append(decodeDNA(x.transpose(2,1).detach().cpu().numpy()))
+        sequences.append(decode_DNA_seq(x.transpose(2,1).detach().cpu().numpy()))
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
         np_act = np.concatenate(activations)
         np_seq = np.concatenate(sequences)

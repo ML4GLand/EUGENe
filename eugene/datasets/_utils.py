@@ -1,12 +1,11 @@
 from pathlib import Path
 from functools import wraps
-from .._settings import settings
-
 import os, gzip, wget, io
-
 import pandas as pd
-
+from .._settings import settings
 HERE = Path(__file__).parent
+
+
 def check_datasetdir_exists(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -14,6 +13,7 @@ def check_datasetdir_exists(f):
         return f(*args, **kwargs)
 
     return wrapper
+
 
 def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
     if index == 5:
@@ -30,6 +30,7 @@ def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
         return file
     else:
         return file
+
 
 def try_download_urls(data_idxs: list, url_list: list, ds_name: str, is_gz: bool = False) -> list:
     paths = []

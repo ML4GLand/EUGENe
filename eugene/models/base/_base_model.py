@@ -11,7 +11,7 @@ import torchmetrics
 from pytorch_lightning.core.lightning import LightningModule
 
 # EUGENE
-from ...preprocessing._seq_preprocess import ascii_decode
+from ...preprocessing._utils import ascii_decode
 
 # omit_final_pool should be set to True in conv_kwargs
 class BaseModel(LightningModule):

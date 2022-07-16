@@ -6,16 +6,16 @@ import logging
 from ._constants import REGISTRY_KEYS
 from ._settings import settings
 
-from . import datasets
-from . import dataloading as dl
 from . import preprocessing as pp
+from . import dataloading as dl
+from . import datasets
 from . import models
 from . import train
 from . import predict
 from . import interpret
 from . import plotting as pl
-from . import utils
 from . import external
+from . import utils
 
 try:
     import importlib.metadata as importlib_metadata

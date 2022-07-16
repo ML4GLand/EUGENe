@@ -1,16 +1,12 @@
 from __future__ import division, print_function
-import re
-import logging
 import numpy as np
 np.random.seed(13)
 
 
-# Define a few constants:
-alphabet = np.array(["A", "G", "C", "T"])
-COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-
-
 def ascii_encode(seq, pad=0):
+    """
+    Converts a string of characters to a NumPy array of byte-long ASCII codes.
+    """
     encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
     if pad > 0:
         encode_seq = np.pad(encode_seq, pad_width=(0, pad), mode="constant", constant_values=36)
@@ -18,6 +14,9 @@ def ascii_encode(seq, pad=0):
 
 
 def ascii_decode(seq):
+    """
+    Converts a NumPy array of byte-long ASCII codes to a string of characters.
+    """
     return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
 
 
@@ -30,7 +29,6 @@ def _is_overlapping(a, b):
 
 
 def _merge_intervals(intervals):
-
     """Merges a list of overlapping intervals"""
     if len(intervals) == 0:
         return None
@@ -38,7 +36,7 @@ def _merge_intervals(intervals):
     merged_list.append(intervals[0])
     for i in range(1, len(intervals)):
         pop_element = merged_list.pop()
-        if is_overlapping(pop_element, intervals[i]):
+        if _is_overlapping(pop_element, intervals[i]):
             new_element = pop_element[0], max(pop_element[1], intervals[i][1])
             merged_list.append(new_element)
         else:
@@ -74,10 +72,16 @@ def _collapse_pos(positions):
 
 
 def _get_vocab_dict(vocab):
+    """
+    Returns a dictionary mapping each token to its index in the vocabulary.
+    """
     return {l: i for i, l in enumerate(vocab)}
 
 
 def _get_index_dict(vocab):
+    """
+    Returns a dictionary mapping each token to its index in the vocabulary.
+    """
     return {i: l for i, l in enumerate(vocab)}
 
 
@@ -86,13 +90,14 @@ def _one_hot2token(arr):
 
 
 def _tokenize(seq, vocab, neutral_vocab=[]):
-    """Convert sequence to integers
-        Arguments
-            seq: Sequence to encode
-            vocab: Vocabulary to use
-            neutral_vocab: Neutral vocabulary -> assign those values to -1
+    """
+    Convert sequence to integers
+    Arguments
+        seq: Sequence to encode
+        vocab: Vocabulary to use
+        neutral_vocab: Neutral vocabulary -> assign those values to -1
 
-        Returns
+    Returns
         List of length `len(seq)` with integers from `-1` to `len(vocab) - 1`
     """
     # Req: all vocabs have the same length
@@ -125,13 +130,14 @@ def _token2one_hot(tvec, vocab_size):
 
 
 def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
-    """Pad and/or trim a list of sequences to have common length. Procedure:
+    """
+    Pad and/or trim a list of sequences to have common length. Procedure:
         1. Pad the sequence with N's or any other string or list element (`value`)
         2. Subset the sequence
-    # Note
+    Note
         See also: https://keras.io/preprocessing/sequence/
         Aplicable also for lists of characters
-    # Arguments
+    Arguments
         sequence_vec: list of chars or lists
             List of sequences that can have various lengths
         value: Neutral element to pad the sequence with. Can be `str` or `list`.
@@ -139,7 +145,7 @@ def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
              If None, maxlen is set to the longest sequence length.
         align: character; 'start', 'end' or 'center'
             To which end to align the sequences when triming/padding. See examples bellow.
-    # Returns
+    Returns
         List of sequences of the same class as sequence_vec
     # Example
         ```python

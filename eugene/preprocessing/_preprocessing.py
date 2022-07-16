@@ -1,12 +1,8 @@
-import numpy as np
-import pandas as pd
 from tqdm.auto import tqdm
-
-from ..utils._decorators import track
 from ..dataloading import SeqData
 from ._dataset_preprocess import split_train_test
-from ._seq_preprocess import encodeDNA
-from ._utils import reverse_complement_seqs
+from ._seq_preprocess import ohe_DNA_seqs, reverse_complement_seqs
+from ..utils._decorators import track
 
 
 @track
@@ -40,9 +36,9 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     if sdata.seqs is not None:
-        sdata.ohe_seqs = encodeDNA(sdata.seqs)
+        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
     if sdata.rev_seqs is not None:
-        sdata.ohe_rev_seqs = encodeDNA(sdata.rev_seqs)
+        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs)
     return sdata if copy else None
 
 

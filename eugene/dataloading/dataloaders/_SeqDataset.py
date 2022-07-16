@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from ...preprocessing._seq_preprocess import ascii_encode
+from ...preprocessing._utils import ascii_encode
 
 
 class SeqDataset(Dataset):
@@ -35,12 +35,9 @@ class SeqDataset(Dataset):
                 self.longest_name = np.max(self.name_lengths)
                 self.ascii_names = np.zeros((len(self.names), self.longest_name))
                 for i, name in enumerate(self.names):
-                    #np_name = np.array([ord(letter) for letter in name], dtype=int)
-                    #self.ascii_names[i] = np.pad(np_name, pad_width=(0, self.longest_name-len(np_name)), mode="constant", constant_values=36)
                     pad_len = self.longest_name-len(name)
                     self.ascii_names[i] = ascii_encode(name, pad_len)
             else:
-                #self.ascii_names = np.array([np.array([ord(letter) for letter in name], dtype=int) for name in self.names])
                 self.ascii_names = np.array([ascii_encode(name) for name in self.names])
         else:
             self.ascii_names = None

@@ -1,22 +1,18 @@
 from ast import Raise
-from nbformat import write
 import numpy as np
 import pandas as pd
 import pyranges as pr
 from typing import Any, Union, Optional
-from typing import Dict, Iterable, Sequence, Mapping, MutableMapping  # Generic ABCs
+from typing import Dict, Iterable, Sequence, Mapping
 from os import PathLike
 from collections import OrderedDict
-from functools import partial, singledispatch
-from pandas.api.types import infer_dtype, is_string_dtype, is_categorical_dtype
-import h5py
-import warnings
+from functools import singledispatch
+from pandas.api.types import is_string_dtype
 import pyranges as pr
+from ._SeqDataset import SeqDataset
 
 
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
-
-from ._SeqDataset import SeqDataset
 
 
 try:
@@ -50,8 +46,24 @@ class SeqData():
         uns: Optional[Mapping[str, Any]] = None,
         seqidx: Index1D = None
     ):
+        """Initialize SeqData object.
+        Args:
+            seqs: numpy array of sequences.
+            names: numpy array of names.
+            rev_seqs: numpy array of reverse complement sequences.
+            seqs_annot: pandas DataFrame or dict of sequences annotations.
+            pos_annot: PyRanges object or dict of positions annotations.
+            ohe_seqs: numpy array of one-hot encoded sequences.
+            ohe_rev_seqs: numpy array of one-hot encoded reverse complement sequences.
+            seqsm: numpy array of sequences or dict of sequences.
+            uns: dict of additional information.
+            seqidx: Index of sequences to use.
+        """
+        if seqs is not None:
+            self.seqidx = range(seqs.shape[0]) if seqidx is None else seqidx
+        else:
+            self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None else seqidx
 
-        self.seqidx = range(seqs.shape[0]) if seqidx is None else seqidx
         self.seqs = seqs[self.seqidx] if seqs is not None else None
         self.names = names[self.seqidx] if names is not None else None
         self.rev_seqs = rev_seqs[self.seqidx] if rev_seqs is not None else None
@@ -129,7 +141,6 @@ class SeqData():
     @ohe_seqs.setter
     def ohe_seqs(self, ohe_seqs: np.ndarray):
         self._ohe_seqs = ohe_seqs
-
 
 
     @property
@@ -285,7 +296,6 @@ class SeqData():
             return SeqDataset(self.ohe_seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
         else:
             return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
-
 
 
 @singledispatch
