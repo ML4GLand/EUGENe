@@ -23,7 +23,7 @@ class FCN(BaseModel):
             self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, output_dim=output_dim, **fc_kwargs)
             self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, output_dim=output_dim, **fc_kwargs)
 
-    def forward(self, x, x_rev_comp):
+    def forward(self, x, x_rev_comp=None):
         x = x.flatten(start_dim=1)
         if self.strand == "ss":
             x = self.fcn(x)
@@ -63,7 +63,7 @@ class CNN(BaseModel):
             self.reverse_convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim*2, output_dim=output_dim, **fc_kwargs)
 
-    def forward(self, x, x_rev_comp):
+    def forward(self, x, x_rev_comp=None):
         x = self.convnet(x)
         x = x.view(x.size(0), self.convnet.flatten_dim)
         if self.strand == "ds":
@@ -102,7 +102,7 @@ class RNN(BaseModel):
             self.reverse_rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
             self.fcnet = BasicFullyConnectedModule(input_dim=self.rnn.out_dim*2, output_dim=output_dim, **fc_kwargs)
 
-    def forward(self, x, x_rev_comp):
+    def forward(self, x, x_rev_comp=None):
         x, _ = self.rnn(x)
         x = x[:, -1, :]
         if self.strand == "ds":
@@ -147,7 +147,7 @@ class Hybrid(BaseModel):
             self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels*2, **rnn_kwargs)
             self.fcnet = BasicFullyConnectedModule(input_dim=self.recurrentnet.out_dim, output_dim=output_dim, **fc_kwargs)
 
-    def forward(self, x, x_rev_comp):
+    def forward(self, x, x_rev_comp=None):
         x = self.convnet(x)
         x = x.transpose(1, 2)
         if self.strand == "ds":

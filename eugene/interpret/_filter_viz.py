@@ -84,3 +84,33 @@ def generate_pfms(model, sdata, copy=False):
     filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0])
     sdata.uns["pfms"] = filter_pfms
     return sdata if copy else None
+
+
+# From gopher
+def meme_generate(W, output_file='meme.txt', prefix='filter'):
+  """generate a meme file for a set of filters, W ∈ (N,L,A)"""
+
+  # background frequency
+  nt_freqs = [1./4 for i in range(4)]
+
+  # open file for writing
+  f = open(output_file, 'w')
+
+  # print intro material
+  f.write('MEME version 4\n')
+  f.write('\n')
+  f.write('ALPHABET= ACGT\n')
+  f.write('\n')
+  f.write('Background letter frequencies:\n')
+  f.write('A %.4f C %.4f G %.4f T %.4f \n' % tuple(nt_freqs))
+  f.write('\n')
+
+  for j, pwm in enumerate(W):
+    L, A = pwm.shape
+    f.write('MOTIF %s%d \n' % (prefix, j))
+    f.write('letter-probability matrix: alength= 4 w= %d nsites= %d \n' % (L, L))
+    for i in range(L):
+      f.write('%.4f %.4f %.4f %.4f \n' % tuple(pwm[i,:]))
+    f.write('\n')
+
+  f.close()

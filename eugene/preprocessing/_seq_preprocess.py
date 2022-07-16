@@ -1,6 +1,7 @@
 from tqdm.auto import tqdm
 import pandas as pd
 import numpy as np
+import torch
 from ._utils import _get_index_dict, _one_hot2token, _tokenize, _token2one_hot, _pad_sequences # concise
 from ._utils import _string_to_char_array, _one_hot_to_tokens, _char_array_to_string, _tokens_to_one_hot # dinuc_shuffle
 
@@ -85,14 +86,14 @@ def _ohe_seqs(seq_vec, vocab, neutral_vocab, maxlen=None, seq_align="start", pad
 
 def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
     """
-    Convert the DNA sequence into 1-hot-encoding numpy array
+    Convert the DNA sequence into 1-hot-encoding np array
     Arguments
         seq_vec: list of chars. List of sequences that can have different lengths
         maxlen: int or None, Should we trim (subset) the resulting sequence. If None don't trim. Note that trims wrt the align parameter. It should be smaller than the longest sequence.
         seq_align: character; 'end' or 'start' To which end should we align sequences?
 
     Returns
-        3D numpy array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
+        3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
     return _ohe_seqs(seq_vec, vocab=DNA, neutral_vocab="N", maxlen=maxlen, seq_align=seq_align, pad_value="N", encode_type="one_hot")
 
 
@@ -108,14 +109,14 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
     Creates shuffles of the given sequence, in which dinucleotide frequencies
     are preserved.
     Arguments:
-        `seq`: either a string of length L, or an L x D NumPy array of one-hot
+        `seq`: either a string of length L, or an L x D np array of one-hot
             encodings
         `num_shufs`: the number of shuffles to create, N; if unspecified, only
             one shuffle will be created
-        `rng`: a NumPy RandomState object, to use for performing shuffles
+        `rng`: a np RandomState object, to use for performing shuffles
     If `seq` is a string, returns a list of N strings of length L, each one
-    being a shuffled version of `seq`. If `seq` is a 2D NumPy array, then the
-    result is an N x L x D NumPy array of shuffled versions of `seq`, also
+    being a shuffled version of `seq`. If `seq` is a 2D np array, then the
+    result is an N x L x D np array of shuffled versions of `seq`, also
     one-hot encoded. If `num_shufs` is not specified, then the first dimension
     of N will not be present (i.e. a single string will be returned, or an L x D
     array).
@@ -193,3 +194,43 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     for i in range(len(seqs)):
         all_results.append(dinuc_shuffle_seq(seqs[i], num_shufs=num_shufs, rng=rng))
     return np.array(all_results)
+
+
+def perturb_seqs(X_0, ds=False):
+    """Produce all edit-distance-one pertuabtions of a sequence.
+    This function will take in a single one-hot encoded sequence of length N
+    and return a batch of N*(n_choices-1) sequences, each containing a single
+    perturbation from the given sequence.
+    Parameters
+    ----------
+    X_0: np.ndarray, shape=(n_seqs, n_choices, seq_len)
+        A one-hot encoded sequence to generate all potential perturbations.
+    Returns
+    -------
+    X: torch.Tensor, shape=(n_seqs, (n_choices-1)*seq_len, n_choices, seq_len)
+        Each single-position perturbation of seq.
+    """
+
+    if not isinstance(X_0, np.ndarray):
+        raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
+
+    if len(X_0.shape) != 3:
+        raise ValueError("X_0 must have three dimensions: (n_seqs, n_choices, seq_len).")
+
+    n_seqs, n_choices, seq_len = X_0.shape
+    idxs = X_0.argmax(axis=1)
+
+    X_0 = torch.from_numpy(X_0)
+
+    n = seq_len*(n_choices-1)
+    X = torch.tile(X_0, (n, 1, 1))
+    X = X.reshape(n, n_seqs, n_choices, seq_len).permute(1, 0, 2, 3)
+
+    for i in range(n_seqs):
+        for k in range(1, n_choices):
+            idx = np.arange(seq_len)*(n_choices-1) + (k-1)
+
+            X[i, idx, idxs[i], np.arange(seq_len)] = 0
+            X[i, idx, (idxs[i]+k) % n_choices, np.arange(seq_len)] = 1
+
+    return X
