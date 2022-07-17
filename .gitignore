@@ -15,6 +15,7 @@ tests/_data/tf_modisco/
 tests/_logs/
 tests/_out/
 tests/_data/datasets/
+*.DS_store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
