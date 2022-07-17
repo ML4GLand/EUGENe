@@ -256,7 +256,7 @@ def read(seq_file, *args, **kwargs):
         return
 
 
-def write_csv(sdata, filename, delim=","):
+def write_csv(sdata, filename, delim="\t"):
     """Function for writing sequences to csv files.
 
     Args:
@@ -264,9 +264,9 @@ def write_csv(sdata, filename, delim=","):
         filename (str): file path to write to
         delim (str, optional): delimiter to use. Defaults to ",".
     """
-    with open(filename, "w") as f:
-        for i in range(len(sdata.seqs)):
-            f.write(sdata.names[i] + delim + sdata.seqs[i] + "\n")
+    dataframe = pd.DataFrame(data={"NAMES": sdata.names, "SEQ": sdata.seqs})
+    dataframe = dataframe.merge(sdata.seqs_annot, left_on="NAMES", right_index=True)
+    dataframe.to_csv(filename, sep=delim, index=False)
 
 
 def write_fasta(sdata, filename):

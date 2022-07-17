@@ -1,4 +1,4 @@
-from ._feature_attribution import nn_explain, feature_attribution
+from ._feature_attribution import nn_explain, feature_attribution, aggregate_importance
 from ._filter_viz import generate_pfms
 from ._feature_dependency import layer_activations
 from ._dim_reduction import pca, umap

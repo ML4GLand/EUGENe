@@ -346,6 +346,23 @@ def _plot_regression_summary(sdata, ax, target="TARGETS", prediction="PREDICTION
 
 
 def pca(sdata, seqsm_key, pc1=0, pc2=1, color="b", loadings=None, labels=None, n=5):
+    """
+    Plot the PCA of the data.
+    Parameters
+    ----------
+    sdata : SeqData The SeqData object.
+    seqsm_key : str The key of the SeqSM object to use.
+    pc1 : int The first PC to plot.
+    pc2 : int The second PC to plot.
+    color : str The color of the points.
+    loadings : list of floats The loadings of the PCs.
+    labels : list of str The labels of the points.
+    n : int The number of points to plot.
+
+    Returns
+    -------
+    None
+    """
     pc_data = sdata.seqsm[seqsm_key]
     xs = pc_data[:, pc1]
     ys = pc_data[:, pc2]
@@ -369,7 +386,7 @@ def pca(sdata, seqsm_key, pc1=0, pc2=1, color="b", loadings=None, labels=None, n
     return ax
 
 
-def skree(sdata, uns_key="sklearn_pca_obj", n_comp=30):
+def skree(sdata, uns_key, n_comp=30, return_variance=False):
     """
     Function to generate and output a Skree plot using matplotlib barplot
     Parameters
@@ -384,15 +401,32 @@ def skree(sdata, uns_key="sklearn_pca_obj", n_comp=30):
     variance={}
     for i,val in enumerate(sdata.uns[uns_key].explained_variance_ratio_.tolist()):
         key="PC"+str(i+1)
-        variance[key]=val
-    plt.bar(["PC"+str(i) for i in range(1,n_comp+1)],sdata.uns[uns_key].explained_variance_ratio_.tolist())
+        variance[key]=val*100
+    plt.bar(["PC"+str(i) for i in range(1,n_comp+1)],sdata.uns[uns_key].explained_variance_ratio_*100)
     plt.xticks(rotation=90)
     plt.ylabel("Variance Explained")
     plt.xlabel("Principal Component")
-    return variance
+    if return_variance:
+        return variance
 
 
 def umap(sdata, seqsm_key, umap1=0, umap2=1, color="b", n=5):
+    """
+    Plot the UMAP of the data.
+
+    Parameters
+    ----------
+    sdata : SeqData The SeqData object.
+    seqsm_key : str The key of the SeqSM object to use.
+    umap1 : int The first UMAP to plot.
+    umap2 : int The second UMAP to plot.
+    color : str The color of the points.
+    n : int The number of points to plot.
+
+    Returns
+    -------
+    None
+    """
     umap_data = sdata.seqsm[seqsm_key]
     xs = umap_data[:, umap1]
     ys = umap_data[:, umap2]

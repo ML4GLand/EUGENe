@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import pyranges as pr
 from captum.attr import InputXGradient, DeepLift, GradientShap
 from ..utils import track
 from ..preprocessing import dinuc_shuffle_seq
@@ -196,3 +197,18 @@ def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGrad
             all_explanations[i_batch*batch_size:dataset_len] = curr_explanations
     sdata.uns[f"{saliency_method}_imps"] = all_explanations
     return sdata if copy else None
+
+
+def aggregate_importance(sdata, uns_key):
+    vals = sdata.uns[uns_key]
+    df = sdata.pos_annot.df
+    agg_scores = []
+    for i, row in df.iterrows():
+        seq_id = row["Chromosome"]
+        start = row["Start"]
+        end = row["End"]
+        seq_idx = np.where(sdata.names == seq_id)[0][0]
+        agg_scores.append(vals[seq_idx, :, start:end].sum())
+    df[f"{uns_key}_agg_scores"] = agg_scores
+    ranges = pr.PyRanges(df)
+    sdata.pos_annot = ranges

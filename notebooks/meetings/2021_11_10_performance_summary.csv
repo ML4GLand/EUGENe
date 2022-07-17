@@ -1,8 +1,0 @@
-﻿Name,Set-up,Accuracy,auROC,auPRC
-"https://www.notion.so/Logistic-Regression-LR-0c4e806fad47483ab30767e1134204d2 ",block-baseline,0.7067,0.6604,0.4692
-"https://www.notion.so/Random-Forests-RF-e8d61283d3c8416b816e0e5d74397113 ",mixed-1.0-100-trials-hyperopt,0.7588,0.7645,0.6360
-"https://www.notion.so/Gapped-k-mer-SVM-gkSVM-d5214291480e4baab805f9bfb28c7bc4 ",fasta-baseline-positive-weighted,0.7643,0.7748,0.6517
-"https://www.notion.so/Gradient-Boosting-Machines-GBM-e13ca532f90b4af0976947073a2ac24d ",mixed-2.0-baseline,0.7621,0.7672,0.6351
-"https://www.notion.so/Convolutional-Neural-Networks-CNN-22f67f1cc82a4defba56e2ba724da7f0 ",ohe-seq-baseline,0.7249,0.7319,0.5739
-Recurrent Neural Networks (RNN),ohe-seq-baseline,0.7468,0.7522,0.6118
-Metapredictors,"mixed-2.0-baseline, ohe-seq-baseline",0.7791,0.7829,0.6537

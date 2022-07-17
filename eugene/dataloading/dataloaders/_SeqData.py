@@ -223,6 +223,7 @@ class SeqData():
             "seqs_annot",
             "pos_annot",
             "seqsm",
+            "uns"
         ]:
             if attr in [
             "seqs",
@@ -243,6 +244,11 @@ class SeqData():
             elif attr in ["pos_annot"]:
                 if getattr(self, attr) is not None:
                     descr += f"\n{attr}: PyRanges object with {len(getattr(self, attr))} features"
+                else:
+                    descr += f"\n{attr}: None"
+            elif attr in ["seqsm", "uns"]:
+                if len(getattr(self, attr)) > 0:
+                    descr += f"\n{attr}: {str(list(getattr(self, attr).keys()))[1:-1]}"
                 else:
                     descr += f"\n{attr}: None"
         return descr
