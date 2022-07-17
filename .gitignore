@@ -16,6 +16,7 @@ tests/_logs/
 tests/_out/
 tests/_data/datasets/
 *.DS_store
+docs/_static
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
