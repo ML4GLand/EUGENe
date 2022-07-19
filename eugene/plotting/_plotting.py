@@ -267,12 +267,15 @@ def violin(sdata, **kwargs):
     _plot_violin(sdata, **kwargs)
 
 
-def _plot_violin(sdata, category, value="PREDICTIONS", title="Distribution of Predictions", ylab="Predicted Activity", **kwargs):
+def _plot_violin(sdata, category=None, value="PREDICTIONS", title="Distribution of Predictions", ylab="Predicted Activity", **kwargs):
     fig, ax = plt.subplots(1,1,figsize=(6,6))
     rc = {"font.size": 16}
     with plt.rc_context(rc):
-        sns.violinplot(data=sdata.seqs_annot, x=category, y=value, ax=ax, **kwargs)
-        ax.set_xlabel(category, fontsize=20)
+        if category == None:
+            sns.violinplot(data=sdata.seqs_annot, x=category, y=value, ax=ax, **kwargs)
+        else:
+            sns.violinplot(data=sdata.seqs_annot, x=category, y=value, ax=ax, **kwargs)
+            ax.set_xlabel(category, fontsize=20)
         ax.set_ylabel(ylab, fontsize=20)
         ax.set_title(title, fontsize=24)
         plt.tight_layout()
@@ -282,12 +285,15 @@ def boxplot(sdata, **kwargs):
     _plot_boxplot(sdata, **kwargs)
 
 
-def _plot_boxplot(sdata, category, value="PREDICTIONS", title="Distribution of Predictions", ylab="Predicted Activity", **kwargs):
+def _plot_boxplot(sdata, category=None, value="PREDICTIONS", title="Distribution of Predictions", ylab="Predicted Activity", **kwargs):
     fig, ax = plt.subplots(1,1,figsize=(6,6))
     rc = {"font.size": 16}
     with plt.rc_context(rc):
-        sns.boxplot(data=sdata.seqs_annot, x=category, y=value, ax=ax, **kwargs)
-        ax.set_xlabel(category, fontsize=20)
+        if category == None:
+            sns.boxplot(data=sdata.seqs_annot, y=value, ax=ax, **kwargs)
+        else:
+            sns.boxplot(data=sdata.seqs_annot, x=category, y=value, ax=ax, **kwargs)
+            ax.set_xlabel(category, fontsize=20)
         ax.set_ylabel(ylab, fontsize=20)
         ax.set_title(title, fontsize=24)
         plt.tight_layout()

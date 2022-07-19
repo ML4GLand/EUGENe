@@ -46,7 +46,9 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
                 os.makedirs(ds_path)
 
             print(f"Downloading {ds_name} {os.path.basename(url_list[i])} to {ds_path}...")
+            print(url_list[i], os.path.relpath(ds_path))
             path = wget.download(url_list[i], os.path.relpath(ds_path))
+            paths.append(path)
             print(f"Finished downloading {os.path.basename(url_list[i])}")
 
             if compression == ".gz":
@@ -70,4 +72,5 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
         else:
             print(f"Dataset {ds_name} {base_name} has already been dowloaded.")
             paths.append(os.path.join(ds_path, base_name))
+
     return paths

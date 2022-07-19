@@ -35,7 +35,6 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
         SeqData object with one-hot encoded sequences.
     """
     sdata = sdata.copy() if copy else sdata
-    print(sdata)
     if sdata.seqs is not None:
         sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
     if sdata.rev_seqs is not None:
@@ -69,6 +68,26 @@ def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     sdata.seqs_annot["POS"] = sdata.seqs_annot.index.map(lambda x: x.split("_")[1])
+    return sdata if copy else None
+
+
+@track
+def scale_targets(sdata: SeqData, target_col="TARGETS", train_col="TRAIN", copy=False) -> SeqData:
+    """Scale targets.
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    Returns
+    -------
+    SeqData
+        SeqData object with scaled targets.
+    """
+    from sklearn.preprocessing import StandardScaler
+    sdata = sdata.copy() if copy else sdata
+    scaler = StandardScaler()
+    scaler.fit(sdata[sdata[train_col] == True][target_col].values.reshape(-1, 1))
+    sdata.seqs_annot[f"{target_col}_SCALED"] = scaler.transform(sdata.seqs_annot[target_col].values.reshape(-1, 1))
     return sdata if copy else None
 
 

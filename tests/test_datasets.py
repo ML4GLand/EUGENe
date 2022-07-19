@@ -8,6 +8,7 @@ import pytest
 from pathlib import Path
 
 HERE = Path(__file__).parent
+eu.settings.datasetdir = "/_data/datasets/"
 
 @pytest.fixture(scope="module")
 def tmp_dataset_dir(tmpdir_factory):
@@ -20,4 +21,9 @@ def tmp_dataset_dir(tmpdir_factory):
 
 def test_random1000(tmp_dataset_dir):
     data = eu.datasets.random1000()
+    assert(data)
+
+
+def test_farley2015(tmp_dataset_dir):
+    data = eu.datasets.farley15()
     assert(data)

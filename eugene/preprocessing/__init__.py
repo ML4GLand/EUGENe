@@ -3,7 +3,8 @@ from ._seq_preprocess import ohe_DNA_seq, ohe_DNA_seqs, decode_DNA_seq, decode_D
 from ._seq_preprocess import dinuc_shuffle_seq, dinuc_shuffle_seqs # dinucleotide shuffle
 from ._seq_preprocess import perturb_seqs
 from ._dataset_preprocess import split_train_test, standardize_features # dataset stuff
-from ._preprocessing import one_hot_encode_data, reverse_complement_data, train_test_split_data, prepare_data # sdata functions
+from ._preprocessing import one_hot_encode_data, reverse_complement_data, train_test_split_data, prepare_data # core sdata functions
+from ._preprocessing import scale_targets # scaling TODO add simpler function to _dataset_preprocess
 
 # Project specific
 from ._otx_preprocess import randomizeLinkers, convert2pyRangesDict
