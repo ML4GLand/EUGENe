@@ -23,7 +23,7 @@ def track(func):
         kwargs.update(kwds)
 
         #print(kwargs, args, type(args[0]))
-        if isinstance(args[0], SeqData):
+        if type(args[0]) == SeqData:
             sdata = args[0]
         else:
             if "sdata" in kwargs:

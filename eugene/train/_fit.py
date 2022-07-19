@@ -26,7 +26,9 @@ def fit(model: LightningModule,
         early_stopping_metric = None,
         early_stopping_metric_min = None,
         early_stopping_metric_patience = None,
-        copy=False):
+        copy=False,
+        gpus=None,
+        **kwargs):
    """
     Train the model.
     """
@@ -47,7 +49,7 @@ def fit(model: LightningModule,
 
    # Set-up a trainer with a logger and callbacks (if applicable)
    logger = TensorBoardLogger(log_dir)
-   trainer = Trainer(max_epochs=epochs, logger=logger)
+   trainer = Trainer(max_epochs=epochs, logger=logger, gpus=gpus)
 
    # Fit the model
    trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)

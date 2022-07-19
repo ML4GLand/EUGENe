@@ -12,6 +12,11 @@ from rich.logging import RichHandler
 
 from ._compat import Literal
 
+if torch.cuda.is_available():
+    print(f"GPU is available: {torch.cuda.is_available()}")
+    print(f"Number of GPUs: {torch.cuda.device_count()}")
+    print(f"Current GPU: {torch.cuda.current_device()}")
+    print(f"GPUs: {torch.cuda.get_device_name(torch.cuda.current_device())}")
 eugene_logger = logging.getLogger("eugene")
 
 def _type_check(var: Any, varname: str, types: Union[type, Tuple[type, ...]]):

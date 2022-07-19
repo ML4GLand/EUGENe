@@ -62,7 +62,7 @@ class BaseModel(LightningModule):
         if self.task == "binary_classification":
             # Get the loss
             loss = F.binary_cross_entropy_with_logits(outs, y)
-
+            print(f"{stage} loss: {loss}")
             # Get and log the accuracy
             preds = torch.round(torch.sigmoid(outs))
             acc = self.accuracy(preds, y.long())
@@ -88,10 +88,7 @@ class BaseModel(LightningModule):
                 self.log("hp_metric", auroc, on_epoch=True)
             elif self.task == "regression":
                 self.log("hp_metric", r_squared, on_epoch=True)
-
-        return {'loss': loss, 'predictions': np.stack([np.array([ascii_decode(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]),
-                                                       outs.detach().cpu().numpy(),
-                                                       y.detach().cpu().numpy()], axis=-1)}
+        return loss
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-3)

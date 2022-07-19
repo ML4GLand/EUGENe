@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 from os import PathLike
+import pyranges as pr
 
 # Relative imports
 from .dataloaders import SeqData
@@ -194,6 +195,7 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
         return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
 
 
+# TODO: This is a bit of a hack, but it works for now. Same with write_h5sd
 def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
     """Function for loading sequences into SeqData objects from h5sd files.
 
@@ -214,25 +216,56 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
         if "ohe_seqs" in f:
             d["ohe_seqs"] = f["ohe_seqs"][:]
         if "rev_seqs" in f:
-            d["rev_seqs"] = f["rev_seqs"][:]
+            d["rev_seqs"] = np.array([n.decode("ascii", "ignore") for n in f["rev_seqs"][:]])
         if "ohe_rev_seqs" in f:
             d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
         if "seqs_annot" in f:
             out_dict = {}
             for key in f["seqs_annot"].keys():
-                print(key)
                 out = f["seqs_annot"][key][()]
-                print(out.dtype.name)
                 if out.dtype.name == "bytes120":
-                    print("HERE")
                     out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
                 else:
                     out_dict[key] = out
-            d["seqs_annot"] = pd.DataFrame(out_dict)
+            if "names" in f:
+                d["seqs_annot"] = pd.DataFrame(index=d["names"], data=out_dict).replace("NA", np.nan)
+            else:
+                n_digits = len(str(len(d["seqs"])))
+                idx = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(d["seqs"]))])
+                d["seqs_annot"] = pd.DataFrame(index=idx, data=out_dict).replace("NA", np.nan)
         if "pos_annot" in f:
-            d["pos_annot"] = f["pos_annot"].attrs
+            out_dict = {}
+            for key in f["pos_annot"].keys():
+                out = f["pos_annot"][key][()]
+                if "bytes" in out.dtype.name:
+                    out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
+                else:
+                    out_dict[key] = out
+            d["pos_annot"] = pr.from_dict(out_dict)
         if "seqsm" in f:
-            d["seqsm"] = f["seqsm"].attrs
+            out_dict = {}
+            for key in f["seqsm"].keys():
+                out = f["seqsm"][key][()]
+                if out.dtype.name == "bytes120":
+                    out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
+                else:
+                    out_dict[key] = out
+            d["seqsm"] = out_dict
+        if "uns" in f:
+            out_dict = {}
+            for key in f["uns"].keys():
+                if key == "pfms":
+                    pfm_dfs = {}
+                    for i, pfm in enumerate(f["uns"][key][()]):
+                        pfm_dfs[i] = pd.DataFrame(pfm, columns=["A", "C", "G", "T"])
+                    out_dict[key] = pfm_dfs
+                else:
+                    out = f["uns"][key][()]
+                    if out.dtype.name == "bytes120":
+                        out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
+                    else:
+                        out_dict[key] = out
+            d["uns"] = out_dict
     return SeqData(**d)
 
 
@@ -318,9 +351,30 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
            for key, item in dict(sdata.seqs_annot).items():
                 # note that not all variable types are supported but string and int are
                 if item.dtype == "object":
-                    f["seqs_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "")])
+                    f["seqs_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "NA")])
                 else:
                     f["seqs_annot/" + str(key)] = item
+        if sdata.pos_annot is not None:
+            for key, item in dict(sdata.pos_annot.df).items():
+                if item.dtype in ["object", "category"]:
+                    f["pos_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "NA")])
+                else:
+                    f["pos_annot/" + str(key)] = item
+        if sdata.seqsm is not None:
+            for key, item in dict(sdata.seqsm).items():
+                f["seqsm/" + str(key)] = item
+        if sdata.uns is not None:
+            for key, item in dict(sdata.uns).items():
+                if key == "pfms":
+                    pfms = np.zeros((len(item), *item[list(item.keys())[0]].shape))
+                    for i, in_key in enumerate(item.keys()):
+                        pfms[i, :, :] = item[in_key]
+                    item = pfms
+                try:
+                    f["uns/" + str(key)] = item
+                except TypeError:
+                    print(f"Unsupported type for {key}")
+                    continue
 
 
 def write(sdata, filename, *args, **kwargs):

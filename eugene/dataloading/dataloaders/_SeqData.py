@@ -207,16 +207,31 @@ class SeqData():
 
     def __getitem__(self, index):
         """Get item from data."""
-        return SeqData(seqs = self.seqs,
-                        names = self.names,
-                        rev_seqs = self.rev_seqs,
-                        seqs_annot = self.seqs_annot,
-                        pos_annot = self.pos_annot,
-                        ohe_seqs = self.ohe_seqs,
-                        ohe_rev_seqs = self.ohe_rev_seqs,
-                        seqsm = self.seqsm,
-                        uns = self.uns,
-                        seqidx = index)
+        if isinstance(index, str):
+            return self.seqs_annot[index]
+        elif isinstance(index, slice):
+            return SeqData(seqs = self.seqs,
+                            names = self.names,
+                            rev_seqs = self.rev_seqs,
+                            seqs_annot = self.seqs_annot,
+                            pos_annot = self.pos_annot,
+                            ohe_seqs = self.ohe_seqs,
+                            ohe_rev_seqs = self.ohe_rev_seqs,
+                            seqsm = self.seqsm,
+                            uns = self.uns,
+                            seqidx = index)
+        # TODO: this is where we could fix the way bools are handled
+        else:
+            return SeqData(seqs = self.seqs,
+                            names = self.names,
+                            rev_seqs = self.rev_seqs,
+                            seqs_annot = self.seqs_annot,
+                            pos_annot = self.pos_annot,
+                            ohe_seqs = self.ohe_seqs,
+                            ohe_rev_seqs = self.ohe_rev_seqs,
+                            seqsm = self.seqsm,
+                            uns = self.uns,
+                            seqidx = index)
 
 
     def __repr__(self):
@@ -280,7 +295,7 @@ class SeqData():
 
         if seq_transforms is None:
             print("No transforms given, assuming default transforms (reverse complement, one hot encode and tensorize).")
-            transforms = [Augment(**transform_kwargs), ReverseComplement(**transform_kwargs), OneHotEncode(**transform_kwargs), ToTensor()]
+            transforms = [ReverseComplement(**transform_kwargs), OneHotEncode(**transform_kwargs), ToTensor()]
             return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
 
         if "augment" in seq_transforms:

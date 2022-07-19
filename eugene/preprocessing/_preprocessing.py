@@ -35,6 +35,7 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
         SeqData object with one-hot encoded sequences.
     """
     sdata = sdata.copy() if copy else sdata
+    print(sdata)
     if sdata.seqs is not None:
         sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
     if sdata.rev_seqs is not None:
@@ -86,9 +87,10 @@ def prepare_data(sdata: SeqData, steps=["reverse_complement", "one_hot_encode", 
     if not isinstance(steps, list):
         steps = [steps]
 
-    steps = list(set(steps))
+    steps = list(steps)
 
     for f in tqdm(steps):
+        print(f)
         preprocessing_steps[f].__wrapped__(sdata)
 
     return sdata if copy else None
