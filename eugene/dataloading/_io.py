@@ -41,13 +41,13 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         dataframe = None
         for i in range(len(file) - 1):
             if dataframe is None:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression).drop(0)], ignore_index=True)
+                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression)], ignore_index=True)
             else:
                 dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), dataframe], ignore_index=True)
     else:
         dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0, compression=compression)
         dataframe.reset_index(inplace=True, drop=True)
-
+    print(dataframe.head())
     # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
         assert low_thresh != None and high_thresh != None and target_col != None

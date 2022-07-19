@@ -85,3 +85,33 @@ def deBoer20(datasets: list, binary=False, **kwargs: dict) -> pd.DataFrame:
     else:
         data = read_csv(paths, sep=",", seq_col=seq_col, target_col=target_col, col_names=[seq_col,target_col], auto_name=True, compression="gzip", **kwargs)
     return data
+
+
+def jores21(dataset="leaf", binary=False, **kwargs: dict) -> pd.DataFrame:
+    """
+    Reads the Jores21 dataset.
+    """
+    urls_list = [
+        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_leaf.tsv",
+        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_train_leaf.tsv",
+        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_train_proto.tsv",
+        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_proto.tsv"
+    ]
+    if dataset == "leaf":
+        urls = [0,1]
+    elif dataset == "proto":
+        urls = [2,3]
+    else:
+        raise ValueError("dataset must be either 'leaf' or 'proto'.")
+    paths = try_download_urls(urls, urls_list, "jores21", compression = "")
+
+    seq_col="sequence"
+    if binary:
+        raise NotImplementedError("Jores21 dataset is not yet implemented for non-binary data.")
+    else:
+        data = read_csv(paths, sep="\t", seq_col=seq_col, auto_name=True, return_dataframe=True, **kwargs)
+        print(data.head())
+        n_digits = len(str(len(data)-1))
+        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(data))])
+        sdata = SeqData(seqs=data[seq_col], names=ids, seqs_annot=data[["set", "sp", "gene", "enrichment"]])
+    return sdata

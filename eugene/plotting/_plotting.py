@@ -178,7 +178,7 @@ def performance_scatter(sdata, seq_idx=None, target="TARGETS", prediction="PREDI
     if seq_idx is None:
         sdata = sdata[seq_idx]
 
-    _plot_performance_scatter(sdata, **kwargs)
+    _plot_performance_scatter(sdata, target=target, prediction=prediction, **kwargs)
 
 
 def _plot_performance_scatter(sdata, target="TARGETS", prediction="PREDICTIONS", **kwargs):

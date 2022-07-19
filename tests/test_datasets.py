@@ -27,3 +27,8 @@ def test_random1000(tmp_dataset_dir):
 def test_farley2015(tmp_dataset_dir):
     data = eu.datasets.farley15()
     assert(data)
+
+
+def test_jores21(tmp_dataset_dir):
+    data = eu.datasets.jores21()
+    assert(data)
