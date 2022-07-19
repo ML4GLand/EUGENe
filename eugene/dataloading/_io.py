@@ -9,7 +9,7 @@ from os import PathLike
 # Relative imports
 from .dataloaders import SeqData
 
-def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, col_names=None, auto_name=True, compression="infer", **kwargs):
+def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, return_dataframe=False, col_names=None, auto_name=True, compression="infer", **kwargs):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -93,6 +93,8 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     # Return it all
     if return_numpy:
         return ids, seqs, rev_seqs, targets
+    elif return_dataframe:
+        return dataframe
     else:
         return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["TARGETS"]))
 
@@ -205,28 +207,32 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
     """
     with h5py.File(filename, "r") as f:
         d = {}
-        for k in f.keys():
-            if "seqs" in f:
-                d["seqs"] = np.array([n.decode("ascii", "ignore") for n in f["seqs"][:]])
-            if "names" in f:
-                d["names"] = np.array([n.decode("ascii", "ignore") for n in f["names"][:]])
-            if "ohe_seqs" in f:
-                d["ohe_seqs"] = f["ohe_seqs"][:]
-            if "ohe_rev_seqs" in f:
-                d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
-            if "rev_seqs" in f:
-                d["rev_seqs"] = f["rev_seqs"][:]
-            if "ohe_rev_seqs" in f:
-                d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
-            if "seqs_annot" in f:
-                out_dict = {}
-                for key in f["seqs_annot"].keys():
-                    out_dict[key] = f["seqs_annot"][key][()]
-                    d["seqs_annot"] = pd.DataFrame(out_dict)
-            if "pos_annot" in f:
-                d["pos_annot"] = f["pos_annot"].attrs
-            if "seqsm" in f:
-                d["seqsm"] = f["seqsm"].attrs
+        if "seqs" in f:
+            d["seqs"] = np.array([n.decode("ascii", "ignore") for n in f["seqs"][:]])
+        if "names" in f:
+            d["names"] = np.array([n.decode("ascii", "ignore") for n in f["names"][:]])
+        if "ohe_seqs" in f:
+            d["ohe_seqs"] = f["ohe_seqs"][:]
+        if "rev_seqs" in f:
+            d["rev_seqs"] = f["rev_seqs"][:]
+        if "ohe_rev_seqs" in f:
+            d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
+        if "seqs_annot" in f:
+            out_dict = {}
+            for key in f["seqs_annot"].keys():
+                print(key)
+                out = f["seqs_annot"][key][()]
+                print(out.dtype.name)
+                if out.dtype.name == "bytes120":
+                    print("HERE")
+                    out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
+                else:
+                    out_dict[key] = out
+            d["seqs_annot"] = pd.DataFrame(out_dict)
+        if "pos_annot" in f:
+            d["pos_annot"] = f["pos_annot"].attrs
+        if "seqsm" in f:
+            d["seqsm"] = f["seqsm"].attrs
     return SeqData(**d)
 
 
@@ -304,8 +310,6 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
             f.create_dataset("names", data=np.array([n.encode("ascii", "ignore") for n in sdata.names]))
         if sdata.ohe_seqs is not None:
             f.create_dataset("ohe_seqs", data=sdata.ohe_seqs)
-        if sdata.ohe_rev_seqs is not None:
-            f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
         if sdata.rev_seqs is not None:
             f.create_dataset("rev_seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.rev_seqs]))
         if sdata.ohe_rev_seqs is not None:
@@ -313,7 +317,10 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
         if sdata.seqs_annot is not None:
            for key, item in dict(sdata.seqs_annot).items():
                 # note that not all variable types are supported but string and int are
-                f["seqs_annot/" + str(key)] = item
+                if item.dtype == "object":
+                    f["seqs_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "")])
+                else:
+                    f["seqs_annot/" + str(key)] = item
 
 
 def write(sdata, filename, *args, **kwargs):

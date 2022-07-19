@@ -6,4 +6,4 @@ from ._dataset_preprocess import split_train_test, standardize_features # datase
 from ._preprocessing import one_hot_encode_data, reverse_complement_data, train_test_split_data, prepare_data # sdata functions
 
 # Project specific
-from ._otx_preprocess import randomizeLinkers
+from ._otx_preprocess import randomizeLinkers, convert2pyRangesDict

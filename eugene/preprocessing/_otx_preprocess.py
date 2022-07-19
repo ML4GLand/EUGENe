@@ -195,6 +195,13 @@ def convert2pyRangesDict(names, seqs):
     return d
 
 
+def convert2pyRanges(names, seqs):
+    """Convert a list of names and sequences to a list of pyRanges objects"""
+    import pyranges as pr
+    d = convert2pyRangesDict(names, seqs)
+    return pr.from_dict(d)
+
+
 # Function to encode a sequence based on nucleotides. Makes use of defineTFBS to find TFBS. Note that the current
 # implementation only keeps sequences with exactly 5 binding sites. Currently supports encoding into mixed 1.0, 2.0 and 3.0
 def encode_seq(seq, encoding):

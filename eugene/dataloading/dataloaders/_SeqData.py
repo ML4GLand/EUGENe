@@ -9,6 +9,7 @@ from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
 import pyranges as pr
+from pandas import Int64Index
 from ._SeqDataset import SeqDataset
 
 
@@ -64,11 +65,11 @@ class SeqData():
         else:
             self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None else seqidx
 
-        self.seqs = seqs[self.seqidx] if seqs is not None else None
-        self.names = names[self.seqidx] if names is not None else None
-        self.rev_seqs = rev_seqs[self.seqidx] if rev_seqs is not None else None
-        self.ohe_seqs = ohe_seqs[self.seqidx] if ohe_seqs is not None else None
-        self.ohe_rev_seqs = ohe_rev_seqs[self.seqidx] if ohe_rev_seqs is not None else None
+        self.seqs = np.array(seqs[self.seqidx]) if seqs is not None else None
+        self.names = np.array(names[self.seqidx]) if names is not None else None
+        self.rev_seqs = np.array(rev_seqs[self.seqidx]) if rev_seqs is not None else None
+        self.ohe_seqs = np.array(ohe_seqs[self.seqidx]) if ohe_seqs is not None else None
+        self.ohe_rev_seqs = np.array(ohe_rev_seqs[self.seqidx]) if ohe_rev_seqs is not None else None
 
         if self.seqs is not None:
             self._n_obs = len(self.seqs)
@@ -76,7 +77,12 @@ class SeqData():
             self._n_obs = len(self.ohe_seqs)
 
         # seq annotations (handled by gen dataframe)
-        self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])
+        if isinstance(self.seqidx, slice):
+            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])[self.seqidx]
+        elif type(self.seqidx[0]) in [bool, np.bool_]:
+            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"]).loc[self.seqidx]
+        else:
+            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"]).iloc[self.seqidx]
 
         # pos annotations
         if isinstance(pos_annot, dict):
@@ -85,6 +91,7 @@ class SeqData():
             self.pos_annot = pr.read_bed(pos_annot)
         else:
             self.pos_annot = pos_annot
+        #self.pos_annot = self.pos_annot.df[self.seqidx]
 
         # unstructured metadata/data
         self.uns = uns or OrderedDict()

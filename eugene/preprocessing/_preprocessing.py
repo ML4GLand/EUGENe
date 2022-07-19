@@ -55,6 +55,23 @@ def train_test_split_data(sdata: SeqData, copy=False, kwargs={}) -> SeqData:
 
 
 @track
+def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
+    """Add position annotation.
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    Returns
+    -------
+    SeqData
+        SeqData object with position annotation.
+    """
+    sdata = sdata.copy() if copy else sdata
+    sdata.seqs_annot["POS"] = sdata.seqs_annot.index.map(lambda x: x.split("_")[1])
+    return sdata if copy else None
+
+
+@track
 def prepare_data(sdata: SeqData, steps=["reverse_complement", "one_hot_encode", "train_test_split"], copy=False) -> SeqData:
     """Prepare data.
     Parameters
