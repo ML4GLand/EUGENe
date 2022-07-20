@@ -24,11 +24,21 @@ def test_random1000(tmp_dataset_dir):
     assert(data)
 
 
-def test_farley2015(tmp_dataset_dir):
+def test_farley15(tmp_dataset_dir):
     data = eu.datasets.farley15()
+    assert(data)
+
+
+def test_deBoer20(tmp_dataset_dir):
+    data = eu.datasets.deBoer20(0)
     assert(data)
 
 
 def test_jores21(tmp_dataset_dir):
     data = eu.datasets.jores21()
+    assert(data)
+
+
+def test_deAlmeida22(tmp_dataset_dir):
+    data = eu.datasets.deAlmeida22()
     assert(data)

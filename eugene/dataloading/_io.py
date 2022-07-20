@@ -47,7 +47,7 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     else:
         dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0, compression=compression)
         dataframe.reset_index(inplace=True, drop=True)
-    print(dataframe.head())
+
     # Subset if thresholds are passed in
     if low_thresh != None or high_thresh != None:
         assert low_thresh != None and high_thresh != None and target_col != None
@@ -117,7 +117,6 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
 
     seqs = np.array([x.rstrip() for (i,x) in enumerate(open(seq_file)) if i%2==1])
     ids = np.array([x.rstrip().replace(">", "") for (i,x) in enumerate(open(seq_file)) if i%2==0])
-
     if target_file is not None:
         if is_target_text:
             targets = np.loadtxt(target_file, dtype=float)
@@ -134,8 +133,10 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
 
     if return_numpy:
         return ids, seqs, rev_seqs, targets
-    else:
+    elif targets is not None:
         return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+    else:
+        return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs)
 
 
 def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, is_names_text=False, is_seq_text=False, is_target_text=False, delim="\n", ohe_encoded=False, return_numpy=False):

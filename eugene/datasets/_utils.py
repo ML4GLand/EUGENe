@@ -38,7 +38,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
     if compression != "":
         compression = "." + compression
     for i in data_idxs:
-        base_name = os.path.basename(url_list[i]).split(".")[0] + f".csv{compression}"
+        base_name = os.path.basename(url_list[i]).split("?")[0] #.split(".")[0] + f".csv{compression}"
         search_path = os.path.join(HERE.parent, settings.datasetdir, ds_name, base_name)
         if not os.path.exists(search_path):
             if not os.path.isdir(ds_path):
@@ -46,7 +46,6 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
                 os.makedirs(ds_path)
 
             print(f"Downloading {ds_name} {os.path.basename(url_list[i])} to {ds_path}...")
-            print(url_list[i], os.path.relpath(ds_path))
             path = wget.download(url_list[i], os.path.relpath(ds_path))
             paths.append(path)
             print(f"Finished downloading {os.path.basename(url_list[i])}")
@@ -56,7 +55,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
                 with gzip.open(path) as gz:
                     with io.TextIOWrapper(gz, encoding="utf-8") as file:
                         file = pd.read_csv(file, delimiter=r"\t", engine="python", header=None)
-
+                        print(file.head())
                         if ds_name == "deBoer20":
                             file = deBoerCleanup(file, i)
 
@@ -65,7 +64,7 @@ def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression
                         file.to_csv(save_path, index = False, compression="gzip")
                         print(f"Saved file to {save_path}")
                         paths.append(save_path)
-                os.remove(os.path.join(ds_path, os.path.basename(url_list[i])))
+                #os.remove(os.path.join(ds_path, os.path.basename(url_list[i])))
             else:
                 # Implement when needed
                 pass
