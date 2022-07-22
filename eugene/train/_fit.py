@@ -26,6 +26,7 @@ def fit(model: LightningModule,
         early_stopping_metric = None,
         early_stopping_metric_min = None,
         early_stopping_metric_patience = None,
+        seq_transforms=None,
         copy=False,
         gpus=None,
         **kwargs):
@@ -41,10 +42,10 @@ def fit(model: LightningModule,
    # Move on to sdata if not
    elif sdata is not None:
       train_idx = np.where(sdata.seqs_annot[train_idx_label] == True)[0]
-      train_dataset = sdata[train_idx].to_dataset(label=target_label, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
+      train_dataset = sdata[train_idx].to_dataset(label=target_label, seq_transforms=seq_transforms, transform_kwargs={"transpose": True})
       train_dataloader = train_dataset.to_dataloader(batch_size=batch_size, num_workers=num_workers)
       val_idx = np.where(sdata.seqs_annot[train_idx_label] == False)[0]
-      val_dataset = sdata[val_idx].to_dataset(label=target_label, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
+      val_dataset = sdata[val_idx].to_dataset(label=target_label, seq_transforms=seq_transforms, transform_kwargs={"transpose": True})
       val_dataloader = val_dataset.to_dataloader(batch_size=batch_size, num_workers=num_workers)
 
    # Set-up a trainer with a logger and callbacks (if applicable)

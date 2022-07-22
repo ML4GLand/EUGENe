@@ -294,8 +294,8 @@ class SeqData():
         transforms = []
 
         if seq_transforms is None:
-            print("No transforms given, assuming default transforms (reverse complement, one hot encode and tensorize).")
-            transforms = [ReverseComplement(**transform_kwargs), OneHotEncode(**transform_kwargs), ToTensor()]
+            print("No transforms given, assuming just need to tensorize).")
+            transforms = [ToTensor()]
             return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
 
         if "augment" in seq_transforms:

@@ -3,7 +3,7 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurr
 
 
 class FCN(BaseModel):
-    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, fc_kwargs={}):
+    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, loss_fxn="mse", fc_kwargs={}):
         """ Initialize the FCN model.
         Args:
             input_len: The length of the input sequence.
@@ -13,7 +13,7 @@ class FCN(BaseModel):
             aggr: The aggregation function.
             fc_kwargs: The keyword arguments for the fully connected layer.
         """
-        super().__init__(input_len, output_dim, strand, task, aggr)
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn)
         self.flattened_input_dims = 4*input_len
         if self.strand == "ss":
             self.fcn = BasicFullyConnectedModule(input_dim=self.flattened_input_dims, output_dim=output_dim, **fc_kwargs)
@@ -40,7 +40,7 @@ class FCN(BaseModel):
 
 
 class CNN(BaseModel):
-    def __init__(self, input_len, output_dim, conv_kwargs, strand="ss", task="regression", aggr=None, fc_kwargs={}):
+    def __init__(self, input_len, output_dim, conv_kwargs, strand="ss", task="regression", aggr=None, loss_fxn="mse", fc_kwargs={}):
         """ Initialize the CNN model.
         Args:
             input_len: The length of the input sequence.
@@ -51,7 +51,7 @@ class CNN(BaseModel):
             aggr: The aggregation function.
             fc_kwargs: The keyword arguments for the fully connected layer.
         """
-        super().__init__(input_len, output_dim, strand, task, aggr)
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn)
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.fcnet = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim, output_dim=output_dim, **fc_kwargs)
@@ -131,8 +131,8 @@ class Hybrid(BaseModel):
         fc_kwargs: The keyword arguments for the fully connected layer.
     """
 
-    def __init__(self, input_len, output_dim, conv_kwargs, rnn_kwargs, strand="ss", task="regression", aggr=None, fc_kwargs={}):
-        super().__init__(input_len, output_dim, strand, task, aggr)
+    def __init__(self, input_len, output_dim, conv_kwargs, rnn_kwargs, strand="ss", task="regression", loss_fxn="mse", aggr=None, fc_kwargs={}):
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn)
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.recurrentnet = BasicRecurrent(input_dim=self.convnet.out_channels, **rnn_kwargs)

@@ -175,7 +175,7 @@ def _plot_logo(matrix, **kwargs):
 def performance_scatter(sdata, seq_idx=None, target="TARGETS", prediction="PREDICTIONS", **kwargs):
 
     # Get the indices of the sequences in the subset
-    if seq_idx is None:
+    if seq_idx is not None:
         sdata = sdata[seq_idx]
 
     _plot_performance_scatter(sdata, target=target, prediction=prediction, **kwargs)
@@ -262,6 +262,24 @@ def _plot_auprc(sdata, target="TARGETS", prediction="PREDICTIONS", title="AUPRC 
         ax.legend(loc="lower right")
         plt.tight_layout()
 
+
+def histogram(sdata, category, **kwargs):
+    _plot_histogram(sdata, category=category, **kwargs)
+
+
+def _plot_histogram(sdata, category, title="Histogram", xlab=None, ylab="Frequency", **kwargs):
+    fig, ax = plt.subplots(1,1,figsize=(6,6))
+    rc = {"font.size": 16}
+    with plt.rc_context(rc):
+        ps = sdata.seqs_annot[category].values.reshape(-1, 1)
+        ax.hist(ps, bins=100, density=True, **kwargs)
+        if xlab is not None:
+            ax.set_xlabel(xlab, fontsize=20)
+        else:
+            ax.set_xlabel(category, fontsize=20)
+        ax.set_ylabel(ylab, fontsize=20)
+        ax.set_title(title, fontsize=24)
+        plt.tight_layout()
 
 def violin(sdata, **kwargs):
     _plot_violin(sdata, **kwargs)

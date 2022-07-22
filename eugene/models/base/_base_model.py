@@ -15,7 +15,7 @@ from ...preprocessing._utils import ascii_decode
 
 # omit_final_pool should be set to True in conv_kwargs
 class BaseModel(LightningModule):
-    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, **kwargs):
+    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, loss_fxn="mse", **kwargs):
         super().__init__()
 
         # Instance variables
@@ -23,6 +23,7 @@ class BaseModel(LightningModule):
         self.strand = strand
         self.task = task
         self.aggr = aggr
+        self.loss_fxn = loss_fxn
         self.kwargs = kwargs
 
         # Add task specific metrics
@@ -75,7 +76,10 @@ class BaseModel(LightningModule):
 
         elif self.task == "regression":
             # Get the loss
-            loss = F.mse_loss(outs, y)
+            if self.loss_fxn == "mse":
+                loss = F.mse_loss(outs, y)
+            elif self.loss_fxn == "poisson":
+                loss = F.poisson_nll_loss(outs, y)
 
             # Get and log R2Score
             r_squared = self.r_squared(outs, y)
