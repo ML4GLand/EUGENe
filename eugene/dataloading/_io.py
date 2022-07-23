@@ -1,8 +1,7 @@
-from enum import auto
 import h5py
 import numpy as np
 import pandas as pd
-from typing import Optional
+from typing import Union, Optional, Iterable
 from os import PathLike
 import pyranges as pr
 
@@ -11,40 +10,41 @@ from .dataloaders import SeqData
 
 
 def read_csv(
-    file,
-    seq_col="SEQ",
-    name_col=None,
-    target_col=None,
-    binarize=False,
-    rev_comp=False,
-    sep="\t",
-    low_thresh=None,
-    high_thresh=None,
-    low_memory=False,
-    return_numpy=False,
-    return_dataframe=False,
-    col_names=None,
-    auto_name=True,
-    compression="infer",
+    file: PathLike,
+    seq_col: Optional[str] = "SEQ",
+    name_col: Optional[str] = None,
+    target_col: Union[str, Iterable[str]] = None,
+    rev_comp: bool = False,
+    sep: str = "\t",
+    low_memory: bool = False,
+    return_numpy: bool = False,
+    return_dataframe: bool = False,
+    col_names: Iterable = None,
+    auto_name: bool = True,
+    compression: str = "infer",
     **kwargs,
 ):
     """Function for loading sequences into numpy objects from csv/tsv files
 
-    Args:
-        file (str): tsv/csv file path to read
-        seq_col (str, optional): name of column containing sequences. Defaults to None.
-        name_col (str, optional): name of column containing sequence names. Defaults to None.
-        target_col (str, optional): name of column containing sequence names. Defaults to None.
-        sep (str, optional): column separator. Defaults to "\t".
-        rev_comp (bool, optional): whether to generate reverse complements for sequences. Defaults to False.
-        low_thresh (float, optional): if specified all activities under this threshold are considered inactive. Defaults to None.
-        high_thresh (float, optional): if specified all activities above this threshold are considered inactive. Defaults to None.
-        low_memory (bool, optional): whether to read file in low_memory mode. Defaults to False.
-        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
-
-    Returns:
-        tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-               if any are not provided they are set to none
+    Parameters
+    ----------
+    file : PathLike
+        file path to read
+    seq_col : str, optional
+        column name containing sequences. Defaults to "SEQ".
+    name_col : str, optional
+        column name containing identifiers. Defaults to None.
+    target_col : str, optional
+        column name containing targets. Defaults to None.
+    rev_comp : bool, optional
+        whether to generate reverse complements for sequences. Defaults to False.
+    sep : str, optional
+        delimiter to use. Defaults to "\t".
+    low_memory : bool, optional
+        whether to use low memory mode. Defaults to False.
+    return_numpy : bool, optional
+        whether to return numpy arrays. Defaults to False.
+    return_dataframe : bool, optional
     """
 
     try:
@@ -103,18 +103,6 @@ def read_csv(
             compression=compression,
         )
         dataframe.reset_index(inplace=True, drop=True)
-
-    # Subset if thresholds are passed in
-    if low_thresh is not None or high_thresh is not None:
-        assert (
-            low_thresh is not None
-            and high_thresh is not None
-            and target_col is not None
-        )
-        dataframe["FXN_LABEL"] = np.nan
-        dataframe.loc[dataframe[target_col] <= low_thresh, "FXN_LABEL"] = 0
-        dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
-        target_col = "FXN_LABEL"
 
     # Grab targets if column is provided
     if target_col is not None:
