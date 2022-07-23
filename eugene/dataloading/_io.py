@@ -1,4 +1,3 @@
-# Absolute imports
 from enum import auto
 import h5py
 import numpy as np
@@ -10,7 +9,25 @@ import pyranges as pr
 # Relative imports
 from .dataloaders import SeqData
 
-def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False, rev_comp=False, sep="\t", low_thresh=None, high_thresh=None, low_memory=False, return_numpy=False, return_dataframe=False, col_names=None, auto_name=True, compression="infer", **kwargs):
+
+def read_csv(
+    file,
+    seq_col="SEQ",
+    name_col=None,
+    target_col=None,
+    binarize=False,
+    rev_comp=False,
+    sep="\t",
+    low_thresh=None,
+    high_thresh=None,
+    low_memory=False,
+    return_numpy=False,
+    return_dataframe=False,
+    col_names=None,
+    auto_name=True,
+    compression="infer",
+    **kwargs,
+):
     """Function for loading sequences into numpy objects from csv/tsv files
 
     Args:
@@ -33,7 +50,7 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     try:
         if len(file) == 1 and type(file) is list:
             file = file[0]
-    except:
+    except ValueError:
         raise ValueError("file must be a list of files or a single file")
 
     # Load as pandas dataframe
@@ -41,16 +58,59 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         dataframe = None
         for i in range(len(file) - 1):
             if dataframe is None:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), pd.read_csv(file[i-1], sep=sep, low_memory=low_memory, names=col_names, compression=compression)], ignore_index=True)
+                dataframe = pd.concat(
+                    [
+                        pd.read_csv(
+                            file[i],
+                            sep=sep,
+                            low_memory=low_memory,
+                            names=col_names,
+                            compression=compression,
+                            header=0,
+                        ),
+                        pd.read_csv(
+                            file[i - 1],
+                            sep=sep,
+                            low_memory=low_memory,
+                            names=col_names,
+                            compression=compression,
+                        ),
+                    ],
+                    ignore_index=True,
+                )
             else:
-                dataframe = pd.concat([pd.read_csv(file[i], sep=sep, low_memory=low_memory, names=col_names, compression=compression, header=0), dataframe], ignore_index=True)
+                dataframe = pd.concat(
+                    [
+                        pd.read_csv(
+                            file[i],
+                            sep=sep,
+                            low_memory=low_memory,
+                            names=col_names,
+                            compression=compression,
+                            header=0,
+                        ),
+                        dataframe,
+                    ],
+                    ignore_index=True,
+                )
     else:
-        dataframe = pd.read_csv(file, sep=sep, low_memory=low_memory, names=col_names, header=0, compression=compression)
+        dataframe = pd.read_csv(
+            file,
+            sep=sep,
+            low_memory=low_memory,
+            names=col_names,
+            header=0,
+            compression=compression,
+        )
         dataframe.reset_index(inplace=True, drop=True)
 
     # Subset if thresholds are passed in
-    if low_thresh != None or high_thresh != None:
-        assert low_thresh != None and high_thresh != None and target_col != None
+    if low_thresh is not None or high_thresh is not None:
+        assert (
+            low_thresh is not None
+            and high_thresh is not None
+            and target_col is not None
+        )
         dataframe["FXN_LABEL"] = np.nan
         dataframe.loc[dataframe[target_col] <= low_thresh, "FXN_LABEL"] = 0
         dataframe.loc[dataframe[target_col] >= high_thresh, "FXN_LABEL"] = 1
@@ -60,7 +120,9 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     if target_col is not None:
         targets = dataframe[target_col].to_numpy(float)
         keep = np.where(~np.isnan(targets) & ~np.isinf(targets))[0]
-        print(f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets")
+        print(
+            f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets"
+        )
         targets = targets[keep]
     else:
         targets = None
@@ -76,8 +138,13 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
         ids = ids[keep]
     else:
         if auto_name:
-            n_digits = len(str(len(dataframe)-1))
-            dataframe.index = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(dataframe))])
+            n_digits = len(str(len(dataframe) - 1))
+            dataframe.index = np.array(
+                [
+                    "seq{num:0{width}}".format(num=i, width=n_digits)
+                    for i in range(len(dataframe))
+                ]
+            )
             ids = dataframe.index.to_numpy()
             ids = ids[keep]
         else:
@@ -86,6 +153,7 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     # Grab reverse complement if asked for
     if rev_comp:
         from ..preprocessing import reverse_complement_seqs
+
         rev_seqs = reverse_complement_seqs(seqs)
         rev_seqs = rev_seqs[keep]
     else:
@@ -97,10 +165,17 @@ def read_csv(file, seq_col="SEQ", name_col=None, target_col=None, binarize=False
     elif return_dataframe:
         return dataframe
     else:
-        return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["TARGETS"]))
+        return SeqData(
+            names=ids,
+            seqs=seqs,
+            rev_seqs=rev_seqs,
+            seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["TARGETS"]),
+        )
 
 
-def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False):
+def read_fasta(
+    seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False
+):
     """Function for loading sequences into numpy objects from fasta
 
     Args:
@@ -115,8 +190,14 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
                if any are not provided they are set to none
     """
 
-    seqs = np.array([x.rstrip() for (i,x) in enumerate(open(seq_file)) if i%2==1])
-    ids = np.array([x.rstrip().replace(">", "") for (i,x) in enumerate(open(seq_file)) if i%2==0])
+    seqs = np.array([x.rstrip() for (i, x) in enumerate(open(seq_file)) if i % 2 == 1])
+    ids = np.array(
+        [
+            x.rstrip().replace(">", "")
+            for (i, x) in enumerate(open(seq_file))
+            if i % 2 == 0
+        ]
+    )
     if target_file is not None:
         if is_target_text:
             targets = np.loadtxt(target_file, dtype=float)
@@ -127,19 +208,36 @@ def read_fasta(seq_file, target_file=None, rev_comp=False, is_target_text=False,
 
     if rev_comp:
         from ..preprocessing import reverse_complement_seqs
-        rev_seqs =  reverse_complement_seqs(seqs)
+
+        rev_seqs = reverse_complement_seqs(seqs)
     else:
         rev_seqs = None
 
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif targets is not None:
-        return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+        return SeqData(
+            names=ids,
+            seqs=seqs,
+            rev_seqs=rev_seqs,
+            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+        )
     else:
         return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs)
 
 
-def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, is_names_text=False, is_seq_text=False, is_target_text=False, delim="\n", ohe_encoded=False, return_numpy=False):
+def read_numpy(
+    seq_file,
+    names_file=None,
+    target_file=None,
+    rev_seq_file=None,
+    is_names_text=False,
+    is_seq_text=False,
+    is_target_text=False,
+    delim="\n",
+    ohe_encoded=False,
+    return_numpy=False,
+):
     """Function for loading sequences into numpy objects from numpy compressed files.
        Note if you pass one hot encoded sequences in, you must pass in reverse complements
        if you want them to be included
@@ -162,13 +260,13 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
     """
     if is_seq_text:
         seqs = np.loadtxt(seq_file, dtype=str, delim=delim)
-        if rev_seq_file != None:
+        if rev_seq_file is not None:
             rev_seqs = np.loadtxt(rev_seq_file, dtype=str)
         else:
             rev_seqs = None
     else:
         seqs = np.load(seq_file, allow_pickle=True)
-        if rev_seq_file != None:
+        if rev_seq_file is not None:
             rev_seqs = np.load(rev_seq_file, allow_pickle=True)
         else:
             rev_seqs = None
@@ -191,13 +289,23 @@ def read_numpy(seq_file, names_file=None, target_file=None, rev_seq_file=None, i
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif ohe_encoded:
-        return SeqData(names=ids, ohe_seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+        return SeqData(
+            names=ids,
+            ohe_seqs=seqs,
+            rev_seqs=rev_seqs,
+            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+        )
     else:
-        return  SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs, seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]))
+        return SeqData(
+            names=ids,
+            seqs=seqs,
+            rev_seqs=rev_seqs,
+            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+        )
 
 
 # TODO: This is a bit of a hack, but it works for now. Same with write_h5sd
-def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
+def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
     """Function for loading sequences into SeqData objects from h5sd files.
 
     Args:
@@ -217,7 +325,9 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
         if "ohe_seqs" in f:
             d["ohe_seqs"] = f["ohe_seqs"][:]
         if "rev_seqs" in f:
-            d["rev_seqs"] = np.array([n.decode("ascii", "ignore") for n in f["rev_seqs"][:]])
+            d["rev_seqs"] = np.array(
+                [n.decode("ascii", "ignore") for n in f["rev_seqs"][:]]
+            )
         if "ohe_rev_seqs" in f:
             d["ohe_rev_seqs"] = f["ohe_rev_seqs"][:]
         if "seqs_annot" in f:
@@ -229,11 +339,20 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
                 else:
                     out_dict[key] = out
             if "names" in f:
-                d["seqs_annot"] = pd.DataFrame(index=d["names"], data=out_dict).replace("NA", np.nan)
+                d["seqs_annot"] = pd.DataFrame(index=d["names"], data=out_dict).replace(
+                    "NA", np.nan
+                )
             else:
                 n_digits = len(str(len(d["seqs"])))
-                idx = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(d["seqs"]))])
-                d["seqs_annot"] = pd.DataFrame(index=idx, data=out_dict).replace("NA", np.nan)
+                idx = np.array(
+                    [
+                        "seq{num:0{width}}".format(num=i, width=n_digits)
+                        for i in range(len(d["seqs"]))
+                    ]
+                )
+                d["seqs_annot"] = pd.DataFrame(index=idx, data=out_dict).replace(
+                    "NA", np.nan
+                )
         if "pos_annot" in f:
             out_dict = {}
             for key in f["pos_annot"].keys():
@@ -263,7 +382,9 @@ def read_h5sd(filename: Optional[PathLike], sdata = None, mode: str = "r"):
                 else:
                     out = f["uns"][key][()]
                     if out.dtype.name == "bytes120":
-                        out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
+                        out_dict[key] = np.array(
+                            [n.decode("ascii", "ignore") for n in out]
+                        )
                     else:
                         out_dict[key] = out
             d["uns"] = out_dict
@@ -339,26 +460,44 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
         f.attrs.setdefault("encoding-type", "SeqData")
         f.attrs.setdefault("encoding-version", "0.0.0")
         if sdata.seqs is not None:
-            f.create_dataset("seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.seqs]))
+            f.create_dataset(
+                "seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.seqs])
+            )
         if sdata.names is not None:
-            f.create_dataset("names", data=np.array([n.encode("ascii", "ignore") for n in sdata.names]))
+            f.create_dataset(
+                "names",
+                data=np.array([n.encode("ascii", "ignore") for n in sdata.names]),
+            )
         if sdata.ohe_seqs is not None:
             f.create_dataset("ohe_seqs", data=sdata.ohe_seqs)
         if sdata.rev_seqs is not None:
-            f.create_dataset("rev_seqs", data=np.array([n.encode("ascii", "ignore") for n in sdata.rev_seqs]))
+            f.create_dataset(
+                "rev_seqs",
+                data=np.array([n.encode("ascii", "ignore") for n in sdata.rev_seqs]),
+            )
         if sdata.ohe_rev_seqs is not None:
             f.create_dataset("ohe_rev_seqs", data=sdata.ohe_rev_seqs)
         if sdata.seqs_annot is not None:
-           for key, item in dict(sdata.seqs_annot).items():
+            for key, item in dict(sdata.seqs_annot).items():
                 # note that not all variable types are supported but string and int are
                 if item.dtype == "object":
-                    f["seqs_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "NA")])
+                    f["seqs_annot/" + str(key)] = np.array(
+                        [
+                            n.encode("ascii", "ignore")
+                            for n in item.replace(np.nan, "NA")
+                        ]
+                    )
                 else:
                     f["seqs_annot/" + str(key)] = item
         if sdata.pos_annot is not None:
             for key, item in dict(sdata.pos_annot.df).items():
                 if item.dtype in ["object", "category"]:
-                    f["pos_annot/" + str(key)] = np.array([n.encode("ascii", "ignore") for n in item.replace(np.nan, "NA")])
+                    f["pos_annot/" + str(key)] = np.array(
+                        [
+                            n.encode("ascii", "ignore")
+                            for n in item.replace(np.nan, "NA")
+                        ]
+                    )
                 else:
                     f["pos_annot/" + str(key)] = item
         if sdata.seqsm is not None:
