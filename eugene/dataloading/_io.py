@@ -45,6 +45,24 @@ def read_csv(
     return_numpy : bool, optional
         whether to return numpy arrays. Defaults to False.
     return_dataframe : bool, optional
+        whether to return pandas dataframe. Defaults to False.
+    col_names : Iterable, optional
+        column names to use. Defaults to None.
+    auto_name : bool, optional
+        whether to automatically generate identifiers. Defaults to True.
+    compression : str, optional
+        compression type to use. Defaults to "infer".
+    **kwargs : dict, optional
+        keyword arguments to pass to pandas.read_csv. Defaults to {}.
+
+    Returns
+    -------
+    tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+              if any are not provided they are set to none
+    sdata: SeqData
+        SeqData object containing sequences and identifiers
+    df: pandas.DataFrame
+        pandas dataframe containing sequences and identifiers
     """
 
     try:
@@ -162,18 +180,30 @@ def read_csv(
 
 
 def read_fasta(
-    seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False
+    seq_file, 
+    target_file=None, 
+    rev_comp=False, 
+    is_target_text=False, 
+    return_numpy=False
 ):
     """Function for loading sequences into numpy objects from fasta
 
-    Args:
-        seq_file (str): fasta file path to read
-        target_file (str): .npy or .txt file path containing targets. Defaults to None.
-        rev_comp (bool, optional): whether to generate reverse complements for sequences. Defaults to False.
-        is_target_text (bool, optional): whether the file is compressed or plaintext. Defaults to False.
-        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
+    Parameters
+    ----------
+        seq_file (str): 
+            fasta file path to read
+        target_file (str): 
+            .npy or .txt file path containing targets. Defaults to None.
+        rev_comp (bool, optional): 
+            whether to generate reverse complements for sequences. Defaults to False.
+        is_target_text (bool, optional): 
+            whether the file is compressed or plaintext. Defaults to False.
+        return_numpy (bool, optional): 
+            whether to return numpy arrays. Defaults to False.
 
-    Returns:
+    Returns
+    -------
+        sdata: SeqData
         tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
                if any are not provided they are set to none
     """
@@ -293,16 +323,25 @@ def read_numpy(
 
 
 # TODO: This is a bit of a hack, but it works for now. Same with write_h5sd
-def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
+def read_h5sd(
+    filename: Optional[PathLike], 
+    sdata=None, 
+    mode: str = "r"):
     """Function for loading sequences into SeqData objects from h5sd files.
 
-    Args:
-        filename (str): .h5sd file path to read
-        sdata (SeqData, optional): SeqData object to load data into. Defaults to None.
-        mode (str, optional): mode to open file. Defaults to "r".
+    Parameters
+    ----------
 
-    Returns:
-        SeqData: SeqData object containing sequences and identifiers
+        filename (str): 
+            .h5sd file path to read
+        sdata (SeqData, optional): 
+            SeqData object to load data into. Defaults to None.
+        mode (str, optional): 
+            mode to open file. Defaults to "r".
+
+    Returns
+    -------
+        sdata: SeqData object containing sequences and identifiers
     """
     with h5py.File(filename, "r") as f:
         d = {}
