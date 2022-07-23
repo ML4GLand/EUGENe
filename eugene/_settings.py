@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from typing import Union
 from typing import Any, Union, Optional, Iterable, TextIO
@@ -57,8 +56,9 @@ class EugeneConfig:
         batch_size: int = 128,
         seed: int = 13,
         gpus: int = None,
-        datasetdir = "./datasets/",
+        dataset_dir = "./datasets/",
         logging_dir: str = "./eugene_log/",
+        output_dir: str = "./eugene_output/",
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
     ):
@@ -70,8 +70,9 @@ class EugeneConfig:
         self.batch_size = batch_size
         self.seed = seed
         self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
-        self.datasetdir = datasetdir
+        self.dataset_dir =dataset_dir
         self.logging_dir = logging_dir
+        self.output_dir = output_dir
         self.dl_num_workers = dl_num_workers
         self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
 
@@ -137,14 +138,14 @@ class EugeneConfig:
         self._logging_dir = Path(logging_dir).resolve()
 
     @property
-    def datasetdir(self) -> Path:
+    def dataset_dir(self) -> Path:
         """Directory for example (default `'./data/'`)."""
-        return self._datasetdir
+        return self._dataset_dir
 
-    @datasetdir.setter
-    def datasetdir(self, datasetdir: Union[str, Path]):
-        _type_check(datasetdir, "datasetdir", (str, Path))
-        self._datasetdir = Path(datasetdir).resolve()
+    @dataset_dir.setter
+    def dataset_dir(self, dataset_dir: Union[str, Path]):
+        _type_check(dataset_dir, "dataset_dir", (str, Path))
+        self._dataset_dir = Path(dataset_dir).resolve()
 
     @property
     def progress_bar_style(self) -> str:
@@ -173,6 +174,15 @@ class EugeneConfig:
     def verbosity(self) -> int:
         """Verbosity level (default `logging.INFO`)."""
         return self._verbosity
+
+    @property
+    def output_dir(self) -> Path:
+        """Directory for saving output (default `'./eugene_output/'`)."""
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, output_dir: Union[str, Path]):
+        self._output_dir = Path(output_dir).resolve()
 
     @verbosity.setter
     def verbosity(self, level: Union[str, int]):

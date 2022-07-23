@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader
 from .._settings import settings
 import logging
 
-#logging.disable(logging.ERROR)
+logging.disable(logging.ERROR)
 seed_everything(settings.seed, workers=True)
-#logging.disable(logging.NOTSET)
+logging.disable(logging.NOTSET)
 
 
 def fit(

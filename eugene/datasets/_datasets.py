@@ -37,6 +37,21 @@ def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     return sdata
 
 
+def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
+    """
+    Reads the random1000_10 dataset.
+    """
+    filename = f"{HERE}/random1000_10/random1000_10_seqs.tsv"
+    if binary:
+        raise NotImplementedError("random1000_10 dataset does not need to support binary data.")
+    else:
+        sdataframe = read(filename, return_dataframe=True)
+        n_digits = len(str(len(sdataframe)-1))
+        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(sdataframe))])
+        sdata = SeqData(seqs=sdataframe["SEQ"], names=ids, seqs_annot=sdataframe.drop(columns=["NAME", "SEQ"]))
+    return sdata
+
+
 def farley15(binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     """
     Reads the Farley15 dataset.

@@ -8,15 +8,15 @@ import pytest
 from pathlib import Path
 
 HERE = Path(__file__).parent
-eu.settings.datasetdir = "/_data/datasets/"
+eu.settings.dataset_dir = "/_data/datasets/"
 
 @pytest.fixture(scope="module")
 def tmp_dataset_dir(tmpdir_factory):
     new_dir = Path(tmpdir_factory.mktemp("eugene_data"))
-    old_dir = eu.settings.datasetdir
-    eu.settings.datasetdir = new_dir  # Set up
-    yield eu.settings.datasetdir
-    eu.settings.datasetdir = old_dir  # Tear down
+    old_dir = eu.settings.dataset_dir
+    eu.settings. dataset_dir= new_dir  # Set up
+    yield eu.settings.dataset_dir
+    eu.settings. dataset_dir= old_dir  # Tear down
 
 
 def test_random1000(tmp_dataset_dir):

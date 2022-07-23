@@ -234,6 +234,14 @@ class SeqData():
                             seqidx = index)
 
 
+    def __setitem__(self, index, value):
+        """Set item in data."""
+        if isinstance(index, str):
+            self.seqs_annot[index] = value
+        else:
+            raise ValueError("SeqData only supports setting seq_annot columns with indexing.")
+
+
     def __repr__(self):
         descr = f"SeqData object with = {self._n_obs} seqs"
         for attr in [
@@ -295,7 +303,7 @@ class SeqData():
 
         if label is None:
             targs = None
-        elif type(label) is str:
+        elif type(label) is str or type(label) is int:
             targs = self.seqs_annot[label]
         elif type(label) is list:
             targs = self.seqs_annot[label].values

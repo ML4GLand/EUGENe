@@ -107,10 +107,10 @@ def prepare_data(sdata: SeqData, steps=["reverse_complement", "one_hot_encode", 
         steps = [steps]
 
     steps = list(steps)
-
-    for f in tqdm(steps):
-        print(f)
-        preprocessing_steps[f].__wrapped__(sdata)
+    pbar = tqdm(steps)
+    for step in pbar:
+        pbar.set_description(f"{step_name[step]} on SeqData")
+        preprocessing_steps[step].__wrapped__(sdata)
 
     return sdata if copy else None
 
@@ -119,4 +119,10 @@ preprocessing_steps = dict(
     reverse_complement=reverse_complement_data,
     one_hot_encode=one_hot_encode_data,
     train_test_split=train_test_split_data,
+)
+
+step_name = dict(
+    reverse_complement="Reverse complementing",
+    one_hot_encode="One hot encoding",
+    train_test_split="Train/test splitting",
 )

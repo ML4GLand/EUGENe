@@ -6,10 +6,10 @@ from .._settings import settings
 HERE = Path(__file__).parent
 
 
-def check_datasetdir_exists(f):
+def check_dataset_dir_exists(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        settings.datasetdir.mkdir(exist_ok=True)
+        settings.dataset_dir.mkdir(exist_ok=True)
         return f(*args, **kwargs)
 
     return wrapper
@@ -33,13 +33,13 @@ def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
 
 
 def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression: str = "") -> list:
-    ds_path = os.path.join(HERE.parent, settings.datasetdir, ds_name)
+    ds_path = os.path.join(HERE.parent, settings.dataset_dir, ds_name)
     paths = []
     if compression != "":
         compression = "." + compression
     for i in data_idxs:
         base_name = os.path.basename(url_list[i]).split("?")[0] #.split(".")[0] + f".csv{compression}"
-        search_path = os.path.join(HERE.parent, settings.datasetdir, ds_name, base_name)
+        search_path = os.path.join(HERE.parent, settings.dataset_dir, ds_name, base_name)
         if not os.path.exists(search_path):
             if not os.path.isdir(ds_path):
                 print(f"Path {ds_path} does not exist, creating new folder.")

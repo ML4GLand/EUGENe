@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 # EUGENE
+from .._settings import settings
 from ..preprocessing import reverse_complement_seqs, ohe_DNA_seqs
 from ..dataloading._utils import _seq2Fasta
 
@@ -56,10 +57,14 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
     pass
 
 
-def generate_random_data(num_seqs, seq_len, out_dir="./", autoname=False):
+def generate_random_data(num_seqs, seq_len, num_outputs=1, out_dir=None, dataset_name=None):
     """Simple function tp generate commonly used file types for testing EUGENE models"""
-    if autoname:
-        out_dir = os.path.join(out_dir, "random{0}seqs_{1}bp/".format(num_seqs, seq_len))
+    out_dir = out_dir if out_dir is not None else settings.dataset_dir
+
+    if dataset_name is None:
+        dataset_name = f"random{num_seqs}seqs_{seq_len}bp"
+
+    out_dir = os.path.join(out_dir, dataset_name)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -67,17 +72,19 @@ def generate_random_data(num_seqs, seq_len, out_dir="./", autoname=False):
     ohe_seqs = ohe_DNA_seqs(seqs)
     rev_seqs = reverse_complement_seqs(seqs)
     rev_ohe_seqs = ohe_DNA_seqs(rev_seqs)
-    n_digits = len(str(len(seqs)-1))
-    ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(seqs))])
-    labels = np.array([np.random.randint(0,2) for i in range(num_seqs)])
-    activities = np.array([np.random.rand() for i in range(num_seqs)])
-
-    pd.DataFrame(data={"NAME": ids, "SEQ":seqs, "LABEL": labels, "ACTIVITY": activities}).to_csv(os.path.join(out_dir, "random_seqs.tsv"), sep="\t", index=False)
-    np.save(os.path.join(out_dir, "random_seqs"), seqs)
-    np.save(os.path.join(out_dir, "random_ohe_seqs"), ohe_seqs)
-    np.save(os.path.join(out_dir, "random_rev_seqs"), rev_seqs)
-    np.save(os.path.join(out_dir, "random_rev_ohe_seqs"), rev_ohe_seqs)
-    np.save(os.path.join(out_dir, "random_ids"), ids)
-    np.save(os.path.join(out_dir, "random_labels"), labels)
-    np.save(os.path.join(out_dir, "random_activities"), activities)
-    _seq2Fasta(seqs, ids, name=os.path.join(out_dir, "random_seqs"))
+    n_digits = len(str(num_seqs-1))
+    ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(num_seqs)])
+    labels = np.random.randint(0,2,size=(num_seqs, num_outputs))
+    activities = np.random.rand(num_seqs, num_outputs)
+    label_cols = ["LABEL_{}".format(i) for i in range(num_outputs)]
+    activity_cols = ["ACTIVITY_{}".format(i) for i in range(num_outputs)]
+    d = dict(dict(NAME=ids, SEQ=seqs), **dict(zip(label_cols, labels.T)), **dict(zip(activity_cols, activities.T)))
+    pd.DataFrame(d).to_csv(os.path.join(out_dir, f"{dataset_name}_seqs.tsv"), sep="\t", index=False)
+    np.save(os.path.join(out_dir, f"{dataset_name}_seqs"), seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_ohe_seqs"), ohe_seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_rev_seqs"), rev_seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_rev_ohe_seqs"), rev_ohe_seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_ids"), ids)
+    np.save(os.path.join(out_dir, f"{dataset_name}_labels"), labels)
+    np.save(os.path.join(out_dir, f"{dataset_name}_activities"), activities)
+    _seq2Fasta(seqs, ids, name=os.path.join(out_dir, f"{dataset_name}_seqs"))
