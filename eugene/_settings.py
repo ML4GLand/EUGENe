@@ -17,6 +17,7 @@ if torch.cuda.is_available():
     print(f"Number of GPUs: {torch.cuda.device_count()}")
     print(f"Current GPU: {torch.cuda.current_device()}")
     print(f"GPUs: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+
 eugene_logger = logging.getLogger("eugene")
 
 def _type_check(var: Any, varname: str, types: Union[type, Tuple[type, ...]]):
@@ -38,7 +39,7 @@ class EugeneConfig:
     --------
     To set the seed
     >>> eugene.settings.seed = 13
-    To set the batch size for functions like `eugene.get_latent_representation`
+    To set the default batch size for all functions
     >>> eugene.settings.batch_size = 1024
     To set the progress bar style, choose one of "rich", "tqdm"
     >>> eugene.settings.progress_bar_style = "rich"
@@ -47,10 +48,6 @@ class EugeneConfig:
     >>> eugene.settings.verbosity = logging.INFO
     To set pin memory for GPU training
     >>> eugene.settings.dl_pin_memory_gpu_training = True
-    To set the number of threads PyTorch will use
-    >>> eugene.settings.num_threads = 2
-    To prevent Jax from preallocating GPU memory on start (default)
-    >>> eugene.settings.jax_preallocate_gpu_memory = False
     """
 
     def __init__(
@@ -64,22 +61,19 @@ class EugeneConfig:
         logging_dir: str = "./eugene_log/",
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
-        jax_preallocate_gpu_memory: bool = False,
     ):
 
-        self.seed = seed
-        self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
-        self.batch_size = batch_size
+        self.verbosity = verbosity
         if progress_bar_style not in ["rich", "tqdm"]:
             raise ValueError("Progress bar style must be in ['rich', 'tqdm']")
         self.progress_bar_style = progress_bar_style
+        self.batch_size = batch_size
+        self.seed = seed
+        self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
         self.datasetdir = datasetdir
         self.logging_dir = logging_dir
         self.dl_num_workers = dl_num_workers
         self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
-        self._num_threads = None
-        self.jax_preallocate_gpu_memory = jax_preallocate_gpu_memory
-        self.verbosity = verbosity
 
     @property
     def batch_size(self) -> int:
@@ -153,17 +147,6 @@ class EugeneConfig:
         self._datasetdir = Path(datasetdir).resolve()
 
     @property
-    def num_threads(self) -> None:
-        """Number of threads PyTorch will use."""
-        return self._num_threads
-
-    @num_threads.setter
-    def num_threads(self, num: int):
-        """Number of threads PyTorch will use."""
-        self._num_threads = num
-        torch.set_num_threads(num)
-
-    @property
     def progress_bar_style(self) -> str:
         """Library to use for progress bar."""
         return self._pbar_style
@@ -229,30 +212,6 @@ class EugeneConfig:
         formatter = logging.Formatter("%(message)s")
         ch.setFormatter(formatter)
         eugene_logger.addHandler(ch)
-
-    @property
-    def jax_preallocate_gpu_memory(self):
-        """
-        Jax GPU memory allocation settings.
-        If False, Jax will ony preallocate GPU memory it needs.
-        If float in (0, 1), Jax will preallocate GPU memory to that
-        fraction of the GPU memory.
-        """
-        return self._jax_gpu
-
-    @jax_preallocate_gpu_memory.setter
-    def jax_preallocate_gpu_memory(self, value: Union[float, bool]):
-        # see https://jax.readthedocs.io/en/latest/gpu_memory_allocation.html#gpu-memory-allocation
-        if value is False:
-            os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-        elif isinstance(value, float):
-            if value >= 1 or value <= 0:
-                raise ValueError("Need to use a value between 0 and 1")
-            # format is ".XX"
-            os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = str(value)[1:4]
-        else:
-            raise ValueError("value not understood, need bool or float in (0, 1)")
-        self._jax_gpu = value
 
 
 settings = EugeneConfig()

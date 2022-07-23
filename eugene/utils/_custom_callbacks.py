@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import numpy as np
-import torch
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.callbacks import BasePredictionWriter
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY

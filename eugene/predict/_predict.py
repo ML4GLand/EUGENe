@@ -6,11 +6,13 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from ..dataloading import SeqData, SeqDataset
 from torch.utils.data import DataLoader
 from ..utils._decorators import track
-from ..utils import suppress_stdout
+import logging
 from .._settings import settings
 
-with suppress_stdout():
-   seed_everything(settings.seed, workers=True)
+#logging.disable(logging.ERROR)
+seed_everything(settings.seed, workers=True)
+#logging.disable(logging.NOTSET)
+
 
 
 @track

@@ -5,11 +5,12 @@ from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
 from ..dataloading import SeqData, SeqDataset
 from torch.utils.data import DataLoader
-from ..utils import suppress_stdout
 from .._settings import settings
+import logging
 
-with suppress_stdout():
-   seed_everything(settings.seed, workers=True)
+#logging.disable(logging.ERROR)
+seed_everything(settings.seed, workers=True)
+#logging.disable(logging.NOTSET)
 
 
 def fit(

@@ -2,6 +2,8 @@
 
 # Set default logging handler to avoid logging with logging.lastResort logger.
 import logging
+#logging.getLogger("predict").setLevel(logging.ERROR)
+#logging.getLogger("train").setLevel(logging.ERROR)
 
 from ._constants import REGISTRY_KEYS
 from ._settings import settings
