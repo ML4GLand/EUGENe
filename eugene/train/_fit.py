@@ -5,34 +5,39 @@ from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
 from ..dataloading import SeqData, SeqDataset
 from torch.utils.data import DataLoader
+from ..utils import suppress_stdout
+from .._settings import settings
 
-from ..utils._decorators import track
-seed_everything(13, workers=True)
+with suppress_stdout():
+   seed_everything(settings.seed, workers=True)
 
-@track
-def fit(model: LightningModule,
-        sdata: SeqData = None,
-        train_dataset: SeqDataset = None,
-        val_dataset: SeqDataset = None,
-        batch_size: int = 32,
-        num_workers: int = 0,
-        epochs = 10,
-        log_dir = "_logs",
-        out_dir = None,
-        train_idx_label = "TRAIN",
-        target_label = "TARGETS",
-        save_preds = True,
-        early_stopping_path = None,
-        early_stopping_metric = None,
-        early_stopping_metric_min = None,
-        early_stopping_metric_patience = None,
-        seq_transforms=None,
-        copy=False,
-        gpus=None,
-        **kwargs):
+
+def fit(
+   model: LightningModule,
+   sdata: SeqData = None,
+   train_idx_label = "TRAIN",
+   target_label = "TARGETS",
+   gpus = None,
+   train_dataset: SeqDataset = None,
+   val_dataset: SeqDataset = None,
+   seq_transforms=None,
+   batch_size: int = None,
+   num_workers: int = None,
+   epochs = 10,
+   log_dir = None,
+   early_stopping_path = None,
+   early_stopping_metric = None,
+   early_stopping_metric_min = None,
+   early_stopping_metric_patience = None,
+   **kwargs
+   ):
    """
-    Train the model.
-    """
+   Train the model.
+   """
+
+   batch_size = batch_size if batch_size is not None else settings.batch_size
+   num_workers = num_workers if num_workers is not None else settings.dl_num_workers
+   log_dir = log_dir if log_dir is not None else settings.logging_dir
 
    # First try to train with a SeqDataset if available
    if train_dataset is not None:
@@ -48,24 +53,12 @@ def fit(model: LightningModule,
       val_dataset = sdata[val_idx].to_dataset(label=target_label, seq_transforms=seq_transforms, transform_kwargs={"transpose": True})
       val_dataloader = val_dataset.to_dataloader(batch_size=batch_size, num_workers=num_workers)
 
+   else:
+      raise ValueError("No data provided to train on.")
+
    # Set-up a trainer with a logger and callbacks (if applicable)
    logger = TensorBoardLogger(log_dir)
-   trainer = Trainer(max_epochs=epochs, logger=logger, gpus=gpus)
+   trainer = Trainer(max_epochs=epochs, logger=logger, gpus=gpus, **kwargs)
 
    # Fit the model
    trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
-
-   # Save the predictions to sdata if applicable
-   if sdata is not None and save_preds:
-      if out_dir is not None:
-         from ..utils._custom_callbacks import PredictionWriter
-         train_predictor = Trainer(logger=False, callbacks=PredictionWriter(out_dir + "train_"))
-         val_predictor = Trainer(logger=False, callbacks=PredictionWriter(out_dir + "val_"))
-      else:
-         train_predictor = Trainer(logger=False)
-         val_predictor = Trainer(logger=False)
-      t = np.concatenate(train_predictor.predict(model, train_dataloader), axis=0)
-      v = np.concatenate(val_predictor.predict(model, val_dataloader), axis=0)
-      preds = pd.concat([pd.DataFrame(index=t[:, 0], data=t[:, 1]), pd.DataFrame(index=v[:, 0], data=v[:, 1])], axis=0)
-      sdata.seqs_annot["PREDICTIONS"] = preds.loc[sdata.seqs_annot.index].astype(float)
-      return sdata if copy else None

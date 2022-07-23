@@ -59,6 +59,7 @@ class EugeneConfig:
         progress_bar_style: Literal["rich", "tqdm"] = "tqdm",
         batch_size: int = 128,
         seed: int = 13,
+        gpus: int = None,
         datasetdir = "./datasets/",
         logging_dir: str = "./eugene_log/",
         dl_num_workers: int = 0,
@@ -67,6 +68,7 @@ class EugeneConfig:
     ):
 
         self.seed = seed
+        self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
         self.batch_size = batch_size
         if progress_bar_style not in ["rich", "tqdm"]:
             raise ValueError("Progress bar style must be in ['rich', 'tqdm']")
@@ -96,6 +98,20 @@ class EugeneConfig:
         `batch_size` parameters.
         """
         self._batch_size = batch_size
+
+    @property
+    def gpus(self) -> int:
+        """
+        Number of GPUs to use.
+        """
+        return self._gpus
+
+    @gpus.setter
+    def gpus(self, gpus: int):
+        """
+        Number of GPUs to use.
+        """
+        self._gpus = gpus
 
     @property
     def dl_num_workers(self) -> int:

@@ -287,16 +287,23 @@ class SeqData():
         write_h5sd(self, path, mode)
 
 
-    def to_dataset(self, label: str = "labels", seq_transforms = None, transform_kwargs = {}) -> SeqDataset:
+    def to_dataset(self, label = "labels", seq_transforms = None, transform_kwargs = {}) -> SeqDataset:
         """Convert SeqData object to SeqDataset."""
         from .._transforms import Augment, ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
         transforms = []
 
+        if label is None:
+            targs = None
+        elif type(label) is str:
+            targs = self.seqs_annot[label]
+        elif type(label) is list:
+            targs = self.seqs_annot[label].values
+
         if seq_transforms is None:
             print("No transforms given, assuming just need to tensorize).")
-            transforms = [ToTensor()]
-            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+            transforms = [ToTensor(**transform_kwargs)]
+            return SeqDataset(self.ohe_seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
 
         if "augment" in seq_transforms:
             if self.seqs is not None:
@@ -321,9 +328,9 @@ class SeqData():
         transforms.append(ToTensor(**transform_kwargs))
 
         if ohe_flag:
-            return SeqDataset(self.ohe_seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(self.ohe_seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
         else:
-            return SeqDataset(self.seqs, names=self.names, targets=self.seqs_annot[label] if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(self.seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
 
 
 @singledispatch

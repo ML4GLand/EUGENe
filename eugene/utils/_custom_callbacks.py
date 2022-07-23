@@ -7,7 +7,7 @@ from pytorch_lightning.callbacks import BasePredictionWriter
 from pytorch_lightning.utilities.cli import CALLBACK_REGISTRY
 
 
-@CALLBACK_REGISTRY
+#@CALLBACK_REGISTRY
 class PredictionWriter(BasePredictionWriter):
 
     def __init__(self, output_dir: str, write_interval="epoch"):
@@ -22,11 +22,15 @@ class PredictionWriter(BasePredictionWriter):
 
     def write_on_epoch_end(self, trainer, pl_module, outputs, batch_indices):
         outputs = np.concatenate(outputs[0], axis=0)
-        pred_df = pd.DataFrame(data=outputs, columns=["NAMES", "PREDICTIONS", "TARGETS"])
+        num_outputs = pl_module.output_dim
+        print(num_outputs)
+        pred_cols = [f"PREDICTIONS{i}" for i in range(num_outputs)]
+        target_cols = [f"TARGET{i}" for i in range(num_outputs)]
+        pred_df = pd.DataFrame(data=outputs, columns=["NAMES"] + target_cols + pred_cols)
         pred_df.to_csv(os.path.join(self.output_dir + "predictions.tsv"), sep="\t", index=False)
 
 
-@CALLBACK_REGISTRY
+#@CALLBACK_REGISTRY
 class TrainAndValPredictionWriter(Callback):
     """_summary_ only works with Hybrid
 
