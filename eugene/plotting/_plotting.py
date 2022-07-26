@@ -268,7 +268,7 @@ def histogram(sdata, category, **kwargs):
 
 
 def _plot_histogram(sdata, category, title="Histogram", xlab=None, ylab="Frequency", **kwargs):
-    fig, ax = plt.subplots(1,1,figsize=(6,6))
+    _, ax = plt.subplots(1,1,figsize=(6,6))
     rc = {"font.size": 16}
     with plt.rc_context(rc):
         ps = sdata.seqs_annot[category].values.reshape(-1, 1)
@@ -280,6 +280,7 @@ def _plot_histogram(sdata, category, title="Histogram", xlab=None, ylab="Frequen
         ax.set_ylabel(ylab, fontsize=20)
         ax.set_title(title, fontsize=24)
         plt.tight_layout()
+
 
 def violin(sdata, **kwargs):
     _plot_violin(sdata, **kwargs)
