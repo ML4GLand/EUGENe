@@ -109,7 +109,7 @@ def _grad_explain(model, inputs, ref_type=None, target=None, device="cpu"):
     grad_explainer = InputXGradient(model)
     forward_inputs = inputs[0].requires_grad_().to(device)
     reverse_inputs = inputs[1].requires_grad_().to(device)
-    attrs = grad_explainer.attribute(forward_inputs, additional_forward_args=reverse_inputs)
+    attrs = grad_explainer.attribute(forward_inputs, target=target, additional_forward_args=reverse_inputs)
     return attrs.to("cpu").detach().numpy()
 
 
@@ -177,11 +177,11 @@ def nn_explain(model,
 
 
 @track
-def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGradient", device="cpu", copy=False):
+def feature_attribution(model, sdata, target=None, batch_size=32, saliency_method="InputXGradient", device="cpu", copy=False):
     if saliency_method == "NaiveISM":
         print("Note: NaiveISM is not implemented yet for models other than single stranded ones")
     sdata = sdata.copy() if copy else sdata
-    sdataset = sdata.to_dataset(label=None, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
+    sdataset = sdata.to_dataset(label=None, transform_kwargs={"transpose": True})
     sdataloader = sdataset.to_dataloader(batch_size=batch_size)
     dataset_len = len(sdataloader.dataset)
     example_shape = sdataloader.dataset[0][1].numpy().shape
@@ -190,7 +190,7 @@ def feature_attribution(model, sdata, batch_size=32, saliency_method="InputXGrad
         batch_size = sdataloader.batch_size
     for i_batch, batch in tqdm(enumerate(sdataloader), total=int(dataset_len / batch_size)):
         ID, x, x_rev_comp, y = batch
-        curr_explanations = nn_explain(model, (x, x_rev_comp), saliency_type=saliency_method, device=device, batch_size=batch_size)
+        curr_explanations = nn_explain(model, (x, x_rev_comp), target=target, saliency_type=saliency_method, device=device, batch_size=batch_size)
         if (i_batch+1)*batch_size < dataset_len:
             all_explanations[i_batch*batch_size: (i_batch+1)*batch_size] = curr_explanations
         else:

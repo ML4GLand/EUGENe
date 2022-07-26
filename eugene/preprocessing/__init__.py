@@ -7,4 +7,4 @@ from ._preprocessing import one_hot_encode_data, reverse_complement_data, train_
 from ._preprocessing import scale_targets # scaling TODO add simpler function to _dataset_preprocess
 
 # Project specific
-from ._otx_preprocess import randomizeLinkers, convert2pyRangesDict
+from ._otx_preprocess import randomizeLinkers, convert2pyRanges

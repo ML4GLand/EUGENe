@@ -74,9 +74,14 @@ def _get_pfms(filter_activators, kernel_size):
 
 
 @track
-def generate_pfms(model, sdata, copy=False):
+def generate_pfms(
+    model, 
+    sdata, 
+    target_label = "TARGETS",
+    copy=False
+):
     sdata = sdata.copy() if copy else sdata
-    sdataset = sdata.to_dataset(label="TARGETS", seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
+    sdataset = sdata.to_dataset(label=target_label, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
     sdataloader = DataLoader(sdataset, batch_size=32, num_workers=0)
     first_layer = _get_first_conv_layer(model)
     activations, sequences = _get_activations_from_layer(first_layer, sdataloader)
