@@ -34,10 +34,10 @@ def _create_matplotlib_axes(
 
 
 def _label_plot(
-    ax,
-    title,
-    xlab,
-    ylab
+    ax: Axes,
+    title: str,
+    xlab: str,
+    ylab: str
 ) -> None:
     """ 
     Labels a plot.
@@ -64,14 +64,14 @@ def _label_plot(
 
 
 def _plot_seaborn(
-    dataframe,
+    dataframe: pd.DataFrame,
     keys: Union[str, Sequence[str]],
     func, 
     groupby: str = None,
     orient: str = 'v',
     title: str = None,
     xlab: str = None,
-    ylab: str = "Frequency",
+    ylab: str = None,
     **kwargs
 ) -> Axes:
     """
@@ -119,13 +119,35 @@ def _plot_seaborn(
     return ax
 
 
-# Extraction function from https://github.com/theRealSuperMario/supermariopy/blob/master/scripts/tflogs2pandas.py
+
+def _check_input(
+    sdata,
+    targets: Union[Sequence[str], str],
+    predictions: Union[Sequence[str], str],
+    labels: Union[Sequence[str], str]
+):
+    if isinstance(targets, str):
+        targets = [targets]
+    if isinstance(predictions, str):
+        predictions = [predictions]
+    if isinstance(labels, str):
+        labels = [labels]
+    if len(targets) != len(predictions):
+        raise ValueError("Number of targets and predictions must be equal.")
+    if len(targets) != len(labels):
+        labels = [f"LABEL_{i}" for i in range(len(targets))]
+    return targets, predictions, labels
+
+
+# Extraction function modified from https://github.com/theRealSuperMario/supermariopy/blob/master/scripts/tflogs2pandas.py
 def tflog2pandas(path: str) -> pd.DataFrame:
-    """convert single tensorflow log file to pandas DataFrame
+    """Convert single tensorflow log file to pandas DataFrame
+    
     Parameters
     ----------
     path : str
         path to tensorflow log file
+    
     Returns
     -------
     pd.DataFrame
@@ -157,6 +179,18 @@ def tflog2pandas(path: str) -> pd.DataFrame:
 
 
 def many_logs2pandas(event_paths):
+    """Convert many tensorflow log files to pandas DataFrame
+
+    Parameters
+    ----------
+    event_paths : list of str
+        paths to tensorflow log files
+    
+    Returns
+    -------
+    pd.DataFrame
+        converted dataframe
+    """
     all_logs = pd.DataFrame()
     for path in event_paths:
         log = tflog2pandas(path)

@@ -7,6 +7,7 @@ from typing import Sequence, Collection, Iterable  # Acol_indexB
 from typing import Tuple, List  # Classes
 from ._utils import _create_matplotlib_axes, _label_plot, _plot_seaborn
 
+
 default_rc_context = {
     "axes.titlesize": 16,
     "axes.labelsize": 14,
@@ -49,7 +50,7 @@ def histplot(
         None
     """
     with plt.rc_context(rc_context):
-        ax = _plot_seaborn(sdata.seqs_annot, keys, func=sns.histplot, orient=orient, **kwargs)
+        ax = _plot_seaborn(sdata.seqs_annot, keys, func=sns.histplot, orient=orient, ylab="Frequency", **kwargs)
     if return_axes:
         return ax
 
@@ -134,12 +135,30 @@ def violinplot(
 
 def scatterplot(
     sdata, 
-    x, 
-    y, 
-    seq_idx=None, 
+    x: str, 
+    y: str, 
+    seq_idx = None, 
     **kwargs
 ):
-    # Get the indices of the sequences in the subset
+    """
+    Plots a scatterplot using seaborn.
+
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    x : str
+        Key for x-axis.
+    y : str
+        Key for y-axis.
+    seq_idx : int or list of int
+        Index of sequences to plot.
+    **kwargs
+
+    Returns
+    -------
+    None
+    """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    _plot_seaborn(sdata.seqs_annot, x, sns.scatterplot, y, **kwargs)
+    _plot_seaborn(sdata.seqs_annot, x, sns.scatterplot, y, ylab=y, **kwargs)

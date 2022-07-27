@@ -7,8 +7,6 @@ import numpy as np
 import pytest
 from pathlib import Path
 
-HERE = Path(__file__).parent
-eu.settings.dataset_dir = "/_data/datasets/"
 
 @pytest.fixture(scope="module")
 def tmp_dataset_dir(tmpdir_factory):

@@ -11,27 +11,27 @@ import pyranges as pr
 HERE = Path(__file__).parent
 
 def test_init():
-    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/_data/datasets/random1000/random1000_seqs.npy", names_file=f"{HERE}/_data/datasets/random1000/random1000_ids.npy", target_file=f"{HERE}/_data/datasets/random1000/random1000_labels.npy", rev_seq_file=f"{HERE}/_data/datasets/random1000/random1000_rev_seqs.npy", return_numpy=True)
+    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/../eugene/datasets/random1000/random1000_seqs.npy", names_file=f"{HERE}/../eugene/datasets/random1000/random1000_ids.npy", target_file=f"{HERE}/../eugene/datasets/random1000/random1000_labels.npy", rev_seq_file=f"{HERE}/../eugene/datasets/random1000/random1000_rev_seqs.npy", return_numpy=True)
     assert(len(names) == len(seqs) == len(rev_seqs) == len(targets))
-    sdata = eu.dl.SeqData(names=names, seqs=seqs, seqs_annot=targets, rev_seqs=rev_seqs, pos_annot=f"{HERE}/_data/datasets/random1000/random1000_pos_annot.bed")
+    sdata = eu.dl.SeqData(names=names, seqs=seqs, seqs_annot=targets, rev_seqs=rev_seqs, pos_annot=f"{HERE}/../eugene/datasets/random1000/random1000_pos_annot.bed")
 
 @pytest.fixture
 def sdata():
     """
     sdata
     """
-    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/_data/datasets/random1000/random1000_seqs.npy", names_file=f"{HERE}/_data/datasets/random1000/random1000_ids.npy", target_file=f"{HERE}/_data/datasets/random1000/random1000_labels.npy", rev_seq_file=f"{HERE}/_data/datasets/random1000/random1000_rev_seqs.npy", return_numpy=True)
+    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/../eugene/datasets/random1000/random1000_seqs.npy", names_file=f"{HERE}/../eugene/datasets/random1000/random1000_ids.npy", target_file=f"{HERE}/../eugene/datasets/random1000/random1000_labels.npy", rev_seq_file=f"{HERE}/../eugene/datasets/random1000/random1000_rev_seqs.npy", return_numpy=True)
     sdata = eu.dl.SeqData(names=names, seqs=seqs, seqs_annot=targets, rev_seqs=rev_seqs)
     return sdata
 
 
 def test_print(sdata):
     print(sdata)
-    sdata.pos_annot = pr.read_bed(f"{HERE}/_data/datasets/random1000/random1000_pos_annot.bed")
+    sdata.pos_annot = pr.read_bed(f"{HERE}/../eugene/datasets/random1000/random1000_pos_annot.bed")
     print(sdata)
 
 def test_write_h5sd(sdata):
-    sdata.write_h5sd(f"{HERE}/_data/datasets/random1000/random1000_seqs.h5sd")
+    sdata.write_h5sd(f"{HERE}/../eugene/datasets/random1000/random1000_seqs.h5sd")
 
 
 def test_to_dataset(sdata):

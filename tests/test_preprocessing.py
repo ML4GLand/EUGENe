@@ -15,7 +15,7 @@ def sdata():
     """
     sdata
     """
-    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/_data/datasets/random1000/random1000_seqs.npy", return_numpy=True)
+    names, seqs, rev_seqs, targets = eu.dl.read_numpy(f"{HERE}/../eugene/datasets/random1000/random1000_seqs.npy", return_numpy=True)
     sdata = eu.dl.SeqData(seqs=seqs)
     return sdata
 

@@ -1,16 +1,40 @@
-def pca(sdata, seqsm_key, pc1=0, pc2=1, color="b", loadings=None, labels=None, n=5):
+from matplotlib import offsetbox
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+def pca(
+    sdata, 
+    seqsm_key, 
+    pc1=0, 
+    pc2=1, 
+    loadings=None, 
+    labels=None, 
+    n=5,
+    return_axes=False,
+    **kwargs):
     """
     Plot the PCA of the data.
+
     Parameters
     ----------
-    sdata : SeqData The SeqData object.
-    seqsm_key : str The key of the SeqSM object to use.
-    pc1 : int The first PC to plot.
-    pc2 : int The second PC to plot.
-    color : str The color of the points.
-    loadings : list of floats The loadings of the PCs.
-    labels : list of str The labels of the points.
-    n : int The number of points to plot.
+    sdata : 
+        SeqData The SeqData object.
+    seqsm_key : 
+    str The key of the SeqSM object to use.
+    pc1 : int 
+        The first PC to plot.
+    pc2 : int 
+        The second PC to plot.
+    color : str 
+        The color of the points.
+    loadings : 
+        list of floats The loadings of the PCs.
+    labels : 
+        list of str The labels of the points.
+    n : 
+        int The number of points to plot.
 
     Returns
     -------
@@ -21,7 +45,7 @@ def pca(sdata, seqsm_key, pc1=0, pc2=1, color="b", loadings=None, labels=None, n
     ys = pc_data[:, pc2]
     scalex = 1.0 / (xs.max() - xs.min())
     scaley = 1.0 / (ys.max() - ys.min())
-    ax = plt.scatter(xs * scalex, ys * scaley, c=color)
+    ax = plt.scatter(xs * scalex, ys * scaley, **kwargs)
     if loadings is not None:
         if n > loadings.shape[0]:
             n = loadings.shape[0]
@@ -35,11 +59,15 @@ def pca(sdata, seqsm_key, pc1=0, pc2=1, color="b", loadings=None, labels=None, n
     plt.ylim(-1, 1)
     plt.xlabel("PC{}".format(1))
     plt.ylabel("PC{}".format(2))
-    plt.show()
-    return ax
+    if return_axes:
+        return ax
 
 
-def skree(sdata, uns_key, n_comp=30, return_variance=False):
+def skree(
+    sdata, 
+    uns_key, 
+    n_comp=30, 
+    return_variance=False):
     """
     Function to generate and output a Skree plot using matplotlib barplot
     Parameters
@@ -63,18 +91,31 @@ def skree(sdata, uns_key, n_comp=30, return_variance=False):
         return variance
 
 
-def umap(sdata, seqsm_key, umap1=0, umap2=1, color="b", n=5):
+def umap(
+    sdata, 
+    seqsm_key, 
+    umap1=0, 
+    umap2=1,  
+    n=5,
+    return_axes=False,
+    **kwargs):
     """
     Plot the UMAP of the data.
 
     Parameters
     ----------
-    sdata : SeqData The SeqData object.
-    seqsm_key : str The key of the SeqSM object to use.
-    umap1 : int The first UMAP to plot.
-    umap2 : int The second UMAP to plot.
-    color : str The color of the points.
-    n : int The number of points to plot.
+    sdata : SeqData 
+        The SeqData object.
+    seqsm_key : str 
+        The key of the SeqSM object to use.
+    umap1 : int 
+        The first UMAP to plot.
+    umap2 : int 
+        The second UMAP to plot.
+    color : str 
+        The color of the points.
+    n : int 
+        The number of points to plot.
 
     Returns
     -------
@@ -85,8 +126,9 @@ def umap(sdata, seqsm_key, umap1=0, umap2=1, color="b", n=5):
     ys = umap_data[:, umap2]
     scalex = 1.0 / (xs.max() - xs.min())
     scaley = 1.0 / (ys.max() - ys.min())
-    ax = plt.scatter(xs * scalex, ys * scaley, c=color)
+    ax = plt.scatter(xs * scalex, ys * scaley, **kwargs)
     plt.xlabel("UMAP{}".format(1))
     plt.ylabel("UMAP{}".format(2))
     plt.show()
-    return ax
+    if return_axes:
+        return ax
