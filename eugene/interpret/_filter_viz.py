@@ -4,12 +4,15 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 from ..utils import track
+from .._settings import settings
 
 
 def _get_activation(name):
     activation = {}
+
     def hook(model, input, output):
         activation[name] = output.detach()
+
     return hook
 
 
@@ -35,11 +38,18 @@ def _get_first_conv_layer(model):
 
 def _get_activations_from_layer(layer, sdataloader):
     from ..preprocessing import decode_DNA_seqs
+
     activations = []
     sequences = []
-    for i_batch, batch in tqdm(enumerate(sdataloader)):
+    dataset_len = len(sdataloader.dataset)
+    batch_size = sdataloader.batch_size
+    for i_batch, batch in tqdm(
+        enumerate(sdataloader),
+        total=int(dataset_len / batch_size),
+        desc="Getting maximial activating seqlets",
+    ):
         ID, x, x_rev_comp, y = batch
-        sequences.append(decode_DNA_seqs(x.transpose(2,1).detach().cpu().numpy()))
+        sequences.append(decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy()))
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
         np_act = np.concatenate(activations)
         np_seq = np.concatenate(sequences)
@@ -54,20 +64,29 @@ def _get_filter_activators(activations, sequences, layer):
         max_val = np.max(single_filter)
         activators = []
         for i in range(len(single_filter)):
-            starts = np.where(single_filter[i] > max_val/2)[0]
+            starts = np.where(single_filter[i] > max_val / 2)[0]
             for start in starts:
-                activators.append(sequences[i][start:start+kernel_size])
+                activators.append(sequences[i][start : start + kernel_size])
         filter_activators.append(activators)
     return filter_activators
 
 
 def _get_pfms(filter_activators, kernel_size):
     filter_pfms = {}
-    for i, activators in tqdm(enumerate(filter_activators)):
-        pfm = {"A": np.zeros(kernel_size), "C": np.zeros(kernel_size), "G": np.zeros(kernel_size), "T": np.zeros(kernel_size)}
+    for i, activators in tqdm(
+        enumerate(filter_activators),
+        total=len(filter_activators),
+        desc="Getting PFMs from filters",
+    ):
+        pfm = {
+            "A": np.zeros(kernel_size),
+            "C": np.zeros(kernel_size),
+            "G": np.zeros(kernel_size),
+            "T": np.zeros(kernel_size),
+        }
         for seq in activators:
             for j, nt in enumerate(seq):
-                pfm[nt][j]+=1
+                pfm[nt][j] += 1
         filter_pfm = pd.DataFrame(pfm)
         filter_pfms[i] = filter_pfm
     return filter_pfms
@@ -75,47 +94,48 @@ def _get_pfms(filter_activators, kernel_size):
 
 @track
 def generate_pfms(
-    model, 
-    sdata, 
-    target_label = "TARGETS",
-    copy=False
+    model, sdata, batch_size=None, num_workers=None, key_name="pfms", copy=False
 ):
+    batch_size = batch_size if batch_size is not None else settings.batch_size
+    num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     sdata = sdata.copy() if copy else sdata
-    sdataset = sdata.to_dataset(label=target_label, seq_transforms=["one_hot_encode"], transform_kwargs={"transpose": True})
-    sdataloader = DataLoader(sdataset, batch_size=32, num_workers=0)
+    sdataset = sdata.to_dataset(
+        target=None, seq_transforms=None, transform_kwargs={"transpose": True}
+    )
+    sdataloader = DataLoader(sdataset, batch_size=batch_size, num_workers=num_workers)
     first_layer = _get_first_conv_layer(model)
     activations, sequences = _get_activations_from_layer(first_layer, sdataloader)
     filter_activators = _get_filter_activators(activations, sequences, first_layer)
     filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0])
-    sdata.uns["pfms"] = filter_pfms
+    sdata.uns[key_name] = filter_pfms
     return sdata if copy else None
 
 
-# From gopher
-def meme_generate(W, output_file='meme.txt', prefix='filter'):
-  """generate a meme file for a set of filters, W ∈ (N,L,A)"""
+# Adapted from gopher
+def meme_generate(W, output_file="meme.txt", prefix="filter"):
+    """generate a meme file for a set of filters, W ∈ (N,L,A)"""
 
-  # background frequency
-  nt_freqs = [1./4 for i in range(4)]
+    # background frequency
+    nt_freqs = [1.0 / 4 for i in range(4)]
 
-  # open file for writing
-  f = open(output_file, 'w')
+    # open file for writing
+    f = open(output_file, "w")
 
-  # print intro material
-  f.write('MEME version 4\n')
-  f.write('\n')
-  f.write('ALPHABET= ACGT\n')
-  f.write('\n')
-  f.write('Background letter frequencies:\n')
-  f.write('A %.4f C %.4f G %.4f T %.4f \n' % tuple(nt_freqs))
-  f.write('\n')
+    # print intro material
+    f.write("MEME version 4\n")
+    f.write("\n")
+    f.write("ALPHABET= ACGT\n")
+    f.write("\n")
+    f.write("Background letter frequencies:\n")
+    f.write("A %.4f C %.4f G %.4f T %.4f \n" % tuple(nt_freqs))
+    f.write("\n")
 
-  for j, pwm in enumerate(W):
-    L, A = pwm.shape
-    f.write('MOTIF %s%d \n' % (prefix, j))
-    f.write('letter-probability matrix: alength= 4 w= %d nsites= %d \n' % (L, L))
-    for i in range(L):
-      f.write('%.4f %.4f %.4f %.4f \n' % tuple(pwm[i,:]))
-    f.write('\n')
+    for j, pwm in enumerate(W):
+        L, A = pwm.shape
+        f.write("MOTIF %s%d \n" % (prefix, j))
+        f.write("letter-probability matrix: alength= 4 w= %d nsites= %d \n" % (L, L))
+        for i in range(L):
+            f.write("%.4f %.4f %.4f %.4f \n" % tuple(pwm[i, :]))
+        f.write("\n")
 
-  f.close()
+    f.close()

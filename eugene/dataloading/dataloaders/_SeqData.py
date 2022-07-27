@@ -2,20 +2,17 @@ from ast import Raise
 import numpy as np
 import pandas as pd
 import pyranges as pr
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, List
 from typing import Dict, Iterable, Sequence, Mapping
 from os import PathLike
 from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
-import pyranges as pr
 from pandas import Int64Index
 from ._SeqDataset import SeqDataset
 
 
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
-
-
 try:
     from typing import Literal
 except ImportError:
@@ -33,9 +30,9 @@ except ImportError:
             pass
 
 
-class SeqData():
-
-    def __init__(self,
+class SeqData:
+    def __init__(
+        self,
         seqs: np.ndarray = None,
         names: np.ndarray = None,
         rev_seqs: np.ndarray = None,
@@ -45,7 +42,7 @@ class SeqData():
         ohe_rev_seqs: np.ndarray = None,
         seqsm: Optional[Union[np.ndarray, Mapping[str, Sequence[Any]]]] = None,
         uns: Optional[Mapping[str, Any]] = None,
-        seqidx: Index1D = None
+        seqidx: Index1D = None,
     ):
         """Initialize SeqData object.
         Args:
@@ -65,182 +62,181 @@ class SeqData():
         else:
             self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None else seqidx
 
+        # X
         self.seqs = np.array(seqs[self.seqidx]) if seqs is not None else None
         self.names = np.array(names[self.seqidx]) if names is not None else None
-        self.rev_seqs = np.array(rev_seqs[self.seqidx]) if rev_seqs is not None else None
-        self.ohe_seqs = np.array(ohe_seqs[self.seqidx]) if ohe_seqs is not None else None
-        self.ohe_rev_seqs = np.array(ohe_rev_seqs[self.seqidx]) if ohe_rev_seqs is not None else None
+        self.rev_seqs = (
+            np.array(rev_seqs[self.seqidx]) if rev_seqs is not None else None
+        )
+        self.ohe_seqs = (
+            np.array(ohe_seqs[self.seqidx]) if ohe_seqs is not None else None
+        )
+        self.ohe_rev_seqs = (
+            np.array(ohe_rev_seqs[self.seqidx]) if ohe_rev_seqs is not None else None
+        )
 
+        # n_obs
         if self.seqs is not None:
             self._n_obs = len(self.seqs)
         else:
             self._n_obs = len(self.ohe_seqs)
 
-        # seq annotations (handled by gen dataframe)
+        # seq_annot (handled by gen dataframe)
         if isinstance(self.seqidx, slice):
-            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])[self.seqidx]
+            self.seqs_annot = _gen_dataframe(
+                seqs_annot, self._n_obs, ["obs_names", "row_names"]
+            )[self.seqidx]
         elif type(self.seqidx[0]) in [bool, np.bool_]:
-            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"]).loc[self.seqidx]
+            self.seqs_annot = _gen_dataframe(
+                seqs_annot, self._n_obs, ["obs_names", "row_names"]
+            ).loc[self.seqidx]
         else:
-            self.seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"]).iloc[self.seqidx]
+            self.seqs_annot = _gen_dataframe(
+                seqs_annot, self._n_obs, ["obs_names", "row_names"]
+            ).iloc[self.seqidx]
 
-        # pos annotations
+        # pos_annot
         if isinstance(pos_annot, dict):
             self.pos_annot = pr.from_dict(pos_annot)
         elif isinstance(pos_annot, str):
             self.pos_annot = pr.read_bed(pos_annot)
         else:
             self.pos_annot = pos_annot
-        #self.pos_annot = self.pos_annot.df[self.seqidx]
 
-        # unstructured metadata/data
+        # uns
         self.uns = uns or OrderedDict()
 
-        # TODO: Think about consequences of making obsm a group in hdf
+        # seqsm TODO: Think about consequences of making obsm a group in hdf
         self.seqsm = convert_to_dict(seqsm)
-
 
     @property
     def seqs(self) -> np.ndarray:
         """Sequences."""
         return self._seqs
 
-
     @seqs.setter
     def seqs(self, seqs: np.ndarray):
         self._seqs = seqs
-
 
     @property
     def names(self) -> np.ndarray:
         """Names of sequences."""
         return self._names
 
-
     @names.setter
     def names(self, names: np.ndarray):
         self._names = names
-
 
     @property
     def n_obs(self) -> int:
         """Number of observations."""
         return self._n_obs
 
-
     @property
     def rev_seqs(self) -> np.ndarray:
         """Reverse complement of sequences."""
         return self._rev_seqs
 
-
     @rev_seqs.setter
     def rev_seqs(self, rev_seqs: np.ndarray):
         self._rev_seqs = rev_seqs
-
 
     @property
     def ohe_seqs(self) -> np.ndarray:
         """One-hot encoded sequences."""
         return self._ohe_seqs
 
-
     @ohe_seqs.setter
     def ohe_seqs(self, ohe_seqs: np.ndarray):
         self._ohe_seqs = ohe_seqs
-
 
     @property
     def seqs_annot(self) -> pd.DataFrame:
         """Sequences annotations."""
         return self._seqs_annot
 
-
     @seqs_annot.setter
     def seqs_annot(self, seqs_annot: Union[pd.DataFrame, Mapping[str, Iterable[Any]]]):
-        self._seqs_annot = _gen_dataframe(seqs_annot, self._n_obs, ["obs_names", "row_names"])
-
+        self._seqs_annot = _gen_dataframe(
+            seqs_annot, self._n_obs, ["obs_names", "row_names"]
+        )
 
     @property
     def pos_annot(self) -> pr.PyRanges:
         """Positional annotations."""
         return self._pos_annot
 
-
     @pos_annot.setter
     def pos_annot(self, pos_annot: pr.PyRanges):
         self._pos_annot = pos_annot
-
 
     @property
     def ohe_rev_seqs(self) -> np.ndarray:
         """One-hot encoded reverse complement sequences."""
         return self._ohe_rev_seqs
 
-
     @ohe_rev_seqs.setter
     def ohe_rev_seqs(self, ohe_rev_seqs: np.ndarray):
         self._ohe_rev_seqs = ohe_rev_seqs
-
 
     @property
     def seqsm(self) -> Mapping[str, Sequence[Any]]:
         """Sequences metadata."""
         return self._seqsm
 
-
     @seqsm.setter
     def seqsm(self, seqsm: Mapping[str, Sequence[Any]]):
         self._seqsm = seqsm
-
 
     @property
     def uns(self) -> Mapping[str, Any]:
         """Unstructured data."""
         return self._uns
 
-
     @uns.setter
     def uns(self, uns: Mapping[str, Any]):
         self._uns = uns
-
 
     def __getitem__(self, index):
         """Get item from data."""
         if isinstance(index, str):
             return self.seqs_annot[index]
         elif isinstance(index, slice):
-            return SeqData(seqs = self.seqs,
-                            names = self.names,
-                            rev_seqs = self.rev_seqs,
-                            seqs_annot = self.seqs_annot,
-                            pos_annot = self.pos_annot,
-                            ohe_seqs = self.ohe_seqs,
-                            ohe_rev_seqs = self.ohe_rev_seqs,
-                            seqsm = self.seqsm,
-                            uns = self.uns,
-                            seqidx = index)
+            return SeqData(
+                seqs=self.seqs,
+                names=self.names,
+                rev_seqs=self.rev_seqs,
+                seqs_annot=self.seqs_annot,
+                pos_annot=self.pos_annot,
+                ohe_seqs=self.ohe_seqs,
+                ohe_rev_seqs=self.ohe_rev_seqs,
+                seqsm=self.seqsm,
+                uns=self.uns,
+                seqidx=index,
+            )
         # TODO: this is where we could fix the way bools are handled
         else:
-            return SeqData(seqs = self.seqs,
-                            names = self.names,
-                            rev_seqs = self.rev_seqs,
-                            seqs_annot = self.seqs_annot,
-                            pos_annot = self.pos_annot,
-                            ohe_seqs = self.ohe_seqs,
-                            ohe_rev_seqs = self.ohe_rev_seqs,
-                            seqsm = self.seqsm,
-                            uns = self.uns,
-                            seqidx = index)
-
+            return SeqData(
+                seqs=self.seqs,
+                names=self.names,
+                rev_seqs=self.rev_seqs,
+                seqs_annot=self.seqs_annot,
+                pos_annot=self.pos_annot,
+                ohe_seqs=self.ohe_seqs,
+                ohe_rev_seqs=self.ohe_rev_seqs,
+                seqsm=self.seqsm,
+                uns=self.uns,
+                seqidx=index,
+            )
 
     def __setitem__(self, index, value):
         """Set item in data."""
         if isinstance(index, str):
             self.seqs_annot[index] = value
         else:
-            raise ValueError("SeqData only supports setting seq_annot columns with indexing.")
-
+            raise ValueError(
+                "SeqData only supports setting seq_annot columns with indexing."
+            )
 
     def __repr__(self):
         descr = f"SeqData object with = {self._n_obs} seqs"
@@ -253,17 +249,10 @@ class SeqData():
             "seqs_annot",
             "pos_annot",
             "seqsm",
-            "uns"
+            "uns",
         ]:
-            if attr in [
-            "seqs",
-            "names",
-            "rev_seqs",
-            "ohe_seqs",
-            "ohe_rev_seqs"
-            ]:
+            if attr in ["seqs", "names", "rev_seqs", "ohe_seqs", "ohe_rev_seqs"]:
                 if getattr(self, attr) is not None:
-                    #print(attr)
                     descr += f"\n{attr} = {getattr(self, attr).shape}"
                 else:
                     descr += f"\n{attr} = None"
@@ -283,7 +272,6 @@ class SeqData():
                     descr += f"\n{attr}: None"
         return descr
 
-
     def write_h5sd(self, path: PathLike, mode: str = "w"):
         """Write SeqData object to h5sd file.
 
@@ -292,26 +280,38 @@ class SeqData():
             mode: Mode to open h5sd file.
         """
         from .._io import write_h5sd
+
         write_h5sd(self, path, mode)
 
-
-    def to_dataset(self, label = "labels", seq_transforms = None, transform_kwargs = {}) -> SeqDataset:
+    def to_dataset(
+        self,
+        target: Union[str, List[str]] = None,
+        seq_transforms: List[str] = None,
+        transform_kwargs: dict = {},
+    ) -> SeqDataset:
         """Convert SeqData object to SeqDataset."""
         from .._transforms import Augment, ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
+
         transforms = []
 
-        if label is None:
+        if target is None:
             targs = None
-        elif type(label) is str or type(label) is int:
-            targs = self.seqs_annot[label]
-        elif type(label) is list:
-            targs = self.seqs_annot[label].values
+        elif type(target) is str or type(target) is int:
+            targs = self.seqs_annot[target].values
+        elif type(target) is list:
+            targs = self.seqs_annot[target].values
 
         if seq_transforms is None:
             print("No transforms given, assuming just need to tensorize).")
             transforms = [ToTensor(**transform_kwargs)]
-            return SeqDataset(self.ohe_seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(
+                self.ohe_seqs,
+                names=self.names,
+                targets=targs if target is not None else None,
+                rev_seqs=self.ohe_rev_seqs,
+                transform=torch_transforms.Compose(transforms),
+            )
 
         if "augment" in seq_transforms:
             if self.seqs is not None:
@@ -336,9 +336,21 @@ class SeqData():
         transforms.append(ToTensor(**transform_kwargs))
 
         if ohe_flag:
-            return SeqDataset(self.ohe_seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.ohe_rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(
+                self.ohe_seqs,
+                names=self.names,
+                targets=targs if target is not None else None,
+                rev_seqs=self.ohe_rev_seqs,
+                transform=torch_transforms.Compose(transforms),
+            )
         else:
-            return SeqDataset(self.seqs, names=self.names, targets=targs if label != None else None, rev_seqs=self.rev_seqs, transform=torch_transforms.Compose(transforms))
+            return SeqDataset(
+                self.seqs,
+                names=self.names,
+                targets=targs if target is not None else None,
+                rev_seqs=self.rev_seqs,
+                transform=torch_transforms.Compose(transforms),
+            )
 
 
 @singledispatch
@@ -359,7 +371,7 @@ def _gen_dataframe(anno, length, index_names):
 def _(anno, length, index_names):
     anno = anno.copy(deep=False)
     if not is_string_dtype(anno.index):
-        #warnings.warn("Transforming to str index.", ImplicitModificationWarning)
+        # warnings.warn("Transforming to str index.", ImplicitModificationWarning)
         anno.index = anno.index.astype(str)
     return anno
 
