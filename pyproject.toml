@@ -30,6 +30,8 @@ myst-parser = {version = "0.18.0", extras = ["docs"]}
 sphinxcontrib-apidoc = {version = "0.3.0", extras = ["docs"]}
 sphinx-autobuild = {version = "2021.3.14", extras = ["docs"]}
 autopep8 = {version = "1.6.0", extras = ["docs"]}
+seqlogo = "^5.29.8"
+h5py = "^3.7.0"
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]
