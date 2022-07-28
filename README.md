@@ -1,14 +1,18 @@
-# EUGENE (**E**lucidating and **U**nderstanding **G**rammar of **E**nhancers with **Ne**uralnets)
+# EUGENE (**E**lucidating and **U**nderstanding **G**rammar of **E**lements with **Ne**uralnets)
 
-EUGENE represents a computational framework for building models of regulatory sequences as input. It is designed after the scverse framework for single cell analysis in Python and is meant to make the developments in the deep learning genomics field more accessible. EUGENE consists of a codebase for building, training, validating and interpreting several deep learners that model sequence-based data. EUGENE is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. Jupyter), however we have also implemented several key functions via the command line.
+EUGENe represents a computational framework for building models of regulatory sequences as input. It is designed after the scverse framework for single cell analysis in Python and is meant to make the development in the deep learning genomics field more accessible. EUGENE consists of a codebase for building, training, validating and interpreting several deep learners that model sequence-based data. EUGENE is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. Jupyter), however we have also implemented several key functions via the command line.
 
 ---
 
-# Developmental Installation
+# Developmental Installation (WIP)
 
 ```bash
-conda create -f eugene_env.yml
-pip install -e eugene
+conda create --name eugene_dev python=3.7 -y
+conda activate eugene_dev
+pip install -e .[docs]
+pip install torch-tb-profiler pre-commit
+conda install -c anaconda cudatoolkit=10.2
+python -m ipykernel install --user --name eugene_dev --display-name "Python 3.7 eugene_dev"
 ```
 
 ---
@@ -21,21 +25,15 @@ pip install -e eugene
 
 **Build a LightningModule**
 
-**Train a LightningModule from the through the API or the command line**
+**Train a LightningModule from the Python API or via command line**
 
 **Validate the model by making predictions on unseen test data**
 
-**Interpret the model through a suite of tools**
+**Interpret the model through a suite of methods**
 
-**Visualize it all**
+**Visualize it all as you go**
 
 **Benchmark against other common methods**
-
-The core functionality of EUGENE is built off of several established packages in the neural nets and gene regulation fields. These include but are not limited to:
-
-- `pytorch_lightning`(with CLI add-ons)
-- `pytorch`
-- `seqlogo`
 
 ---
 
@@ -58,6 +56,6 @@ We have worked hard to abstract away as much of the technical details of these p
 
 # Help Wanted
 
-I am [actively recruiting](https://www.notion.so/eugene-Team-Page-8d31da75046049fa86264be57e5711bf) for this project! If you are interested in software development for building predictive models in sequence based genomics send me [an email](aklie@eng.ucsd.edu). All collaborators and developers will of course be included on all publications. See the end of this page for more info on expected skills and qualifications. Contact aklie@ucsd.eng.edu if you are interested in contributing to the project.
+I am [actively recruiting](https://www.notion.so/eugene-Team-Page-8d31da75046049fa86264be57e5711bf) contributors for this project! If you are interested in software development for building predictive models in sequence based genomics send me [an email](aklie@eng.ucsd.edu). All collaborators and developers will of course be included on all publications. See the end of this page for more info on expected skills and qualifications. Contact aklie@ucsd.eng.edu if you are interested in contributing to the project.
 
 ---
