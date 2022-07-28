@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from ...preprocessing._utils import ascii_encode
+from ..._settings import settings
 
 
 class SeqDataset(Dataset):
@@ -10,13 +11,18 @@ class SeqDataset(Dataset):
 
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
         """
-        Args:
-            seqs (iterable): list of sequences to serve as input into models
-            names (iterable, optional): list of identifiers for sequences
-            targets (iterable): aligned list of targets for each sequence
-            rev_seqs (iterable, optional): Optional reverse complements of seqs
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+
+        Parameters:
+        seqs (iterable):
+            list of sequences to serve as input into models
+        names (iterable, optional):
+            list of identifiers for sequences
+        targets (iterable):
+            aligned list of targets for each sequence
+        rev_seqs (iterable, optional):
+            Optional reverse complements of seqs
+        transform (callable, optional):
+            Optional transform to be applied on a sample.
         """
         self.names = names
         self.seqs = seqs
@@ -26,7 +32,11 @@ class SeqDataset(Dataset):
         self._init_dataset()
 
     def _init_dataset(self):
-        """Perform any initialization steps on the dataset, currently converts names into ascii if provided
+        """Perform any initialization steps on the dataset.
+        Currently converts names into ascii if provided
+
+        Returns:
+            None
         """
 
         if self.names is not None:
@@ -35,7 +45,7 @@ class SeqDataset(Dataset):
                 self.longest_name = np.max(self.name_lengths)
                 self.ascii_names = np.zeros((len(self.names), self.longest_name))
                 for i, name in enumerate(self.names):
-                    pad_len = self.longest_name-len(name)
+                    pad_len = self.longest_name - len(name)
                     self.ascii_names[i] = ascii_encode(name, pad_len)
             else:
                 self.ascii_names = np.array([ascii_encode(name) for name in self.names])
@@ -48,12 +58,15 @@ class SeqDataset(Dataset):
     def __getitem__(self, idx):
         """Get an item from the dataset and return as tuple. Perform any transforms passed in
 
-        Args:
-            idx (int): dataset index to grab
+        Parameters:
+        ----------
+        idx (int):
+            dataset index to grab
 
         Returns:
-            tuple: Returns a quadruple of tensors: identifiers, sequences, reverse complement
-                   sequences, targets. If any are not provided tensor([-1.]) is returned for that sequence
+        tuple:
+            Returns a quadruple of tensors: identifiers, sequences, reverse complement
+            sequences, targets. If any are not provided tensor([-1.]) is returned for that sequence
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
@@ -81,7 +94,30 @@ class SeqDataset(Dataset):
             sample = self.transform(sample)
         return sample
 
+    def to_dataloader(
+        self, batch_size=None, pin_memory=True, shuffle=False, num_workers=0, **kwargs
+    ):
+        """Convert the dataset to a PyTorch DataLoader
 
-    def to_dataloader(self, batch_size=32, pin_memory=True, shuffle=False, num_workers=0):
-        """Convert the dataset to a PyTorch DataLoader"""
-        return DataLoader(self, batch_size=batch_size, pin_memory=True, shuffle=shuffle, num_workers=num_workers)
+        Parameters:
+        ----------
+        batch_size (int, optional):
+            batch size for dataloader
+        pin_memory (bool, optional):
+            whether to pin memory for dataloader
+        shuffle (bool, optional):
+            whether to shuffle the dataset
+        num_workers (int, optional):
+            number of workers for dataloader
+        **kwargs:
+            additional arguments to pass to DataLoader
+        """
+        batch_size = batch_size if batch_size is not None else settings.batch_size
+        return DataLoader(
+            self,
+            batch_size=batch_size,
+            pin_memory=pin_memory,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            **kwargs
+        )

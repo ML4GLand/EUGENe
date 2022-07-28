@@ -1,16 +1,15 @@
 import h5py
 import numpy as np
 import pandas as pd
-from typing import Union, Optional, Iterable
+from typing import List, Union, Optional, Iterable
 from os import PathLike
 import pyranges as pr
-
-# Relative imports
 from .dataloaders import SeqData
+from ._utils import _read_and_concat_dataframes
 
 
 def read_csv(
-    file: PathLike,
+    filename: Union[PathLike, List[PathLike]],
     seq_col: Optional[str] = "SEQ",
     name_col: Optional[str] = None,
     target_col: Union[str, Iterable[str]] = None,
@@ -24,12 +23,14 @@ def read_csv(
     compression: str = "infer",
     **kwargs,
 ):
-    """Function for loading sequences into numpy objects from csv/tsv files
+    """Function for loading sequences into SeqData object from csv/tsv files.
+
+    Also allows for returning np.ndarray and pd.DataFrame objects if specified.
 
     Parameters
     ----------
     file : PathLike
-        file path to read
+        file path to read the data from
     seq_col : str, optional
         column name containing sequences. Defaults to "SEQ".
     name_col : str, optional
@@ -47,7 +48,7 @@ def read_csv(
     return_dataframe : bool, optional
         whether to return pandas dataframe. Defaults to False.
     col_names : Iterable, optional
-        column names to use. Defaults to None.
+        column names to use. Defaults to None. If not provided, uses first line of file.
     auto_name : bool, optional
         whether to automatically generate identifiers. Defaults to True.
     compression : str, optional
@@ -57,91 +58,26 @@ def read_csv(
 
     Returns
     -------
-    tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-              if any are not provided they are set to none
     sdata: SeqData
-        SeqData object containing sequences and identifiers
-    df: pandas.DataFrame
-        pandas dataframe containing sequences and identifiers
+        Returns SeqData object containing sequences and identifiers by defualt
+    tuple:
+        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets
+        if return_numpy is True. If any are not provided they are set to none.
+    dataframe: pandas.DataFrame
+        Returns pandas dataframe containing sequences and identifiers if return_dataframe is True.
     """
-
-    try:
-        if len(file) == 1 and type(file) is list:
-            file = file[0]
-    except ValueError:
-        raise ValueError("file must be a list of files or a single file")
-
-    # Load as pandas dataframe
-    if type(file) is list:
-        dataframe = None
-        for i in range(len(file) - 1):
-            if dataframe is None:
-                dataframe = pd.concat(
-                    [
-                        pd.read_csv(
-                            file[i],
-                            sep=sep,
-                            low_memory=low_memory,
-                            names=col_names,
-                            compression=compression,
-                            header=0,
-                        ),
-                        pd.read_csv(
-                            file[i - 1],
-                            sep=sep,
-                            low_memory=low_memory,
-                            names=col_names,
-                            compression=compression,
-                        ),
-                    ],
-                    ignore_index=True,
-                )
-            else:
-                dataframe = pd.concat(
-                    [
-                        pd.read_csv(
-                            file[i],
-                            sep=sep,
-                            low_memory=low_memory,
-                            names=col_names,
-                            compression=compression,
-                            header=0,
-                        ),
-                        dataframe,
-                    ],
-                    ignore_index=True,
-                )
-    else:
-        dataframe = pd.read_csv(
-            file,
-            sep=sep,
-            low_memory=low_memory,
-            names=col_names,
-            header=0,
-            compression=compression,
-        )
-        dataframe.reset_index(inplace=True, drop=True)
-
-    # Grab targets if column is provided
-    if target_col is not None:
-        targets = dataframe[target_col].to_numpy(float)
-        keep = np.where(~np.isnan(targets) & ~np.isinf(targets))[0]
-        print(
-            f"Kept {len(keep)} sequences with targets, dropped {len(targets) - len(keep)} sequences with no targets"
-        )
-        targets = targets[keep]
-    else:
-        targets = None
-        keep = range(len(dataframe))
-
-    # Grab sequences
+    dataframe = _read_and_concat_dataframes(
+        file_names=filename,
+        col_names=col_names,
+        sep=sep,
+        low_memory=low_memory,
+        compression=compression,
+        **kwargs,
+    )
     seqs = dataframe[seq_col].to_numpy(dtype=str)
-    seqs = seqs[keep]
-
-    # Add names if available
+    targets = dataframe[target_col].to_numpy(float) if target_col is not None else None
     if name_col is not None:
         ids = dataframe[name_col].to_numpy(dtype=str)
-        ids = ids[keep]
     else:
         if auto_name:
             n_digits = len(str(len(dataframe) - 1))
@@ -152,20 +88,14 @@ def read_csv(
                 ]
             )
             ids = dataframe.index.to_numpy()
-            ids = ids[keep]
         else:
             ids = None
-
-    # Grab reverse complement if asked for
     if rev_comp:
         from ..preprocessing import reverse_complement_seqs
 
         rev_seqs = reverse_complement_seqs(seqs)
-        rev_seqs = rev_seqs[keep]
     else:
         rev_seqs = None
-
-    # Return it all
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif return_dataframe:
@@ -175,39 +105,36 @@ def read_csv(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["TARGETS"]),
+            seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["target"]),
         )
 
 
 def read_fasta(
-    seq_file, 
-    target_file=None, 
-    rev_comp=False, 
-    is_target_text=False, 
-    return_numpy=False
+    seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False
 ):
-    """Function for loading sequences into numpy objects from fasta
+    """Function for loading sequences into SeqData object from fasta files.
 
     Parameters
     ----------
-        seq_file (str): 
-            fasta file path to read
-        target_file (str): 
-            .npy or .txt file path containing targets. Defaults to None.
-        rev_comp (bool, optional): 
-            whether to generate reverse complements for sequences. Defaults to False.
-        is_target_text (bool, optional): 
-            whether the file is compressed or plaintext. Defaults to False.
-        return_numpy (bool, optional): 
-            whether to return numpy arrays. Defaults to False.
+    seq_file (str):
+        fasta file path to read
+    target_file (str):
+        .npy or .txt file path containing targets. Defaults to None.
+    rev_comp (bool, optional):
+        whether to generate reverse complements for sequences. Defaults to False.
+    is_target_text (bool, optional):
+        whether the file is compressed or plaintext. Defaults to False.
+    return_numpy (bool, optional):
+        whether to return numpy arrays. Defaults to False.
 
     Returns
     -------
-        sdata: SeqData
-        tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-               if any are not provided they are set to none
+    sdata:
+        Returns SeqData object containing sequences and identifiers by defualt
+    tuple:
+        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets
+        if return_numpy is True. If any are not provided they are set to none
     """
-
     seqs = np.array([x.rstrip() for (i, x) in enumerate(open(seq_file)) if i % 2 == 1])
     ids = np.array(
         [
@@ -223,14 +150,12 @@ def read_fasta(
             targets = np.load(target_file)
     else:
         targets = None
-
     if rev_comp:
         from ..preprocessing import reverse_complement_seqs
 
         rev_seqs = reverse_complement_seqs(seqs)
     else:
         rev_seqs = None
-
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif targets is not None:
@@ -238,7 +163,7 @@ def read_fasta(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=["target"]),
         )
     else:
         return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs)
@@ -257,24 +182,40 @@ def read_numpy(
     return_numpy=False,
 ):
     """Function for loading sequences into numpy objects from numpy compressed files.
-       Note if you pass one hot encoded sequences in, you must pass in reverse complements
-       if you want them to be included
 
-    Args:
-        seq_file (str): .npy file path containing sequences
-        names_file (str): .npy or .txt file path containing identifiers. Defaults to None.
-        target_file (str): .npy or .txt file path containing targets. Defaults to None.
-        rev_seq_file (str, optional): .npy or .txt file path containing reverse complement sequences. Defaults to None.
-        is_names_text (bool, optional): whether the file is compressed (.npy) or plaintext (.txt). Defaults to False.
-        is_seq_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
-        is_target_text (bool, optional): whether the file is (.npy) or plaintext (.txt). Defaults to False.
-        delim (str, optional):  Defaults to "\n".
-        ohe_encoded (bool, optional): whether the sequences are one hot encoded. Defaults to False.
-        return_numpy (bool, optional): whether to return numpy arrays. Defaults to False.
+    Note if you pass only one hot encoded sequences in, you must pass in reverse complements
+    if you want them to be included
+
+    Parameters
+    ----------
+        seq_file (str):
+            .npy file path containing sequences
+        names_file (str):
+            .npy or .txt file path containing identifiers. Defaults to None.
+        target_file (str):
+            .npy or .txt file path containing targets. Defaults to None.
+        rev_seq_file (str, optional):
+            .npy or .txt file path containing reverse complement sequences. Defaults to None.
+        is_names_text (bool, optional):
+            whether the file is compressed (.npy) or plaintext (.txt). Defaults to False.
+        is_seq_text (bool, optional):
+            whether the file is (.npy) or plaintext (.txt). Defaults to False.
+        is_target_text (bool, optional):
+            whether the file is (.npy) or plaintext (.txt). Defaults to False.
+        delim (str, optional):
+            Defaults to "\n".
+        ohe_encoded (bool, optional):
+            whether the sequences are one hot encoded. Defaults to False.
+        return_numpy (bool, optional):
+            whether to return numpy arrays. Defaults to False.
 
     Returns:
-        tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-               if any are not provided they are set to none
+    --------
+    sdata: SeqData
+        Returns SeqData object containing sequences and identifiers by defualt
+    tuple:
+        numpy arrays of identifiers, sequences, reverse complement sequences and targets
+        if return_numpy is True. If any are not provided they are set to none
     """
     if is_seq_text:
         seqs = np.loadtxt(seq_file, dtype=str, delim=delim)
@@ -288,7 +229,6 @@ def read_numpy(
             rev_seqs = np.load(rev_seq_file, allow_pickle=True)
         else:
             rev_seqs = None
-
     if names_file is not None:
         if is_names_text:
             ids = np.loadtxt(names_file, dtype=str)
@@ -296,7 +236,6 @@ def read_numpy(
             ids = np.load(names_file)
     else:
         ids = None
-
     if target_file is not None:
         if is_target_text:
             targets = np.loadtxt(target_file, dtype=float)
@@ -311,33 +250,29 @@ def read_numpy(
             names=ids,
             ohe_seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=["targets"]),
         )
     else:
         return SeqData(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["TARGETS"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=["targets"]),
         )
 
 
-# TODO: This is a bit of a hack, but it works for now. Same with write_h5sd
-def read_h5sd(
-    filename: Optional[PathLike], 
-    sdata=None, 
-    mode: str = "r"):
+# TODO: Clean up the hacky bits
+def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
     """Function for loading sequences into SeqData objects from h5sd files.
 
     Parameters
     ----------
-
-        filename (str): 
-            .h5sd file path to read
-        sdata (SeqData, optional): 
-            SeqData object to load data into. Defaults to None.
-        mode (str, optional): 
-            mode to open file. Defaults to "r".
+    filename (str):
+        .h5sd file path to read
+    sdata (SeqData, optional):
+        SeqData object to load data into. Defaults to None.
+    mode (str, optional):
+        mode to open file. Defaults to "r".
 
     Returns
     -------
@@ -421,14 +356,22 @@ def read_h5sd(
 def read(seq_file, *args, **kwargs):
     """Wrapper function around read_csv, read_fasta, read_numpy to read sequence based input
 
-    Args:
-        seq_file (str): file path containing sequences
-        args: positional arguments from read_csv, read_fasta, read_numpy, read_h5sd
-        kwargs: keyword arguments from read_csv, read_fasta, read_numpy, read_h5sd
+    Parameters
+    ----------
+    seq_file (str):
+        file path containing sequences
+    args:
+        positional arguments from read_csv, read_fasta, read_numpy, read_h5sd
+    kwargs:
+        keyword arguments from read_csv, read_fasta, read_numpy, read_h5sd
 
-    Returns:
-        tuple: numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-               if any are not provided they are set to none
+    Returns
+    -------
+    sdata: SeqData
+        SeqData object containing sequences and identifiers
+    tuple:
+        numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+        If any are not provided they are set to none
     """
     seq_file_extension = seq_file.split(".")[-1]
     if seq_file_extension in ["csv", "tsv"]:
@@ -444,25 +387,40 @@ def read(seq_file, *args, **kwargs):
         return
 
 
-def write_csv(sdata, filename, delim="\t"):
+def write_csv(sdata, filename, target_key, delim="\t"):
     """Function for writing sequences to csv files.
 
-    Args:
-        sdata (SeqData): SeqData object containing sequences and identifiers
-        filename (str): file path to write to
-        delim (str, optional): delimiter to use. Defaults to ",".
+    Parameters
+    ----------
+    sdata (SeqData):
+        SeqData object containing sequences and identifiers
+    filename (str):
+        file path to write to
+    target_key (str):
+        key in sdata.seqs_annot to use as target
+    delim (str, optional):
+        delimiter to use. Defaults to ",".
+
+    Returns
+    -------
+    None
     """
-    dataframe = pd.DataFrame(data={"NAMES": sdata.names, "SEQ": sdata.seqs})
-    dataframe = dataframe.merge(sdata.seqs_annot, left_on="NAMES", right_index=True)
+    dataframe = pd.DataFrame(
+        data={"name": sdata.names, "seq": sdata.seqs, "target": sdata[target_key]}
+    )
+    dataframe = dataframe.merge(sdata.seqs_annot, left_on="name", right_index=True)
     dataframe.to_csv(filename, sep=delim, index=False)
 
 
 def write_fasta(sdata, filename):
     """Function for writing sequences to fasta files.
 
-    Args:
-        sdata (SeqData): SeqData object containing sequences and identifiers
-        filename (str): file path to write to
+    Parameters
+    ----------
+    sdata (SeqData):
+        SeqData object containing sequences and identifiers
+    filename (str):
+        file path to write to
     """
     with open(filename, "w") as f:
         for i in range(len(sdata.seqs)):
@@ -473,15 +431,32 @@ def write_fasta(sdata, filename):
 def write_numpy(sdata, filename):
     """Function for writing sequences to numpy files.
 
-    Args:
-        sdata (SeqData): SeqData object containing sequences and identifiers
-        filename (str): file path to write to
+    Parameters
+    ----------
+    sdata (SeqData):
+        SeqData object containing sequences and identifiers
+    filename (str):
+        file path to write to
+
+    Returns
+    -------
+    None
     """
     np.save(filename, sdata.seqs)
 
 
 def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
-    """Write SeqData object to h5sd file."""
+    """Write SeqData object to h5sd file.
+
+    Parameters
+    ----------
+    sdata (SeqData):
+        SeqData object containing sequences and identifiers
+    filename (str, optional):
+        file path to write to. Defaults to None.
+    mode (str, optional):
+        mode to open file. Defaults to "w".
+    """
     with h5py.File(filename, mode) as f:
         f = f["/"]
         f.attrs.setdefault("encoding-type", "SeqData")
@@ -547,11 +522,16 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
 def write(sdata, filename, *args, **kwargs):
     """Wrapper function around write_csv, write_fasta, write_numpy to write sequence based input
 
-    Args:
-        sdata (SeqData): SeqData object containing sequences and identifiers
-        filename (str): file path to write to
-        args: positional arguments from write_csv, write_fasta, write_numpy, write_h5sd
-        kwargs: keyword arguments from write_csv, write_fasta, write_numpy, write_h5sd
+    Parameters
+    ----------
+    sdata (SeqData):
+        SeqData object containing sequences and identifiers
+    filename (str):
+        file path to write to
+    args:
+        positional arguments from write_csv, write_fasta, write_numpy, write_h5sd
+    kwargs:
+        keyword arguments from write_csv, write_fasta, write_numpy, write_h5sd
     """
     seq_file_extension = filename.split(".")[-1]
     if seq_file_extension in ["csv", "tsv"]:

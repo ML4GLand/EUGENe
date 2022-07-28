@@ -289,7 +289,21 @@ class SeqData:
         seq_transforms: List[str] = None,
         transform_kwargs: dict = {},
     ) -> SeqDataset:
-        """Convert SeqData object to SeqDataset."""
+        """Convert SeqData object to SeqDataset.
+
+        Parameters
+        ----------
+        target: str or list of str, optional
+            Target to use for training. If None, -1 will be used for all sequences.
+        seq_transforms: list of str, optional
+            List of sequence transforms to apply.
+        transform_kwargs: dict, optional
+            Keyword arguments to pass to sequence transforms.
+
+        Returns
+        -------
+        SeqDataset
+        """
         from .._transforms import Augment, ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
 
@@ -353,6 +367,7 @@ class SeqData:
             )
 
 
+# TODO: move this to utils or something
 @singledispatch
 def _gen_dataframe(anno, length, index_names):
     if anno is None or len(anno) == 0:
