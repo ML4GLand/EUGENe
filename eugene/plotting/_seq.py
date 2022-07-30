@@ -199,23 +199,43 @@ def seq_track(
     # Get the sequence and annotations
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     seq = sdata.seqs[seq_idx]
-    p_annot = sdata.pos_annot.df[sdata.pos_annot.df["Chromosome"] == seq_id]
+    p_annot = (
+        sdata.pos_annot.df[sdata.pos_annot.df["Chromosome"] == seq_id]
+        if sdata.pos_annot is not None
+        else None
+    )
     imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
 
     # Define subplots
-    _, ax = plt.subplots(2, 1, figsize=(12, 4), sharex=True)
+    _, ax = (
+        plt.subplots(2, 1, figsize=(12, 4), sharex=True)
+        if p_annot is not None
+        else plt.subplots(1, 1, figsize=(12, 4))
+    )
     plt.subplots_adjust(wspace=0, hspace=0)
 
     # Plot the sequence and annotations
-    _plot_seq_features(ax[0], seq, p_annot, additional_annots=additional_annotations)
-    _plot_seq_logo(
-        ax[1],
-        seq,
-        imp_scores=imp_scores,
-        highlight=highlight,
-        threshold=threshold,
-        **kwargs
-    )
+    if p_annot is not None:
+        _plot_seq_features(
+            ax[0], seq, p_annot, additional_annots=additional_annotations
+        )
+        _plot_seq_logo(
+            ax[1],
+            seq,
+            imp_scores=imp_scores,
+            highlight=highlight,
+            threshold=threshold,
+            **kwargs
+        )
+    else:
+        _plot_seq_logo(
+            ax,
+            seq,
+            imp_scores=imp_scores,
+            highlight=highlight,
+            threshold=threshold,
+            **kwargs
+        )
 
     # Add title
     title = seq_id
