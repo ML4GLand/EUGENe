@@ -95,7 +95,7 @@ class SeqDataset(Dataset):
         return sample
 
     def to_dataloader(
-        self, batch_size=None, pin_memory=True, shuffle=False, num_workers=0, **kwargs
+        self, batch_size=None, pin_memory=True, shuffle=True, num_workers=0, **kwargs
     ):
         """Convert the dataset to a PyTorch DataLoader
 

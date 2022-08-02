@@ -52,8 +52,11 @@ class Jores21CNN(BaseModel):
         stride: int = 1,
         dropout: float = 0.15,
         hidden_dim: int = 64,
+        **kwargs
     ):
-        super().__init__(input_len, output_dim, strand="ss", task=task, aggr=aggr)
+        super().__init__(
+            input_len, output_dim, strand="ss", task=task, aggr=aggr, **kwargs
+        )
         self.biconv = BiConv1D(
             filters=filters,
             kernel_size=kernel_size,
@@ -73,7 +76,7 @@ class Jores21CNN(BaseModel):
         self.batchnorm = nn.BatchNorm1d(num_features=hidden_dim)
         self.fc2 = nn.Linear(in_features=hidden_dim, out_features=output_dim)
 
-    def forward(self, x):
+    def forward(self, x, x_rev=None):
         x = self.biconv(x)
         x = self.conv(x)
         x = F.relu(x)

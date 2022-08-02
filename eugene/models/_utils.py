@@ -46,11 +46,11 @@ def init_from_motifs(
     else:
         assert kernel_number is not None
         assert isinstance(
-            model.__getattr__(layer_name).__dict__[kernel_name][kernel_number],
+            model.__getattr__(layer_name).__getattr__(kernel_name)[kernel_number],
             torch.Tensor,
         )
         layer_size = (
-            model.__getattr__(layer_name).__dict__[kernel_name][kernel_number].size()
+            model.__getattr__(layer_name).__getattr__(kernel_name)[kernel_number].size()
         )
     kernel = _create_kernel_matrix(layer_size, motifs)
     init_conv(model, kernel, layer_name, kernel_name, kernel_number)

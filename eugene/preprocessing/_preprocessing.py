@@ -43,14 +43,16 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def train_test_split_data(sdata: SeqData, copy=False, kwargs={}) -> SeqData:
+def train_test_split_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
     """Train test split.
     Parameters
     ----------
     sdata : SeqData"""
     sdata = sdata.copy() if copy else sdata
-    train_indeces, _, _, _ = split_train_test(X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs)
-    sdata.seqs_annot["TRAIN"] = sdata.seqs_annot.index.isin(train_indeces)
+    train_indeces, _, _, _ = split_train_test(
+        X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs
+    )
+    sdata["train"] = sdata.seqs_annot.index.isin(train_indeces)
     return sdata if copy else None
 
 
@@ -67,12 +69,14 @@ def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
         SeqData object with position annotation.
     """
     sdata = sdata.copy() if copy else sdata
-    sdata.seqs_annot["POS"] = sdata.seqs_annot.index.map(lambda x: x.split("_")[1])
+    sdata["POS"] = sdata.seqs_annot.index.map(lambda x: x.split("_")[1])
     return sdata if copy else None
 
 
 @track
-def scale_targets(sdata: SeqData, target_col="TARGETS", train_col="TRAIN", copy=False) -> SeqData:
+def scale_targets(
+    sdata: SeqData, target_col="TARGETS", train_col="TRAIN", copy=False
+) -> SeqData:
     """Scale targets.
     Parameters
     ----------
@@ -84,15 +88,22 @@ def scale_targets(sdata: SeqData, target_col="TARGETS", train_col="TRAIN", copy=
         SeqData object with scaled targets.
     """
     from sklearn.preprocessing import StandardScaler
+
     sdata = sdata.copy() if copy else sdata
     scaler = StandardScaler()
     scaler.fit(sdata[sdata[train_col] == True][target_col].values.reshape(-1, 1))
-    sdata.seqs_annot[f"{target_col}_SCALED"] = scaler.transform(sdata.seqs_annot[target_col].values.reshape(-1, 1))
+    sdata[f"{target_col}_scaled"] = scaler.transform(
+        sdata[target_col].values.reshape(-1, 1)
+    )
     return sdata if copy else None
 
 
 @track
-def prepare_data(sdata: SeqData, steps=["reverse_complement", "one_hot_encode", "train_test_split"], copy=False) -> SeqData:
+def prepare_data(
+    sdata: SeqData,
+    steps=["reverse_complement", "one_hot_encode", "train_test_split"],
+    copy=False,
+) -> SeqData:
     """Prepare data.
     Parameters
     ----------

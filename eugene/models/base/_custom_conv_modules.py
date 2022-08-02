@@ -6,7 +6,7 @@ from ._utils import GetFlattenDim, BuildFullyConnected
 
 class BiConv1D(nn.Module):
     def __init__(
-        self, filters, kernel_size, input_size=4, layers=2, stride=1, dropout_rate=0.15
+        self, filters, kernel_size, input_size=4, layers=1, stride=1, dropout_rate=0.15
     ):
         super().__init__()
         self.filters = filters
@@ -20,12 +20,12 @@ class BiConv1D(nn.Module):
         self.dropout_rate = dropout_rate
         self.stride = stride
 
-        self.kernels = []
-        self.biases = []
-        kernel = torch.zeros(filters, input_size, kernel_size)
+        self.kernels = nn.ParameterList()
+        self.biases = nn.ParameterList()
+        kernel = nn.Parameter(torch.zeros(self.filters, self.input_size, kernel_size))
         nn.init.xavier_uniform_(kernel)
         self.kernels.append(kernel)
-        bias = torch.zeros(filters)
+        bias = nn.Parameter(torch.zeros(filters))
         nn.init.zeros_(bias)
         self.biases.append(bias)
         for layer in range(1, self.layers):
@@ -44,7 +44,7 @@ class BiConv1D(nn.Module):
         x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
         x_rev = F.conv1d(
             x,
-            torch.flip(self.kernels[0], dims=[1, 2]),
+            torch.flip(self.kernels[0], dims=[0, 1]),
             stride=self.stride,
             padding="same",
         )
@@ -58,7 +58,7 @@ class BiConv1D(nn.Module):
             x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
             x_rev = F.conv1d(
                 x_rev,
-                torch.flip(self.kernels[layer], dims=[1, 2]),
+                torch.flip(self.kernels[layer], dims=[0, 1]),
                 stride=self.stride,
                 padding="same",
             )

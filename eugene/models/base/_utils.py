@@ -52,11 +52,13 @@ def init_conv(
 ):
     if kernel_name is None:
         assert isinstance(model.__getattr__(layer_name), nn.Conv1d)
-        model.__getattr__(layer_name).weight = torch.nn.Parameter(weights)
+        model.__getattr__(layer_name).weight = nn.Parameter(weights)
     else:
         assert kernel_number is not None
         assert isinstance(
-            model.__getattr__(layer_name).__dict__[kernel_name][kernel_number],
+            model.__getattr__(layer_name).__getattr__(kernel_name)[kernel_number],
             torch.Tensor,
         )
-        model.__getattr__(layer_name).__dict__[kernel_name][kernel_number] = weights
+        model.__getattr__(layer_name).__getattr__(kernel_name)[
+            kernel_number
+        ] = nn.Parameter(weights)

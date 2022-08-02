@@ -6,7 +6,9 @@ from typing import Union, List
 from torch.utils.data import DataLoader
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from ..dataloading import SeqData, SeqDataset
 from .._settings import settings
 
@@ -71,12 +73,19 @@ def fit(
             transform_kwargs=transform_kwargs,
         )
         val_dataloader = val_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers
+            batch_size=batch_size,
+            num_workers=num_workers,
+            shuffle=False,
         )
     else:
         raise ValueError("No data provided to train on.")
     logger = TensorBoardLogger(log_dir, name=name, version=version)
     callbacks = []
+    callbacks.append(
+        ModelCheckpoint(
+            dirpath=logger.log_dir + "/checkpoints", save_top_k=1, monitor="val_loss"
+        )
+    )
     if early_stopping_callback:
         early_stopping_callback = EarlyStopping(
             monitor=early_stopping_metric,
@@ -85,6 +94,8 @@ def fit(
             verbose=True,
         )
         callbacks.append(early_stopping_callback)
+    if model.scheduler is not None:
+        callbacks.append(LearningRateMonitor())
     trainer = Trainer(
         max_epochs=epochs, logger=logger, gpus=gpus, callbacks=callbacks, **kwargs
     )

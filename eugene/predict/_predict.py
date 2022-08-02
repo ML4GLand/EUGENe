@@ -190,7 +190,7 @@ def train_val_predictions(
             transform_kwargs=transform_kwargs,
         )
         train_dataloader = train_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers
+            batch_size=batch_size, num_workers=num_workers, shuffle=False
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(
@@ -199,7 +199,7 @@ def train_val_predictions(
             transform_kwargs=transform_kwargs,
         )
         val_dataloader = val_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers
+            batch_size=batch_size, num_workers=num_workers, shuffle=False
         )
 
         if out_dir is not None:
@@ -228,7 +228,7 @@ def train_val_predictions(
             ],
             axis=0,
         )
-        sdata.seqs_annot[[f"{label}_PREDICTIONS" for label in target]] = preds.loc[
+        sdata.seqs_annot[[f"{label}_predictions" for label in target]] = preds.loc[
             sdata.seqs_annot.index
         ].astype(float)
         return sdata if copy else None
