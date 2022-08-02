@@ -95,16 +95,14 @@ def loss_curve(
     If return_axes is True, returns the axes object.
     """
     ax = metric_curve(
-        log_path, metric="loss", title=title, xlab=xlab, ylab=ylab, **kwargs
+        log_path, metric="loss", title=title, xlab="loss", ylab=ylab, **kwargs
     )
     if return_axes:
         return ax
 
 
 def training_summary(
-    log_path: str,
-    metrics: Union[str, Sequence[str]] = None,
-    save: str = None,
+    log_path: str, metrics: Union[str, Sequence[str]] = None, save: str = None, **kwargs
 ) -> None:
     """
     Plots the training summary from a training run. Convenience function to plot loss and metric together.
@@ -120,8 +118,8 @@ def training_summary(
     -------
     None
     """
-    loss_curve(log_path, return_axes=True)
-    metric_curve(log_path, metric=metrics, return_axes=True)
+    loss_curve(log_path, return_axes=True, **kwargs)
+    metric_curve(log_path, metric=metrics, return_axes=True, **kwargs)
     if save is not None:
         plt.savefig(save)
     return None

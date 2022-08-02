@@ -44,6 +44,7 @@ class Jores21CNN(BaseModel):
         self,
         input_len,
         output_dim,
+        strand="ss",
         task="regression",
         aggr=None,
         filters: int = 128,
@@ -55,7 +56,7 @@ class Jores21CNN(BaseModel):
         **kwargs
     ):
         super().__init__(
-            input_len, output_dim, strand="ss", task=task, aggr=aggr, **kwargs
+            input_len, output_dim, strand=strand, task=task, aggr=aggr, **kwargs
         )
         self.biconv = BiConv1D(
             filters=filters,
