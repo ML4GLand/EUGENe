@@ -78,7 +78,13 @@ def _plot_performance_scatter(
 
 
 def performance_scatter(
-    sdata, target: str, prediction: str, seq_idx=None, title: str = None, **kwargs
+    sdata,
+    target: str,
+    prediction: str,
+    seq_idx=None,
+    title: str = None,
+    save: str = None,
+    **kwargs,
 ) -> None:
     """
     Plot a scatter plot of the performance of the model on a subset of the sequences.
@@ -104,3 +110,5 @@ def performance_scatter(
     _plot_performance_scatter(
         sdata, target=target, prediction=prediction, title=title, **kwargs
     )
+    if save is not None:
+        plt.savefig(save)

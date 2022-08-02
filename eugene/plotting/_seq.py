@@ -161,6 +161,7 @@ def seq_track(
     cmap=None,
     norm=None,
     return_axes: bool = False,
+    save: str = None,
     **kwargs
 ):
     """
@@ -251,6 +252,8 @@ def seq_track(
     plt.suptitle(title, fontsize=24, weight="bold", color=color)
     if return_axes:
         return ax
+    if save is not None:
+        plt.savefig(save)
 
 
 def _plot_logo(matrix, **kwargs):
@@ -272,7 +275,7 @@ def _plot_logo(matrix, **kwargs):
     display(logo)
 
 
-def filter_viz(sdata, filter_id=None, uns_key="pfms", **kwargs):
+def filter_viz(sdata, filter_id=None, uns_key="pfms", save: str = None, **kwargs):
     """Plot the logo of the pfm generated for a passed in filter.  If a filter_id is given,
     the logo will be filtered to only show the features that match the filter_id.
     The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
@@ -294,4 +297,7 @@ def filter_viz(sdata, filter_id=None, uns_key="pfms", **kwargs):
     ax : matplotlib.axes._subplots.AxesSubplot
         The matplotlib axes object
     """
-    return _plot_logo(sdata.uns[uns_key][filter_id], **kwargs)
+    ax = _plot_logo(sdata.uns[uns_key][filter_id], **kwargs)
+    if save is not None:
+        plt.savefig(save)
+    return ax

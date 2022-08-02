@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import torch.nn as nn
 from tqdm.auto import tqdm
 from ..utils import track
 from .._settings import settings
@@ -17,6 +18,8 @@ def _get_activation(name):
 
 
 def _get_first_conv_layer_params(model):
+    if model.__class__.__name__ == "Jores21CNN":
+        return model.biconv.kernels[0].cpu()
     for layer in model.convnet.module:
         name = layer.__class__.__name__
         if name == "Conv1d":
@@ -27,6 +30,19 @@ def _get_first_conv_layer_params(model):
 
 
 def _get_first_conv_layer(model):
+    if model.__class__.__name__ == "Jores21CNN":
+        layer_shape = model.biconv.kernels[0].shape
+        kernels = model.biconv.kernels[0]
+        biases = model.biconv.biases[0]
+        layer = nn.Conv1d(
+            in_channels=layer_shape[1],
+            out_channels=layer_shape[0],
+            kernel_size=layer_shape[2],
+            padding="same",
+        )
+        layer.weight = nn.Parameter(kernels)
+        layer.bias = nn.Parameter(biases)
+        return layer.cpu()
     for layer in model.convnet.module:
         name = layer.__class__.__name__
         if name == "Conv1d":

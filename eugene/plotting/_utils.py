@@ -7,10 +7,7 @@ from typing import List, Union, Sequence
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
-def _create_matplotlib_axes(
-    num_axes,
-    subplot_size=(4,4)
-) -> List[Axes]:
+def _create_matplotlib_axes(num_axes, subplot_size=(4, 4)) -> List[Axes]:
     """
     Creates a grid of matplotlib axes.
 
@@ -28,18 +25,17 @@ def _create_matplotlib_axes(
     """
     num_rows = int(np.ceil(num_axes / 3))
     num_cols = int(np.ceil(num_axes / num_rows))
-    _, ax = plt.subplots(num_rows, num_cols, figsize=(num_cols * subplot_size[0], num_rows * subplot_size[1]))
+    _, ax = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * subplot_size[0], num_rows * subplot_size[1]),
+    )
     ax = ax.flatten() if num_axes > 1 else ax
     return ax
 
 
-def _label_plot(
-    ax: Axes,
-    title: str,
-    xlab: str,
-    ylab: str
-) -> None:
-    """ 
+def _label_plot(ax: Axes, title: str, xlab: str, ylab: str) -> None:
+    """
     Labels a plot.
 
     Parameters
@@ -66,13 +62,14 @@ def _label_plot(
 def _plot_seaborn(
     dataframe: pd.DataFrame,
     keys: Union[str, Sequence[str]],
-    func, 
+    func,
     groupby: str = None,
-    orient: str = 'v',
+    orient: str = "v",
     title: str = None,
     xlab: str = None,
     ylab: str = None,
-    **kwargs
+    save: str = None,
+    **kwargs,
 ) -> Axes:
     """
     Plots a histogram, boxplot, violin plot or scatterplot using seaborn.
@@ -106,25 +103,26 @@ def _plot_seaborn(
     for i, key in enumerate(keys):
         curr_ax = ax[i] if len(keys) > 1 else ax
         if groupby is None:
-            if orient == 'v':
+            if orient == "v":
                 func(data=dataframe, y=key, ax=curr_ax, **kwargs)
-            elif orient == 'h':
+            elif orient == "h":
                 func(data=dataframe, x=key, ax=curr_ax, **kwargs)
         else:
-            if orient == 'v':
+            if orient == "v":
                 func(data=dataframe, x=groupby, y=key, ax=curr_ax, **kwargs)
-            elif orient == 'h':
+            elif orient == "h":
                 func(data=dataframe, x=key, y=groupby, ax=curr_ax, **kwargs)
         _label_plot(curr_ax, title, xlab=key if xlab is None else xlab, ylab=ylab)
+    if save is not None:
+        plt.savefig(save)
     return ax
-
 
 
 def _check_input(
     sdata,
     targets: Union[Sequence[str], str],
     predictions: Union[Sequence[str], str],
-    labels: Union[Sequence[str], str]
+    labels: Union[Sequence[str], str],
 ):
     if isinstance(targets, str):
         targets = [targets]
@@ -142,12 +140,12 @@ def _check_input(
 # Extraction function modified from https://github.com/theRealSuperMario/supermariopy/blob/master/scripts/tflogs2pandas.py
 def tflog2pandas(path: str) -> pd.DataFrame:
     """Convert single tensorflow log file to pandas DataFrame
-    
+
     Parameters
     ----------
     path : str
         path to tensorflow log file
-    
+
     Returns
     -------
     pd.DataFrame
@@ -185,7 +183,7 @@ def many_logs2pandas(event_paths):
     ----------
     event_paths : list of str
         paths to tensorflow log files
-    
+
     Returns
     -------
     pd.DataFrame

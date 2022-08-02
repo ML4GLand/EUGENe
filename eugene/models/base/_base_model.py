@@ -205,6 +205,17 @@ class BaseModel(LightningModule):
 
     def summary(self):
         """Summary of the model"""
+        print(f"Model: {self.__class__.__name__}")
+        print(f"Input length: {self.input_len}")
+        print(f"Output dimension: {self.output_dim}")
+        print(f"Strand: {self.strand}")
+        print(f"Task: {self.task}")
+        print(f"Aggregation: {self.aggr}")
+        print(f"Loss function: {self.loss_fxn.__name__}")
+        print(f"Optimizer: {self.optimizer}")
+        print(f"Learning rate: {self.lr}")
+        print(f"Scheduler: {self.scheduler}")
+        print(f"Scheduler patience: {self.scheduler_patience}")
         return ModelSummary(self)
 
 
