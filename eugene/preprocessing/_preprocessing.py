@@ -74,9 +74,7 @@ def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def scale_targets(
-    sdata: SeqData, target_col="TARGETS", train_col="TRAIN", copy=False
-) -> SeqData:
+def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
     """Scale targets.
     Parameters
     ----------
@@ -91,10 +89,8 @@ def scale_targets(
 
     sdata = sdata.copy() if copy else sdata
     scaler = StandardScaler()
-    scaler.fit(sdata[sdata[train_col] == True][target_col].values.reshape(-1, 1))
-    sdata[f"{target_col}_scaled"] = scaler.transform(
-        sdata[target_col].values.reshape(-1, 1)
-    )
+    scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
+    sdata[f"{target}_scaled"] = scaler.transform(sdata[target].values.reshape(-1, 1))
     return sdata if copy else None
 
 

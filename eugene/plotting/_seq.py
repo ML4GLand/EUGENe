@@ -153,7 +153,7 @@ def _plot_seq_logo(
 def seq_track(
     sdata,
     seq_id: str,
-    uns_key: str,
+    uns_key: str = None,
     additional_annotations: list = ["Score", "Strand"],
     pred_key: str = None,
     threshold: float = None,

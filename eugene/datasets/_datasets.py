@@ -11,6 +11,7 @@ from ..dataloading import SeqData
 HERE = Path(__file__).parent
 pkg_resources = None
 
+
 def get_dataset_info():
     """
     Return DataFrame with info about builtin datasets.
@@ -30,9 +31,13 @@ def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     """
     filename = f"{HERE}/random1000/random1000_seqs.tsv"
     if binary:
-        sdata = read(filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs)
+        sdata = read(
+            filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs
+        )
     else:
-        sdata = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", **kwargs)
+        sdata = read(
+            filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", **kwargs
+        )
     sdata.pos_annot = pr.read_bed(f"{HERE}/random1000/random1000_pos_annot.bed")
     return sdata
 
@@ -43,12 +48,23 @@ def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
     """
     filename = f"{HERE}/random1000_10/random1000_10_seqs.tsv"
     if binary:
-        raise NotImplementedError("random1000_10 dataset does not need to support binary data.")
+        raise NotImplementedError(
+            "random1000_10 dataset does not need to support binary data."
+        )
     else:
         sdataframe = read(filename, return_dataframe=True)
-        n_digits = len(str(len(sdataframe)-1))
-        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(sdataframe))])
-        sdata = SeqData(seqs=sdataframe["SEQ"], names=ids, seqs_annot=sdataframe.drop(columns=["NAME", "SEQ"]))
+        n_digits = len(str(len(sdataframe) - 1))
+        ids = np.array(
+            [
+                "seq{num:0{width}}".format(num=i, width=n_digits)
+                for i in range(len(sdataframe))
+            ]
+        )
+        sdata = SeqData(
+            seqs=sdataframe["SEQ"],
+            names=ids,
+            seqs_annot=sdataframe.drop(columns=["NAME", "SEQ"]),
+        )
     return sdata
 
 
@@ -57,27 +73,57 @@ def farley15(binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     Reads the Farley15 dataset.
     """
     if binary:
-        raise NotImplementedError("Farley15 dataset is not yet implemented for non-binary data.")
+        raise NotImplementedError(
+            "Farley15 dataset is not yet implemented for non-binary data."
+        )
 
-    urls_list = ["https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
-                 "https://zenodo.org/record/6863861/files/farley2015_seqs_annot.csv?download=1"]
-    paths = try_download_urls([0,1], urls_list, "farley15", compression = "")
+    urls_list = [
+        "https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
+        "https://zenodo.org/record/6863861/files/farley2015_seqs_annot.csv?download=1",
+    ]
+    paths = try_download_urls([0, 1], urls_list, "farley15", compression="")
 
     if return_sdata:
         path = paths[0]
-        seq_col="Enhancer"
-        data = read_csv(path, sep=",", seq_col=seq_col, auto_name=True, return_dataframe=True, **kwargs)
-        n_digits = len(str(len(data)-1))
-        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(data))])
-        sdata = SeqData(seqs=data[seq_col], names=ids, seqs_annot=data[["Barcode", "Biological Replicate 1 (RPM)", "Biological Replicate 2 (RPM)"]])
+        seq_col = "Enhancer"
+        data = read_csv(
+            path,
+            sep=",",
+            seq_col=seq_col,
+            auto_name=True,
+            return_dataframe=True,
+            **kwargs,
+        )
+        n_digits = len(str(len(data) - 1))
+        ids = np.array(
+            [
+                "seq{num:0{width}}".format(num=i, width=n_digits)
+                for i in range(len(data))
+            ]
+        )
+        sdata = SeqData(
+            seqs=data[seq_col],
+            names=ids,
+            seqs_annot=data[
+                [
+                    "Barcode",
+                    "Biological Replicate 1 (RPM)",
+                    "Biological Replicate 2 (RPM)",
+                ]
+            ],
+        )
         return sdata
     else:
         return paths
 
 
-def deBoer20(datasets: list, binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def deBoer20(
+    datasets: list, binary=False, return_sdata=True, **kwargs: dict
+) -> pd.DataFrame:
     if binary:
-        raise NotImplementedError("deBoer20 dataset is not yet implemented for non-binary data.")
+        raise NotImplementedError(
+            "deBoer20 dataset is not yet implemented for non-binary data."
+        )
     """
     Reads the deBoer20 dataset.
     """
@@ -89,59 +135,103 @@ def deBoer20(datasets: list, binary=False, return_sdata=True, **kwargs: dict) ->
         "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_20161024_average_promoter_ELs_per_seq_3p1E7_Gly_ALL.shuffled.txt.gz",
         "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_20170811_average_promoter_ELs_per_seq_OLS_Glu_goodCores_ALL.txt.gz",
         "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_20180808_processed_Native80_and_N80_spikein.txt.gz",
-        "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_pTpA_random_design_tiling_etc_YPD_expression.txt.gz"
+        "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_pTpA_random_design_tiling_etc_YPD_expression.txt.gz",
     ]
 
     if type(datasets) is int:
         datasets = [datasets]
 
-    paths = try_download_urls(datasets, urls_list, "deBoer20", compression = "gz")
+    paths = try_download_urls(datasets, urls_list, "deBoer20", compression="gz")
 
     if return_sdata:
-        seq_col="SEQ"
-        target_col="TARGET"
-        sdata = read_csv(paths, sep=",", seq_col=seq_col, target_col=target_col, col_names=[seq_col,target_col], auto_name=True, compression="gzip", **kwargs)
+        seq_col = "SEQ"
+        target_col = "TARGET"
+        sdata = read_csv(
+            paths,
+            sep=",",
+            seq_col=seq_col,
+            target_col=target_col,
+            col_names=[seq_col, target_col],
+            auto_name=True,
+            compression="gzip",
+            **kwargs,
+        )
         return sdata
     else:
         return paths
 
 
-def jores21(dataset="leaf", binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def jores21(
+    dataset="leaf", binary=False, add_metadata=False, return_sdata=True, **kwargs: dict
+) -> pd.DataFrame:
     """
     Reads the Jores21 dataset.
     """
     if binary:
-        raise NotImplementedError("Jores21 dataset is not yet implemented for non-binary data.")
+        raise NotImplementedError(
+            "Jores21 dataset is not yet implemented for non-binary data."
+        )
     urls_list = [
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_leaf.tsv",
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_train_leaf.tsv",
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_train_proto.tsv",
-        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_proto.tsv"
+        "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_proto.tsv",
+        "https://static-content.springer.com/esm/art%3A10.1038%2Fs41477-021-00932-y/MediaObjects/41477_2021_932_MOESM3_ESM.xlsx",
     ]
     if dataset == "leaf":
-        urls = [0,1]
+        urls = [0, 1]
     elif dataset == "proto":
-        urls = [2,3]
+        urls = [2, 3]
     else:
         raise ValueError("dataset must be either 'leaf' or 'proto'.")
-    paths = try_download_urls(urls, urls_list, "jores21", compression = "")
+    paths = try_download_urls(urls, urls_list, "jores21", compression="")
     if return_sdata:
-        seq_col="sequence"
-        data = read_csv(paths, sep="\t", seq_col=seq_col, auto_name=True, return_dataframe=True, **kwargs)
-        n_digits = len(str(len(data)-1))
-        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(data))])
-        sdata = SeqData(seqs=data[seq_col], names=ids, seqs_annot=data[["set", "sp", "gene", "enrichment"]])
+        seq_col = "sequence"
+        data = read_csv(
+            paths,
+            sep="\t",
+            seq_col=seq_col,
+            auto_name=True,
+            return_dataframe=True,
+            **kwargs,
+        )
+        n_digits = len(str(len(data) - 1))
+        ids = np.array(
+            [
+                "seq{num:0{width}}".format(num=i, width=n_digits)
+                for i in range(len(data))
+            ]
+        )
+        sdata = SeqData(
+            seqs=data[seq_col],
+            names=ids,
+            seqs_annot=data[["set", "sp", "gene", "enrichment"]],
+        )
+        if add_metadata:
+            metadata_path = try_download_urls(
+                [4], urls_list, "jores21", compression=""
+            )[0]
+            smetadata = pd.read_excel(metadata_path, sheet_name=0, skiprows=3)
+            sdata["sequence"] = sdata.seqs
+            sdata.seqs_annot = sdata.seqs_annot.merge(
+                smetadata, on="sequence", how="left"
+            )
+            sdata.seqs_annot.drop("sequence", axis=1, inplace=True)
         return sdata
     else:
         return paths
 
 
-def deAlmeida22(dataset="train", binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def deAlmeida22(
+    dataset="train", binary=False, return_sdata=True, **kwargs: dict
+) -> pd.DataFrame:
     """
     Reads the deAlmeida22 dataset.
     """
     if binary:
-        raise NotImplementedError("deAlmeida22 dataset is not yet implemented for non-binary data.")
+        raise NotImplementedError(
+            "deAlmeida22 dataset is not yet implemented for non-binary data."
+        )
     urls_list = [
         "https://zenodo.org/record/5502060/files/Sequences_Train.fa?download=1",
         "https://zenodo.org/record/5502060/files/Sequences_Val.fa?download=1",
@@ -151,12 +241,12 @@ def deAlmeida22(dataset="train", binary=False, return_sdata=True, **kwargs: dict
         "https://zenodo.org/record/5502060/files/Sequences_activity_Test.txt?download=1",
     ]
     if dataset == "train":
-        urls = [0,3]
+        urls = [0, 3]
     elif dataset == "val":
-        urls = [1,4]
+        urls = [1, 4]
     elif dataset == "test":
-        urls = [2,5]
-    paths = try_download_urls(urls, urls_list, "deAlmeida22", compression = "")
+        urls = [2, 5]
+    paths = try_download_urls(urls, urls_list, "deAlmeida22", compression="")
     if return_sdata:
         sdata = read_fasta(seq_file=paths[0])
         sdata.seqs_annot = pd.read_csv(paths[1], sep="\t")

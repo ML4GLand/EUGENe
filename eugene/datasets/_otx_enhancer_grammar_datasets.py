@@ -26,8 +26,16 @@ def ols(**kwargs: dict) -> pd.DataFrame:
     """
     reads the OLS dataset.
     """
-    filename = "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
-    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY_SUMRNA_NUMDNA", **kwargs)
+    filename = (
+        "/cellar/users/aklie/projects/EUGENE/data/2021_OLS_Library/2021_OLS_Library.tsv"
+    )
+    data = read(
+        filename,
+        seq_col="SEQ",
+        name_col="NAME",
+        target_col="ACTIVITY_SUMRNA_NUMDNA",
+        **kwargs
+    )
     return data
 
 
@@ -36,5 +44,7 @@ def Khoueiry10(**kwargs: dict) -> pd.DataFrame:
     Reads the Khoueiry10 dataset.
     """
     filename = "/cellar/users/aklie/projects/EUGENE/data/2010_Khoueiry_CellPress/2010_Khoueiry_CellPress.tsv"
-    data = read(filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs)
+    data = read(
+        filename, seq_col="SEQ", name_col="NAME", target_col="FXN_LABEL", **kwargs
+    )
     return data
