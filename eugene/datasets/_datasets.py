@@ -4,18 +4,20 @@ import numpy as np
 import pyranges as pr
 from .._compat import Literal
 from ._utils import try_download_urls
-
 from ..dataloading._io import read, read_csv, read_fasta
 from ..dataloading import SeqData
+
 
 HERE = Path(__file__).parent
 pkg_resources = None
 
 
 def get_dataset_info():
-    """
-    Return DataFrame with info about builtin datasets.
+    """Return DataFrame with info about builtin datasets.
+    
     Returns
+    -------
+    df : pd.DataFrame
         Info about builtin datasets indexed by dataset name as dataframe.
     """
     global pkg_resources
@@ -25,9 +27,21 @@ def get_dataset_info():
     return pd.read_csv(stream, index_col=0)
 
 
-def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads the random1000 dataset.
+def random1000(
+    binary=False, 
+    **kwargs: dict
+) -> pd.DataFrame:
+    """Reads the random1000 dataset.
+
+    Parameters
+    ----------
+    binary : bool, optional
+        If True, return binary target data. The default is False.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the random1000 dataset.
     """
     filename = f"{HERE}/random1000/random1000_seqs.tsv"
     if binary:
@@ -42,9 +56,21 @@ def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     return sdata
 
 
-def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads the random1000_10 dataset.
+def random1000_10(
+    binary=False, 
+    **kwargs: dict
+) -> pd.DataFrame:
+    """Reads the random1000_10 dataset.
+
+    Parameters
+    ----------
+    binary : bool, optional
+        If True, return binary target data. The default is False.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the random1000_10 dataset.
     """
     filename = f"{HERE}/random1000_10/random1000_10_seqs.tsv"
     if binary:
@@ -68,21 +94,27 @@ def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
     return sdata
 
 
-def farley15(binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads the Farley15 dataset.
-    """
-    if binary:
-        raise NotImplementedError(
-            "Farley15 dataset is not yet implemented for non-binary data."
-        )
+def farley15(
+    return_sdata=True, 
+    **kwargs: dict
+) -> pd.DataFrame:
+    """Reads the Farley15 dataset.
 
+    Parameters
+    ----------
+    return_sdata : bool, optional
+        If True, return SeqData object with the Farley15 dataset. The default is True.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the Farley15 dataset.
+    """
     urls_list = [
         "https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
         "https://zenodo.org/record/6863861/files/farley2015_seqs_annot.csv?download=1",
     ]
     paths = try_download_urls([0, 1], urls_list, "farley15", compression="")
-
     if return_sdata:
         path = paths[0]
         seq_col = "Enhancer"
@@ -118,14 +150,23 @@ def farley15(binary=False, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
 
 
 def deBoer20(
-    datasets: list, binary=False, return_sdata=True, **kwargs: dict
+    datasets: list, 
+    return_sdata=True, 
+    **kwargs: dict
 ) -> pd.DataFrame:
-    if binary:
-        raise NotImplementedError(
-            "deBoer20 dataset is not yet implemented for non-binary data."
-        )
-    """
-    Reads the deBoer20 dataset.
+    """Reads the deBoer20 dataset.
+
+    Parameters
+    ----------
+    datasets : list of str
+        List of datasets to read.
+    return_sdata : bool, optional
+        If True, return SeqData object with the deBoer20 dataset. The default is True.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the deBoer20 dataset.
     """
     urls_list = [
         "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_20160503_average_promoter_ELs_per_seq_atLeast100Counts.txt.gz",
@@ -162,15 +203,27 @@ def deBoer20(
 
 
 def jores21(
-    dataset="leaf", binary=False, add_metadata=False, return_sdata=True, **kwargs: dict
+    dataset="leaf", 
+    add_metadata=False, 
+    return_sdata=True, 
+    **kwargs: dict
 ) -> pd.DataFrame:
+    """Reads the Jores21 dataset.
+
+    Parameters
+    ----------
+    dataset : str, optional
+        Dataset to read. Either leaf or proto. The default is "leaf".
+    add_metadata : bool, optional
+        If True, add metadata to the SeqData object. The default is False.
+    return_sdata : bool, optional
+        If True, return SeqData object with the Jores21 dataset. The default is True.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the Jores21 dataset.
     """
-    Reads the Jores21 dataset.
-    """
-    if binary:
-        raise NotImplementedError(
-            "Jores21 dataset is not yet implemented for non-binary data."
-        )
     urls_list = [
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_leaf.tsv",
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_train_leaf.tsv",
@@ -223,15 +276,24 @@ def jores21(
 
 
 def deAlmeida22(
-    dataset="train", binary=False, return_sdata=True, **kwargs: dict
+    dataset="train", 
+    return_sdata=True, 
+    **kwargs: dict
 ) -> pd.DataFrame:
+    """Reads the deAlmeida22 dataset.
+
+    Parameters
+    ----------
+    dataset : str, optional
+        Dataset to read. Either train or test. The default is "train".
+    return_sdata : bool, optional
+        If True, return SeqData object with the deAlmeida22 dataset. The default is True.
+    
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the deAlmeida22 dataset.
     """
-    Reads the deAlmeida22 dataset.
-    """
-    if binary:
-        raise NotImplementedError(
-            "deAlmeida22 dataset is not yet implemented for non-binary data."
-        )
     urls_list = [
         "https://zenodo.org/record/5502060/files/Sequences_Train.fa?download=1",
         "https://zenodo.org/record/5502060/files/Sequences_Val.fa?download=1",

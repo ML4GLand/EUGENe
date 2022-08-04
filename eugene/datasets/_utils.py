@@ -11,11 +11,22 @@ def check_dataset_dir_exists(f):
     def wrapper(*args, **kwargs):
         settings.dataset_dir.mkdir(exist_ok=True)
         return f(*args, **kwargs)
-
     return wrapper
 
 
-def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
+def deBoerCleanup(
+    file: pd.DataFrame, 
+    index: int
+) -> pd.DataFrame:
+    """Cleanup the deBoer dataset to remove the first column and the last row.
+
+    Parameters
+    ----------
+    file : pd.DataFrame
+        The dataset to be cleaned.
+    index : int
+        The index of the dataset to be cleaned.
+    """
     if index == 5:
         # Remove upper title row, keep only expression column
         file = file.drop(index=0, columns=[0,3,4])
@@ -32,7 +43,30 @@ def deBoerCleanup(file: pd.DataFrame, index: int) -> pd.DataFrame:
         return file
 
 
-def try_download_urls(data_idxs: list, url_list: list, ds_name: str, compression: str = "") -> list:
+def try_download_urls(
+    data_idxs: list, 
+    url_list: list, 
+    ds_name: str, 
+    compression: str = ""
+) -> list:
+    """Download the data from the given urls.
+
+    Parameters
+    ----------
+    data_idxs : list
+        The indices of the data to be downloaded.
+    url_list : list
+        The urls of the data to be downloaded.
+    ds_name : str
+        The name of the dataset to be downloaded.
+    compression : str, optional
+        The compression of the data to be downloaded. The default is "".
+    
+    Returns
+    -------
+    list
+        The downloaded data.
+    """
     ds_path = os.path.join(HERE.parent, settings.dataset_dir, ds_name)
     paths = []
     if compression != "":
