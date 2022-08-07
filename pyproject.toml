@@ -42,11 +42,13 @@ pyBigWig = {version = "^0.3.18", extras = ["janggu"]}
 pybedtools = {version = "^0.9.0", extras = ["janggu"]}
 biopython = {version = "1.77", extras = ["janggu"]}
 progress = {version = "^1.6", extras = ["janggu"]}
+keras = {version = "^2.4.3", extras = ["janggu"]}
+tensorflow = {version = "^2.4.1", extras = ["janggu"]}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]
 dev = ["black", "pre-commit", "pytest", "codecov"]
-janggu = ["pyBigWig", "pybedtools", "biopython", "progress"]
+janggu = ["pyBigWig", "pybedtools", "biopython", "progress", "keras", "tensorflow"]
 
 [tool.poetry.dev-dependencies]
 
