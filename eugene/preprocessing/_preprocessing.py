@@ -43,21 +43,30 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def train_test_split_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
+def train_test_split_data(
+    sdata: SeqData, train_key="train", chr=None, copy=False, **kwargs
+) -> SeqData:
     """Train test split.
     Parameters
     ----------
     sdata : SeqData"""
     sdata = sdata.copy() if copy else sdata
-    train_indeces, _, _, _ = split_train_test(
-        X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs
-    )
-    sdata["train"] = sdata.seqs_annot.index.isin(train_indeces)
-    return sdata if copy else None
+    if chr is not None:
+        chr = [chr] if isinstance(chr, str) else chr
+        sdata[train_key] = ~sdata["chr"].isin(chr)
+        return sdata if copy else None
+    else:
+        train_indeces, _, _, _ = split_train_test(
+            X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs
+        )
+        sdata[train_key] = sdata.seqs_annot.index.isin(train_indeces)
+        return sdata if copy else None
 
 
 @track
-def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
+def add_ranges_annot(
+    sdata: SeqData, chr_delim=":", rng_delim="-", copy=False
+) -> SeqData:
     """Add position annotation.
     Parameters
     ----------
@@ -68,8 +77,14 @@ def add_pos_annot(sdata: SeqData, copy=False) -> SeqData:
     SeqData
         SeqData object with position annotation.
     """
-    sdata = sdata.copy() if copy else sdata
-    sdata["POS"] = sdata.seqs_annot.index.map(lambda x: x.split("_")[1])
+    idx = sdata.seqs_annot.index
+    if chr_delim not in idx[0] or rng_delim not in idx[0]:
+        raise ValueError("Invalid index format.")
+    chr = [i[0] for i in idx.str.split(chr_delim)]
+    rng = [i[1].split(rng_delim) for i in idx.str.split(chr_delim)]
+    sdata["chr"] = chr
+    sdata["start"] = [int(i[0]) for i in rng]
+    sdata["end"] = [int(i[1]) for i in rng]
     return sdata if copy else None
 
 

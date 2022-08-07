@@ -6,6 +6,8 @@ from os import PathLike
 import pyranges as pr
 from .dataloaders import SeqData
 from ._utils import _read_and_concat_dataframes
+from ..preprocessing import decode_DNA_seqs, reverse_complement_seqs
+from ..external.janggu.data import Bioseq, Cover
 
 
 def read_csv(
@@ -353,6 +355,216 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
     return SeqData(**d)
 
 
+def read_bed(
+    bed_file: str,
+    roi_file: str,
+    ref_file: str,
+    dnaflank=0,
+    resolution=None,
+    collapser="max",
+    add_seqs=False,
+    return_janggu=False,
+    **kwargs,
+):
+    """
+    Read a BED file and return a DataFrame.
+
+    Parameters
+    ----------
+    bed_file : str
+        Path to the BED file where peaks are stored.
+    roi_file : str
+        Path to the file containing the regions of interest under consideration.
+    ref_file : str
+        Path to the genome reference file.
+    dnaflank : int, optional
+        Number of nucleotides to flank the sequence. Defaults to None.
+    resolution : int, optional
+        Resolution of the sequence. Defaults to None.
+    collapser : str, optional
+        Collapser to use. Defaults to "max".
+    add_seqs : bool, optional
+        Add sequences to the DataFrame. Defaults to False.
+    return_janggu : bool, optional
+        Return a Janggu object. Defaults to False.
+    **kwargs : dict
+        Additional arguments to pass to as Janggu's parameters for loading
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object containing the peaks.
+    """
+    dna = Bioseq.create_from_refgenome(
+        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+    )
+    cover = Cover.create_from_bed(
+        "cover",
+        bedfiles=bed_file,
+        roi=roi_file,
+        resolution=resolution,
+        collapser=collapser,
+        **kwargs,
+    )
+    if return_janggu:
+        return dna, cover
+    ids = np.array(list(dna.garray.region2index.keys()))
+    ohe_seqs = dna[:][:, :, 0, :]
+    targets = cover[:].squeeze()
+    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
+    return SeqData(
+        names=ids,
+        seqs=seqs,
+        ohe_seqs=ohe_seqs,
+        rev_seqs=rev_seqs,
+        seqs_annot=pd.DataFrame(data=targets, index=ids, columns=["target"]),
+    )
+
+
+def read_bam(
+    bam_file: str,
+    roi_file: str,
+    ref_file: str,
+    dnaflank=0,
+    resolution=None,
+    normalizer=None,
+    add_seqs=False,
+    return_janggu=False,
+    **kwargs,
+):
+    """
+    Read a BAM file and return a DataFrame.
+
+    Parameters
+    ----------
+    bam_file : str
+        Path to the BED file where peaks are stored.
+    roi_file : str
+        Path to the file containing the regions of interest under consideration.
+    ref_file : str
+        Path to the genome reference file.
+    dnaflank : int, optional
+        Number of nucleotides to flank the sequence. Defaults to None.
+    resolution : int, optional
+        Resolution of the sequence. Defaults to None.
+    collapser : str, optional
+        Collapser to use. Defaults to "max".
+    add_seqs : bool, optional
+        Add sequences to the DataFrame. Defaults to False.
+    return_janggu : bool, optional
+        Return a Janggu object. Defaults to False.
+    **kwargs : dict
+        Additional arguments to pass to as Janggu's parameters for loading
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object containing the peaks.
+    """
+    dna = Bioseq.create_from_refgenome(
+        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+    )
+    cover = Cover.create_from_bam(
+        "cover",
+        bamfiles=bam_file,
+        roi=roi_file,
+        resolution=resolution,
+        normalizer=normalizer,
+        stranded=False,
+        **kwargs,
+    )
+    if return_janggu:
+        return dna, cover
+    ids = np.array(list(dna.garray.region2index.keys()))
+    ohe_seqs = dna[:][:, :, 0, :]
+    targets = cover[:].squeeze(axis=(2, 3))
+    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
+    return SeqData(
+        names=ids,
+        seqs=seqs,
+        ohe_seqs=ohe_seqs,
+        rev_seqs=rev_seqs,
+        seqs_annot=pd.DataFrame(
+            data=targets,
+            index=ids,
+            columns=[f"target_{i}" for i in range(targets.shape[1])],
+        ),
+    )
+
+
+def read_bigwig(
+    bigwig_file: str,
+    roi_file: str,
+    ref_file: str,
+    dnaflank=0,
+    resolution=None,
+    collapser="max",
+    add_seqs=False,
+    return_janggu=False,
+    **kwargs,
+):
+    """
+    Read a bigwig file and return a DataFrame.
+
+    Parameters
+    ----------
+    bigwig_file : str
+        Path to the bigwig file where peaks are stored.
+    roi_file : str
+        Path to the file containing the regions of interest under consideration.
+    ref_file : str
+        Path to the genome reference file.
+    dnaflank : int, optional
+        Number of nucleotides to flank the sequence. Defaults to None.
+    resolution : int, optional
+        Resolution of the sequence. Defaults to None.
+    collapser : str, optional
+        Collapser to use. Defaults to "max".
+    add_seqs : bool, optional
+        Add sequences to the DataFrame. Defaults to False.
+    return_janggu : bool, optional
+        Return a Janggu object. Defaults to False.
+    **kwargs : dict
+        Additional arguments to pass to as Janggu's parameters for loading
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object containing the peaks.
+    """
+    dna = Bioseq.create_from_refgenome(
+        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+    )
+    cover = Cover.create_from_bigwig(
+        "cover",
+        bigwigfiles=bigwig_file,
+        roi=roi_file,
+        resolution=resolution,
+        collapser=collapser,
+        **kwargs,
+    )
+    if return_janggu:
+        return dna, cover
+    ids = np.array(list(dna.garray.region2index.keys()))
+    ohe_seqs = dna[:][:, :, 0, :]
+    targets = cover[:].squeeze(axis=(2, 3))
+    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
+    return SeqData(
+        names=ids,
+        seqs=seqs,
+        ohe_seqs=ohe_seqs,
+        rev_seqs=rev_seqs,
+        seqs_annot=pd.DataFrame(
+            data=targets,
+            index=ids,
+            columns=[f"target_{i}" for i in range(targets.shape[1])],
+        ),
+    )
+
+
 def read(seq_file, *args, **kwargs):
     """Wrapper function around read_csv, read_fasta, read_numpy to read sequence based input
 
@@ -382,6 +594,12 @@ def read(seq_file, *args, **kwargs):
         return read_fasta(seq_file, *args, **kwargs)
     elif seq_file_extension in ["h5sd", "h5"]:
         return read_h5sd(seq_file, *args, **kwargs)
+    elif seq_file_extension in ["bed"]:
+        return read_bed(seq_file, *args, **kwargs)
+    elif seq_file_extension in ["bam"]:
+        return read_bam(seq_file, *args, **kwargs)
+    elif seq_file_extension in ["bw"]:
+        return read_bigwig(seq_file, *args, **kwargs)
     else:
         print("Sequence file type not currently supported")
         return
