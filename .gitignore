@@ -1,7 +1,7 @@
 # User-defined
 EUGENe_paper
 archive/
-data/
+./data/
 results/
 bin/*/err/
 bin/*/out/
