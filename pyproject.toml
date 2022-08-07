@@ -38,9 +38,15 @@ black = {version = "^22.3", extras = ["dev"]}
 pre-commit = {version = "^2.20", extras = ["dev"]}
 pytest = {version = "^7.1.2", extras = ["dev"]}
 codecov = {version = "^2.0.8", extras = ["dev"]}
+pyBigWig = {version = "^0.3.18", extras = ["janggu"]}
+pybedtools = {version = "^0.9.0", extras = ["janggu"]}
+biopython = {version = "1.77", extras = ["janggu"]}
+progress = {version = "^1.6", extras = ["janggu"]}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]
+dev = ["black", "pre-commit", "pytest", "codecov"]
+janggu = ["pyBigWig", "pybedtools", "biopython", "progress"]
 
 [tool.poetry.dev-dependencies]
 

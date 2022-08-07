@@ -14,7 +14,7 @@ pkg_resources = None
 
 def get_dataset_info():
     """Return DataFrame with info about builtin datasets.
-    
+
     Returns
     -------
     df : pd.DataFrame
@@ -27,17 +27,14 @@ def get_dataset_info():
     return pd.read_csv(stream, index_col=0)
 
 
-def random1000(
-    binary=False, 
-    **kwargs: dict
-) -> pd.DataFrame:
+def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
     """Reads the random1000 dataset.
 
     Parameters
     ----------
     binary : bool, optional
         If True, return binary target data. The default is False.
-    
+
     Returns
     -------
     sdata : SeqData
@@ -56,17 +53,14 @@ def random1000(
     return sdata
 
 
-def random1000_10(
-    binary=False, 
-    **kwargs: dict
-) -> pd.DataFrame:
+def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
     """Reads the random1000_10 dataset.
 
     Parameters
     ----------
     binary : bool, optional
         If True, return binary target data. The default is False.
-    
+
     Returns
     -------
     sdata : SeqData
@@ -94,17 +88,14 @@ def random1000_10(
     return sdata
 
 
-def farley15(
-    return_sdata=True, 
-    **kwargs: dict
-) -> pd.DataFrame:
+def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     """Reads the Farley15 dataset.
 
     Parameters
     ----------
     return_sdata : bool, optional
         If True, return SeqData object with the Farley15 dataset. The default is True.
-    
+
     Returns
     -------
     sdata : SeqData
@@ -149,11 +140,7 @@ def farley15(
         return paths
 
 
-def deBoer20(
-    datasets: list, 
-    return_sdata=True, 
-    **kwargs: dict
-) -> pd.DataFrame:
+def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     """Reads the deBoer20 dataset.
 
     Parameters
@@ -162,7 +149,7 @@ def deBoer20(
         List of datasets to read.
     return_sdata : bool, optional
         If True, return SeqData object with the deBoer20 dataset. The default is True.
-    
+
     Returns
     -------
     sdata : SeqData
@@ -185,8 +172,8 @@ def deBoer20(
     paths = try_download_urls(datasets, urls_list, "deBoer20", compression="gz")
 
     if return_sdata:
-        seq_col = "SEQ"
-        target_col = "TARGET"
+        seq_col = "seq"
+        target_col = "target"
         sdata = read_csv(
             paths,
             sep=",",
@@ -203,10 +190,7 @@ def deBoer20(
 
 
 def jores21(
-    dataset="leaf", 
-    add_metadata=False, 
-    return_sdata=True, 
-    **kwargs: dict
+    dataset="leaf", add_metadata=False, return_sdata=True, **kwargs: dict
 ) -> pd.DataFrame:
     """Reads the Jores21 dataset.
 
@@ -218,7 +202,7 @@ def jores21(
         If True, add metadata to the SeqData object. The default is False.
     return_sdata : bool, optional
         If True, return SeqData object with the Jores21 dataset. The default is True.
-    
+
     Returns
     -------
     sdata : SeqData
@@ -275,11 +259,7 @@ def jores21(
         return paths
 
 
-def deAlmeida22(
-    dataset="train", 
-    return_sdata=True, 
-    **kwargs: dict
-) -> pd.DataFrame:
+def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     """Reads the deAlmeida22 dataset.
 
     Parameters
@@ -288,7 +268,7 @@ def deAlmeida22(
         Dataset to read. Either train or test. The default is "train".
     return_sdata : bool, optional
         If True, return SeqData object with the deAlmeida22 dataset. The default is True.
-    
+
     Returns
     -------
     sdata : SeqData

@@ -34,8 +34,8 @@ def test_fit(sdata, model):
     eu.train.fit(
         model,
         sdata=sdata,
-        target="TARGETS",
-        train_key="TRAIN",
+        target="target",
+        train_key="train",
         epochs=5,
         log_dir=f"{HERE}/_logs",
     )
