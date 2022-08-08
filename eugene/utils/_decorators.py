@@ -3,6 +3,7 @@ import inspect
 from functools import wraps
 from ..dataloading import SeqData
 
+
 def get_default_args(func):
     signature = inspect.signature(func)
     return {
@@ -22,8 +23,12 @@ def track(func):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
 
-        #print(kwargs, args, type(args[0]))
+        print(kwargs, args, type(args[0]))
         if type(args[0]) == SeqData:
+            sdata = args[0]
+        elif args[0].__repr__()[:7] == "SeqData":
+            sdata = args[0]
+        elif isinstance(args[0], SeqData):
             sdata = args[0]
         else:
             if "sdata" in kwargs:
@@ -45,8 +50,8 @@ def track(func):
         out += "SeqData object modified:"
 
         modified = False
-        #print(old_attr)
-        #print(new_attr)
+        # print(old_attr)
+        # print(new_attr)
         for attr in old_attr.keys():
             if attr == "n_obs":
                 if old_attr["n_obs"] != new_attr["n_obs"]:
@@ -60,7 +65,7 @@ def track(func):
                 if old_attr[attr] is None or new_attr[attr] is None:
                     continue
                 else:
-                    #print(old_attr[attr])
+                    # print(old_attr[attr])
                     removed = list(old_attr[attr] - new_attr[attr])
                     added = list(new_attr[attr] - old_attr[attr])
 
@@ -74,7 +79,7 @@ def track(func):
 
         if modified:
             print(out)
-        #print(out)
+        # print(out)
         return out_sdata if kwargs["copy"] else None
 
     return wrapper
@@ -96,7 +101,7 @@ def list_attributes(sdata):
             found_attr[attr] = None
             continue
         if attr in ["seqs", "names", "rev_seqs", "ohe_seqs", "ohe_rev_seqs"]:
-            #print(attr)
+            # print(attr)
             vals = getattr(sdata, attr)
             found_attr[attr] = vals
         elif attr in ["seqs_annot", "pos_annot"]:

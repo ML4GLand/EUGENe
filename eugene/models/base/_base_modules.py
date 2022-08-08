@@ -82,16 +82,14 @@ class BasicConv1D(nn.Module):
                 net.append(nn.ReLU(inplace=False))
             elif activation == "sigmoid":
                 net.append(nn.Sigmoid())
-            if not (
-                omit_final_pool and (len(channels) - i == 1)
-            ):  # Only omit max pool on final iteration
-                if len(channels) != 2:
+            if i == len(channels) - 1:  # Only omit max pool on final iteration
+                if not omit_final_pool:
                     net.append(
                         nn.MaxPool1d(
                             kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]
                         )
                     )
-            if len(channels) == 2 and not omit_final_pool:
+            else:
                 net.append(
                     nn.MaxPool1d(
                         kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]

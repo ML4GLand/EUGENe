@@ -2,23 +2,112 @@ from tqdm.auto import tqdm
 import pandas as pd
 import numpy as np
 import torch
-from ._utils import _get_index_dict, _one_hot2token, _tokenize, _token2one_hot, _pad_sequences # concise
-from ._utils import _string_to_char_array, _one_hot_to_tokens, _char_array_to_string, _tokens_to_one_hot # dinuc_shuffle
+from ._utils import (
+    _get_index_dict,
+    _one_hot2token,
+    _tokenize,
+    _token2one_hot,
+    _pad_sequences,
+)  # concise
+from ._utils import (
+    _string_to_char_array,
+    _one_hot_to_tokens,
+    _char_array_to_string,
+    _tokens_to_one_hot,
+)  # dinuc_shuffle
 
 
 # Vocabularies
 DNA = ["A", "C", "G", "T"]
-COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
 RNA = ["A", "C", "G", "U"]
-AMINO_ACIDS = ["A", "R", "N", "D", "B", "C", "E", "Q", "Z", "G", "H",
-               "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V"]
-CODONS = ["AAA", "AAC", "AAG", "AAT", "ACA", "ACC", "ACG", "ACT", "AGA",
-          "AGC", "AGG", "AGT", "ATA", "ATC", "ATG", "ATT", "CAA", "CAC",
-          "CAG", "CAT", "CCA", "CCC", "CCG", "CCT", "CGA", "CGC", "CGG",
-          "CGT", "CTA", "CTC", "CTG", "CTT", "GAA", "GAC", "GAG", "GAT",
-          "GCA", "GCC", "GCG", "GCT", "GGA", "GGC", "GGG", "GGT", "GTA",
-          "GTC", "GTG", "GTT", "TAC", "TAT", "TCA", "TCC", "TCG", "TCT",
-          "TGC", "TGG", "TGT", "TTA", "TTC", "TTG", "TTT"]
+AMINO_ACIDS = [
+    "A",
+    "R",
+    "N",
+    "D",
+    "B",
+    "C",
+    "E",
+    "Q",
+    "Z",
+    "G",
+    "H",
+    "I",
+    "L",
+    "K",
+    "M",
+    "F",
+    "P",
+    "S",
+    "T",
+    "W",
+    "Y",
+    "V",
+]
+CODONS = [
+    "AAA",
+    "AAC",
+    "AAG",
+    "AAT",
+    "ACA",
+    "ACC",
+    "ACG",
+    "ACT",
+    "AGA",
+    "AGC",
+    "AGG",
+    "AGT",
+    "ATA",
+    "ATC",
+    "ATG",
+    "ATT",
+    "CAA",
+    "CAC",
+    "CAG",
+    "CAT",
+    "CCA",
+    "CCC",
+    "CCG",
+    "CCT",
+    "CGA",
+    "CGC",
+    "CGG",
+    "CGT",
+    "CTA",
+    "CTC",
+    "CTG",
+    "CTT",
+    "GAA",
+    "GAC",
+    "GAG",
+    "GAT",
+    "GCA",
+    "GCC",
+    "GCG",
+    "GCT",
+    "GGA",
+    "GGC",
+    "GGG",
+    "GGT",
+    "GTA",
+    "GTC",
+    "GTG",
+    "GTT",
+    "TAC",
+    "TAT",
+    "TCA",
+    "TCC",
+    "TCG",
+    "TCT",
+    "TGC",
+    "TGG",
+    "TGT",
+    "TTA",
+    "TTC",
+    "TTG",
+    "TTT",
+]
 STOP_CODONS = ["TAG", "TAA", "TGA"]
 
 
@@ -42,10 +131,18 @@ def decode_DNA_seq(arr, vocab=DNA, neutral_vocab="N"):
     """Convert a one-hot encoded array back to string"""
     tokens = arr.argmax(axis=1)
     indexToLetter = _get_index_dict(vocab)
-    return ''.join([indexToLetter[x] for x in tokens])
+    return "".join([indexToLetter[x] for x in tokens])
 
 
-def _ohe_seqs(seq_vec, vocab, neutral_vocab, maxlen=None, seq_align="start", pad_value="N", encode_type="one_hot"):
+def _ohe_seqs(
+    seq_vec,
+    vocab,
+    neutral_vocab,
+    maxlen=None,
+    seq_align="start",
+    pad_value="N",
+    encode_type="one_hot",
+):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
     Arguments
@@ -64,20 +161,24 @@ def _ohe_seqs(seq_vec, vocab, neutral_vocab, maxlen=None, seq_align="start", pad
     if isinstance(neutral_vocab, str):
         neutral_vocab = [neutral_vocab]
     if isinstance(seq_vec, str):
-        raise ValueError("seq_vec should be an iterable returning " +
-                         "strings not a string itself")
+        raise ValueError(
+            "seq_vec should be an iterable returning " + "strings not a string itself"
+        )
     assert len(vocab[0]) == len(pad_value)
     assert pad_value in neutral_vocab
     assert encode_type in ["one_hot", "token"]
 
-    seq_vec = _pad_sequences(seq_vec, maxlen=maxlen,
-                            align=seq_align, value=pad_value)
+    seq_vec = _pad_sequences(seq_vec, maxlen=maxlen, align=seq_align, value=pad_value)
 
     if encode_type == "one_hot":
-        arr_list = [_token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
-                    for i, seq in enumerate(seq_vec)]
+        arr_list = [
+            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
+            for i, seq in enumerate(seq_vec)
+        ]
     elif encode_type == "token":
-        arr_list = [1 + np.array(_tokenize(seq, vocab, neutral_vocab)) for seq in seq_vec]
+        arr_list = [
+            1 + np.array(_tokenize(seq, vocab, neutral_vocab)) for seq in seq_vec
+        ]
         # we add 1 to be compatible with keras: https://keras.io/layers/embeddings/
         # indexes > 0, 0 = padding element
 
@@ -94,14 +195,29 @@ def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
 
     Returns
         3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
-    return _ohe_seqs(seq_vec, vocab=DNA, neutral_vocab="N", maxlen=maxlen, seq_align=seq_align, pad_value="N", encode_type="one_hot")
+    return _ohe_seqs(
+        seq_vec,
+        vocab=DNA,
+        neutral_vocab="N",
+        maxlen=maxlen,
+        seq_align=seq_align,
+        pad_value="N",
+        encode_type="one_hot",
+    )
 
 
 def decode_DNA_seqs(arr, vocab=DNA):
     """Convert a one-hot encoded array back to string"""
     tokens = _one_hot2token(arr)
     indexToLetter = _get_index_dict(vocab)
-    return [''.join([indexToLetter[x] for x in row]) for row in tokens]
+    return np.array(
+        [
+            "".join([indexToLetter[x] for x in row])
+            for i, row in tqdm(
+                enumerate(tokens), total=len(tokens), desc="Decoding DNA sequences"
+            )
+        ]
+    )
 
 
 def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
@@ -148,8 +264,7 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
         all_results = []
     else:
         all_results = np.empty(
-            (num_shufs if num_shufs else 1, seq_len, one_hot_dim),
-            dtype=seq.dtype
+            (num_shufs if num_shufs else 1, seq_len, one_hot_dim), dtype=seq.dtype
         )
 
     for i in range(num_shufs if num_shufs else 1):
@@ -215,22 +330,24 @@ def perturb_seqs(X_0, ds=False):
         raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
 
     if len(X_0.shape) != 3:
-        raise ValueError("X_0 must have three dimensions: (n_seqs, n_choices, seq_len).")
+        raise ValueError(
+            "X_0 must have three dimensions: (n_seqs, n_choices, seq_len)."
+        )
 
     n_seqs, n_choices, seq_len = X_0.shape
     idxs = X_0.argmax(axis=1)
 
     X_0 = torch.from_numpy(X_0)
 
-    n = seq_len*(n_choices-1)
+    n = seq_len * (n_choices - 1)
     X = torch.tile(X_0, (n, 1, 1))
     X = X.reshape(n, n_seqs, n_choices, seq_len).permute(1, 0, 2, 3)
 
     for i in range(n_seqs):
         for k in range(1, n_choices):
-            idx = np.arange(seq_len)*(n_choices-1) + (k-1)
+            idx = np.arange(seq_len) * (n_choices - 1) + (k - 1)
 
             X[i, idx, idxs[i], np.arange(seq_len)] = 0
-            X[i, idx, (idxs[i]+k) % n_choices, np.arange(seq_len)] = 1
+            X[i, idx, (idxs[i] + k) % n_choices, np.arange(seq_len)] = 1
 
     return X

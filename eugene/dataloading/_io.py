@@ -180,7 +180,7 @@ def read_numpy(
     is_seq_text=False,
     is_target_text=False,
     delim="\n",
-    ohe_encoded=False,
+    ohe=False,
     return_numpy=False,
 ):
     """Function for loading sequences into numpy objects from numpy compressed files.
@@ -206,7 +206,7 @@ def read_numpy(
             whether the file is (.npy) or plaintext (.txt). Defaults to False.
         delim (str, optional):
             Defaults to "\n".
-        ohe_encoded (bool, optional):
+        ohe (bool, optional):
             whether the sequences are one hot encoded. Defaults to False.
         return_numpy (bool, optional):
             whether to return numpy arrays. Defaults to False.
@@ -247,7 +247,7 @@ def read_numpy(
         targets = None
     if return_numpy:
         return ids, seqs, rev_seqs, targets
-    elif ohe_encoded:
+    elif ohe:
         return SeqData(
             names=ids,
             ohe_seqs=seqs,
@@ -617,15 +617,13 @@ def write_csv(sdata, filename, target_key, delim="\t"):
     target_key (str):
         key in sdata.seqs_annot to use as target
     delim (str, optional):
-        delimiter to use. Defaults to ",".
+        delimiter to use. Defaults to "\t".
 
     Returns
     -------
     None
     """
-    dataframe = pd.DataFrame(
-        data={"name": sdata.names, "seq": sdata.seqs, "target": sdata[target_key]}
-    )
+    dataframe = pd.DataFrame(data={"name": sdata.names, "seq": sdata.seqs})
     dataframe = dataframe.merge(sdata.seqs_annot, left_on="name", right_index=True)
     dataframe.to_csv(filename, sep=delim, index=False)
 
@@ -646,7 +644,7 @@ def write_fasta(sdata, filename):
             f.write(sdata.seqs[i] + "\n")
 
 
-def write_numpy(sdata, filename):
+def write_numpy(sdata, filename, ohe=False, target_key=None):
     """Function for writing sequences to numpy files.
 
     Parameters
@@ -660,7 +658,12 @@ def write_numpy(sdata, filename):
     -------
     None
     """
-    np.save(filename, sdata.seqs)
+    if ohe:
+        np.save(filename + "_ohe_seqs.npy", sdata.ohe_seqs)
+    else:
+        np.save(filename + "_seqs.npy", sdata.seqs)
+    if target_key is not None:
+        np.save(filename + "_targets.npy", sdata.seqs_annot[target_key])
 
 
 def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
