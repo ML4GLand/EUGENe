@@ -249,7 +249,8 @@ def feature_attribution(
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     sdata = sdata.copy() if copy else sdata
     sdataset = sdata.to_dataset(target=None, transform_kwargs=transform_kwargs)
-    sdataloader = sdataset.to_dataloader(batch_size=batch_size)
+    #print(sdataset[0][:, :5])
+    sdataloader = sdataset.to_dataloader(batch_size=batch_size, shuffle=False)
     dataset_len = len(sdataloader.dataset)
     example_shape = sdataloader.dataset[0][1].numpy().shape
     all_explanations = np.zeros((dataset_len, *example_shape))
