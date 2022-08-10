@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 import numpy as np
+
 np.random.seed(13)
 
 
@@ -9,7 +10,9 @@ def ascii_encode(seq, pad=0):
     """
     encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
     if pad > 0:
-        encode_seq = np.pad(encode_seq, pad_width=(0, pad), mode="constant", constant_values=36)
+        encode_seq = np.pad(
+            encode_seq, pad_width=(0, pad), mode="constant", constant_values=36
+        )
     return encode_seq
 
 
@@ -32,7 +35,7 @@ def _merge_intervals(intervals):
     """Merges a list of overlapping intervals"""
     if len(intervals) == 0:
         return None
-    merged_list= []
+    merged_list = []
     merged_list.append(intervals[0])
     for i in range(1, len(intervals)):
         pop_element = merged_list.pop()
@@ -62,12 +65,12 @@ def _collapse_pos(positions):
     ranges = []
     start = positions[0]
     for i in range(1, len(positions)):
-        if positions[i-1] == positions[i]-1:
+        if positions[i - 1] == positions[i] - 1:
             continue
         else:
-            ranges.append((start, positions[i-1]+2))
+            ranges.append((start, positions[i - 1] + 2))
             start = positions[i]
-    ranges.append((start, positions[-1]+2))
+    ranges.append((start, positions[-1] + 2))
     return ranges
 
 
@@ -114,7 +117,10 @@ def _tokenize(seq, vocab, neutral_vocab=[]):
         vocab_dict[l] = -1
 
     # current performance bottleneck
-    return [vocab_dict[seq[(i * nchar):((i + 1) * nchar)]] for i in range(len(seq) // nchar)]
+    return [
+        vocab_dict[seq[(i * nchar) : ((i + 1) * nchar)]]
+        for i in range(len(seq) // nchar)
+    ]
 
 
 def _token2one_hot(tvec, vocab_size):
@@ -126,7 +132,7 @@ def _token2one_hot(tvec, vocab_size):
     tvec_range = np.arange(len(tvec))
     tvec = np.asarray(tvec)
     arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
-    return arr
+    return arr.astype(np.int8)
 
 
 def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
@@ -174,7 +180,11 @@ def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
 
     if max_seq_len < maxlen:
         import warnings
-        warnings.warn("Maximum sequence length (%s) is less than maxlen (%s)" % (max_seq_len, maxlen))
+
+        warnings.warn(
+            "Maximum sequence length (%s) is less than maxlen (%s)"
+            % (max_seq_len, maxlen)
+        )
         max_seq_len = maxlen
 
     # check the case when len > 1
@@ -222,9 +232,13 @@ def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
         else:
             raise ValueError("align can be of: end, start or center")
 
-    padded_sequence_vec = [pad(seq, max(max_seq_len, maxlen),
-                               value=value, align=align) for seq in sequence_vec]
-    padded_sequence_vec = [trim(seq, maxlen, align=align) for seq in padded_sequence_vec]
+    padded_sequence_vec = [
+        pad(seq, max(max_seq_len, maxlen), value=value, align=align)
+        for seq in sequence_vec
+    ]
+    padded_sequence_vec = [
+        trim(seq, maxlen, align=align) for seq in padded_sequence_vec
+    ]
 
     return padded_sequence_vec
 

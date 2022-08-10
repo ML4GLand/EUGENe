@@ -301,7 +301,7 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
                 if out.dtype.name == "bytes120":
                     out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
                 else:
-                    out_dict[key] = out
+                    out_dict[key] = out.decode("utf-8")
             if "names" in f:
                 d["seqs_annot"] = pd.DataFrame(index=d["names"], data=out_dict).replace(
                     "NA", np.nan

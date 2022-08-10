@@ -87,3 +87,57 @@ class Jores21CNN(BaseModel):
         x = F.relu(x)
         x = self.fc2(x)
         return x
+
+
+class Kopp21CNN(BaseModel):
+    def __init__(
+        self,
+        input_len,
+        output_dim,
+        strand="ds",
+        task="binary_classification",
+        aggr="max",
+        loss_fxn="bce",
+        filters: list = [10, 8],
+        conv_kernel_size: list = [11, 3],
+        maxpool_kernel_size: int = 30,
+        stride: int = 1,
+        **kwargs
+    ):
+        super().__init__(
+            input_len,
+            output_dim,
+            strand=strand,
+            task=task,
+            aggr=aggr,
+            loss_fxn=loss_fxn,
+            **kwargs
+        )
+        self.conv = nn.Conv1d(4, filters[0], conv_kernel_size[0], stride=stride)
+        self.maxpool = nn.MaxPool1d(kernel_size=maxpool_kernel_size, stride=stride)
+        self.batchnorm = nn.BatchNorm1d(filters[0])
+        self.conv2 = nn.Conv1d(
+            filters[0], filters[1], conv_kernel_size[1], stride=stride
+        )
+        self.batchnorm2 = nn.BatchNorm1d(filters[1])
+        self.linear = nn.Linear(filters[1], self.output_dim)
+
+    def forward(self, x, x_rev):
+        x_fwd = F.relu(self.conv(x))
+        x_rev = F.relu(self.conv(x_rev))
+        if self.aggr == "concat":
+            x = torch.cat((x_fwd, x_rev), dim=1)
+        elif self.aggr == "max":
+            x = torch.max(x_fwd, x_rev)
+        elif self.aggr == "ave":
+            x = (x_fwd + x_rev) / 2
+        elif self.aggr is None:
+            x = torch.cat((x_fwd, x_rev), dim=1)
+        x = self.maxpool(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool1d(x, x.shape[2])
+        x = self.batchnorm2(x)
+        x = x.view(x.shape[0], -1)
+        x = self.linear(x)
+        return x

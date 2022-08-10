@@ -27,6 +27,7 @@ def predictions(
     name: str = None,
     version: str = "",
     file_label: str = "",
+    prefix: str = "",
     sdataset: SeqDataset = None,
     sdataloader: DataLoader = None,
     seq_transforms: List = None,
@@ -106,7 +107,7 @@ def predictions(
         ps = np.concatenate(predictor.predict(model, sdataloader), axis=0)
         num_outs = model.output_dim
         preds = pd.DataFrame(index=ps[:, 0], data=ps[:, 1 : num_outs + 1])
-        sannot_cols = [f"{lab}_predictions" for lab in target]
+        sannot_cols = [f"{prefix}{lab}_predictions" for lab in target]
         ordered_preds = preds.loc[sdata.seqs_annot.index].astype(float)
         sdata.seqs_annot[sannot_cols] = ordered_preds
         return sdata if copy else None

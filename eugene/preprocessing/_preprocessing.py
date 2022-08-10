@@ -35,7 +35,7 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
         SeqData object with one-hot encoded sequences.
     """
     sdata = sdata.copy() if copy else sdata
-    if sdata.seqs is not None:
+    if sdata.seqs is not None and sdata.ohe_seqs is None:
         sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
     if sdata.rev_seqs is not None:
         sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs)

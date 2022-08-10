@@ -6,6 +6,7 @@ import torch.nn as nn
 from tqdm.auto import tqdm
 from ..utils import track
 from .._settings import settings
+from ..utils._decorators import nostdout
 
 
 def _get_activation(name):
@@ -20,6 +21,8 @@ def _get_activation(name):
 def _get_first_conv_layer_params(model):
     if model.__class__.__name__ == "Jores21CNN":
         return model.biconv.kernels[0].cpu()
+    elif model.__class__.__name__ == "Kopp21CNN":
+        return model.conv.cpu()
     for layer in model.convnet.module:
         name = layer.__class__.__name__
         if name == "Conv1d":
@@ -43,6 +46,8 @@ def _get_first_conv_layer(model):
         layer.weight = nn.Parameter(kernels)
         layer.bias = nn.Parameter(biases)
         return layer.cpu()
+    elif model.__class__.__name__ == "Kopp21CNN":
+        return model.conv
     for layer in model.convnet.module:
         name = layer.__class__.__name__
         if name == "Conv1d":
@@ -52,9 +57,10 @@ def _get_first_conv_layer(model):
     return None
 
 
-def _get_activations_from_layer(layer, sdataloader):
+def _get_activations_from_layer(layer, sdataloader, device):
     from ..preprocessing import decode_DNA_seqs
 
+    print(device)
     activations = []
     sequences = []
     dataset_len = len(sdataloader.dataset)
@@ -65,7 +71,10 @@ def _get_activations_from_layer(layer, sdataloader):
         desc="Getting maximial activating seqlets",
     ):
         ID, x, x_rev_comp, y = batch
-        sequences.append(decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy()))
+        with nostdout():
+            sequences.append(decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy()))
+        # print(x.shape)
+        x = x.to(device)
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
         np_act = np.concatenate(activations)
         np_seq = np.concatenate(sequences)
@@ -110,8 +119,16 @@ def _get_pfms(filter_activators, kernel_size):
 
 @track
 def generate_pfms(
-    model, sdata, batch_size=None, num_workers=None, key_name="pfms", copy=False
+    model,
+    sdata,
+    batch_size=None,
+    num_workers=None,
+    key_name="pfms",
+    copy=False,
+    device=None,
 ):
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    print(device)
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     sdata = sdata.copy() if copy else sdata
@@ -120,7 +137,9 @@ def generate_pfms(
     )
     sdataloader = DataLoader(sdataset, batch_size=batch_size, num_workers=num_workers)
     first_layer = _get_first_conv_layer(model)
-    activations, sequences = _get_activations_from_layer(first_layer, sdataloader)
+    activations, sequences = _get_activations_from_layer(
+        first_layer, sdataloader, device=device
+    )
     filter_activators = _get_filter_activators(activations, sequences, first_layer)
     filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0])
     sdata.uns[key_name] = filter_pfms

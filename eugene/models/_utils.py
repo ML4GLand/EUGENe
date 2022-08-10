@@ -14,7 +14,6 @@ def load_config(arch, model_config):
     model_type = getattr(importlib.import_module("eugene.models"), arch)
     parser.add_lightning_class_args(model_type, nested_key="model")
     model_yml = parser.parse_path(cfg_path=model_config)
-    print(model_yml["model"])
     model = model_type(**model_yml["model"])
     return model
 

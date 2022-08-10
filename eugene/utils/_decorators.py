@@ -23,7 +23,7 @@ def track(func):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
 
-        print(kwargs, args, type(args[0]))
+        # print(kwargs, args, type(args[0]))
         if type(args[0]) == SeqData:
             sdata = args[0]
         elif args[0].__repr__()[:7] == "SeqData":
@@ -109,3 +109,16 @@ def list_attributes(sdata):
             found_attr[attr] = keys
 
     return found_attr
+
+
+import contextlib
+import io
+import sys
+
+
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = io.BytesIO()
+    yield
+    sys.stdout = save_stdout

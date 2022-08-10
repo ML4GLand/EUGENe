@@ -51,9 +51,10 @@ class BaseModel(LightningModule):
         loss_fxn="mse",
         optimizer="adam",
         lr=1e-3,
-        scheduler=None,
-        scheduler_patience=None,
+        scheduler="lr_scheduler",
+        scheduler_patience=2,
         hp_metric=None,
+        optimizer_kwargs={},
         **kwargs,
     ):
         super().__init__()
@@ -73,6 +74,7 @@ class BaseModel(LightningModule):
         self.lr = lr
         self.scheduler = scheduler
         self.scheduler_patience = scheduler_patience
+        self.optimizer_kwargs = optimizer_kwargs
         self.kwargs = kwargs
 
         # Save hyperparameters
@@ -165,7 +167,9 @@ class BaseModel(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = Adam(self.parameters(), lr=self.lr)
+        optimizer = optimizer_dict[self.optimizer](
+            self.parameters(), lr=self.lr, **self.optimizer_kwargs
+        )
         scheduler = (
             ReduceLROnPlateau(optimizer, patience=self.scheduler_patience)
             if self.scheduler_patience is not None
@@ -213,6 +217,7 @@ class BaseModel(LightningModule):
         print(f"Aggregation: {self.aggr}")
         print(f"Loss function: {self.loss_fxn.__name__}")
         print(f"Optimizer: {self.optimizer}")
+        print(f"\tOptimizer parameters: {self.optimizer_kwargs}")
         print(f"Learning rate: {self.lr}")
         print(f"Scheduler: {self.scheduler}")
         print(f"Scheduler patience: {self.scheduler_patience}")

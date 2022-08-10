@@ -34,7 +34,7 @@ def _create_matplotlib_axes(num_axes, subplot_size=(4, 4)) -> List[Axes]:
     return ax
 
 
-def _label_plot(ax: Axes, title: str, xlab: str, ylab: str) -> None:
+def _label_plot(ax: Axes, title: str, xlab: str, ylab: str, xtick_rot: int = 0) -> None:
     """
     Labels a plot.
 
@@ -54,6 +54,8 @@ def _label_plot(ax: Axes, title: str, xlab: str, ylab: str) -> None:
     None
     """
     ax.set_xlabel(xlab)
+    if xtick_rot != 0:
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=xtick_rot)
     ax.set_ylabel(ylab)
     ax.set_title(title)
     plt.tight_layout()
@@ -67,7 +69,9 @@ def _plot_seaborn(
     orient: str = "v",
     title: str = None,
     xlab: str = None,
+    xtick_rot: int = 0,
     ylab: str = None,
+    figsize: tuple = (10, 5),
     save: str = None,
     **kwargs,
 ) -> Axes:
@@ -99,7 +103,7 @@ def _plot_seaborn(
     """
     keys = [keys] if isinstance(keys, str) else keys
     num_axes = len(keys)
-    ax = _create_matplotlib_axes(num_axes)
+    ax = _create_matplotlib_axes(num_axes, subplot_size=figsize)
     for i, key in enumerate(keys):
         curr_ax = ax[i] if len(keys) > 1 else ax
         if groupby is None:
@@ -112,7 +116,13 @@ def _plot_seaborn(
                 func(data=dataframe, x=groupby, y=key, ax=curr_ax, **kwargs)
             elif orient == "h":
                 func(data=dataframe, x=key, y=groupby, ax=curr_ax, **kwargs)
-        _label_plot(curr_ax, title, xlab=key if xlab is None else xlab, ylab=ylab)
+        _label_plot(
+            curr_ax,
+            title,
+            xlab=key if xlab is None else xlab,
+            xtick_rot=xtick_rot,
+            ylab=ylab,
+        )
     if save is not None:
         plt.savefig(save)
     return ax

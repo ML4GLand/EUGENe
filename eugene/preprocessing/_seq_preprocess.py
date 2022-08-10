@@ -118,7 +118,16 @@ def reverse_complement_seq(seq, copy=False):
 
 def reverse_complement_seqs(seqs, copy=False):
     """Reverse complement a list of DNA sequences."""
-    return np.array([reverse_complement_seq(seq) for seq in seqs])
+    return np.array(
+        [
+            reverse_complement_seq(seq)
+            for i, seq in tqdm(
+                enumerate(seqs),
+                total=len(seqs),
+                desc="Reverse complementing DNA sequences",
+            )
+        ]
+    )
 
 
 def ohe_DNA_seq(seq, vocab=DNA, neutral_vocab="N"):
@@ -173,7 +182,11 @@ def _ohe_seqs(
     if encode_type == "one_hot":
         arr_list = [
             _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
-            for i, seq in enumerate(seq_vec)
+            for i, seq in tqdm(
+                enumerate(seq_vec),
+                total=len(seq_vec),
+                desc="One-hot-encoding sequences",
+            )
         ]
     elif encode_type == "token":
         arr_list = [
