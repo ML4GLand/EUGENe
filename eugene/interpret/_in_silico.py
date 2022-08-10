@@ -3,9 +3,9 @@ import numpy as np
 from yuzu.naive_ism import naive_ism
 from ._utils import k_largest_index_argsort
 from .. import settings
-from ..preprocessing import decode_DNA_seq
+#from ..preprocessing import decode_DNA_seq
 
-def in_silico_best_k_muts(
+def best_k_muts(
     model,
     X: np.ndarray,
     k: str = 1,
@@ -61,7 +61,7 @@ def in_silico_best_k_muts(
     return mut_Xs, maxs, locs
 
 
-def in_silico_best_mut_seqs(
+def best_mut_seqs(
     model,
     X: np.ndarray,
     batch_size: int = None,
@@ -118,7 +118,7 @@ def in_silico_best_mut_seqs(
     return mut_X, np.array(maxs), np.array(inds)
 
 
-def in_silico_evolution(
+def evolution(
     model,
     X: np.ndarray,
     rounds: int = 10,

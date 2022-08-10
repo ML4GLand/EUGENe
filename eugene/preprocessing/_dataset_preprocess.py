@@ -3,9 +3,32 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 
-def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
-    """Function to perform train test splitting with added bonus of defining a subset for testing"""
-    train_X, test_X, train_y, test_y = train_test_split(X_data, y_data, train_size=split, random_state=rand_state, shuffle=shuf)
+def split_train_test(
+    X_data, 
+    y_data, 
+    split=0.8, 
+    subset=None, 
+    rand_state=13, 
+    shuf=True
+):
+    """
+    Function to perform train test splitting with added bonus of defining a subset for testing
+    
+    Parameters
+    ----------
+    X_data: numpy.ndarray
+        The data to split
+    y_data: numpy.ndarray
+        The labels to split
+    split: float, optional
+        The percentage of the data to use for training
+    subset: numpy.ndarray, optional
+        The subset of the data to use for testing
+    rand_state: int, optional
+        The random state to use for splitting
+    """
+    train_X, test_X, train_y, test_y = train_test_split(
+        X_data, y_data, train_size=split, random_state=rand_state, shuffle=shuf)
     if subset != None:
         num_train = int(len(train_X)*subset)
         num_test = int(len(test_X)*subset)

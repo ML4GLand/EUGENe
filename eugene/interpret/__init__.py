@@ -2,4 +2,4 @@ from ._feature_attribution import nn_explain, feature_attribution, aggregate_imp
 from ._filter_viz import generate_pfms
 from ._feature_dependency import layer_activations
 from ._dim_reduction import pca, umap
-from ._in_silico_oracle import in_silico_best_k_muts, in_silico_best_mut_seqs, in_silico_evolution
+from ._in_silico import best_k_muts, best_mut_seqs, evolution
