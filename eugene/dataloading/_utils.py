@@ -1,6 +1,7 @@
 from os import PathLike
 from pathlib import Path
 from typing import Union, List
+import numpy as np
 import pandas as pd
 
 
@@ -53,12 +54,51 @@ def _read_and_concat_dataframes(
 def _seq2Fasta(seqs, IDs, name="seqs"):
     """Utility function to generate a fasta file from a list of sequences and identifiers
 
-    Args:
-        seqs (list-like): list of sequences
-        IDs (list-like):  list of identifiers
-        name (str, optional): name of file. Defaults to "seqs".
+    Parameters
+    ----------
+        seqs (list-like): 
+            list of sequences
+        IDs (list-like):  
+            list of identifiers
+        name (str, optional): 
+            name of file. Defaults to "seqs".
     """
     file = open("{}.fa".format(name), "w")
     for i in range(len(seqs)):
         file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
     file.close()
+
+
+def concat(
+    sdatas, 
+    keys: Union[str, list] = None,
+):
+    """
+    Concatenates a list of SeqData objects together without merging.
+    Does not currently support merging of uns and seqsm.
+    Only objects present in the first sdata of the list will be merged
+
+    Parameters
+    ----------
+    sdatas : list of SeqData objects
+        List of SeqData objects to concatenate together
+    keys : str or list, optional
+        Names to add in seqs_annot column "batch"
+    """
+    from . import SeqData
+    concat_seqs = np.concatenate([s.seqs for s in sdatas]) if sdatas[0].seqs is not None else None
+    concat_names = np.concatenate([s.names for s in sdatas]) if sdatas[0].names is not None else None
+    concat_ohe_seqs = np.concatenate([s.ohe_seqs for s in sdatas]) if sdatas[0].ohe_seqs is not None else None
+    concat_rev_seqs = np.concatenate([s.rev_seqs for s in sdatas]) if sdatas[0].rev_seqs is not None else None
+    concat_rev_ohe_seqs = np.concatenate([s.ohe_rev_seqs for s in sdatas]) if sdatas[0].ohe_rev_seqs is not None else None
+    for i,s in enumerate(sdatas):
+        s["batch"] = keys[i]
+    concat_seqs_annot = pd.concat([s.seqs_annot for s in sdatas])
+    return SeqData(
+        seqs=concat_seqs,
+        names=concat_names,
+        ohe_seqs=concat_ohe_seqs,
+        rev_seqs=concat_rev_seqs,
+        ohe_rev_seqs=concat_rev_ohe_seqs,
+        seqs_annot=concat_seqs_annot,
+    )
