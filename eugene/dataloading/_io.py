@@ -298,10 +298,10 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
             out_dict = {}
             for key in f["seqs_annot"].keys():
                 out = f["seqs_annot"][key][()]
-                if out.dtype.name == "bytes120":
+                if isinstance(out[0], bytes):
                     out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
                 else:
-                    out_dict[key] = out.decode("utf-8")
+                    out_dict[key] = out
             if "names" in f:
                 d["seqs_annot"] = pd.DataFrame(index=d["names"], data=out_dict).replace(
                     "NA", np.nan
@@ -321,7 +321,7 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
             out_dict = {}
             for key in f["pos_annot"].keys():
                 out = f["pos_annot"][key][()]
-                if "bytes" in out.dtype.name:
+                if isinstance(out[0], bytes):
                     out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
                 else:
                     out_dict[key] = out
@@ -330,7 +330,7 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
             out_dict = {}
             for key in f["seqsm"].keys():
                 out = f["seqsm"][key][()]
-                if out.dtype.name == "bytes120":
+                if isinstance(out[0], bytes):
                     out_dict[key] = np.array([n.decode("ascii", "ignore") for n in out])
                 else:
                     out_dict[key] = out
@@ -345,7 +345,7 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
                     out_dict[key] = pfm_dfs
                 else:
                     out = f["uns"][key][()]
-                    if out.dtype.name == "bytes120":
+                    if isinstance(out[0], bytes):
                         out_dict[key] = np.array(
                             [n.decode("ascii", "ignore") for n in out]
                         )

@@ -10,10 +10,6 @@ from ..dataloading import SeqData, SeqDataset
 from ..utils._decorators import track
 from .._settings import settings
 
-logging.disable(logging.ERROR)
-seed_everything(settings.seed, workers=True)
-logging.disable(logging.NOTSET)
-
 
 @track
 def predictions(
@@ -126,6 +122,7 @@ def train_val_predictions(
     name: str = None,
     version: str = "",
     file_label: str = "",
+    prefix: str = "",
     sdataset: SeqDataset = None,
     sdataloader: DataLoader = None,
     seq_transforms: List = None,
@@ -229,7 +226,7 @@ def train_val_predictions(
             ],
             axis=0,
         )
-        sdata.seqs_annot[[f"{label}_predictions" for label in target]] = preds.loc[
+        sdata.seqs_annot[[f"{prefix}{label}_predictions" for label in target]] = preds.loc[
             sdata.seqs_annot.index
         ].astype(float)
         return sdata if copy else None

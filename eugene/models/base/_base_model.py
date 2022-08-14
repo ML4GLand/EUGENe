@@ -13,8 +13,10 @@ from torchmetrics import (
 )
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.model_summary import ModelSummary
 from ...preprocessing._utils import ascii_decode
+from ..._settings import settings
 
 
 class BaseModel(LightningModule):
@@ -55,6 +57,7 @@ class BaseModel(LightningModule):
         scheduler_patience=2,
         hp_metric=None,
         optimizer_kwargs={},
+        seed=None,
         **kwargs,
     ):
         super().__init__()
@@ -75,6 +78,7 @@ class BaseModel(LightningModule):
         self.scheduler = scheduler
         self.scheduler_patience = scheduler_patience
         self.optimizer_kwargs = optimizer_kwargs
+        seed_everything(seed) if seed is not None else None
         self.kwargs = kwargs
 
         # Save hyperparameters

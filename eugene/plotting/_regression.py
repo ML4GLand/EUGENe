@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -18,7 +19,11 @@ def _plot_performance_scatter(
     target: str,
     prediction: str,
     metrics: Union[str, Sequence[str]] = ["r2", "mse", "spearmanr"],
+    groupby=None,
     title: str = None,
+    figsize: tuple = (8, 8),
+    save: str = None,
+    return_ax = False,
     **kwargs,
 ) -> None:
     """
@@ -48,9 +53,32 @@ def _plot_performance_scatter(
     spearr = (
         spearmanr(targets, predictions).correlation if "spearmanr" in metrics else None
     )
+    if "c" in kwargs:
+        if kwargs["c"] in sdata.seqs_annot.columns:
+            kwargs["c"] = sdata.seqs_annot[kwargs["c"]]
 
-    ax = _create_matplotlib_axes(1)
-    ax.scatter(targets, predictions, edgecolor="black", linewidth=0.1, s=10, **kwargs)
+    ax = _create_matplotlib_axes(1, subplot_size=figsize)
+    if groupby is not None:
+        i = 0
+        print("Group", "R2", "MSE", "Spearmanr")
+        for group, data in sdata.seqs_annot.groupby(groupby):
+            targets = data[target]
+            predictions = data[prediction]
+            group_r2 = r2_score(targets, predictions) if "r2" in metrics else None
+            group_mse = mean_squared_error(targets, predictions) if "mse" in metrics else None
+            group_spearr = (
+                spearmanr(targets, predictions).correlation
+                if "spearmanr" in metrics
+                else None
+            )
+            im = ax.scatter(targets, predictions, label=group, color="bgrcm"[i], **kwargs)
+            print(group, group_r2, group_mse, group_spearr)
+            i += 1
+            ax.legend()
+    else:
+        im = ax.scatter(targets, predictions, edgecolor="black", linewidth=0.1, s=10, **kwargs)
+    if "c" in kwargs:
+        plt.colorbar(im, location='bottom', label=kwargs["c"].name)
     ax.set_xlabel(target)
     ax.set_ylabel(prediction)
     ax.text(
@@ -75,6 +103,8 @@ def _plot_performance_scatter(
     ax.set_xlim(lims)
     ax.set_ylim(lims)
     ax.set_title(title)
+    return ax
+
 
 
 def performance_scatter(
@@ -84,6 +114,7 @@ def performance_scatter(
     seq_idx=None,
     title: str = None,
     save: str = None,
+    return_ax = False,
     **kwargs,
 ) -> None:
     """
@@ -107,8 +138,15 @@ def performance_scatter(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    _plot_performance_scatter(
+    ax = _plot_performance_scatter(
         sdata, target=target, prediction=prediction, title=title, **kwargs
     )
     if save is not None:
+        if "/" not in save:
+            save = os.path.join(os.getcwd(), save)
+        dir = "/".join(save.split("/")[:-1])
+        if not os.path.exists(dir):
+            os.makedirs(dir)
         plt.savefig(save)
+    if return_ax:
+        return ax

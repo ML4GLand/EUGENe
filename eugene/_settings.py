@@ -59,6 +59,7 @@ class EugeneConfig:
         dataset_dir = "./datasets/",
         logging_dir: str = "./eugene_log/",
         output_dir: str = "./eugene_output/",
+        config_dir: str = "./eugene_config/",
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
     ):
@@ -146,6 +147,15 @@ class EugeneConfig:
     def dataset_dir(self, dataset_dir: Union[str, Path]):
         _type_check(dataset_dir, "dataset_dir", (str, Path))
         self._dataset_dir = Path(dataset_dir).resolve()
+
+    @property
+    def config_dir(self) -> Path:
+        """Directory for config files (default `'./eugene_config/'`)."""
+        return self._config_dir
+
+    @config_dir.setter
+    def config_dir(self, config_dir: Union[str, Path]):
+        self._config_dir = Path(config_dir).resolve()
 
     @property
     def progress_bar_style(self) -> str:

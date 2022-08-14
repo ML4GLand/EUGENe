@@ -13,11 +13,6 @@ from ..dataloading import SeqData, SeqDataset
 from .._settings import settings
 
 
-logging.disable(logging.ERROR)
-seed_everything(settings.seed, workers=True)
-logging.disable(logging.NOTSET)
-
-
 def fit(
     model: LightningModule,
     sdata: SeqData = None,
@@ -37,6 +32,8 @@ def fit(
     early_stopping_callback: bool = True,
     early_stopping_metric="val_loss",
     early_stopping_patience=5,
+    seed: int = None,
+    verbosity = None,
     **kwargs
 ):
     """
@@ -47,6 +44,8 @@ def fit(
     log_dir = log_dir if log_dir is not None else settings.logging_dir
     model_name = model.strand + model.__class__.__name__ + "_" + model.task
     name = name if name is not None else model_name
+    seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
+    logging.getLogger("lightning").setLevel(verbosity if verbosity is not None else settings.verbosity)
     if train_dataset is not None:
         assert val_dataset is not None
         train_dataloader = DataLoader(

@@ -49,10 +49,12 @@ def init_conv(
     layer_name: str,
     kernel_name: str = None,
     kernel_number: int = None,
+    module_number: int = None,
 ):
     if kernel_name is None:
-        assert isinstance(model.__getattr__(layer_name), nn.Conv1d)
-        model.__getattr__(layer_name).weight = nn.Parameter(weights)
+        assert module_number is not None
+        assert isinstance(model.__getattr__(layer_name).module[module_number], torch.nn.Conv1d)
+        model.__getattr__(layer_name).module[module_number].weight = nn.Parameter(weights)
     else:
         assert kernel_number is not None
         assert isinstance(

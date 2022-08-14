@@ -1,4 +1,4 @@
-import traceback
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -73,6 +73,7 @@ def _plot_seaborn(
     ylab: str = None,
     figsize: tuple = (10, 5),
     save: str = None,
+    ax = None,
     **kwargs,
 ) -> Axes:
     """
@@ -103,7 +104,8 @@ def _plot_seaborn(
     """
     keys = [keys] if isinstance(keys, str) else keys
     num_axes = len(keys)
-    ax = _create_matplotlib_axes(num_axes, subplot_size=figsize)
+    if ax is None:
+        ax = _create_matplotlib_axes(num_axes, subplot_size=figsize)
     for i, key in enumerate(keys):
         curr_ax = ax[i] if len(keys) > 1 else ax
         if groupby is None:
@@ -124,6 +126,11 @@ def _plot_seaborn(
             ylab=ylab,
         )
     if save is not None:
+        if "/" not in save:
+            save = os.path.join(os.getcwd(), save)
+        dir = "/".join(save.split("/")[:-1])
+        if not os.path.exists(dir):
+            os.makedirs(dir)
         plt.savefig(save)
     return ax
 
