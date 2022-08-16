@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import seqlogo
+import logomaker as lm
 from vizsequence import viz_sequence
 from tqdm.auto import tqdm
 from ..preprocessing._utils import _collapse_pos
@@ -384,36 +385,151 @@ def filter_viz(sdata, filter_id=None, uns_key="pfms", save: str = None, **kwargs
         plt.savefig(save)
     return ax
 
-def multifilter_viz(
+
+def lm_seq_track(
     sdata,
-    filter_ids: list,
-    uns_key="pfms",
+    seq_id,
+    uns_key,
+    highlights: list = [],
+    highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
+    ylabel = "Saliency",
+    title="",
+    return_ax: bool = False,
+    save=None,
+    **kwargs
+):
+    if isinstance(highlights, tuple):
+        highlights = [highlights]
+    if isinstance(highlight_colors, str):
+        highlight_colors = [highlight_colors] * len(highlights)
+    
+    seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
+    imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
+    viz_seq = pd.DataFrame(imp_scores.T, columns=["A", "C", "G", "T"])
+    viz_seq.index.name = "pos"
+    y_max = np.max(viz_seq.values)
+    y_min = np.min(viz_seq.values)
+    nn_logo = lm.Logo(
+        viz_seq,
+        **kwargs
+    )
+
+    # style using Logo methods
+    nn_logo.style_spines(visible=False)
+    nn_logo.style_spines(spines=['left'], visible=True, bounds=[y_min, y_max])
+
+    # style using Axes methods
+    nn_logo.ax.set_xlim([0, len(viz_seq)])
+    nn_logo.ax.set_xticks([])
+    nn_logo.ax.set_ylim([y_min, y_max])
+    nn_logo.ax.set_ylabel(ylabel)
+    nn_logo.ax.set_title(title)
+    for i, highlight in enumerate(highlights):
+        nn_logo.highlight_position_range(pmin=highlight[0], pmax=highlight[1], color=highlight_colors[i])
+    if return_ax:
+        return nn_logo.ax
+    if save is not None:
+        plt.savefig(save)
+
+
+def lm_multiseq_track(
+    sdata,
+    seq_ids: list,
+    uns_keys: str = None,
+    ylabels: list = None,
+    width=None,
+    height=None,
+    return_axes: bool = False,
     save: str = None,
     **kwargs
 ):
-    """Plot the logo of the pfm generated for a passed in filter.  If a filter_id is given,
-    the logo will be filtered to only show the features that match the filter_id.
-    The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
-    The kwargs are passed to the SeqLogo object. See the SeqLogo documentation for more details.
+    if isinstance(seq_ids, str):
+        seq_ids = [seq_ids]
+    if isinstance(uns_keys, str):
+        uns_keys = [uns_keys]
+    if isinstance(ylabels, str):
+        ylabels = [ylabels]
+    seq = sdata.seqs[0]
+    ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
+    fig_width = len(seq_ids) * int(len(seq) / 20) if width is None else width # make each sequence width proportional to its length and multiply by the number of sequences
+    fig_height = len(uns_keys)*4 if height is None else height # make each sequence height proportional to the number of uns_keys
+    _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
+    for i, uns_key in tqdm(enumerate(uns_keys), desc=f"Importance values", position=0):
+        for j, seq_id in enumerate(seq_ids):
+            lm_seq_track(
+                sdata,
+                seq_id=seq_id,
+                uns_key=uns_key,
+                ax=ax.flatten()[i*len(seq_ids)+j],
+                ylabel=ylabels[i],
+                title=seq_id,
+                save=None,
+                **kwargs
+            )
 
-    Parameters
-    ----------
-    sdata : SeqData
-        The SeqData object to plot the logo for
-    filter_ids : list
-        The filter_ids to use to filter the logo
-    uns_key : str
-        The key in the sdata.uns dictionary that contains the importance scores
-    **kwargs : dict
-        The keyword arguments to pass to the SeqLogo object
-
-    Returns
-    -------
-    ax : matplotlib.axes._subplots.AxesSubplot
-        The matplotlib axes object
-    """
-    ax = _plot_logo(sdata.uns[uns_key][filter_ids], **kwargs)
+    plt.tight_layout()
+    if return_axes:
+        return ax
     if save is not None:
         plt.savefig(save)
-    return ax
-)
+
+
+def lm_filter_viz(
+    sdata, 
+    filter_id=None, 
+    uns_key="pfms", 
+    return_ax: bool = False,
+    save: str = None, 
+    title=None,
+    **kwargs):
+
+    pfm=sdata.uns[uns_key][filter_id]
+    info_mat = lm.transform_matrix(
+        pfm, 
+        from_type='counts', 
+        to_type='information')
+    logo = lm.Logo(
+        info_mat,
+        **kwargs
+    )
+    logo.style_xticks(spacing=5, anchor=25, rotation=45, fmt='%d', fontsize=14)
+    logo.style_spines(visible=False)
+    logo.style_spines(spines=['left','bottom'], visible=True, linewidth=2)
+    logo.ax.set_ylim([0, 2])
+    logo.ax.set_yticks([0, 1, 2])
+    logo.ax.set_yticklabels(['0', '1', '2'])
+    logo.ax.set_ylabel('bits')
+    logo.ax.set_title(title if title is not None else filter_id)
+    if save is not None:
+        plt.savefig(save)
+    if return_ax:
+        return logo.ax
+
+
+def lm_multifilter_viz(
+    sdata, 
+    filter_ids: list, 
+    num_rows: int = None,
+    num_cols: int = None,
+    uns_key="pfms", 
+    titles: list = None,
+    save: str = None, 
+    **kwargs):
+
+    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12,10))
+    for i in range(num_rows):
+        for j in range(num_cols):
+            filter_id = filter_ids[i*num_cols+j]
+            lm_filter_viz(
+                sdata, 
+                filter_id=filter_id, 
+                uns_key=uns_key, 
+                ax=ax.flatten()[i*num_cols+j], 
+                title=titles[i*num_cols+j] if titles is not None else filter_id,
+                save=None, 
+                **kwargs
+            )
+
+    plt.tight_layout()
+    if save is not None:
+        plt.savefig(save)

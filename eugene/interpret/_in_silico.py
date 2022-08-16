@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
 from ._utils import k_largest_index_argsort
 from .. import settings
@@ -157,7 +158,7 @@ def evolution(
     mutated_positions, mutated_scores = [], []
     for r in range(rounds):
         #print(f"Round {r}")
-        mut_X, score, positions = in_silico_best_k_muts(model, curr_X, k=10, device=device)
+        mut_X, score, positions = best_k_muts(model, curr_X, k=10, device=device)
         #print(mut_X.shape, positions)
         if force_different:
             for i, p in enumerate(positions):
@@ -172,3 +173,29 @@ def evolution(
             mutated_scores.append(score[0])
         #print(decode_DNA_seq(curr_X))
     return curr_X, mutated_scores, mutated_positions
+
+
+def evolve_sdata(
+    model,
+    sdata,
+    rounds,
+    return_seqs=False,
+    **kwargs
+):
+    model.eval()
+    evolved_seqs = np.zeros(sdata.ohe_seqs.shape)
+    for i, ohe_seq in tqdm(enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"):
+        evolved_seq = evolution(
+            model,
+            ohe_seq,
+            rounds=rounds
+        )[0]
+        evolved_seqs[i] = evolved_seq
+    
+    original_scores = model(torch.Tensor(sdata.ohe_seqs.transpose(0, 2, 1))).detach().numpy()
+    evolved_scores = model(torch.Tensor(evolved_seqs.transpose(0, 2, 1))).detach().numpy()
+    sdata["original_scores"] = original_scores
+    sdata[f"evolved_{rounds}_scores"] = evolved_scores
+    if return_seqs:
+        return evolved_seqs
+    
