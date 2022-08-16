@@ -105,7 +105,7 @@ def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
         "https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
         "https://zenodo.org/record/6863861/files/farley2015_seqs_annot.csv?download=1",
     ]
-    paths = try_download_urls([0, 1], urls_list, "farley15", compression="")
+    paths = try_download_urls([0, 1], urls_list, "farley15")
     if return_sdata:
         path = paths[0]
         seq_col = "Enhancer"
@@ -169,7 +169,7 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     if type(datasets) is int:
         datasets = [datasets]
 
-    paths = try_download_urls(datasets, urls_list, "deBoer20", compression="gz")
+    paths = try_download_urls(datasets, urls_list, "deBoer20", processing="gz")
 
     if return_sdata:
         seq_col = "seq"
@@ -183,6 +183,62 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
             auto_name=True,
             compression="gzip",
             **kwargs,
+        )
+        return sdata
+    else:
+        return paths
+
+def RNAcomplete(dataset = "norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+    """Reads the RNAcomplete dataset.
+
+    Parameters
+    ----------
+    dataset : str
+        Dataset to read, can either be "norm" or "raw". The default is "norm".
+    return_sdata : bool, optional
+        If True, return SeqData object with the RNAcomplete dataset. The default is True.
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object with the RNAcomplete dataset.
+    """
+    urls_list = [
+            "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/norm_data.txt.gz",
+            "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/raw_data.txt.gz"
+    ]
+
+    if dataset == "norm":
+        dataset = [0]
+    elif dataset == "raw":
+        dataset = [1]
+    else:
+        raise ValueError("dataset must be either 'norm' or 'raw'.")
+
+    paths = try_download_urls(dataset, urls_list, "RNAcomplete")
+
+    if return_sdata:
+        seq_col = "RNA_Seq"
+        data = read_csv(
+            paths,
+            sep="\t",
+            seq_col=seq_col,
+            auto_name=True,
+            return_dataframe=True,
+            compression="gzip",
+            **kwargs,
+        )
+        n_digits = len(str(len(data) - 1))
+        ids = np.array(
+            [
+                "seq{num:0{width}}".format(num=i, width=n_digits)
+                for i in range(len(data))
+            ]
+        )
+        sdata = SeqData(
+            seqs=data[seq_col],
+            names=ids,
+            seqs_annot=data[data.columns.drop(pd.array(data=[seq_col, "Probe_Set", "Probe_ID"]))],
         )
         return sdata
     else:
@@ -221,7 +277,7 @@ def jores21(
         urls = [2, 3]
     else:
         raise ValueError("dataset must be either 'leaf' or 'proto'.")
-    paths = try_download_urls(urls, urls_list, "jores21", compression="")
+    paths = try_download_urls(urls, urls_list, "jores21")
     if return_sdata:
         seq_col = "sequence"
         data = read_csv(
@@ -288,7 +344,7 @@ def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFr
         urls = [1, 4]
     elif dataset == "test":
         urls = [2, 5]
-    paths = try_download_urls(urls, urls_list, "deAlmeida22", compression="")
+    paths = try_download_urls(urls, urls_list, "deAlmeida22")
     if return_sdata:
         sdata = read_fasta(seq_file=paths[0])
         sdata.seqs_annot = pd.read_csv(paths[1], sep="\t")

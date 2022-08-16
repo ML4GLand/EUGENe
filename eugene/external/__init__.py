@@ -1,2 +1,5 @@
 from . import gkm_svm
-from . import janggu
+try:
+    from . import janggu
+except:
+    print("janggu does not work on this machine, are you using MacOS or Linux?")

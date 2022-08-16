@@ -4,11 +4,15 @@ import pandas as pd
 from typing import List, Union, Optional, Iterable
 from os import PathLike
 import pyranges as pr
+
 from .dataloaders import SeqData
 from ._utils import _read_and_concat_dataframes
 from ..preprocessing import decode_DNA_seqs, reverse_complement_seqs
-from ..external.janggu.data import Bioseq, Cover
 
+try:
+    from ..external.janggu.data import Bioseq, Cover
+except:
+    print("janggu does not work on this machine, are you using MacOS or Linux?")
 
 def read_csv(
     filename: Union[PathLike, List[PathLike]],

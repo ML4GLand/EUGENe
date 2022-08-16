@@ -6,29 +6,33 @@ from ..utils._decorators import track
 
 
 @track
-def reverse_complement_data(sdata: SeqData, copy=False) -> SeqData:
+def reverse_complement_data(sdata: SeqData, RNA_bases=False, copy=False) -> SeqData:
     """Reverse complement sequences.
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
+    RNAbases : bool
+        Whether or not to use RNA bases in place of DNA bases. Default is false.
     Returns
     -------
     SeqData
         SeqData object with reverse complement sequences.
     """
     sdata = sdata.copy() if copy else sdata
-    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs)
+    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, RNA_bases)
     return sdata if copy else None
 
 
 @track
-def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
+def one_hot_encode_data(sdata: SeqData, RNA_bases=False, copy=False) -> SeqData:
     """One-hot encode sequences.
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
+    RNAbases : bool
+        Whether or not to use RNA bases in place of DNA bases. Default is false.    
     Returns
     -------
     SeqData
@@ -36,9 +40,9 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     if sdata.seqs is not None and sdata.ohe_seqs is None:
-        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
+        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs, RNA_bases)
     if sdata.rev_seqs is not None:
-        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs)
+        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs, RNA_bases)
     return sdata if copy else None
 
 
@@ -89,7 +93,7 @@ def add_ranges_annot(
 
 
 @track
-def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
+def scale_targets(sdata: SeqData, targets, train_key, copy=False) -> SeqData:
     """Scale targets.
     Parameters
     ----------
@@ -104,8 +108,11 @@ def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
 
     sdata = sdata.copy() if copy else sdata
     scaler = StandardScaler()
-    scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
-    sdata[f"{target}_scaled"] = scaler.transform(sdata[target].values.reshape(-1, 1))
+    if type(targets) is str:
+        targets = [targets]
+    for target in targets:
+        scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
+        sdata[f"{target}_scaled"] = scaler.transform(sdata[target].values.reshape(-1, 1))
     return sdata if copy else None
 
 
@@ -113,6 +120,7 @@ def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
 def prepare_data(
     sdata: SeqData,
     steps=["reverse_complement", "one_hot_encode", "train_test_split"],
+    # Add in an RNA flag to this
     copy=False,
 ) -> SeqData:
     """Prepare data.
@@ -136,6 +144,22 @@ def prepare_data(
 
     return sdata if copy else None
 
+@track
+def clamp_percentiles(
+    sdata: SeqData,
+    percentile: float,
+    target_list: list,
+    copy=False,
+) -> SeqData:
+
+    if type(target_list) is str:
+        target_list = [target_list]
+
+    for target in target_list:
+        clamp_num = sdata[target].astype(float).quantile(percentile)
+        sdata[target] = sdata[target].astype(float).clip(upper=clamp_num)
+
+    return sdata if copy else None
 
 preprocessing_steps = dict(
     reverse_complement=reverse_complement_data,

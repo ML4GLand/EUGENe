@@ -19,7 +19,8 @@ from ._utils import (
 
 # Vocabularies
 DNA = ["A", "C", "G", "T"]
-COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
+COMPLEMENT_DNA = {"A": "T", "C": "G", "G": "C", "T": "A"}
+COMPLEMENT_RNA = {"A": "U", "C": "G", "G": "C", "U": "A"}
 RNA = ["A", "C", "G", "U"]
 AMINO_ACIDS = [
     "A",
@@ -111,20 +112,23 @@ CODONS = [
 STOP_CODONS = ["TAG", "TAA", "TGA"]
 
 
-def reverse_complement_seq(seq, copy=False):
+def reverse_complement_seq(seq, RNA_bases=False, copy=False):
     """Reverse complement a DNA sequence."""
-    return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
+    if not RNA_bases:
+        return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
+    else:
+        return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
 
 
-def reverse_complement_seqs(seqs, copy=False):
+def reverse_complement_seqs(seqs, RNA_bases=False, copy=False):
     """Reverse complement a list of DNA sequences."""
     return np.array(
         [
-            reverse_complement_seq(seq)
+            reverse_complement_seq(seq, RNA_bases)
             for i, seq in tqdm(
                 enumerate(seqs),
                 total=len(seqs),
-                desc="Reverse complementing DNA sequences",
+                desc="Reverse complementing sequences",
             )
         ]
     )
@@ -198,11 +202,12 @@ def _ohe_seqs(
     return np.stack(arr_list)
 
 
-def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
+def ohe_DNA_seqs(seq_vec, RNA_bases=False, maxlen=None, seq_align="start", copy=False):
     """
-    Convert the DNA sequence into 1-hot-encoding np array
+    Convert the DNA/RNA sequence into 1-hot-encoding np array
     Arguments
         seq_vec: list of chars. List of sequences that can have different lengths
+        RNAbases : bool, Whether or not to use RNA bases in place of DNA bases. Default is false.
         maxlen: int or None, Should we trim (subset) the resulting sequence. If None don't trim. Note that trims wrt the align parameter. It should be smaller than the longest sequence.
         seq_align: character; 'end' or 'start' To which end should we align sequences?
 
@@ -210,7 +215,7 @@ def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
         3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
     return _ohe_seqs(
         seq_vec,
-        vocab=DNA,
+        vocab=DNA if not RNA_bases else RNA,
         neutral_vocab="N",
         maxlen=maxlen,
         seq_align=seq_align,
