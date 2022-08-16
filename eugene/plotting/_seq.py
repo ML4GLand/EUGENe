@@ -6,8 +6,18 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import seqlogo
 from vizsequence import viz_sequence
+from tqdm.auto import tqdm
 from ..preprocessing._utils import _collapse_pos
 
+default_rc_context = {
+    "axes.titlesize": 16,
+    "axes.labelsize": 14,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "legend.fontsize": 12,
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42
+}
 
 def _plot_seq_features(
     ax: Axes,
@@ -89,7 +99,8 @@ def _plot_seq_logo(
     seq: str,
     imp_scores: np.ndarray = None,
     highlight: list = [],
-    threshold: float = 0.5,
+    threshold: float = None,
+    ylab="Importance Score",
     **kwargs
 ):
     """
@@ -118,13 +129,13 @@ def _plot_seq_logo(
         from ..preprocessing import ohe_DNA_seq
 
         print("No importance scores given, outputting just sequence")
-        ylab = "Sequence"
+        ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
         ax.set_yticklabels([])
         ax.set_yticks([])
         imp_scores = ohe_DNA_seq(seq)
     else:
-        ylab = "Importance Score"
+        ylab = "Importance Score" if ylab is None else ylab
 
     # Plot the featue importance scores
     if len(highlight) > 0:
@@ -140,7 +151,7 @@ def _plot_seq_logo(
         )
     else:
         viz_sequence.plot_weights_given_ax(
-            ax, imp_scores, subticks_frequency=10, height_padding_factor=1, **kwargs
+            ax, imp_scores, subticks_frequency=int(len(seq)/10), height_padding_factor=1, **kwargs
         )
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -256,6 +267,77 @@ def seq_track(
         plt.savefig(save)
 
 
+def multiseq_track(
+    sdata,
+    seq_ids: list,
+    uns_keys: str = None,
+    ylabels: list = None,
+    width=None,
+    height=None,
+    return_axes: bool = False,
+    save: str = None,
+    **kwargs
+):
+    """
+    Function to plot tracks from a SeqData object
+
+    Parameters
+    ----------
+    sdata : SeqData object
+        The SeqData object to plot
+    seq_ids : list
+        The IDs of the sequences to plot
+    uns_key : str
+        The key in the SeqData.uns dictionary to use to get the nucleotide scores
+    pred_key : str
+        The key in the SeqData.seqs_annot
+    threshold : float
+        The threshold to use to draw a cut-off line
+    highlight : list
+        A list of positions to highlight in the sequence
+    cmap : str
+        The name of the colormap to use
+    norm : str
+        The name of the normalization to use
+    return_axes : bool
+        Whether to return the axes object
+    **kwargs : dict
+        Additional keyword arguments to pass to vizsequence call
+
+    Returns
+    -------
+    if return_axes:
+        ax : matplotlib.axes.Axes
+            The axes object
+    """
+    if isinstance(seq_ids, str):
+        seq_ids = [seq_ids]
+    if isinstance(uns_keys, str):
+        uns_keys = [uns_keys]
+    ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
+    seq_idx = np.where(sdata.seqs_annot.index.isin(seq_ids))[0]
+    seqs = sdata.seqs[seq_idx]
+    fig_width = len(seq_ids) * int(len(seqs[0]) / 20) if width is None else width # make each sequence width proportional to its length and multiply by the number of sequences
+    fig_height = len(uns_keys)*4 if height is None else height # make each sequence height proportional to the number of uns_keys
+    _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
+    for i, uns_key in tqdm(enumerate(uns_keys), desc=f"Importance values", position=0):
+        for j, seq in enumerate(seqs):
+            imp_scores = sdata.uns[uns_key][seq_idx[j]] if uns_key in sdata.uns.keys() else None
+            _plot_seq_logo(
+                ax.flatten()[i*len(seq_ids)+j],
+                seq,
+                imp_scores=imp_scores,
+                ylab=ylabels[i],
+            )
+            if i == 0:
+                ax.flatten()[i*len(seq_ids)+j].set_title(seq_ids[j], fontsize=18, weight="bold")
+    plt.tight_layout()
+    if return_axes:
+        return ax
+    if save is not None:
+        plt.savefig(save)
+
+
 def _plot_logo(matrix, **kwargs):
     """
     Plot a sequence logo using the SeqLogo package.
@@ -301,3 +383,37 @@ def filter_viz(sdata, filter_id=None, uns_key="pfms", save: str = None, **kwargs
     if save is not None:
         plt.savefig(save)
     return ax
+
+def multifilter_viz(
+    sdata,
+    filter_ids: list,
+    uns_key="pfms",
+    save: str = None,
+    **kwargs
+):
+    """Plot the logo of the pfm generated for a passed in filter.  If a filter_id is given,
+    the logo will be filtered to only show the features that match the filter_id.
+    The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
+    The kwargs are passed to the SeqLogo object. See the SeqLogo documentation for more details.
+
+    Parameters
+    ----------
+    sdata : SeqData
+        The SeqData object to plot the logo for
+    filter_ids : list
+        The filter_ids to use to filter the logo
+    uns_key : str
+        The key in the sdata.uns dictionary that contains the importance scores
+    **kwargs : dict
+        The keyword arguments to pass to the SeqLogo object
+
+    Returns
+    -------
+    ax : matplotlib.axes._subplots.AxesSubplot
+        The matplotlib axes object
+    """
+    ax = _plot_logo(sdata.uns[uns_key][filter_ids], **kwargs)
+    if save is not None:
+        plt.savefig(save)
+    return ax
+)
