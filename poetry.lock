@@ -941,6 +941,19 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "logomaker"
+version = "0.8"
+description = "Package for making Sequence Logos"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+
+[[package]]
 name = "markdown"
 version = "3.4.1"
 description = "Python implementation of Markdown."
@@ -2566,7 +2579,7 @@ janggu = ["pyBigWig", "pybedtools", "biopython", "progress", "keras", "tensorflo
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.12,<3.11"
-content-hash = "e299087c8d9cb8aed81deefe68dae142059615811f4298f04852fc6abe90e375"
+content-hash = "b99e90ebf24e7ee8988585a3b5673003a3ae8bb7dd146c2a6204d4cd3ed0b17f"
 
 [metadata.files]
 absl-py = [
@@ -3347,6 +3360,10 @@ llvmlite = [
     {file = "llvmlite-0.39.0-cp39-cp39-win32.whl", hash = "sha256:0706abf522dc510ddc818f5c9e1cdae521a1416d3c399bbfc4827813379f0164"},
     {file = "llvmlite-0.39.0-cp39-cp39-win_amd64.whl", hash = "sha256:d4a8199263859b97f174035e39297e770617d3497fac44fe738f74ce9c51d22b"},
     {file = "llvmlite-0.39.0.tar.gz", hash = "sha256:01098be54f1aa25e391cebba8ea71cd1533f8cd1f50e34c7dd7540c2560a93af"},
+]
+logomaker = [
+    {file = "logomaker-0.8-py2.py3-none-any.whl", hash = "sha256:6766a0d83de4990ea859366a661ba72c580a7b73ac3c8b526204a0be7d65a50d"},
+    {file = "logomaker-0.8.tar.gz", hash = "sha256:d8c7501a7d6d7961cd68e5a44e939000ebf1b0c4197a0c9198351e1d681d3f6d"},
 ]
 markdown = [
     {file = "Markdown-3.4.1-py3-none-any.whl", hash = "sha256:08fb8465cffd03d10b9dd34a5c3fea908e20391a2a90b88d66362cb05beed186"},

@@ -13,7 +13,11 @@ from ._seq_preprocess import (
     dinuc_shuffle_seqs,
 )  # dinucleotide shuffle
 from ._seq_preprocess import perturb_seqs
-from ._dataset_preprocess import split_train_test, standardize_features  # dataset stuff
+from ._dataset_preprocess import (
+    split_train_test,
+    standardize_features,
+    binarize_values,
+)  # dataset stuff
 from ._preprocessing import (
     one_hot_encode_data,
     reverse_complement_data,

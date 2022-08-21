@@ -44,6 +44,7 @@ biopython = {version = "1.77", extras = ["janggu"]}
 progress = {version = "^1.6", extras = ["janggu"]}
 keras = {version = "^2.4.3", extras = ["janggu"]}
 tensorflow = {version = "^2.4.1", extras = ["janggu"]}
+logomaker = "^0.8"
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]

@@ -1,6 +1,6 @@
 from tqdm.auto import tqdm
 from ..dataloading import SeqData
-from ._dataset_preprocess import split_train_test
+from ._dataset_preprocess import split_train_test, binarize_values
 from ._seq_preprocess import ohe_DNA_seqs, reverse_complement_seqs
 from ..utils._decorators import track
 
@@ -106,6 +106,32 @@ def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
     scaler = StandardScaler()
     scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
     sdata[f"{target}_scaled"] = scaler.transform(sdata[target].values.reshape(-1, 1))
+    return sdata if copy else None
+
+
+@track
+def binarize_target_sdata(
+    sdata: SeqData,
+    target,
+    upper_threshold=0.5,
+    lower_threshold=None,
+    copy=False,
+    **kwargs,
+) -> SeqData:
+    """Binarize target.
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    Returns
+    -------
+    SeqData
+        SeqData object with binarized target.
+    """
+    sdata = sdata.copy() if copy else sdata
+    sdata[f"{target}_binarized"] = binarize_values(
+        sdata[target], upper_threshold, lower_threshold, **kwargs
+    )
     return sdata if copy else None
 
 

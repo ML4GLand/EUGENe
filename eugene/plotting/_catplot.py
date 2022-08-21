@@ -15,7 +15,7 @@ default_rc_context = {
     "ytick.labelsize": 12,
     "legend.fontsize": 12,
     "pdf.fonttype": 42,
-    "ps.fonttype": 42
+    "ps.fonttype": 42,
 }
 
 
@@ -115,6 +115,7 @@ def boxplot(
     keys: Union[str, Sequence[str]],
     groupby: str = None,
     orient: str = "v",
+    jitter=False,
     rc_context: Mapping[str, str] = default_rc_context,
     return_axes: bool = False,
     **kwargs
@@ -152,6 +153,16 @@ def boxplot(
             orient=orient,
             **kwargs
         )
+        if jitter == True:
+            _plot_seaborn(
+                sdata.seqs_annot,
+                keys,
+                func=sns.stripplot,
+                groupby=groupby,
+                orient=orient,
+                ax=ax,
+                **kwargs
+            )
     if return_axes:
         return ax
 

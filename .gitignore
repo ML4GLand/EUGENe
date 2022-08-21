@@ -15,6 +15,7 @@ tests/_configs/
 tests/_data/tf_modisco/
 tests/_logs/
 tests/_output/
+tests/_out/
 tests/_data/datasets/
 *.DS_store
 docs/_static
