@@ -128,7 +128,6 @@ def generate_pfms(
     device=None,
 ):
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    print(device)
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     sdata = sdata.copy() if copy else sdata

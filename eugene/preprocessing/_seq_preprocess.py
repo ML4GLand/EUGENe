@@ -111,6 +111,14 @@ CODONS = [
 STOP_CODONS = ["TAG", "TAA", "TGA"]
 
 
+def sanitize_seq(seq):
+    return seq.strip().upper()
+
+
+def sanitize_seqs(seqs):
+    return np.array([seq.strip().upper() for seq in seqs])
+
+
 def reverse_complement_seq(seq, copy=False):
     """Reverse complement a DNA sequence."""
     return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
@@ -151,6 +159,7 @@ def _ohe_seqs(
     seq_align="start",
     pad_value="N",
     encode_type="one_hot",
+    pad=True
 ):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
@@ -176,8 +185,9 @@ def _ohe_seqs(
     assert len(vocab[0]) == len(pad_value)
     assert pad_value in neutral_vocab
     assert encode_type in ["one_hot", "token"]
-
-    seq_vec = _pad_sequences(seq_vec, maxlen=maxlen, align=seq_align, value=pad_value)
+    
+    if pad:
+        seq_vec = _pad_sequences(seq_vec, maxlen=maxlen, align=seq_align, value=pad_value)
 
     if encode_type == "one_hot":
         arr_list = [
@@ -195,10 +205,13 @@ def _ohe_seqs(
         # we add 1 to be compatible with keras: https://keras.io/layers/embeddings/
         # indexes > 0, 0 = padding element
 
-    return np.stack(arr_list)
+    if pad:
+        return np.stack(arr_list)
+    else:
+        return np.array(arr_list, dtype=object)
 
 
-def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
+def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", pad=True, copy=False):
     """
     Convert the DNA sequence into 1-hot-encoding np array
     Arguments
@@ -216,6 +229,7 @@ def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", copy=False):
         seq_align=seq_align,
         pad_value="N",
         encode_type="one_hot",
+        pad=pad
     )
 
 

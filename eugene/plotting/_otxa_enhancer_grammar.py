@@ -1,16 +1,10 @@
 import numpy as np
+import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from vizsequence import viz_sequence
 from ..preprocessing._utils import _collapse_pos
 from ..preprocessing._otx_preprocess import defineTFBS
-
-
-def otx_seq(sdata, seq_id=None, **kwargs):
-    """
-    Plot a sequence of the data.
-    """
-    _plot_otx_seq(sdata, seq_id, **kwargs)
 
 
 def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None, highlight=[], cmap=None, norm=None, **kwargs):
@@ -106,6 +100,7 @@ def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None
 
     title = seq_id
     if model_pred is not None:
+        model_pred = sdata[model_pred].iloc[seq_idx]
         color = cmap(norm(model_pred))
         title += ": {}".format(str(round(model_pred, 3)))
     else:
@@ -126,3 +121,29 @@ def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None
         ax[1].hlines(1, len(seq), threshold/10, color="red")
     plt.suptitle(title, fontsize=24, weight="bold", color=color)
     return ax
+
+
+def otx_seq(sdata, seq_id=None, **kwargs):
+    """
+    Plot a sequence of the data.
+    """
+    _plot_otx_seq(sdata, seq_id, **kwargs)
+
+    
+def boxplot(
+    sdata,
+    prediction,
+    groupby,
+    palette,
+    order,
+    xlabel=None,
+    ylabel=None,
+    threshold=0
+):
+    fig, ax = plt.subplots(1, 1, figsize=(8,8))
+    sns.boxplot(y=sdata.seqs_annot[prediction], x=sdata.seqs_annot[groupby], order=order, palette=palette, ax=ax)
+    sns.swarmplot(y=sdata.seqs_annot[prediction], x=sdata.seqs_annot[groupby], order=order, palette=palette, ax=ax, size=10, edgecolor="black", linewidth=2)
+    ax.hlines(threshold, ax.get_xlim()[0], ax.get_xlim()[1], color="red", linestyle="dashed")
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=16)
+    ax.set_xlabel(xlabel, fontsize=20)
+    ax.set_ylabel(ylabel, fontsize=20)

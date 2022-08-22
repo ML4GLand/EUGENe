@@ -1,8 +1,26 @@
 from tqdm.auto import tqdm
 from ..dataloading import SeqData
 from ._dataset_preprocess import split_train_test, binarize_values
-from ._seq_preprocess import ohe_DNA_seqs, reverse_complement_seqs
+from ._seq_preprocess import sanitize_seqs, ohe_DNA_seqs, reverse_complement_seqs
 from ..utils._decorators import track
+
+
+#@track
+def sanitize_sdata(sdata: SeqData, copy=False) -> SeqData:
+    """Reverse complement sequences.
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object.
+    Returns
+    -------
+    SeqData
+        SeqData object with reverse complement sequences.
+    """
+    sdata = sdata.copy() if copy else sdata
+    sdata.seqs = sanitize_seqs(sdata.seqs) if sdata.seqs is not None else None
+    sdata.rev_seqs = sanitize_seqs(sdata.rev_seqs) if sdata.rev_seqs is not None else None
+    return sdata if copy else None
 
 
 @track
@@ -23,7 +41,7 @@ def reverse_complement_data(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
+def one_hot_encode_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
     """One-hot encode sequences.
     Parameters
     ----------
@@ -36,9 +54,9 @@ def one_hot_encode_data(sdata: SeqData, copy=False) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     if sdata.seqs is not None and sdata.ohe_seqs is None:
-        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs)
+        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs, **kwargs)
     if sdata.rev_seqs is not None and sdata.ohe_rev_seqs is None:
-        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs)
+        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs, **kwargs)
     return sdata if copy else None
 
 
