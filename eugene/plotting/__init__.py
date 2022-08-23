@@ -8,4 +8,4 @@ from ._dim_reduce import pca, umap, skree
 from ._seq import kipoi_ism_heatmap
 
 # Project Specific Plotting
-from ._otx_enhancer_grammar import otx_seq, boxplot
+from ._otxa_enhancer_grammar import otx_seq, boxplot
