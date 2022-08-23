@@ -79,8 +79,8 @@ def _plot_performance_scatter(
 
 def performance_scatter(
     sdata,
-    target: str,
-    prediction: str,
+    targets: str,
+    predictions: str,
     seq_idx=None,
     title: str = None,
     save: str = None,
@@ -107,8 +107,16 @@ def performance_scatter(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    _plot_performance_scatter(
-        sdata, target=target, prediction=prediction, title=title, **kwargs
-    )
+    
+    if type(targets) is list and type(predictions) is list:
+        assert len(targets) == len(predictions)
+    else:
+        targets = [targets]
+        predictions = [predictions]
+
+    for (target, prediction) in zip(targets, predictions):
+        _plot_performance_scatter(
+                sdata, target=target, prediction=prediction, title=title, **kwargs
+        )
     if save is not None:
         plt.savefig(save)

@@ -112,19 +112,21 @@ CODONS = [
 STOP_CODONS = ["TAG", "TAA", "TGA"]
 
 
-def reverse_complement_seq(seq, RNA_bases=False, copy=False):
+def reverse_complement_seq(seq, alphabet, copy=False):
     """Reverse complement a DNA sequence."""
-    if not RNA_bases:
+    if alphabet == "DNA":
         return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
-    else:
+    elif alphabet == "RNA":
         return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
+    else:
+        raise ValueError("Invalid alphabet")
 
 
-def reverse_complement_seqs(seqs, RNA_bases=False, copy=False):
+def reverse_complement_seqs(seqs, alphabet, copy=False):
     """Reverse complement a list of DNA sequences."""
     return np.array(
         [
-            reverse_complement_seq(seq, RNA_bases)
+            reverse_complement_seq(seq, alphabet)
             for i, seq in tqdm(
                 enumerate(seqs),
                 total=len(seqs),
@@ -155,6 +157,7 @@ def _ohe_seqs(
     seq_align="start",
     pad_value="N",
     encode_type="one_hot",
+    fill_value=None,
 ):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
@@ -185,7 +188,7 @@ def _ohe_seqs(
 
     if encode_type == "one_hot":
         arr_list = [
-            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
+            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value)
             for i, seq in tqdm(
                 enumerate(seq_vec),
                 total=len(seq_vec),
@@ -202,9 +205,9 @@ def _ohe_seqs(
     return np.stack(arr_list)
 
 
-def ohe_DNA_seqs(seq_vec, RNA_bases=False, maxlen=None, seq_align="start", copy=False):
+def ohe_alphabet_seqs(seq_vec, alphabet, maxlen=None, seq_align="start", fill_value=None, copy=False):
     """
-    Convert the DNA/RNA sequence into 1-hot-encoding np array
+    Convert the sequence into 1-hot-encoding np array
     Arguments
         seq_vec: list of chars. List of sequences that can have different lengths
         RNAbases : bool, Whether or not to use RNA bases in place of DNA bases. Default is false.
@@ -215,12 +218,13 @@ def ohe_DNA_seqs(seq_vec, RNA_bases=False, maxlen=None, seq_align="start", copy=
         3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
     return _ohe_seqs(
         seq_vec,
-        vocab=DNA if not RNA_bases else RNA,
+        vocab=DNA if alphabet == "DNA" else RNA,
         neutral_vocab="N",
         maxlen=maxlen,
         seq_align=seq_align,
         pad_value="N",
         encode_type="one_hot",
+        fill_value=fill_value
     )
 
 
@@ -232,7 +236,7 @@ def decode_DNA_seqs(arr, vocab=DNA):
         [
             "".join([indexToLetter[x] for x in row])
             for i, row in tqdm(
-                enumerate(tokens), total=len(tokens), desc="Decoding DNA sequences"
+                enumerate(tokens), total=len(tokens), desc="Decoding sequences", disable=True
             )
         ]
     )

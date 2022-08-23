@@ -8,7 +8,6 @@ from os import PathLike
 from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
-from pandas import Int64Index
 from ._SeqDataset import SeqDataset
 
 
@@ -57,10 +56,11 @@ class SeqData:
             uns: dict of additional information.
             seqidx: Index of sequences to use.
         """
+
         if seqs is not None:
-            self.seqidx = range(seqs.shape[0]) if seqidx is None else seqidx
+            self.seqidx = range(seqs.shape[0]) if seqidx is None or len(seqidx) == 0 else seqidx
         else:
-            self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None else seqidx
+            self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None or len(seqidx) == 0 else seqidx
 
         # X
         self.seqs = np.array(seqs[self.seqidx]) if seqs is not None else None

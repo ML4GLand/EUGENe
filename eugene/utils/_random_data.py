@@ -5,7 +5,7 @@ import pandas as pd
 
 # EUGENE
 from .._settings import settings
-from ..preprocessing import reverse_complement_seqs, ohe_DNA_seqs
+from ..preprocessing import reverse_complement_seqs, ohe_alphabet_seqs
 from ..dataloading._utils import _seq2Fasta
 
 

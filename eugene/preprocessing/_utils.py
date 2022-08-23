@@ -123,16 +123,19 @@ def _tokenize(seq, vocab, neutral_vocab=[]):
     ]
 
 
-def _token2one_hot(tvec, vocab_size):
+def _token2one_hot(tvec, vocab_size, fill_value):
     """
-    Note: everything out of the vucabulary is transformed into `np.zeros(vocab_size)`
+    Note: everything out of the vocabulary is transformed into `np.zeros(vocab_size)`
     """
     arr = np.zeros((len(tvec), vocab_size))
 
     tvec_range = np.arange(len(tvec))
     tvec = np.asarray(tvec)
     arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
-    return arr.astype(np.int8)
+    if fill_value is not None:
+        arr[tvec_range[tvec < 0]] = fill_value
+
+    return arr.astype(np.int8) if fill_value is None else arr.astype(np.float16)
 
 
 def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):

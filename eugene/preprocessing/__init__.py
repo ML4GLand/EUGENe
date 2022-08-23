@@ -4,7 +4,7 @@ from ._seq_preprocess import (
 )  # reverse complement
 from ._seq_preprocess import (
     ohe_DNA_seq,
-    ohe_DNA_seqs,
+    ohe_alphabet_seqs,
     decode_DNA_seq,
     decode_DNA_seqs,
 )  # one-hot encode
@@ -20,6 +20,7 @@ from ._preprocessing import (
     train_test_split_data,
     prepare_data,
     clamp_percentiles,
+    clean_nan_data,
 )  # core sdata functions
 from ._preprocessing import (
     scale_targets,

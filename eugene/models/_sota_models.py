@@ -4,8 +4,8 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D
 
 
 class DeepBind(BaseModel):
-    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, mp_kwargs = {}, conv_kwargs = {}, fc_kwargs = {}):
-        super().__init__(input_len, output_dim, strand, task, aggr)
+    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, loss_fxn="mse", optimizer="adam", lr=1e-3, scheduler="lr_scheduler", scheduler_patience=2, stride_c=0, mp_kwargs = {}, conv_kwargs = {}, fc_kwargs = {}):
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, optimizer, lr, scheduler, scheduler_patience)
         self.flattened_input_dims = 8*input_len
         self.mp_kwargs, self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(mp_kwargs, conv_kwargs, fc_kwargs)
         self.max_pool = nn.MaxPool1d(**self.mp_kwargs)
@@ -14,15 +14,15 @@ class DeepBind(BaseModel):
         # Add strand specific modules
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2), output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
         elif self.strand == "ds":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//4), output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//4)+stride_c, output_dim=output_dim, **self.fc_kwargs)
         elif self.strand == "ts":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2), output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
             self.reverse_convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.reverse_convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2), output_dim=output_dim, **self.fc_kwargs)
+            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.reverse_convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
 
     def forward(self, x, x_rev_comp = None):
         x = self.convnet(x)

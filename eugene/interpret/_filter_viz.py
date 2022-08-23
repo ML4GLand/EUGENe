@@ -60,7 +60,6 @@ def _get_first_conv_layer(model):
 def _get_activations_from_layer(layer, sdataloader, device):
     from ..preprocessing import decode_DNA_seqs
 
-    print(device)
     activations = []
     sequences = []
     dataset_len = len(sdataloader.dataset)
@@ -73,7 +72,6 @@ def _get_activations_from_layer(layer, sdataloader, device):
         ID, x, x_rev_comp, y = batch
         with nostdout():
             sequences.append(decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy()))
-        # print(x.shape)
         x = x.to(device)
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
         np_act = np.concatenate(activations)
@@ -96,18 +94,27 @@ def _get_filter_activators(activations, sequences, layer):
     return filter_activators
 
 
-def _get_pfms(filter_activators, kernel_size):
+def _get_pfms(filter_activators, kernel_size, alphabet):
     filter_pfms = {}
+    DNA = ["A", "C", "G", "T"]
+    RNA = ["A", "C", "G", "U"]
+    if alphabet == "DNA":
+        bases = DNA
+    elif alphabet == "RNA":
+        bases = RNA
+    else:
+        raise ValueError("Alphabet must be either 'DNA' or 'RNA'.")
+
     for i, activators in tqdm(
         enumerate(filter_activators),
         total=len(filter_activators),
         desc="Getting PFMs from filters",
     ):
         pfm = {
-            "A": np.zeros(kernel_size),
-            "C": np.zeros(kernel_size),
-            "G": np.zeros(kernel_size),
-            "T": np.zeros(kernel_size),
+            bases[0]: np.zeros(kernel_size),
+            bases[1]: np.zeros(kernel_size),
+            bases[2]: np.zeros(kernel_size),
+            bases[3]: np.zeros(kernel_size),
         }
         for seq in activators:
             for j, nt in enumerate(seq):
@@ -124,11 +131,12 @@ def generate_pfms(
     batch_size=None,
     num_workers=None,
     key_name="pfms",
+    alphabet="DNA",
     copy=False,
     device=None,
 ):
-    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    print(device)
+    if device is None:
+        device = "cuda" if settings.gpus > 0 else "cpu"
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     sdata = sdata.copy() if copy else sdata
@@ -141,7 +149,7 @@ def generate_pfms(
         first_layer, sdataloader, device=device
     )
     filter_activators = _get_filter_activators(activations, sequences, first_layer)
-    filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0])
+    filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0], alphabet=alphabet)
     sdata.uns[key_name] = filter_pfms
     return sdata if copy else None
 
