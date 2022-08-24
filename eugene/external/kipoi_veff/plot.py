@@ -5,6 +5,7 @@ from .seqplotting_deps import add_letter_to_axis, VOCABS, letter_polygons
 def center_cmap(cmap, vmax, vmin, center):
     # Centering of the colormap, taken from seaborn._HeatMapper implementation
     import matplotlib as mpl
+
     vrange = max(vmax - center, center - vmin)
     normlize = mpl.colors.Normalize(center - vrange, center + vrange)
     cmin, cmax = normlize([vmin, vmax])
@@ -12,9 +13,23 @@ def center_cmap(cmap, vmax, vmin, center):
     return mpl.colors.ListedColormap(cmap(cc))
 
 
-def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax=None, show_letter_scale=False,
-                    cmap=None, cbar=True, cbar_kws=None, cbar_ax=None, limit_region=None, var_box_color="black",
-                    show_var_id=True, box_alt=True, ref_seq=None):
+def seqlogo_heatmap(
+    letter_heights,
+    heatmap_data,
+    ovlp_var=None,
+    vocab="DNA",
+    ax=None,
+    show_letter_scale=False,
+    cmap=None,
+    cbar=True,
+    cbar_kws=None,
+    cbar_ax=None,
+    limit_region=None,
+    var_box_color="black",
+    show_var_id=True,
+    box_alt=True,
+    ref_seq=None,
+):
     """
     Plot heatmap and seqlogo plot together in one axis.
 
@@ -30,17 +45,24 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
     from matplotlib.collections import PatchCollection
+
     if cmap is None:
         cmap = plt.cm.bwr
     assert heatmap_data.shape[1] == letter_heights.shape[0]
     seq_len = heatmap_data.shape[1]
     vocab_len = len(VOCABS[vocab])
-    letter_rescaling = len(VOCABS[vocab])  # This way the heatmap and the letters are the same size on the plot
+    letter_rescaling = len(
+        VOCABS[vocab]
+    )  # This way the heatmap and the letters are the same size on the plot
 
     # heatmap grid
-    grid = np.mgrid[0.5:(seq_len + 0.5):1, -vocab_len:0:1].reshape(2, -1).T
-    y_hm_tickpos = (np.arange(-vocab_len, 0, 1) + 0.5)[::-1]  # alphabet position with 0 on top
-    y_seqlogo_tickpos = np.array([0, letter_rescaling])  # tuple of where the ticks for the seqlogo should be placed
+    grid = np.mgrid[0.5 : (seq_len + 0.5) : 1, -vocab_len:0:1].reshape(2, -1).T
+    y_hm_tickpos = (np.arange(-vocab_len, 0, 1) + 0.5)[
+        ::-1
+    ]  # alphabet position with 0 on top
+    y_seqlogo_tickpos = np.array(
+        [0, letter_rescaling]
+    )  # tuple of where the ticks for the seqlogo should be placed
 
     if ax is None:
         plt.figure(figsize=(20, 4))
@@ -64,11 +86,13 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     # rescale letters so that they look nice above the heatmap
     letter_heights_rescaled = np.copy(letter_heights)
 
-    letter_height_scaling = (vocab_len / 2)
+    letter_height_scaling = vocab_len / 2
 
     if letter_heights_rescaled.min() < 0:
-        lh_range = (letter_heights_rescaled.max() - letter_heights_rescaled.min()) / letter_height_scaling
-        letter_y_offset = - letter_heights_rescaled.min() / lh_range
+        lh_range = (
+            letter_heights_rescaled.max() - letter_heights_rescaled.min()
+        ) / letter_height_scaling
+        letter_y_offset = -letter_heights_rescaled.min() / lh_range
         letter_heights_rescaled = letter_heights_rescaled / lh_range
     else:
         letter_y_offset = 0.0
@@ -94,24 +118,27 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     ax.set_xlim(x_range[0] - 1, x_range[1] + 1)
     ax.grid(False)
     ax.set_xticks(list(range(*x_range)) + [x_range[-1]])
-    ax.set_aspect(aspect='auto', adjustable='box')
+    ax.set_aspect(aspect="auto", adjustable="box")
 
     # set the tick labels and make sure only the left axis is displayed
     if show_letter_scale:
         y_ticks = np.concatenate([y_hm_tickpos, y_seqlogo_tickpos])
-        yticklabels = list(VOCABS[vocab].keys()) + ["%.2f" % letter_heights.min(), "%.2f" % letter_heights.max()]
-        ax.spines['left'].set_bounds(y_seqlogo_tickpos[0], y_seqlogo_tickpos[1])
+        yticklabels = list(VOCABS[vocab].keys()) + [
+            "%.2f" % letter_heights.min(),
+            "%.2f" % letter_heights.max(),
+        ]
+        ax.spines["left"].set_bounds(y_seqlogo_tickpos[0], y_seqlogo_tickpos[1])
     else:
         y_ticks = y_hm_tickpos
         yticklabels = list(VOCABS[vocab].keys())
-        ax.spines['left'].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(yticklabels)
     ax.axes.get_xaxis().set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     ax.autoscale_view()
 
     if ref_seq is not None:
@@ -121,7 +148,9 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
 
     if ovlp_var is not None:
         # for every variant draw a rectangle
-        for rel_pos, var_id, ref, alt in zip(ovlp_var["varpos_rel"], ovlp_var["id"], ovlp_var["ref"], ovlp_var["alt"]):
+        for rel_pos, var_id, ref, alt in zip(
+            ovlp_var["varpos_rel"], ovlp_var["id"], ovlp_var["ref"], ovlp_var["alt"]
+        ):
             # positions of ref and alt on the heatmap
             # This is for non-flipped alphabet
             # y_ref_lowlim = -vocab_len + list(VOCABS[vocab].keys()).index(ref[0])
@@ -140,14 +169,24 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
                 y_lowlim = y_ref_lowlim
             box_height = 1
             ax.add_patch(
-                mpatches.Rectangle((rel_pos + 0.5, y_lowlim), box_width, box_height, fill=False, lw=2,
-                                   ec=var_box_color))
+                mpatches.Rectangle(
+                    (rel_pos + 0.5, y_lowlim),
+                    box_width,
+                    box_height,
+                    fill=False,
+                    lw=2,
+                    ec=var_box_color,
+                )
+            )
             if show_var_id:
                 # annotate the box
-                ax.annotate(var_id, xy=(rel_pos + box_width + 0.5, y_lowlim + box_height / 2),
-                            xytext=(rel_pos + box_width + 0.5 + 2, y_lowlim + box_height / 2),
-                            arrowprops=dict(arrowstyle="->", connectionstyle="arc"),
-                            bbox=dict(boxstyle="round,pad=.5", fc="0.9", alpha=0.7))
+                ax.annotate(
+                    var_id,
+                    xy=(rel_pos + box_width + 0.5, y_lowlim + box_height / 2),
+                    xytext=(rel_pos + box_width + 0.5 + 2, y_lowlim + box_height / 2),
+                    arrowprops=dict(arrowstyle="->", connectionstyle="arc"),
+                    bbox=dict(boxstyle="round,pad=.5", fc="0.9", alpha=0.7),
+                )
 
     if limit_region is not None:
         if not isinstance(limit_region, tuple):
@@ -157,8 +196,9 @@ def seqlogo_heatmap(letter_heights, heatmap_data, ovlp_var=None, vocab="DNA", ax
     if cbar:
         # Colorbar settings adapted from seaborn._HeatMapper implementation
         import matplotlib as mpl
+
         cbar_kws = {} if cbar_kws is None else cbar_kws
-        cbar_kws.setdefault('ticks', mpl.ticker.MaxNLocator(6))
+        cbar_kws.setdefault("ticks", mpl.ticker.MaxNLocator(6))
         cb = ax.figure.colorbar(hm_ax_collection, cbar_ax, ax, **cbar_kws)
         cb.outline.set_linewidth(0)
         # If rasterized is passed to pcolormesh, also rasterize the

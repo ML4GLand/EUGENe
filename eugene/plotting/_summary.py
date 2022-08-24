@@ -20,7 +20,7 @@ default_rc_context = {
     "ytick.labelsize": 12,
     "legend.fontsize": 12,
     "pdf.fonttype": 42,
-    "ps.fonttype": 42
+    "ps.fonttype": 42,
 }
 
 
@@ -30,11 +30,15 @@ def _model_performances_across_groups(
     prediction_labels=None,
     prediction_groups=None,
     groupby=None,
-    metrics="r2"
+    metrics="r2",
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
-    prediction_labels = sdataframe.columns[sdataframe.columns.str.contains("predictions")] if prediction_labels is None else prediction_labels
+    prediction_labels = (
+        sdataframe.columns[sdataframe.columns.str.contains("predictions")]
+        if prediction_labels is None
+        else prediction_labels
+    )
     conc = pd.DataFrame()
     for group, data in sdataframe.groupby(groupby):
         predicts = data[prediction_labels]
@@ -45,18 +49,22 @@ def _model_performances_across_groups(
             if metric in ["r2", "mse"]:
                 scores = pd.concat(
                     [
-                        scores, 
-                        predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)
+                        scores,
+                        predicts.apply(lambda x: func(true, x), axis=0).to_frame(
+                            name=metric
+                        ),
                     ],
-                    axis=1
+                    axis=1,
                 )
             elif metric in ["spearman", "pearson", "kendall"]:
                 scores = pd.concat(
                     [
-                        scores, 
-                        predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(name=metric)
+                        scores,
+                        predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(
+                            name=metric
+                        ),
                     ],
-                    axis=1
+                    axis=1,
                 )
         scores[groupby] = group
         if prediction_groups is not None:
@@ -66,16 +74,16 @@ def _model_performances_across_groups(
 
 
 def _model_performances(
-    sdataframe,
-    target,
-    prediction_labels=None,
-    prediction_groups=None,
-    metrics="r2"
+    sdataframe, target, prediction_labels=None, prediction_groups=None, metrics="r2"
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
     true = sdataframe[target]
-    prediction_labels = sdataframe.columns[sdataframe.columns.str.contains("predictions")] if prediction_labels is None else prediction_labels
+    prediction_labels = (
+        sdataframe.columns[sdataframe.columns.str.contains("predictions")]
+        if prediction_labels is None
+        else prediction_labels
+    )
     predicts = sdataframe[prediction_labels]
     scores = pd.DataFrame()
     for metric in metrics:
@@ -84,17 +92,21 @@ def _model_performances(
             scores = pd.concat(
                 [
                     scores,
-                    predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric),
-                ], 
-                axis=1
+                    predicts.apply(lambda x: func(true, x), axis=0).to_frame(
+                        name=metric
+                    ),
+                ],
+                axis=1,
             )
         elif metric in ["spearman", "pearson", "kendall"]:
             scores = pd.concat(
                 [
                     scores,
-                    predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(name=metric),
+                    predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(
+                        name=metric
+                    ),
                 ],
-                axis=1
+                axis=1,
             )
     if prediction_groups is not None:
         scores["prediction_groups"] = prediction_groups
@@ -108,6 +120,7 @@ def performance_summary(
     prediction_groups=None,
     groupby=None,
     add_swarm=False,
+    size=5,
     metrics="r2",
     orient="v",
     rc_context=default_rc_context,
@@ -116,9 +129,13 @@ def performance_summary(
 ):
     sdataframe = sdata.seqs_annot
     if groupby is None:
-        scores = _model_performances(sdataframe, target, prediction_labels, prediction_groups, metrics)
+        scores = _model_performances(
+            sdataframe, target, prediction_labels, prediction_groups, metrics
+        )
     else:
-        scores = _model_performances_across_groups(sdataframe, target, prediction_labels, prediction_groups, groupby, metrics)
+        scores = _model_performances_across_groups(
+            sdataframe, target, prediction_labels, prediction_groups, groupby, metrics
+        )
     print(scores.columns)
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
@@ -136,7 +153,9 @@ def performance_summary(
                 func=sns.swarmplot,
                 groupby="prediction_groups" if groupby is None else groupby,
                 orient=orient,
-                size=10, edgecolor="black", linewidth=2,
+                size=size,
+                edgecolor="black",
+                linewidth=2,
                 ax=ax,
                 **kwargs
             )

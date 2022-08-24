@@ -21,26 +21,33 @@ def standardize_polygons_str(data_str):
     # find all of the polygons in the letter (for instance an A
     # needs to be constructed from 2 polygons)
     from shapely.wkt import loads as load_wkt
+
     path_strs = re.findall("\(\(([^\)]+?)\)\)", data_str.strip())
 
     # convert the data into a numpy array
     polygons_data = []
     for path_str in path_strs:
-        data = np.array([
-            tuple(map(float, x.split())) for x in path_str.strip().split(",")])
+        data = np.array(
+            [tuple(map(float, x.split())) for x in path_str.strip().split(",")]
+        )
         polygons_data.append(data)
 
     # standardize the coordinates
     min_coords = np.vstack(data.min(0) for data in polygons_data).min(0)
     max_coords = np.vstack(data.max(0) for data in polygons_data).max(0)
     for data in polygons_data:
-        data[:, ] -= min_coords
-        data[:, ] /= (max_coords - min_coords)
+        data[
+            :,
+        ] -= min_coords
+        data[:,] /= (
+            max_coords - min_coords
+        )
 
     polygons = []
     for data in polygons_data:
-        polygons.append(load_wkt(
-            "POLYGON((%s))" % ",".join(" ".join(map(str, x)) for x in data)))
+        polygons.append(
+            load_wkt("POLYGON((%s))" % ",".join(" ".join(map(str, x)) for x in data))
+        )
 
     return tuple(polygons)
 
@@ -49,48 +56,67 @@ def standardize_polygons_str(data_str):
 
 letter_polygons = {k: standardize_polygons_str(v) for k, v in all_letters.items()}
 
-VOCABS = {"DNA": OrderedDict([("A", "green"),
-                              ("C", "blue"),
-                              ("G", "orange"),
-                              ("T", "red")]),
-          "RNA": OrderedDict([("A", "green"),
-                              ("C", "blue"),
-                              ("G", "orange"),
-                              ("U", "red")]),
-          "AA": OrderedDict([('A', '#CCFF00'),
-                             ('B', "orange"),
-                             ('C', '#FFFF00'),
-                             ('D', '#FF0000'),
-                             ('E', '#FF0066'),
-                             ('F', '#00FF66'),
-                             ('G', '#FF9900'),
-                             ('H', '#0066FF'),
-                             ('I', '#66FF00'),
-                             ('K', '#6600FF'),
-                             ('L', '#33FF00'),
-                             ('M', '#00FF00'),
-                             ('N', '#CC00FF'),
-                             ('P', '#FFCC00'),
-                             ('Q', '#FF00CC'),
-                             ('R', '#0000FF'),
-                             ('S', '#FF3300'),
-                             ('T', '#FF6600'),
-                             ('V', '#99FF00'),
-                             ('W', '#00CCFF'),
-                             ('Y', '#00FFCC'),
-                             ('Z', 'blue')]),
-          "RNAStruct": OrderedDict([("P", "red"),
-                                    ("H", "green"),
-                                    ("I", "blue"),
-                                    ("M", "orange"),
-                                    ("E", "violet")]),
-          }
+VOCABS = {
+    "DNA": OrderedDict([("A", "green"), ("C", "blue"), ("G", "orange"), ("T", "red")]),
+    "RNA": OrderedDict([("A", "green"), ("C", "blue"), ("G", "orange"), ("U", "red")]),
+    "AA": OrderedDict(
+        [
+            ("A", "#CCFF00"),
+            ("B", "orange"),
+            ("C", "#FFFF00"),
+            ("D", "#FF0000"),
+            ("E", "#FF0066"),
+            ("F", "#00FF66"),
+            ("G", "#FF9900"),
+            ("H", "#0066FF"),
+            ("I", "#66FF00"),
+            ("K", "#6600FF"),
+            ("L", "#33FF00"),
+            ("M", "#00FF00"),
+            ("N", "#CC00FF"),
+            ("P", "#FFCC00"),
+            ("Q", "#FF00CC"),
+            ("R", "#0000FF"),
+            ("S", "#FF3300"),
+            ("T", "#FF6600"),
+            ("V", "#99FF00"),
+            ("W", "#00CCFF"),
+            ("Y", "#00FFCC"),
+            ("Z", "blue"),
+        ]
+    ),
+    "RNAStruct": OrderedDict(
+        [("P", "red"), ("H", "green"), ("I", "blue"), ("M", "orange"), ("E", "violet")]
+    ),
+}
 
 # vocabularies:
 DNA = ["A", "C", "G", "T"]
 RNA = ["A", "C", "G", "U"]
-AMINO_ACIDS = ["A", "R", "N", "D", "B", "C", "E", "Q", "Z", "G", "H",
-               "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V"]
+AMINO_ACIDS = [
+    "A",
+    "R",
+    "N",
+    "D",
+    "B",
+    "C",
+    "E",
+    "Q",
+    "Z",
+    "G",
+    "H",
+    "I",
+    "L",
+    "K",
+    "M",
+    "F",
+    "P",
+    "S",
+    "T",
+    "W",
+    "Y",
+    "V",
+]
 
 # make sure things are in order
 VOCABS["AA"] = OrderedDict((k, VOCABS["AA"][k]) for k in AMINO_ACIDS)
@@ -99,10 +125,10 @@ VOCABS["RNA"] = OrderedDict((k, VOCABS["RNA"][k]) for k in RNA)
 
 
 def add_letter_to_axis(ax, let, col, x, y, height):
-    """Add 'let' with position x,y and height height to matplotlib axis 'ax'.
-    """
+    """Add 'let' with position x,y and height height to matplotlib axis 'ax'."""
     from shapely import affinity
     from descartes.patch import PolygonPatch
+
     if len(let) == 2:
         colors = [col, "white"]
     elif len(let) == 1:
@@ -111,12 +137,9 @@ def add_letter_to_axis(ax, let, col, x, y, height):
         raise ValueError("3 or more Polygons are not supported")
 
     for polygon, color in zip(let, colors):
-        new_polygon = affinity.scale(
-            polygon, yfact=height, origin=(0, 0, 0))
-        new_polygon = affinity.translate(
-            new_polygon, xoff=x, yoff=y)
-        patch = PolygonPatch(
-            new_polygon, edgecolor=color, facecolor=color)
+        new_polygon = affinity.scale(polygon, yfact=height, origin=(0, 0, 0))
+        new_polygon = affinity.translate(new_polygon, xoff=x, yoff=y)
+        patch = PolygonPatch(new_polygon, edgecolor=color, facecolor=color)
         ax.add_patch(patch)
     return
 
@@ -159,16 +182,26 @@ def encodeDNA(seq_vec, maxlen=None, seq_align="start"):
               [1 0 0 0]]]
         ```
     """
-    return encodeSequence(seq_vec,
-                          vocab=DNA,
-                          neutral_vocab="N",
-                          maxlen=maxlen,
-                          seq_align=seq_align,
-                          pad_value="N",
-                          encode_type="one_hot")
+    return encodeSequence(
+        seq_vec,
+        vocab=DNA,
+        neutral_vocab="N",
+        maxlen=maxlen,
+        seq_align=seq_align,
+        pad_value="N",
+        encode_type="one_hot",
+    )
 
-def encodeSequence(seq_vec, vocab, neutral_vocab, maxlen=None,
-                   seq_align="start", pad_value="N", encode_type="one_hot"):
+
+def encodeSequence(
+    seq_vec,
+    vocab,
+    neutral_vocab,
+    maxlen=None,
+    seq_align="start",
+    pad_value="N",
+    encode_type="one_hot",
+):
     """Convert a list of genetic sequences into one-hot-encoded array.
     # Arguments
        seq_vec: list of strings (genetic sequences)
@@ -192,21 +225,25 @@ def encodeSequence(seq_vec, vocab, neutral_vocab, maxlen=None,
     if isinstance(neutral_vocab, str):
         neutral_vocab = [neutral_vocab]
     if isinstance(seq_vec, str):
-        raise ValueError("seq_vec should be an iterable returning " +
-                         "strings not a string itself")
+        raise ValueError(
+            "seq_vec should be an iterable returning " + "strings not a string itself"
+        )
     assert len(vocab[0]) == len(pad_value)
     assert pad_value in neutral_vocab
 
     assert encode_type in ["one_hot", "token"]
 
-    seq_vec = pad_sequences(seq_vec, maxlen=maxlen,
-                            align=seq_align, value=pad_value)
+    seq_vec = pad_sequences(seq_vec, maxlen=maxlen, align=seq_align, value=pad_value)
 
     if encode_type == "one_hot":
-        arr_list = [token2one_hot(tokenize(seq, vocab, neutral_vocab), len(vocab))
-                    for i, seq in enumerate(seq_vec)]
+        arr_list = [
+            token2one_hot(tokenize(seq, vocab, neutral_vocab), len(vocab))
+            for i, seq in enumerate(seq_vec)
+        ]
     elif encode_type == "token":
-        arr_list = [1 + np.array(tokenize(seq, vocab, neutral_vocab)) for seq in seq_vec]
+        arr_list = [
+            1 + np.array(tokenize(seq, vocab, neutral_vocab)) for seq in seq_vec
+        ]
         # we add 1 to be compatible with keras: https://keras.io/layers/embeddings/
         # indexes > 0, 0 = padding element
 
@@ -240,7 +277,10 @@ def tokenize(seq, vocab, neutral_vocab=[]):
         vocab_dict[l] = -1
 
     # current performance bottleneck
-    return [vocab_dict[seq[(i * nchar):((i + 1) * nchar)]] for i in range(len(seq) // nchar)]
+    return [
+        vocab_dict[seq[(i * nchar) : ((i + 1) * nchar)]]
+        for i in range(len(seq) // nchar)
+    ]
 
 
 def token2one_hot(tvec, vocab_size):
@@ -253,6 +293,7 @@ def token2one_hot(tvec, vocab_size):
     tvec = np.asarray(tvec)
     arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
     return arr
+
 
 def pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
     """Pad and/or trim a list of sequences to have common length. Procedure:
@@ -297,7 +338,10 @@ def pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
         maxlen = int(maxlen)
 
     if max_seq_len < maxlen:
-        print("WARNING: Maximum sequence length (%s) is less than maxlen (%s)" % (max_seq_len, maxlen))
+        print(
+            "WARNING: Maximum sequence length (%s) is less than maxlen (%s)"
+            % (max_seq_len, maxlen)
+        )
         max_seq_len = maxlen
 
     # check the case when len > 1
@@ -345,11 +389,16 @@ def pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
         else:
             raise ValueError("align can be of: end, start or center")
 
-    padded_sequence_vec = [pad(seq, max(max_seq_len, maxlen),
-                               value=value, align=align) for seq in sequence_vec]
-    padded_sequence_vec = [trim(seq, maxlen, align=align) for seq in padded_sequence_vec]
+    padded_sequence_vec = [
+        pad(seq, max(max_seq_len, maxlen), value=value, align=align)
+        for seq in sequence_vec
+    ]
+    padded_sequence_vec = [
+        trim(seq, maxlen, align=align) for seq in padded_sequence_vec
+    ]
 
     return padded_sequence_vec
+
 
 # TODO - add figsize???
 def seqlogo(letter_heights, vocab="DNA", ax=None):
@@ -361,6 +410,7 @@ def seqlogo(letter_heights, vocab="DNA", ax=None):
         ax: matplotlib axis
     """
     import matplotlib.pyplot as plt
+
     ax = ax or plt.gca()
 
     assert letter_heights.shape[1] == len(VOCABS[vocab])
@@ -389,8 +439,9 @@ def seqlogo(letter_heights, vocab="DNA", ax=None):
     ax.set_xlim(x_range[0] - 1, x_range[1] + 1)
     ax.grid(False)
     ax.set_xticks(list(range(*x_range)) + [x_range[-1]])
-    ax.set_aspect(aspect='auto', adjustable='box')
+    ax.set_aspect(aspect="auto", adjustable="box")
     ax.autoscale_view()
+
 
 def seqlogo_fig(letter_heights, vocab="DNA", figsize=(10, 2), ncol=1, plot_name=None):
     """
@@ -399,6 +450,7 @@ def seqlogo_fig(letter_heights, vocab="DNA", figsize=(10, 2), ncol=1, plot_name=
     """
     import matplotlib.pyplot as plt
     import math
+
     fig = plt.figure(figsize=figsize)
 
     if len(letter_heights.shape) == 3:

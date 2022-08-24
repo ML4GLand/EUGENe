@@ -26,12 +26,12 @@ def ols(filename, **kwargs: dict) -> pd.DataFrame:
     """
     reads the OLS dataset.
     """
-    sdataframe = read_csv(
-        filename,
-        return_dataframe=True, 
-        auto_name=False
+    sdataframe = read_csv(filename, return_dataframe=True, auto_name=False)
+    sdata = SeqData(
+        seqs=sdataframe["SEQ"],
+        names=sdataframe["NAME"],
+        seqs_annot=sdataframe[["ACTIVITY_SUMRNA_NUMDNA", "SEQ_LEN", "MICROSCOPE_FXN"]],
     )
-    sdata = SeqData(seqs=sdataframe["SEQ"], names=sdataframe["NAME"], seqs_annot=sdataframe[["ACTIVITY_SUMRNA_NUMDNA", "SEQ_LEN", "MICROSCOPE_FXN"]])
     sdata.seqs_annot.index = sdata.names
     sdata.seqs_annot.rename(columns={"ACTIVITY_SUMRNA_NUMDNA": "target"}, inplace=True)
     return sdata
@@ -57,11 +57,11 @@ def exact_syntax_match(filename, **kwargs: dict) -> pd.DataFrame:
     """
     reads the OLS dataset.
     """
-    sdataframe = read_csv(
-        filename,
-        return_dataframe=True, 
-        auto_name=False
+    sdataframe = read_csv(filename, return_dataframe=True, auto_name=False)
+    sdata = SeqData(
+        seqs=sdataframe["SEQ"],
+        names=sdataframe["NAME"],
+        seqs_annot=sdataframe[["FXN_LABEL", "FXN_DESCRIPTION", "SEQ_LEN"]],
     )
-    sdata = SeqData(seqs=sdataframe["SEQ"], names=sdataframe["NAME"], seqs_annot=sdataframe[["FXN_LABEL", "FXN_DESCRIPTION", "SEQ_LEN"]])
     sdata.seqs_annot.index = sdata.names
     return sdata

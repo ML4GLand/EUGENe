@@ -12,5 +12,5 @@ from ._otx_enhancer_grammar_datasets import (
     ols,
     khoueiry10,
     gata_ets_clusters,
-    exact_syntax_match
+    exact_syntax_match,
 )

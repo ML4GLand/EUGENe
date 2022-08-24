@@ -4,14 +4,11 @@ from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
 from ._utils import k_largest_index_argsort
 from .. import settings
-#from ..preprocessing import decode_DNA_seq
 
-def best_k_muts(
-    model,
-    X: np.ndarray,
-    k: str = 1,
-    device: str =None
-) -> np.ndarray:
+# from ..preprocessing import decode_DNA_seq
+
+
+def best_k_muts(model, X: np.ndarray, k: str = 1, device: str = None) -> np.ndarray:
     """
     Find and return the k highest scoring sequence from referenece sequence X.
 
@@ -30,7 +27,7 @@ def best_k_muts(
         The number of mutated seqences to return
     device: str, optional
         Whether to use a 'cpu' or 'cuda'.
-    
+
     Returns
     -------
     mut_X: numpy.ndarray
@@ -49,30 +46,27 @@ def best_k_muts(
     inds = k_largest_index_argsort(X_ism, k)
     locs = inds[:, 1]
     maxs = np.max(X_ism, axis=0)[locs]
-    #print(inds, locs, maxs)
-    #_max, ind = np.max(X_ism), np.unravel_index(X_ism.argmax(), X_ism.shape)
+    # print(inds, locs, maxs)
+    # _max, ind = np.max(X_ism), np.unravel_index(X_ism.argmax(), X_ism.shape)
     mut_Xs = np.zeros((k, X.shape[2], X.shape[1]))
-    #print(mut_Xs.shape)
+    # print(mut_Xs.shape)
     for i in range(k):
         mut_X = X.copy().transpose(0, 2, 1).squeeze(axis=0)
         mut_X[inds[i][1]] = np.zeros(mut_X.shape[1])
         mut_X[inds[i][1]][inds[i][0]] = 1
-        #print(mut_X.shape)
+        # print(mut_X.shape)
         mut_Xs[i] = mut_X
     return mut_Xs, maxs, locs
 
 
 def best_mut_seqs(
-    model,
-    X: np.ndarray,
-    batch_size: int = None,
-    device: str = None
+    model, X: np.ndarray, batch_size: int = None, device: str = None
 ) -> np.ndarray:
     """
-    Find and return the highest scoring sequence for each sequence 
+    Find and return the highest scoring sequence for each sequence
     from a set reference sequences X. X should contain one-hot-encoded sequences
     and should be of shape (n, 4, l). n is the number of sequences, 4 is the number of
-    nucleotides, and l is the length of the sequence. 
+    nucleotides, and l is the length of the sequence.
 
     Using ISM, this function calculates all the scores of all possible mutations
     of each reference sequence using a trained model. It then returns the highest
@@ -89,7 +83,7 @@ def best_mut_seqs(
         The number of sequences to score at once.
     device: str, optional
         Whether to use a 'cpu' or 'cuda'.
-    
+
     Returns
     -------
     mut_X: numpy.ndarray
@@ -105,14 +99,14 @@ def best_mut_seqs(
     batch_size = settings.batch_size if batch_size is None else batch_size
     X = X.transpose(0, 2, 1) if X.shape[2] == 4 else X
     X = torch.Tensor(X).float().numpy()
-    #print(X.shape)
-    X_ism = naive_ism(model, X, device="cpu", batch_size=batch_size)
+    # print(X.shape)
+    X_ism = naive_ism(model, X, device=device, batch_size=batch_size)
     maxs, inds, mut_X = [], [], X.copy().transpose(0, 2, 1)
-    #print(mut_X.shape)
+    # print(mut_X.shape)
     for i in range(len(mut_X)):
         maxs.append(np.max(X_ism[i]))
         ind = np.unravel_index(X_ism[i].argmax(), X_ism[i].shape)
-        #print(ind)
+        # print(ind)
         inds.append(ind[1])
         mut_X[i][ind[1]] = np.zeros(mut_X.shape[2])
         mut_X[i][ind[1]][ind[0]] = 1
@@ -126,7 +120,7 @@ def evolution(
     force_different: bool = True,
     k: int = 10,
     batch_size: int = None,
-    device: str = None
+    device: str = None,
 ) -> np.ndarray:
     """
     Perform rounds rounds of in-silico evolution on a single sequence X.
@@ -157,9 +151,9 @@ def evolution(
     curr_X = X.copy()
     mutated_positions, mutated_scores = [], []
     for r in range(rounds):
-        #print(f"Round {r}")
+        # print(f"Round {r}")
         mut_X, score, positions = best_k_muts(model, curr_X, k=10, device=device)
-        #print(mut_X.shape, positions)
+        # print(mut_X.shape, positions)
         if force_different:
             for i, p in enumerate(positions):
                 if p not in mutated_positions:
@@ -171,31 +165,25 @@ def evolution(
             curr_X = mut_X[0]
             mutated_positions.append(positions[0])
             mutated_scores.append(score[0])
-        #print(decode_DNA_seq(curr_X))
+        # print(decode_DNA_seq(curr_X))
     return curr_X, mutated_scores, mutated_positions
 
 
-def evolve_sdata(
-    model,
-    sdata,
-    rounds,
-    return_seqs=False,
-    **kwargs
-):
-    model.eval()
+def evolve_sdata(model, sdata, rounds, return_seqs=False, **kwargs):
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    print(device)
+    model.eval().to(device)
     evolved_seqs = np.zeros(sdata.ohe_seqs.shape)
-    for i, ohe_seq in tqdm(enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"):
-        evolved_seq = evolution(
-            model,
-            ohe_seq,
-            rounds=rounds
-        )[0]
+    for i, ohe_seq in tqdm(
+        enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"
+    ):
+        evolved_seq = evolution(model, ohe_seq, rounds=rounds, device=device)[0]
         evolved_seqs[i] = evolved_seq
-    
-    original_scores = model(torch.Tensor(sdata.ohe_seqs.transpose(0, 2, 1))).detach().numpy()
-    evolved_scores = model(torch.Tensor(evolved_seqs.transpose(0, 2, 1))).detach().numpy()
+    orig_seqs = torch.Tensor(sdata.ohe_seqs.transpose(0, 2, 1)).to(device)
+    evolved_seqs = torch.Tensor(evolved_seqs.transpose(0, 2, 1)).to(device)
+    original_scores = model(orig_seqs).detach().cpu().numpy()
+    evolved_scores = model(evolved_seqs).detach().cpu().numpy()
     sdata["original_scores"] = original_scores
     sdata[f"evolved_{rounds}_scores"] = evolved_scores
     if return_seqs:
         return evolved_seqs
-    

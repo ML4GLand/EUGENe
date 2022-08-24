@@ -29,7 +29,7 @@ from ._preprocessing import (
     reverse_complement_data,
     train_test_split_data,
     binarize_target_sdata,
-    prepare_data
+    prepare_data,
 )  # core sdata functions
 
 from ._preprocessing import (

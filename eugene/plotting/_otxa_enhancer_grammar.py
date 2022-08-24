@@ -7,7 +7,17 @@ from ..preprocessing._utils import _collapse_pos
 from ..preprocessing._otx_preprocess import defineTFBS
 
 
-def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None, highlight=[], cmap=None, norm=None, **kwargs):
+def _plot_otx_seq(
+    sdata,
+    seq_id,
+    uns_key=None,
+    model_pred=None,
+    threshold=None,
+    highlight=[],
+    cmap=None,
+    norm=None,
+    **kwargs
+):
     """
     Function to plot tracks from a SeqData object
     Parameters
@@ -43,53 +53,98 @@ def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None
     tfbs_annot = defineTFBS(seq)
 
     # Define subplots
-    fig, ax = plt.subplots(2, 1, figsize=(12,4), sharex=True)
+    fig, ax = plt.subplots(2, 1, figsize=(12, 4), sharex=True)
     plt.subplots_adjust(wspace=0, hspace=0)
 
     # Build the annotations in the first subplot
     h = 0.1  # height of TFBS rectangles
     ax[0].set_ylim(0, 1)  # lims of axis
-    ax[0].spines['bottom'].set_visible(False)  #remove axis surrounding, makes it cleaner
-    ax[0].spines['top'].set_visible(False)
-    ax[0].spines['right'].set_visible(False)
-    ax[0].spines['left'].set_visible(False)
-    ax[0].tick_params(left = False)  #remove tick marks on y-axis
+    ax[0].spines["bottom"].set_visible(
+        False
+    )  # remove axis surrounding, makes it cleaner
+    ax[0].spines["top"].set_visible(False)
+    ax[0].spines["right"].set_visible(False)
+    ax[0].spines["left"].set_visible(False)
+    ax[0].tick_params(left=False)  # remove tick marks on y-axis
     ax[0].set_yticks([0.25, 0.525, 0.75])  # Add ticklabel positions
-    ax[0].set_yticklabels(["TFBS", "Affinity", "Closest OLS Hamming Distance"], weight="bold")  # Add ticklabels
+    ax[0].set_yticklabels(
+        ["TFBS", "Affinity", "Closest OLS Hamming Distance"], weight="bold"
+    )  # Add ticklabels
     ax[0].hlines(0.2, 1, len(seq), color="black")  #  Backbone to plot boxes on top of
 
     # Build rectangles for each TFBS into a dictionary
     tfbs_blocks = {}
     for pos in tfbs_annot.keys():
         if tfbs_annot[pos][0] == "GATA":
-            tfbs_blocks[pos] = mpl.patches.Rectangle((pos-2, 0.2-(h/2)), width=8, height=h, facecolor="orange", edgecolor="black")
+            tfbs_blocks[pos] = mpl.patches.Rectangle(
+                (pos - 2, 0.2 - (h / 2)),
+                width=8,
+                height=h,
+                facecolor="orange",
+                edgecolor="black",
+            )
         elif tfbs_annot[pos][0] == "ETS":
-            tfbs_blocks[pos] = mpl.patches.Rectangle((pos-2, 0.2-(h/2)), width=8, height=h, facecolor="blue", edgecolor="black")
+            tfbs_blocks[pos] = mpl.patches.Rectangle(
+                (pos - 2, 0.2 - (h / 2)),
+                width=8,
+                height=h,
+                facecolor="blue",
+                edgecolor="black",
+            )
 
     # Plot the TFBS with annotations, should be input into function
     for pos, r in tfbs_blocks.items():
         ax[0].add_artist(r)
         rx, ry = r.get_xy()
         ytop = ry + r.get_height()
-        cx = rx + r.get_width()/2.0
+        cx = rx + r.get_width() / 2.0
         tfbs_site = tfbs_annot[pos][0] + tfbs_annot[pos][1]
         tfbs_aff = round(tfbs_annot[pos][3], 2)
         closest_match = tfbs_annot[pos][5] + ": " + str(tfbs_annot[pos][7])
         spacing = tfbs_annot[pos][4]
-        ax[0].annotate(tfbs_site, (cx, ytop), color='black', weight='bold',
-                    fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(tfbs_aff, (cx, 0.45), color=r.get_facecolor(), weight='bold',
-                    fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(closest_match, (cx, 0.65), color="black", weight='bold',
-                    fontsize=12, ha='center', va='bottom')
-        ax[0].annotate(str(spacing), (((rx-spacing) + rx)/2, 0.25), weight='bold', color="black",
-                fontsize=12, ha='center', va='bottom')
+        ax[0].annotate(
+            tfbs_site,
+            (cx, ytop),
+            color="black",
+            weight="bold",
+            fontsize=12,
+            ha="center",
+            va="bottom",
+        )
+        ax[0].annotate(
+            tfbs_aff,
+            (cx, 0.45),
+            color=r.get_facecolor(),
+            weight="bold",
+            fontsize=12,
+            ha="center",
+            va="bottom",
+        )
+        ax[0].annotate(
+            closest_match,
+            (cx, 0.65),
+            color="black",
+            weight="bold",
+            fontsize=12,
+            ha="center",
+            va="bottom",
+        )
+        ax[0].annotate(
+            str(spacing),
+            (((rx - spacing) + rx) / 2, 0.25),
+            weight="bold",
+            color="black",
+            fontsize=12,
+            ha="center",
+            va="bottom",
+        )
 
     if uns_key is None:
         from ..preprocessing import ohe_DNA_seq
+
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence"
-        ax[1].spines['left'].set_visible(False)
+        ax[1].spines["left"].set_visible(False)
         ax[1].set_yticklabels([])
         ax[1].set_yticks([])
         print(seq)
@@ -110,15 +165,23 @@ def _plot_otx_seq(sdata, seq_id, uns_key = None, model_pred=None, threshold=None
     if len(highlight) > 0:
         to_highlight = {"red": _collapse_pos(highlight)}
         print(to_highlight)
-        viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, highlight=to_highlight, height_padding_factor=1)
+        viz_sequence.plot_weights_given_ax(
+            ax[1],
+            importance_scores,
+            subticks_frequency=10,
+            highlight=to_highlight,
+            height_padding_factor=1,
+        )
     else:
-        viz_sequence.plot_weights_given_ax(ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1)
-    ax[1].spines['right'].set_visible(False)
-    ax[1].spines['top'].set_visible(False)
+        viz_sequence.plot_weights_given_ax(
+            ax[1], importance_scores, subticks_frequency=10, height_padding_factor=1
+        )
+    ax[1].spines["right"].set_visible(False)
+    ax[1].spines["top"].set_visible(False)
     ax[1].set_xlabel("Sequence Position")
     ax[1].set_ylabel(ylab)
     if threshold is not None:
-        ax[1].hlines(1, len(seq), threshold/10, color="red")
+        ax[1].hlines(1, len(seq), threshold / 10, color="red")
     plt.suptitle(title, fontsize=24, weight="bold", color=color)
     return ax
 
@@ -129,21 +192,31 @@ def otx_seq(sdata, seq_id=None, **kwargs):
     """
     _plot_otx_seq(sdata, seq_id, **kwargs)
 
-    
-def boxplot(
-    sdata,
-    prediction,
-    groupby,
-    palette,
-    order,
-    xlabel=None,
-    ylabel=None,
-    threshold=0
+
+def prettier_boxplot(
+    sdata, prediction, groupby, palette, order, xlabel=None, ylabel=None, threshold=0
 ):
-    fig, ax = plt.subplots(1, 1, figsize=(8,8))
-    sns.boxplot(y=sdata.seqs_annot[prediction], x=sdata.seqs_annot[groupby], order=order, palette=palette, ax=ax)
-    sns.swarmplot(y=sdata.seqs_annot[prediction], x=sdata.seqs_annot[groupby], order=order, palette=palette, ax=ax, size=10, edgecolor="black", linewidth=2)
-    ax.hlines(threshold, ax.get_xlim()[0], ax.get_xlim()[1], color="red", linestyle="dashed")
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    sns.boxplot(
+        y=sdata.seqs_annot[prediction],
+        x=sdata.seqs_annot[groupby],
+        order=order,
+        palette=palette,
+        ax=ax,
+    )
+    sns.swarmplot(
+        y=sdata.seqs_annot[prediction],
+        x=sdata.seqs_annot[groupby],
+        order=order,
+        palette=palette,
+        ax=ax,
+        size=10,
+        edgecolor="black",
+        linewidth=2,
+    )
+    ax.hlines(
+        threshold, ax.get_xlim()[0], ax.get_xlim()[1], color="red", linestyle="dashed"
+    )
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=16)
     ax.set_xlabel(xlabel, fontsize=20)
     ax.set_ylabel(ylabel, fontsize=20)

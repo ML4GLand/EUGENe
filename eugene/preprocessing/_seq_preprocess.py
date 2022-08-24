@@ -159,7 +159,7 @@ def _ohe_seqs(
     seq_align="start",
     pad_value="N",
     encode_type="one_hot",
-    pad=True
+    pad=True,
 ):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
@@ -185,9 +185,11 @@ def _ohe_seqs(
     assert len(vocab[0]) == len(pad_value)
     assert pad_value in neutral_vocab
     assert encode_type in ["one_hot", "token"]
-    
+
     if pad:
-        seq_vec = _pad_sequences(seq_vec, maxlen=maxlen, align=seq_align, value=pad_value)
+        seq_vec = _pad_sequences(
+            seq_vec, maxlen=maxlen, align=seq_align, value=pad_value
+        )
 
     if encode_type == "one_hot":
         arr_list = [
@@ -229,22 +231,25 @@ def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", pad=True, copy=False):
         seq_align=seq_align,
         pad_value="N",
         encode_type="one_hot",
-        pad=pad
+        pad=pad,
     )
 
 
-def decode_DNA_seqs(arr, vocab=DNA):
+def decode_DNA_seqs(arr, vocab=DNA, verbose=True):
     """Convert a one-hot encoded array back to string"""
     tokens = _one_hot2token(arr)
     indexToLetter = _get_index_dict(vocab)
-    return np.array(
-        [
-            "".join([indexToLetter[x] for x in row])
-            for i, row in tqdm(
-                enumerate(tokens), total=len(tokens), desc="Decoding DNA sequences"
-            )
-        ]
-    )
+    if verbose:
+        return np.array(
+            [
+                "".join([indexToLetter[x] for x in row])
+                for i, row in tqdm(
+                    enumerate(tokens), total=len(tokens), desc="Decoding DNA sequences"
+                )
+            ]
+        )
+    else:
+        return ["".join([indexToLetter[x] for x in row]) for row in tokens]
 
 
 def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):

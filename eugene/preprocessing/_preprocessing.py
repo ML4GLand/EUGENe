@@ -5,7 +5,7 @@ from ._seq_preprocess import sanitize_seqs, ohe_DNA_seqs, reverse_complement_seq
 from ..utils._decorators import track
 
 
-#@track
+# @track
 def sanitize_sdata(sdata: SeqData, copy=False) -> SeqData:
     """Reverse complement sequences.
     Parameters
@@ -19,7 +19,9 @@ def sanitize_sdata(sdata: SeqData, copy=False) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     sdata.seqs = sanitize_seqs(sdata.seqs) if sdata.seqs is not None else None
-    sdata.rev_seqs = sanitize_seqs(sdata.rev_seqs) if sdata.rev_seqs is not None else None
+    sdata.rev_seqs = (
+        sanitize_seqs(sdata.rev_seqs) if sdata.rev_seqs is not None else None
+    )
     return sdata if copy else None
 
 

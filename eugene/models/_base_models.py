@@ -198,8 +198,9 @@ class Hybrid(BaseModel):
         loss_fxn="mse",
         aggr=None,
         fc_kwargs={},
+        **kwargs
     ):
-        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn)
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **conv_kwargs)
             self.recurrentnet = BasicRecurrent(

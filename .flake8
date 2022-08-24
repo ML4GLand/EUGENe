@@ -29,7 +29,8 @@ ignore = # module imported but unused -> required for Scanpys API
          F841,
          F821,
 	     E722,
-         W605
+         W605,
+         F632
 per-file-ignores =
     # F811 Redefinition of unused name from line, does not play nice with pytest fixtures
     eugene/tests/test*.py: F811

@@ -72,7 +72,9 @@ def _get_activations_from_layer(layer, sdataloader, device):
     ):
         ID, x, x_rev_comp, y = batch
         with nostdout():
-            sequences.append(decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy()))
+            sequences.append(
+                decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy(), verbose=False)
+            )
         # print(x.shape)
         x = x.to(device)
         activations.append(F.relu(layer(x)).detach().cpu().numpy())

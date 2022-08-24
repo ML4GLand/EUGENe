@@ -18,8 +18,9 @@ default_rc_context = {
     "ytick.labelsize": 12,
     "legend.fontsize": 12,
     "pdf.fonttype": 42,
-    "ps.fonttype": 42
+    "ps.fonttype": 42,
 }
+
 
 def _plot_seq_features(
     ax: Axes,
@@ -103,7 +104,7 @@ def _plot_seq_logo(
     highlight: list = [],
     threshold: float = None,
     ylab="Importance Score",
-    **kwargs
+    **kwargs,
 ):
     """
     Plot sequence logo.
@@ -149,11 +150,15 @@ def _plot_seq_logo(
             subticks_frequency=10,
             highlight=to_highlight,
             height_padding_factor=1,
-            **kwargs
+            **kwargs,
         )
     else:
         viz_sequence.plot_weights_given_ax(
-            ax, imp_scores, subticks_frequency=int(len(seq)/10), height_padding_factor=1, **kwargs
+            ax,
+            imp_scores,
+            subticks_frequency=int(len(seq) / 10),
+            height_padding_factor=1,
+            **kwargs,
         )
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -175,7 +180,7 @@ def seq_track(
     norm=None,
     return_axes: bool = False,
     save: str = None,
-    **kwargs
+    **kwargs,
 ):
     """
     Function to plot tracks from a SeqData object
@@ -239,7 +244,7 @@ def seq_track(
             imp_scores=imp_scores,
             highlight=highlight,
             threshold=threshold,
-            **kwargs
+            **kwargs,
         )
     else:
         _plot_seq_logo(
@@ -248,7 +253,7 @@ def seq_track(
             imp_scores=imp_scores,
             highlight=highlight,
             threshold=threshold,
-            **kwargs
+            **kwargs,
         )
 
     # Add title
@@ -278,7 +283,7 @@ def multiseq_track(
     height=None,
     return_axes: bool = False,
     save: str = None,
-    **kwargs
+    **kwargs,
 ):
     """
     Function to plot tracks from a SeqData object
@@ -319,20 +324,28 @@ def multiseq_track(
     ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
     seq_idx = np.where(sdata.seqs_annot.index.isin(seq_ids))[0]
     seqs = sdata.seqs[seq_idx]
-    fig_width = len(seq_ids) * int(len(seqs[0]) / 20) if width is None else width # make each sequence width proportional to its length and multiply by the number of sequences
-    fig_height = len(uns_keys)*4 if height is None else height # make each sequence height proportional to the number of uns_keys
+    fig_width = (
+        len(seq_ids) * int(len(seqs[0]) / 20) if width is None else width
+    )  # make each sequence width proportional to its length and multiply by the number of sequences
+    fig_height = (
+        len(uns_keys) * 4 if height is None else height
+    )  # make each sequence height proportional to the number of uns_keys
     _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc=f"Importance values", position=0):
+    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0):
         for j, seq in enumerate(seqs):
-            imp_scores = sdata.uns[uns_key][seq_idx[j]] if uns_key in sdata.uns.keys() else None
+            imp_scores = (
+                sdata.uns[uns_key][seq_idx[j]] if uns_key in sdata.uns.keys() else None
+            )
             _plot_seq_logo(
-                ax.flatten()[i*len(seq_ids)+j],
+                ax.flatten()[i * len(seq_ids) + j],
                 seq,
                 imp_scores=imp_scores,
                 ylab=ylabels[i],
             )
             if i == 0:
-                ax.flatten()[i*len(seq_ids)+j].set_title(seq_ids[j], fontsize=18, weight="bold")
+                ax.flatten()[i * len(seq_ids) + j].set_title(
+                    seq_ids[j], fontsize=18, weight="bold"
+                )
     plt.tight_layout()
     if return_axes:
         return ax
@@ -393,31 +406,28 @@ def lm_seq_track(
     uns_key,
     highlights: list = [],
     highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
-    ylabel = "Saliency",
+    ylabel="Saliency",
     title="",
     return_ax: bool = False,
     save=None,
-    **kwargs
+    **kwargs,
 ):
     if isinstance(highlights, tuple):
         highlights = [highlights]
     if isinstance(highlight_colors, str):
         highlight_colors = [highlight_colors] * len(highlights)
-    
+
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
     viz_seq = pd.DataFrame(imp_scores.T, columns=["A", "C", "G", "T"])
     viz_seq.index.name = "pos"
     y_max = np.max(viz_seq.values)
     y_min = np.min(viz_seq.values)
-    nn_logo = lm.Logo(
-        viz_seq,
-        **kwargs
-    )
+    nn_logo = lm.Logo(viz_seq, **kwargs)
 
     # style using Logo methods
     nn_logo.style_spines(visible=False)
-    nn_logo.style_spines(spines=['left'], visible=True, bounds=[y_min, y_max])
+    nn_logo.style_spines(spines=["left"], visible=True, bounds=[y_min, y_max])
 
     # style using Axes methods
     nn_logo.ax.set_xlim([0, len(viz_seq)])
@@ -426,7 +436,9 @@ def lm_seq_track(
     nn_logo.ax.set_ylabel(ylabel)
     nn_logo.ax.set_title(title)
     for i, highlight in enumerate(highlights):
-        nn_logo.highlight_position_range(pmin=highlight[0], pmax=highlight[1], color=highlight_colors[i])
+        nn_logo.highlight_position_range(
+            pmin=highlight[0], pmax=highlight[1], color=highlight_colors[i]
+        )
     if return_ax:
         return nn_logo.ax
     if save is not None:
@@ -442,7 +454,7 @@ def lm_multiseq_track(
     height=None,
     return_axes: bool = False,
     save: str = None,
-    **kwargs
+    **kwargs,
 ):
     if isinstance(seq_ids, str):
         seq_ids = [seq_ids]
@@ -452,20 +464,24 @@ def lm_multiseq_track(
         ylabels = [ylabels]
     seq = sdata.seqs[0]
     ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
-    fig_width = len(seq_ids) * int(len(seq) / 20) if width is None else width # make each sequence width proportional to its length and multiply by the number of sequences
-    fig_height = len(uns_keys)*4 if height is None else height # make each sequence height proportional to the number of uns_keys
+    fig_width = (
+        len(seq_ids) * int(len(seq) / 20) if width is None else width
+    )  # make each sequence width proportional to its length and multiply by the number of sequences
+    fig_height = (
+        len(uns_keys) * 4 if height is None else height
+    )  # make each sequence height proportional to the number of uns_keys
     _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc=f"Importance values", position=0):
+    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0):
         for j, seq_id in enumerate(seq_ids):
             lm_seq_track(
                 sdata,
                 seq_id=seq_id,
                 uns_key=uns_key,
-                ax=ax.flatten()[i*len(seq_ids)+j],
+                ax=ax.flatten()[i * len(seq_ids) + j],
                 ylabel=ylabels[i],
                 title=seq_id,
                 save=None,
-                **kwargs
+                **kwargs,
             )
 
     plt.tight_layout()
@@ -476,30 +492,25 @@ def lm_multiseq_track(
 
 
 def lm_filter_viz(
-    sdata, 
-    filter_id=None, 
-    uns_key="pfms", 
+    sdata,
+    filter_id=None,
+    uns_key="pfms",
     return_ax: bool = False,
-    save: str = None, 
+    save: str = None,
     title=None,
-    **kwargs):
+    **kwargs,
+):
 
-    pfm=sdata.uns[uns_key][filter_id]
-    info_mat = lm.transform_matrix(
-        pfm, 
-        from_type='counts', 
-        to_type='information')
-    logo = lm.Logo(
-        info_mat,
-        **kwargs
-    )
-    logo.style_xticks(spacing=5, anchor=25, rotation=45, fmt='%d', fontsize=14)
+    pfm = sdata.uns[uns_key][filter_id]
+    info_mat = lm.transform_matrix(pfm, from_type="counts", to_type="information")
+    logo = lm.Logo(info_mat, **kwargs)
+    logo.style_xticks(spacing=5, anchor=25, rotation=45, fmt="%d", fontsize=14)
     logo.style_spines(visible=False)
-    logo.style_spines(spines=['left','bottom'], visible=True, linewidth=2)
+    logo.style_spines(spines=["left", "bottom"], visible=True, linewidth=2)
     logo.ax.set_ylim([0, 2])
     logo.ax.set_yticks([0, 1, 2])
-    logo.ax.set_yticklabels(['0', '1', '2'])
-    logo.ax.set_ylabel('bits')
+    logo.ax.set_yticklabels(["0", "1", "2"])
+    logo.ax.set_ylabel("bits")
     logo.ax.set_title(title if title is not None else filter_id)
     if save is not None:
         plt.savefig(save)
@@ -508,40 +519,36 @@ def lm_filter_viz(
 
 
 def lm_multifilter_viz(
-    sdata, 
-    filter_ids: list, 
+    sdata,
+    filter_ids: list,
     num_rows: int = None,
     num_cols: int = None,
-    uns_key="pfms", 
+    uns_key="pfms",
     titles: list = None,
-    save: str = None, 
-    **kwargs):
+    save: str = None,
+    **kwargs,
+):
 
-    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12,10))
+    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12, 10))
     for i in range(num_rows):
         for j in range(num_cols):
-            filter_id = filter_ids[i*num_cols+j]
+            filter_id = filter_ids[i * num_cols + j]
             lm_filter_viz(
-                sdata, 
-                filter_id=filter_id, 
-                uns_key=uns_key, 
-                ax=ax.flatten()[i*num_cols+j], 
-                title=titles[i*num_cols+j] if titles is not None else filter_id,
-                save=None, 
-                **kwargs
+                sdata,
+                filter_id=filter_id,
+                uns_key=uns_key,
+                ax=ax.flatten()[i * num_cols + j],
+                title=titles[i * num_cols + j] if titles is not None else filter_id,
+                save=None,
+                **kwargs,
             )
 
     plt.tight_layout()
     if save is not None:
         plt.savefig(save)
-        
-        
-def kipoi_ism_heatmap(
-    sdata,
-    seq_id,
-    uns_key="NaiveISM_imps",
-    figsize=(15,2.5)
-):
+
+
+def kipoi_ism_heatmap(sdata, seq_id, uns_key="NaiveISM_imps", figsize=(15, 2.5)):
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     val = sdata.uns["NaiveISM_imps"][seq_idx]
     fig = plt.figure(figsize=figsize)
