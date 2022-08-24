@@ -86,8 +86,12 @@ def _plot_seq_features(
         )
         for i, add_annot in enumerate(additional_annots):
             if add_annot in annot.index:
+                if isinstance(annot[add_annot], float):
+                    ann = "{:.2f}".format(annot[add_annot])
+                else:
+                    ann = annot[add_annot]
                 ax.annotate(
-                    annot[add_annot],
+                    ann,
                     (cx, 0.45 + i * 0.2),
                     color="black",
                     weight="bold",
