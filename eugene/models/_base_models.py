@@ -128,7 +128,9 @@ class RNN(BaseModel):
         strand="ss",
         task="regression",
         aggr=None,
+        loss_fxn="mse",
         fc_kwargs={},
+        **kwargs
     ):
         """Initialize the RNN model.
         Args:
@@ -140,7 +142,7 @@ class RNN(BaseModel):
             aggr: The aggregation function.
             fc_kwargs: The keyword arguments for the fully connected layer.
         """
-        super().__init__(input_len, output_dim, strand, task, aggr)
+        super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
             self.rnn = BasicRecurrent(input_dim=4, **rnn_kwargs)
             self.fcnet = BasicFullyConnectedModule(
