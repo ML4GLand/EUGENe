@@ -11,7 +11,6 @@ bin/*/out/
 tests/_data/datasets
 tests/notebooks/lightning_logs
 tests/notebooks/datasets
-tests/_configs/
 tests/_data/tf_modisco/
 tests/_logs/
 tests/_output/

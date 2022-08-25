@@ -1,0 +1,17 @@
+model:
+  input_len: 500
+  output_dim: 1
+  strand: ds
+  task: binary_classification
+  loss_fxn: bce
+  aggr: max
+  optimizer: adam
+  optimizer_kwargs:
+    amsgrad: true
+  lr: 0.001
+  scheduler: reduce_lr_on_plateau
+  scheduler_patience: 2
+  conv_kernel_size: [11, 3]
+  filters: [10, 8]
+  maxpool_kernel_size: 30
+  stride: 1
