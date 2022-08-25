@@ -4,7 +4,7 @@ from pyjaspar import jaspardb
 import pyranges as pr
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
-from ...utils import track
+#from ...utils import track
 
 
 def get_jaspar_motifs(

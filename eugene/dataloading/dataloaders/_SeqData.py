@@ -367,6 +367,17 @@ class SeqData:
             )
 
 
+    def make_names_unique(self):
+        n_digits = len(str(self.n_obs))
+        new_index = np.array(
+            [
+                "seq{num:0{width}}".format(num=i, width=n_digits)
+                for i in range(self.n_obs)
+            ]
+        )
+        self.names = new_index
+        self.seqs_annot.index = new_index
+
 # TODO: move this to utils or something
 @singledispatch
 def _gen_dataframe(anno, length, index_names):

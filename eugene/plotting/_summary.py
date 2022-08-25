@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import accuracy_score, roc_auc_score, average_precision_score, precision_score, recall_score, f1_score
 from scipy.stats import spearmanr, pearsonr, kendalltau
 from ._utils import _create_matplotlib_axes, _label_plot, _plot_seaborn
 
@@ -11,6 +12,12 @@ metric_dict = {
     "spearman": spearmanr,
     "pearson": pearsonr,
     "kendall": kendalltau,
+    "accuracy": accuracy_score,
+    "roc_auc": roc_auc_score,
+    "average_precision": average_precision_score,
+    "precision": precision_score,
+    "recall": recall_score,
+    "f1": f1_score
 }
 
 default_rc_context = {
@@ -31,6 +38,7 @@ def _model_performances_across_groups(
     prediction_groups=None,
     groupby=None,
     metrics="r2",
+    clf_thresh=0,
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
@@ -42,6 +50,7 @@ def _model_performances_across_groups(
     conc = pd.DataFrame()
     for group, data in sdataframe.groupby(groupby):
         predicts = data[prediction_labels]
+        bin_predicts = (predicts >= clf_thresh).astype(int)
         true = data[target]
         scores = pd.DataFrame()
         for metric in metrics:
@@ -66,6 +75,26 @@ def _model_performances_across_groups(
                     ],
                     axis=1,
                 )
+            elif metric in ["accuracy", "precision", "recall"]:
+                scores = pd.concat(
+                    [
+                        scores,
+                        bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(
+                            name=metric
+                        ),
+                    ],
+                    axis=1,
+                )
+            elif metric in ["roc_auc", "average_precision"]:
+                scores = pd.concat(
+                    [
+                        scores,
+                        predicts.apply(lambda x: func(true, x), axis=0).to_frame(
+                            name=metric
+                        ),
+                    ],
+                    axis=1,
+                )
         scores[groupby] = group
         if prediction_groups is not None:
             scores["prediction_groups"] = prediction_groups
@@ -74,7 +103,7 @@ def _model_performances_across_groups(
 
 
 def _model_performances(
-    sdataframe, target, prediction_labels=None, prediction_groups=None, metrics="r2"
+    sdataframe, target, prediction_labels=None, prediction_groups=None, metrics="r2", clf_thresh=0
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
@@ -85,6 +114,7 @@ def _model_performances(
         else prediction_labels
     )
     predicts = sdataframe[prediction_labels]
+    bin_predicts = (predicts >= clf_thresh).astype(int)
     scores = pd.DataFrame()
     for metric in metrics:
         func = metric_dict[metric]
@@ -103,6 +133,26 @@ def _model_performances(
                 [
                     scores,
                     predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(
+                        name=metric
+                    ),
+                ],
+                axis=1,
+            )
+        elif metric in ["accuracy", "precision", "recall", "f1"]:
+            scores = pd.concat(
+                [
+                    scores,
+                    bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(
+                        name=metric
+                    ),
+                ],
+                axis=1,
+            )
+        elif metric in ["roc_auc", "average_precision"]:
+            scores = pd.concat(
+                [
+                    scores,
+                    predicts.apply(lambda x: func(true, x), axis=0).to_frame(
                         name=metric
                     ),
                 ],
@@ -136,7 +186,6 @@ def performance_summary(
         scores = _model_performances_across_groups(
             sdataframe, target, prediction_labels, prediction_groups, groupby, metrics
         )
-    print(scores.columns)
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
             scores,
