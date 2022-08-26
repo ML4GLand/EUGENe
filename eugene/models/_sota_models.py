@@ -4,42 +4,45 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D
 
 
 class DeepBind(BaseModel):
-    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, loss_fxn="mse", optimizer="adam", lr=1e-3, scheduler="lr_scheduler", scheduler_patience=2, stride_c=0, mp_kwargs = {}, conv_kwargs = {}, fc_kwargs = {}):
+    def __init__(self, input_len, output_dim, strand="ss", task="regression", aggr=None, loss_fxn="mse", optimizer="adam", lr=1e-3, scheduler="lr_scheduler", scheduler_patience=2, mp_kwargs = {}, conv_kwargs = {}, fc_kwargs = {}):
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, optimizer, lr, scheduler, scheduler_patience)
         self.flattened_input_dims = 8*input_len
         self.mp_kwargs, self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(mp_kwargs, conv_kwargs, fc_kwargs)
         self.max_pool = nn.MaxPool1d(**self.mp_kwargs)
-        self.avg_pool = nn.AvgPool1d(**self.mp_kwargs)
+        # self.avg_pool = nn.AvgPool1d(**self.mp_kwargs)
 
         # Add strand specific modules
         if self.strand == "ss":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//mp_kwargs.get("kernel_size"), output_dim=output_dim, **self.fc_kwargs)
         elif self.strand == "ds":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//4)+stride_c, output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2), output_dim=output_dim, **self.fc_kwargs)
         elif self.strand == "ts":
             self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
+            self.fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim//mp_kwargs.get("kernel_size"), output_dim=output_dim, **self.fc_kwargs)
             self.reverse_convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.reverse_convnet.flatten_dim//(mp_kwargs.get("kernel_size")//2)+stride_c, output_dim=output_dim, **self.fc_kwargs)
+            self.reverse_fcn = BasicFullyConnectedModule(input_dim=self.convnet.flatten_dim, output_dim=output_dim, **self.fc_kwargs)
 
     def forward(self, x, x_rev_comp = None):
         x = self.convnet(x)
         x = x.view(x.size(0), self.convnet.flatten_dim)
-        x = torch.cat((self.max_pool(x), self.avg_pool(x)), dim=1)
+        x = self.max_pool(x)
+        # x = torch.cat((self.max_pool(x), self.avg_pool(x)), dim=1)
         if self.strand == "ss":
             x = self.fcn(x)
         elif self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
+            x_rev_comp = self.max_pool(x_rev_comp)
+            # x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
             x = torch.cat((x, x_rev_comp), dim=1)
             x = self.fcn(x)
         elif self.strand == "ts":
             x_rev_comp = self.reverse_convnet(x_rev_comp)
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
+            x_rev_comp = self.max_pool(x_rev_comp)
+            # x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
             x = self.fcn(x)
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
             x_rev_comp = self.reverse_fcn(x_rev_comp)
@@ -56,13 +59,12 @@ class DeepBind(BaseModel):
         conv_kwargs.setdefault("conv_kernels", [4])
         conv_kwargs.setdefault("pool_kernels", [4])
         conv_kwargs.setdefault("omit_final_pool", True)
-        conv_kwargs.setdefault("dropout_rates", 0.2)
+        conv_kwargs.setdefault("dropout_rates", 0.25)
         conv_kwargs.setdefault("batchnorm", False)
 
         # Add fc_kwargs
-        #fc_kwargs.setdefault("output_dim", 1)
-        fc_kwargs.setdefault("hidden_dims", [256, 64, 16, 4])
-        fc_kwargs.setdefault("dropout_rate", 0.2)
+        fc_kwargs.setdefault("hidden_dims", [256])
+        fc_kwargs.setdefault("dropout_rate", 0.25)
         fc_kwargs.setdefault("batchnorm", False)
 
         return mp_kwargs, conv_kwargs, fc_kwargs
