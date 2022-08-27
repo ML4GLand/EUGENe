@@ -1,7 +1,7 @@
 from tqdm.auto import tqdm
 from ..dataloading import SeqData
 from ._dataset_preprocess import split_train_test, binarize_values
-from ._seq_preprocess import sanitize_seqs, ohe_DNA_seqs, reverse_complement_seqs
+from ._seq_preprocess import sanitize_seqs, ohe_alphabet_seqs, reverse_complement_seqs
 from ..utils._decorators import track
 
 
@@ -26,29 +26,41 @@ def sanitize_sdata(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def reverse_complement_data(sdata: SeqData, copy=False) -> SeqData:
+def reverse_complement_data(sdata: SeqData, alphabet="DNA", copy=False) -> SeqData:
     """Reverse complement sequences.
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
+    RNAbases : bool
+        Whether or not to use RNA bases in place of DNA bases. Default is false.
     Returns
     -------
     SeqData
         SeqData object with reverse complement sequences.
     """
     sdata = sdata.copy() if copy else sdata
-    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs)
+    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, alphabet)
     return sdata if copy else None
 
 
 @track
-def one_hot_encode_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
+def one_hot_encode_data(
+    sdata: SeqData,
+    alphabet="DNA",
+    seq_align="start",
+    maxlen=None,
+    fill_value=None,
+    copy=False,
+    **kwargs,
+) -> SeqData:
     """One-hot encode sequences.
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
+    RNAbases : bool
+        Whether or not to use RNA bases in place of DNA bases. Default is false.
     Returns
     -------
     SeqData
@@ -56,9 +68,23 @@ def one_hot_encode_data(sdata: SeqData, copy=False, **kwargs) -> SeqData:
     """
     sdata = sdata.copy() if copy else sdata
     if sdata.seqs is not None and sdata.ohe_seqs is None:
-        sdata.ohe_seqs = ohe_DNA_seqs(sdata.seqs, **kwargs)
-    if sdata.rev_seqs is not None and sdata.ohe_rev_seqs is None:
-        sdata.ohe_rev_seqs = ohe_DNA_seqs(sdata.rev_seqs, **kwargs)
+        sdata.ohe_seqs = ohe_alphabet_seqs(
+            sdata.seqs,
+            alphabet,
+            seq_align=seq_align,
+            maxlen=maxlen,
+            fill_value=fill_value,
+            **kwargs,
+        )
+    if sdata.rev_seqs is not None:
+        sdata.ohe_rev_seqs = ohe_alphabet_seqs(
+            sdata.rev_seqs,
+            alphabet,
+            seq_align=seq_align,
+            maxlen=maxlen,
+            fill_value=fill_value,
+            **kwargs,
+        )
     return sdata if copy else None
 
 
@@ -109,7 +135,9 @@ def add_ranges_annot(
 
 
 @track
-def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
+def scale_targets(
+    sdata: SeqData, targets, train_key, suffix=True, copy=False
+) -> SeqData:
     """Scale targets.
     Parameters
     ----------
@@ -124,8 +152,14 @@ def scale_targets(sdata: SeqData, target, train_key, copy=False) -> SeqData:
 
     sdata = sdata.copy() if copy else sdata
     scaler = StandardScaler()
-    scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
-    sdata[f"{target}_scaled"] = scaler.transform(sdata[target].values.reshape(-1, 1))
+    if type(targets) is str:
+        targets = [targets]
+    for target in targets:
+        scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
+        # Remove _scaled to help with fragmentation?
+        sdata[f"{target}_scaled" if suffix else target] = scaler.transform(
+            sdata[target].values.reshape(-1, 1)
+        )
     return sdata if copy else None
 
 
@@ -159,6 +193,7 @@ def binarize_target_sdata(
 def prepare_data(
     sdata: SeqData,
     steps=["reverse_complement", "one_hot_encode", "train_test_split"],
+    # Add in an RNA flag to this
     copy=False,
 ) -> SeqData:
     """Prepare data.
@@ -179,6 +214,47 @@ def prepare_data(
     for step in pbar:
         pbar.set_description(f"{step_name[step]} on SeqData")
         preprocessing_steps[step].__wrapped__(sdata)
+
+    return sdata if copy else None
+
+
+@track
+def clamp_percentiles(
+    sdata: SeqData,
+    percentile: float,
+    target_list: list,
+    copy=False,
+) -> SeqData:
+
+    if type(target_list) is str:
+        target_list = [target_list]
+
+    for target in target_list:
+        clamp_num = sdata[target].astype(float).quantile(percentile)
+        sdata[target] = sdata[target].astype(float).clip(upper=clamp_num)
+
+    return sdata if copy else None
+
+
+@track
+def clean_nan_data(
+    sdata: SeqData,
+    target_list: list,
+    nan_threshold=1,
+    copy=False,
+):
+
+    if type(target_list) is str:
+        target_list = [target_list]
+
+    for target in target_list:
+        if (
+            sdata[target].astype(float).isna().sum() / sdata[target].__len__()
+            > nan_threshold
+        ):
+            sdata.seqs_annot = sdata.seqs_annot.drop(target, axis=1)
+        else:
+            sdata[target].fillna(value=0, inplace=True)
 
     return sdata if copy else None
 

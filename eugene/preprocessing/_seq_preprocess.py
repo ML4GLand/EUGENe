@@ -19,7 +19,8 @@ from ._utils import (
 
 # Vocabularies
 DNA = ["A", "C", "G", "T"]
-COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
+COMPLEMENT_DNA = {"A": "T", "C": "G", "G": "C", "T": "A"}
+COMPLEMENT_RNA = {"A": "U", "C": "G", "G": "C", "U": "A"}
 RNA = ["A", "C", "G", "U"]
 AMINO_ACIDS = [
     "A",
@@ -119,20 +120,25 @@ def sanitize_seqs(seqs):
     return np.array([seq.strip().upper() for seq in seqs])
 
 
-def reverse_complement_seq(seq, copy=False):
+def reverse_complement_seq(seq, alphabet, copy=False):
     """Reverse complement a DNA sequence."""
-    return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
+    if alphabet == "DNA":
+        return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
+    elif alphabet == "RNA":
+        return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
+    else:
+        raise ValueError("Invalid alphabet")
 
 
-def reverse_complement_seqs(seqs, copy=False):
+def reverse_complement_seqs(seqs, alphabet, copy=False):
     """Reverse complement a list of DNA sequences."""
     return np.array(
         [
-            reverse_complement_seq(seq)
+            reverse_complement_seq(seq, alphabet)
             for i, seq in tqdm(
                 enumerate(seqs),
                 total=len(seqs),
-                desc="Reverse complementing DNA sequences",
+                desc="Reverse complementing sequences",
             )
         ]
     )
@@ -159,6 +165,7 @@ def _ohe_seqs(
     seq_align="start",
     pad_value="N",
     encode_type="one_hot",
+    fill_value=None,
     pad=True,
 ):
     """
@@ -193,7 +200,7 @@ def _ohe_seqs(
 
     if encode_type == "one_hot":
         arr_list = [
-            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
+            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value)
             for i, seq in tqdm(
                 enumerate(seq_vec),
                 total=len(seq_vec),
@@ -213,11 +220,20 @@ def _ohe_seqs(
         return np.array(arr_list, dtype=object)
 
 
-def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", pad=True, copy=False):
+def ohe_alphabet_seqs(
+    seq_vec,
+    alphabet,
+    maxlen=None,
+    seq_align="start",
+    pad=True,
+    fill_value=None,
+    copy=False,
+):
     """
-    Convert the DNA sequence into 1-hot-encoding np array
+    Convert the sequence into 1-hot-encoding np array
     Arguments
         seq_vec: list of chars. List of sequences that can have different lengths
+        RNAbases : bool, Whether or not to use RNA bases in place of DNA bases. Default is false.
         maxlen: int or None, Should we trim (subset) the resulting sequence. If None don't trim. Note that trims wrt the align parameter. It should be smaller than the longest sequence.
         seq_align: character; 'end' or 'start' To which end should we align sequences?
 
@@ -225,12 +241,13 @@ def ohe_DNA_seqs(seq_vec, maxlen=None, seq_align="start", pad=True, copy=False):
         3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
     return _ohe_seqs(
         seq_vec,
-        vocab=DNA,
+        vocab=DNA if alphabet == "DNA" else RNA,
         neutral_vocab="N",
         maxlen=maxlen,
         seq_align=seq_align,
         pad_value="N",
         encode_type="one_hot",
+        fill_value=fill_value,
         pad=pad,
     )
 

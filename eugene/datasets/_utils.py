@@ -47,7 +47,7 @@ def try_download_urls(
     data_idxs: list, 
     url_list: list, 
     ds_name: str, 
-    compression: str = ""
+    processing: str = None
 ) -> list:
     """Download the data from the given urls.
 
@@ -59,8 +59,8 @@ def try_download_urls(
         The urls of the data to be downloaded.
     ds_name : str
         The name of the dataset to be downloaded.
-    compression : str, optional
-        The compression of the data to be downloaded. The default is "".
+    processing : str, optional
+        The processing of the data to be downloaded. The default is None.
     
     Returns
     -------
@@ -69,10 +69,10 @@ def try_download_urls(
     """
     ds_path = os.path.join(HERE.parent, settings.dataset_dir, ds_name)
     paths = []
-    if compression != "":
-        compression = "." + compression
+    if processing is not None:
+        processing = "." + processing
     for i in data_idxs:
-        base_name = os.path.basename(url_list[i]).split("?")[0] #.split(".")[0] + f".csv{compression}"
+        base_name = os.path.basename(url_list[i]).split("?")[0] #.split(".")[0] + f".csv{processing}"
         search_path = os.path.join(HERE.parent, settings.dataset_dir, ds_name, base_name)
         if not os.path.exists(search_path):
             if not os.path.isdir(ds_path):
@@ -81,15 +81,15 @@ def try_download_urls(
 
             print(f"Downloading {ds_name} {os.path.basename(url_list[i])} to {ds_path}...")
             path = wget.download(url_list[i], os.path.relpath(ds_path))
-            paths.append(path)
             print(f"Finished downloading {os.path.basename(url_list[i])}")
 
-            if compression == ".gz":
+            # Remove this sometime in the future for cleanliness? Only used for deBoer and could be worked around, would have to do cleanup after loading instead.
+            if processing == ".gz":
                 print("Processing gzip file...")
                 with gzip.open(path) as gz:
                     with io.TextIOWrapper(gz, encoding="utf-8") as file:
                         file = pd.read_csv(file, delimiter=r"\t", engine="python", header=None)
-                        print(file.head())
+
                         if ds_name == "deBoer20":
                             file = deBoerCleanup(file, i)
 
@@ -100,8 +100,7 @@ def try_download_urls(
                         paths.append(save_path)
                 #os.remove(os.path.join(ds_path, os.path.basename(url_list[i])))
             else:
-                # Implement when needed
-                pass
+                paths.append(path)
         else:
             print(f"Dataset {ds_name} {base_name} has already been dowloaded.")
             paths.append(os.path.join(ds_path, base_name))

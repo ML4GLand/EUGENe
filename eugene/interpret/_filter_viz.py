@@ -98,18 +98,27 @@ def _get_filter_activators(activations, sequences, layer):
     return filter_activators
 
 
-def _get_pfms(filter_activators, kernel_size):
+def _get_pfms(filter_activators, kernel_size, alphabet):
     filter_pfms = {}
+    DNA = ["A", "C", "G", "T"]
+    RNA = ["A", "C", "G", "U"]
+    if alphabet == "DNA":
+        bases = DNA
+    elif alphabet == "RNA":
+        bases = RNA
+    else:
+        raise ValueError("Alphabet must be either 'DNA' or 'RNA'.")
+
     for i, activators in tqdm(
         enumerate(filter_activators),
         total=len(filter_activators),
         desc="Getting PFMs from filters",
     ):
         pfm = {
-            "A": np.zeros(kernel_size),
-            "C": np.zeros(kernel_size),
-            "G": np.zeros(kernel_size),
-            "T": np.zeros(kernel_size),
+            bases[0]: np.zeros(kernel_size),
+            bases[1]: np.zeros(kernel_size),
+            bases[2]: np.zeros(kernel_size),
+            bases[3]: np.zeros(kernel_size),
         }
         for seq in activators:
             for j, nt in enumerate(seq):
@@ -126,6 +135,7 @@ def generate_pfms(
     batch_size=None,
     num_workers=None,
     key_name="pfms",
+    alphabet="DNA",
     copy=False,
     device=None,
 ):
@@ -142,7 +152,9 @@ def generate_pfms(
         first_layer, sdataloader, device=device
     )
     filter_activators = _get_filter_activators(activations, sequences, first_layer)
-    filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0])
+    filter_pfms = _get_pfms(
+        filter_activators, first_layer.kernel_size[0], alphabet=alphabet
+    )
     sdata.uns[key_name] = filter_pfms
     return sdata if copy else None
 

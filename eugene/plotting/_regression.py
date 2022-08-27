@@ -23,7 +23,7 @@ def _plot_performance_scatter(
     title: str = None,
     figsize: tuple = (8, 8),
     save: str = None,
-    return_ax = False,
+    return_ax=False,
     **kwargs,
 ) -> None:
     """
@@ -65,20 +65,26 @@ def _plot_performance_scatter(
             targets = data[target]
             predictions = data[prediction]
             group_r2 = r2_score(targets, predictions) if "r2" in metrics else None
-            group_mse = mean_squared_error(targets, predictions) if "mse" in metrics else None
+            group_mse = (
+                mean_squared_error(targets, predictions) if "mse" in metrics else None
+            )
             group_spearr = (
                 spearmanr(targets, predictions).correlation
                 if "spearmanr" in metrics
                 else None
             )
-            im = ax.scatter(targets, predictions, label=group, color="bgrcm"[i], **kwargs)
+            im = ax.scatter(
+                targets, predictions, label=group, color="bgrcm"[i], **kwargs
+            )
             print(group, group_r2, group_mse, group_spearr)
             i += 1
             ax.legend()
     else:
-        im = ax.scatter(targets, predictions, edgecolor="black", linewidth=0.1, s=10, **kwargs)
+        im = ax.scatter(
+            targets, predictions, edgecolor="black", linewidth=0.1, s=10, **kwargs
+        )
     if "c" in kwargs:
-        plt.colorbar(im, location='bottom', label=kwargs["c"].name)
+        plt.colorbar(im, location="bottom", label=kwargs["c"].name)
     ax.set_xlabel(target)
     ax.set_ylabel(prediction)
     ax.text(
@@ -106,15 +112,14 @@ def _plot_performance_scatter(
     return ax
 
 
-
 def performance_scatter(
     sdata,
-    target: str,
-    prediction: str,
+    targets: str,
+    predictions: str,
     seq_idx=None,
     title: str = None,
     save: str = None,
-    return_ax = False,
+    return_ax=False,
     **kwargs,
 ) -> None:
     """
@@ -138,9 +143,17 @@ def performance_scatter(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    ax = _plot_performance_scatter(
-        sdata, target=target, prediction=prediction, title=title, **kwargs
-    )
+
+    if type(targets) is list and type(predictions) is list:
+        assert len(targets) == len(predictions)
+    else:
+        targets = [targets]
+        predictions = [predictions]
+
+    for (target, prediction) in zip(targets, predictions):
+        _plot_performance_scatter(
+            sdata, target=target, prediction=prediction, title=title, **kwargs
+        )
     if save is not None:
         if "/" not in save:
             save = os.path.join(os.getcwd(), save)

@@ -8,7 +8,6 @@ from os import PathLike
 from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
-from pandas import Int64Index
 from ._SeqDataset import SeqDataset
 
 
@@ -57,10 +56,17 @@ class SeqData:
             uns: dict of additional information.
             seqidx: Index of sequences to use.
         """
+
         if seqs is not None:
-            self.seqidx = range(seqs.shape[0]) if seqidx is None else seqidx
+            self.seqidx = (
+                range(seqs.shape[0]) if seqidx is None or len(seqidx) == 0 else seqidx
+            )
         else:
-            self.seqidx = range(ohe_seqs.shape[0]) if seqidx is None else seqidx
+            self.seqidx = (
+                range(ohe_seqs.shape[0])
+                if seqidx is None or len(seqidx) == 0
+                else seqidx
+            )
 
         # X
         self.seqs = np.array(seqs[self.seqidx]) if seqs is not None else None
@@ -377,17 +383,6 @@ class SeqData:
         self.names = new_index
         self.seqs_annot.index = new_index
 
-
-    def make_names_unique(self):
-        n_digits = len(str(self.n_obs))
-        new_index = np.array(
-            [
-                "seq{num:0{width}}".format(num=i, width=n_digits)
-                for i in range(self.n_obs)
-            ]
-        )
-        self.names = new_index
-        self.seqs_annot.index = new_index
 
 # TODO: move this to utils or something
 @singledispatch
