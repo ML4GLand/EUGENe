@@ -32,7 +32,7 @@ def _get_first_conv_layer_params(model):
     return None
 
 
-def _get_first_conv_layer(model):
+def _get_first_conv_layer(model, device="cpu"):
     if model.__class__.__name__ == "Jores21CNN":
         layer_shape = model.biconv.kernels[0].shape
         kernels = model.biconv.kernels[0]
@@ -45,14 +45,14 @@ def _get_first_conv_layer(model):
         )
         layer.weight = nn.Parameter(kernels)
         layer.bias = nn.Parameter(biases)
-        return layer.cpu()
+        return layer.to(device)
     elif model.__class__.__name__ == "Kopp21CNN":
         return model.conv
     for layer in model.convnet.module:
         name = layer.__class__.__name__
         if name == "Conv1d":
             first_layer = model.convnet.module[0]
-            return first_layer
+            return first_layer.to(device)
     print("No Conv1d layer found, returning None")
     return None
 
@@ -60,7 +60,6 @@ def _get_first_conv_layer(model):
 def _get_activations_from_layer(layer, sdataloader, device):
     from ..preprocessing import decode_DNA_seqs
 
-    print(device)
     activations = []
     sequences = []
     dataset_len = len(sdataloader.dataset)
@@ -77,6 +76,7 @@ def _get_activations_from_layer(layer, sdataloader, device):
             )
         # print(x.shape)
         x = x.to(device)
+        layer = layer.to(device)
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
         np_act = np.concatenate(activations)
         np_seq = np.concatenate(sequences)
@@ -137,7 +137,7 @@ def generate_pfms(
         target=None, seq_transforms=None, transform_kwargs={"transpose": True}
     )
     sdataloader = DataLoader(sdataset, batch_size=batch_size, num_workers=num_workers)
-    first_layer = _get_first_conv_layer(model)
+    first_layer = _get_first_conv_layer(model, device=device)
     activations, sequences = _get_activations_from_layer(
         first_layer, sdataloader, device=device
     )
