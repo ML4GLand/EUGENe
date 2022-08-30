@@ -134,9 +134,15 @@ def add_ranges_annot(
     return sdata if copy else None
 
 
-@track
+# @track
 def scale_targets(
-    sdata: SeqData, targets, train_key, suffix=True, copy=False
+    sdata: SeqData,
+    targets,
+    train_key=None,
+    scaler=None,
+    store_scaler=True,
+    suffix=True,
+    copy=False,
 ) -> SeqData:
     """Scale targets.
     Parameters
@@ -151,15 +157,26 @@ def scale_targets(
     from sklearn.preprocessing import StandardScaler
 
     sdata = sdata.copy() if copy else sdata
-    scaler = StandardScaler()
     if type(targets) is str:
         targets = [targets]
-    for target in targets:
-        scaler.fit(sdata[sdata[train_key] == True][target].values.reshape(-1, 1))
-        # Remove _scaled to help with fragmentation?
-        sdata[f"{target}_scaled" if suffix else target] = scaler.transform(
-            sdata[target].values.reshape(-1, 1)
-        )
+    if train_key is not None:
+        scale_data = sdata[sdata[train_key]].seqs_annot[targets]
+    else:
+        scale_data = sdata.seqs_annot[targets]
+    to_scale = sdata.seqs_annot[targets]
+    if len(targets) == 1:
+        scale_data = scale_data.values.reshape(-1, 1)
+        to_scale.values.reshape(-1, 1)
+    if scaler is None:
+        scaler = StandardScaler()
+        scaler.fit(scale_data)
+    assert scaler.n_features_in_ == len(targets)
+    # Remove _scaled to help with fragmentation?
+    sdata.seqs_annot[
+        [f"{target}_scaled" for target in targets] if suffix else targets
+    ] = scaler.transform(to_scale)
+    if store_scaler:
+        sdata.uns["scaler"] = scaler
     return sdata if copy else None
 
 
@@ -218,21 +235,36 @@ def prepare_data(
     return sdata if copy else None
 
 
-@track
+# @track
 def clamp_percentiles(
     sdata: SeqData,
-    percentile: float,
     target_list: list,
+    percentile: float = None,
+    train_key: str = None,
+    clamp_nums: list = None,
+    store_clamp_nums=False,
     copy=False,
 ) -> SeqData:
 
     if type(target_list) is str:
         target_list = [target_list]
-
-    for target in target_list:
-        clamp_num = sdata[target].astype(float).quantile(percentile)
-        sdata[target] = sdata[target].astype(float).clip(upper=clamp_num)
-
+    if clamp_nums is None:
+        assert percentile is not None
+        if train_key is not None:
+            clamp_nums = (
+                sdata[sdata.seqs_annot[train_key]]
+                .seqs_annot[target_list]
+                .quantile(percentile)
+            )
+        else:
+            clamp_nums = sdata.seqs_annot[target_list].quantile(percentile)
+    else:
+        assert len(clamp_nums) == len(target_list)
+    sdata.seqs_annot[target_list] = sdata.seqs_annot[target_list].clip(
+        upper=clamp_nums, axis=1
+    )
+    if store_clamp_nums:
+        sdata.uns["clamp_nums"] = clamp_nums
     return sdata if copy else None
 
 

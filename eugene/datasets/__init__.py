@@ -6,7 +6,7 @@ from ._datasets import (
     deBoer20,
     jores21,
     deAlmeida22,
-    RNAcomplete,
+    ray13,
 )
 
 from ._otx_enhancer_grammar_datasets import (

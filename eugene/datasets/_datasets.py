@@ -188,7 +188,8 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     else:
         return paths
 
-def RNAcomplete(dataset = "norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+
+def ray13(dataset="norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     """Reads the RNAcomplete dataset.
 
     Parameters
@@ -204,8 +205,8 @@ def RNAcomplete(dataset = "norm", return_sdata=True, **kwargs: dict) -> pd.DataF
         SeqData object with the RNAcomplete dataset.
     """
     urls_list = [
-            "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/norm_data.txt.gz",
-            "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/raw_data.txt.gz"
+        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/norm_data.txt.gz",
+        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/raw_data.txt.gz",
     ]
 
     if dataset == "norm":
@@ -215,31 +216,25 @@ def RNAcomplete(dataset = "norm", return_sdata=True, **kwargs: dict) -> pd.DataF
     else:
         raise ValueError("dataset must be either 'norm' or 'raw'.")
 
-    paths = try_download_urls(dataset, urls_list, "RNAcomplete")
+    paths = try_download_urls(dataset, urls_list, "ray13")
 
     if return_sdata:
         seq_col = "RNA_Seq"
-        data = read_csv(
+        sdataframe = read_csv(
             paths,
             sep="\t",
             seq_col=seq_col,
-            auto_name=True,
             return_dataframe=True,
             compression="gzip",
+            na_values=" NaN",
             **kwargs,
         )
-        n_digits = len(str(len(data) - 1))
-        ids = np.array(
-            [
-                "seq{num:0{width}}".format(num=i, width=n_digits)
-                for i in range(len(data))
-            ]
-        )
         sdata = SeqData(
-            seqs=data[seq_col],
-            names=ids,
-            seqs_annot=data[data.columns.drop(pd.array(data=[seq_col, "Probe_Set", "Probe_ID"]))],
+            seqs=sdataframe["RNA_Seq"],
+            names=sdataframe["Probe_ID"],
+            seqs_annot=sdataframe[sdataframe.columns.drop(pd.array(data=["RNA_Seq"]))],
         )
+        sdata.seqs_annot.set_index("Probe_ID", inplace=True)
         return sdata
     else:
         return paths
