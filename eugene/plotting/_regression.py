@@ -48,6 +48,10 @@ def _plot_performance_scatter(
     targets = sdata.seqs_annot[target]
     predictions = sdata.seqs_annot[prediction]
 
+    nan_mask = ~np.isnan(targets)
+    targets = targets[nan_mask]
+    predictions = predictions[nan_mask]
+
     r2 = r2_score(targets, predictions) if "r2" in metrics else None
     mse = mean_squared_error(targets, predictions) if "mse" in metrics else None
     spearr = (
@@ -143,13 +147,15 @@ def performance_scatter(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-
+    if isinstance(targets, str) and isinstance(predictions, str):
+        targets = [targets]
+        predictions = [predictions]
     if type(targets) is list and type(predictions) is list:
         assert len(targets) == len(predictions)
     else:
         targets = [targets]
         predictions = [predictions]
-
+    print(targets, predictions)
     for (target, prediction) in zip(targets, predictions):
         _plot_performance_scatter(
             sdata, target=target, prediction=prediction, title=title, **kwargs
