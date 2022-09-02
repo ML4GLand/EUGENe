@@ -46,7 +46,9 @@ def fit(
     name = name if name is not None else model_name
     seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
     logging.getLogger("lightning").setLevel(verbosity if verbosity is not None else settings.verbosity)
-    if train_dataset is not None:
+    if train_dataloader is None:
+        assert val_dataloader is not None
+    elif train_dataset is not None:
         assert val_dataset is not None
         train_dataloader = DataLoader(
             train_dataset, batch_size=batch_size, num_workers=num_workers

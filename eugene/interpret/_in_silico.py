@@ -3,6 +3,7 @@ import numpy as np
 from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
 from ._utils import k_largest_index_argsort
+from ..preprocessing import ohe_alphabet_seqs, feature_implant_seq, feature_implant_across_seq
 from .. import settings
 
 # from ..preprocessing import decode_DNA_seq
@@ -187,3 +188,43 @@ def evolve_sdata(model, sdata, rounds, return_seqs=False, **kwargs):
     sdata[f"evolved_{rounds}_scores"] = evolved_scores
     if return_seqs:
         return evolved_seqs
+
+
+def feature_implant(model, sdata, seq_id, feature, feature_name="feature", encoding="str", onehot=False, device="cpu", store=False):
+    """
+    Score a set of sequences with a feature inserted at every position of each sequence in sdata
+    """
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.to(device)
+    seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
+    if encoding == "str":
+        seq = sdata.seqs[seq_idx]
+        implanted_seqs = feature_implant_across_seq(seq, feature, encoding=encoding)
+        implanted_seqs = ohe_alphabet_seqs(implanted_seqs, alphabet="DNA", verbose=False)
+        X = torch.from_numpy(implanted_seqs).transpose(1, 2).float()
+    elif encoding == "onehot":
+        seq = sdata.ohe_seqs[seq_idx]
+        implanted_seqs = feature_implant_across_seq(
+            seq, feature, encoding=encoding, onehot=onehot
+        )
+        X = torch.from_numpy(implanted_seqs).transpose(1, 2).float()
+    else:
+        raise ValueError("Encoding not recognized.")
+    X = X.to(device)
+    preds = model(X).detach().numpy().squeeze()
+    if store:
+        sdata.seqsm[f"{seq_id}_{feature_name}_slide"] = preds
+    return preds
+
+
+def feature_implant_sdata(model, sdata, seqsm_key=None, **kwargs):
+    """
+    Score a set of sequences with a feature inserted at every position of each sequence in sdata
+    """
+    predictions = []
+    for i, seq_id in tqdm(enumerate(sdata.seqs_annot.index), desc="Implanting feature", total=len(sdata.seqs_annot)):
+        predictions.append(feature_implant(model, sdata, seq_id, **kwargs))
+    if seqsm_key is not None:
+        sdata.seqsm[seqsm_key] = np.array(predictions)
+    else:
+        return np.array(predictions)

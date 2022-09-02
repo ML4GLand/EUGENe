@@ -17,6 +17,8 @@ from ._seq_preprocess import (
 
 from ._seq_preprocess import perturb_seqs
 
+from ._seq_preprocess import feature_implant_seq, feature_implant_across_seq
+
 from ._dataset_preprocess import (
     split_train_test,
     standardize_features,

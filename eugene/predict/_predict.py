@@ -88,7 +88,7 @@ def predictions(
             transform_kwargs=transform_kwargs,
         )
         sdataloader = sdataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers
+            batch_size=batch_size, num_workers=num_workers, shuffle=False
         )
         if out_dir is not None:
             from ..utils._custom_callbacks import PredictionWriter

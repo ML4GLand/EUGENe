@@ -144,10 +144,10 @@ def reverse_complement_seqs(seqs, alphabet, copy=False):
     )
 
 
-def ohe_DNA_seq(seq, vocab=DNA, neutral_vocab="N"):
+def ohe_DNA_seq(seq, vocab=DNA, fill_value=0, neutral_vocab="N"):
     """Convert a DNA sequence into one-hot-encoded array."""
     seq = seq.strip().upper()
-    return _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab))
+    return _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value=0)
 
 
 def decode_DNA_seq(arr, vocab=DNA, neutral_vocab="N"):
@@ -167,6 +167,7 @@ def _ohe_seqs(
     encode_type="one_hot",
     fill_value=None,
     pad=True,
+    verbose=True
 ):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
@@ -205,6 +206,7 @@ def _ohe_seqs(
                 enumerate(seq_vec),
                 total=len(seq_vec),
                 desc="One-hot-encoding sequences",
+                disable=not verbose
             )
         ]
     elif encode_type == "token":
@@ -227,6 +229,7 @@ def ohe_alphabet_seqs(
     seq_align="start",
     pad=True,
     fill_value=None,
+    verbose=True,
     copy=False,
 ):
     """
@@ -249,6 +252,7 @@ def ohe_alphabet_seqs(
         encode_type="one_hot",
         fill_value=fill_value,
         pad=pad,
+        verbose=verbose,
     )
 
 
@@ -400,3 +404,30 @@ def perturb_seqs(X_0, ds=False):
             X[i, idx, (idxs[i] + k) % n_choices, np.arange(seq_len)] = 1
 
     return X
+
+
+def feature_implant_seq(seq, feature, position, encoding="str", onehot=False):
+    """
+    Insert a feature at a given position in a sequence.
+    """
+    if encoding == "str":
+        return seq[:position] + feature + seq[position + len(feature):]
+    elif encoding == "onehot":
+        if onehot:
+            feature = _token2one_hot(feature.argmax(axis=1), vocab_size=4, fill_value=0)
+        return np.concatenate(
+            (seq[:position], feature, seq[position + len(feature):]), axis=0
+        )
+    else:
+        raise ValueError("Encoding not recognized.")
+
+
+def feature_implant_across_seq(seq, feature, **kwargs):
+    """
+    Insert a feature at every position in a sequence.
+    """
+    implanted_seqs = []
+    for pos in range(len(seq) - len(feature) + 1):
+        implanted_seqs.append(feature_implant_seq(seq, feature, pos, **kwargs))
+    return np.array(implanted_seqs)
+
