@@ -236,6 +236,7 @@ def feature_attribution(
     target=None,
     saliency_method="InputXGradient",
     prefix="",
+    suffix="",
     batch_size: int = None,
     num_workers: int = None,
     device="cpu",
@@ -275,7 +276,7 @@ def feature_attribution(
             ] = curr_explanations
         else:
             all_explanations[i_batch * batch_size : dataset_len] = curr_explanations
-    sdata.uns[f"{prefix}{saliency_method}_imps"] = all_explanations
+    sdata.uns[f"{prefix}{saliency_method}_imps{suffix}"] = all_explanations
     return sdata if copy else None
 
 

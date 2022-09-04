@@ -21,6 +21,8 @@ default_rc_context = {
     "ps.fonttype": 42,
 }
 
+alphabet_dict = {"DNA": ["A", "C", "G", "T"], "RNA": ["A", "C", "G", "U"]}
+
 
 def _plot_seq_features(
     ax: Axes,
@@ -408,6 +410,7 @@ def lm_seq_track(
     sdata,
     seq_id,
     uns_key,
+    alphabet="DNA",
     highlights: list = [],
     highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
     ylabel="Saliency",
@@ -423,7 +426,7 @@ def lm_seq_track(
 
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
-    viz_seq = pd.DataFrame(imp_scores.T, columns=["A", "C", "G", "T"])
+    viz_seq = pd.DataFrame(imp_scores.T, columns=alphabet_dict[alphabet])
     viz_seq.index.name = "pos"
     y_max = np.max(viz_seq.values)
     y_min = np.min(viz_seq.values)
@@ -487,7 +490,6 @@ def lm_multiseq_track(
                 save=None,
                 **kwargs,
             )
-
     plt.tight_layout()
     if return_axes:
         return ax
