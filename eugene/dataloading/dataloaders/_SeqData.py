@@ -301,7 +301,7 @@ class SeqData:
         self,
         target: Union[str, List[str]] = None,
         seq_transforms: List[str] = None,
-        transform_kwargs: dict = {},
+        transform_kwargs: dict = {}
     ) -> SeqDataset:
         """Convert SeqData object to SeqDataset.
 
@@ -322,13 +322,10 @@ class SeqData:
         from torchvision import transforms as torch_transforms
 
         transforms = []
-
         if target is None:
             targs = None
-        elif type(target) is str or type(target) is int:
-            targs = self.seqs_annot[target].values
-        elif type(target) is list:
-            targs = self.seqs_annot[target].values
+        else:
+            targs = self.seqs_annot[target].values  
 
         if seq_transforms is None:
             print("No transforms given, assuming just need to tensorize).")

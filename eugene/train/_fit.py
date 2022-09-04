@@ -27,6 +27,8 @@ def fit(
     version: str = None,
     train_dataset: SeqDataset = None,
     val_dataset: SeqDataset = None,
+    train_dataloader: DataLoader = None,
+    val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {"transpose": True},
     early_stopping_callback: bool = True,
@@ -46,7 +48,7 @@ def fit(
     name = name if name is not None else model_name
     seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
     logging.getLogger("lightning").setLevel(verbosity if verbosity is not None else settings.verbosity)
-    if train_dataloader is None:
+    if train_dataloader is not None:
         assert val_dataloader is not None
     elif train_dataset is not None:
         assert val_dataset is not None
@@ -58,6 +60,13 @@ def fit(
         )
     elif sdata is not None:
         assert target is not None
+        targs = sdata.seqs_annot[target].values  
+        if len(targs.shape) == 1:
+            nan_mask = np.isnan(targs)
+        else:
+            nan_mask = np.any(np.isnan(targs), axis=1)
+        print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
+        sdata = sdata[~nan_mask]
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
             target=target,
@@ -65,7 +74,7 @@ def fit(
             transform_kwargs=transform_kwargs,
         )
         train_dataloader = train_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers
+            batch_size=batch_size, num_workers=num_workers, shuffle=True
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(

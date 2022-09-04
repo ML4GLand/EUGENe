@@ -732,7 +732,7 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
                 f["seqsm/" + str(key)] = item
         if sdata.uns is not None:
             for key, item in dict(sdata.uns).items():
-                if key == "pfms":
+                if "pfms" in key:
                     pfms = np.zeros((len(item), *item[list(item.keys())[0]].shape))
                     for i, in_key in enumerate(item.keys()):
                         pfms[i, :, :] = item[in_key]
