@@ -8,6 +8,7 @@ bin/*/out/
 *.err
 *.out
 .vscode/
+tests/_datasets
 tests/_data/datasets
 tests/notebooks/lightning_logs
 tests/notebooks/datasets
@@ -16,6 +17,7 @@ tests/_logs/
 tests/_output/
 tests/_out/
 tests/_data/datasets/
+tests/_figures/
 *.DS_store
 docs/_static
 

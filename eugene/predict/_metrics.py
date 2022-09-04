@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 from itertools import product
 from tqdm.auto import tqdm
+tqdm.pandas()
 from sklearn.metrics import auc
+from sklearn.metrics import r2_score
+from scipy.stats import pearsonr, spearmanr
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # Useful helpers for generating and checking for kmers
@@ -23,6 +28,8 @@ def kmer_in_seqs(seqs, kmer):
 
 
 def calc_auc(z, y, want_curve=False):
+    if isinstance(y, pd.Series):
+        y = y.values
     # https://github.com/jisraeli/DeepBind/blob/master/code/deepfind.py
     """Given predictions z and 0/1 targets y, computes AUC with optional ROC curve"""
     z = z.ravel()
@@ -74,6 +81,8 @@ def median_calc(preds, y):
 
 
 def auc_calc(preds, y):
+    if isinstance(preds, pd.Series):
+        preds = preds.values
     nan_mask = ~np.isnan(y)
     y = y[nan_mask]
     preds = preds[nan_mask]
@@ -84,6 +93,8 @@ def auc_calc(preds, y):
 
 
 def escore(preds, y, use_calc_auc=False):
+    if isinstance(preds, pd.Series):
+        preds = preds.values
     nan_mask = ~np.isnan(y)
     y = y[nan_mask]
     if isinstance(preds, pd.Series):
@@ -316,9 +327,10 @@ def column_rnac_metrics_apply(
     return_cors=False,
     use_calc_auc=False,
     verbose=True,
+    preds_suffix="_predictions"
 ):
     observed = sdata[probe_id].values
-    preds = sdata[f"{probe_id}_predictions"].values
+    preds = sdata[f"{probe_id}{preds_suffix}"].values
 
     # Get zscores, aucs and escores from observed intensities
     observed_zscores, observed_aucs, observed_escores = rna_complete_metrics_apply(
@@ -339,18 +351,30 @@ def column_rnac_metrics_apply(
     )
 
     # Z-scores
+    zscore_nan_mask = np.isnan(observed_zscores) | np.isnan(preds_zscores)
+    preds_zscores = preds_zscores[~zscore_nan_mask]
+    observed_zscores = observed_zscores[~zscore_nan_mask]
     zscore_pearson = pearsonr(preds_zscores, observed_zscores)[0]
     zscore_spearman = spearmanr(preds_zscores, observed_zscores).correlation
 
     # AUCs
+    auc_nan_mask = np.isnan(observed_aucs) | np.isnan(preds_aucs)
+    preds_aucs = preds_aucs[~auc_nan_mask]
+    observed_aucs = observed_aucs[~auc_nan_mask]
     auc_pearson = pearsonr(preds_aucs, observed_aucs)[0]
     auc_spearman = spearmanr(preds_aucs, observed_aucs).correlation
 
     # E-scores
+    escore_nan_mask = np.isnan(observed_escores) | np.isnan(preds_escores)
+    preds_escores = preds_escores[~escore_nan_mask]
+    observed_escores = observed_escores[~escore_nan_mask]
     escore_pearson = pearsonr(preds_escores, observed_escores)[0]
     escore_spearman = spearmanr(preds_escores, observed_escores).correlation
 
     # Intensities
+    intensity_nan_mask = np.isnan(observed) | np.isnan(preds)
+    preds = preds[~intensity_nan_mask]
+    observed = observed[~intensity_nan_mask] 
     intensity_pearson = pearsonr(observed, preds)[0]
     intensity_spearman = spearmanr(observed, preds).correlation
 
@@ -427,7 +451,7 @@ def column_rnac_metrics_apply(
 
 
 def summarize_rbps_apply(
-    sdata, kmer_presence_mtx, probe_ids, n_kmers=100, verbose=False, use_calc_auc=False
+    sdata, kmer_presence_mtx, probe_ids, n_kmers=100, verbose=False, use_calc_auc=False, preds_suffix="_predictions"
 ):
     spearman_summary = pd.DataFrame()
     pearson_summary = pd.DataFrame()
@@ -442,6 +466,7 @@ def summarize_rbps_apply(
             return_cors=True,
             verbose=verbose,
             use_calc_auc=use_calc_auc,
+            preds_suffix=preds_suffix,
         )
         pearson_summary = pd.concat(
             [pearson_summary, pd.DataFrame(rs, index=[probe_id])], axis=0

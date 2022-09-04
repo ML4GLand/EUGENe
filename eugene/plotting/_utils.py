@@ -216,3 +216,8 @@ def many_logs2pandas(event_paths):
             else:
                 all_logs = all_logs.append(log, ignore_index=True)
     return all_logs
+
+
+def const_line(*args, **kwargs):
+    x = np.arange(-1, 1.01, 0.01)
+    plt.plot(x, x, c='k', ls='--')

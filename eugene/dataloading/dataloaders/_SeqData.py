@@ -8,6 +8,7 @@ from os import PathLike
 from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
+from copy import copy, deepcopy
 from ._SeqDataset import SeqDataset
 
 
@@ -208,6 +209,7 @@ class SeqData:
         if isinstance(index, str):
             return self.seqs_annot[index]
         elif isinstance(index, slice):
+            index = np.arange(self.n_obs)[index]
             return SeqData(
                 seqs=self.seqs,
                 names=self.names,
@@ -278,6 +280,12 @@ class SeqData:
                     descr += f"\n{attr}: None"
         return descr
 
+
+    def copy(self):
+        """Return a copy of the object."""
+        return deepcopy(self)
+
+
     def write_h5sd(self, path: PathLike, mode: str = "w"):
         """Write SeqData object to h5sd file.
 
@@ -293,7 +301,7 @@ class SeqData:
         self,
         target: Union[str, List[str]] = None,
         seq_transforms: List[str] = None,
-        transform_kwargs: dict = {},
+        transform_kwargs: dict = {}
     ) -> SeqDataset:
         """Convert SeqData object to SeqDataset.
 
@@ -314,13 +322,10 @@ class SeqData:
         from torchvision import transforms as torch_transforms
 
         transforms = []
-
         if target is None:
             targs = None
-        elif type(target) is str or type(target) is int:
-            targs = self.seqs_annot[target].values
-        elif type(target) is list:
-            targs = self.seqs_annot[target].values
+        else:
+            targs = self.seqs_annot[target].values  
 
         if seq_transforms is None:
             print("No transforms given, assuming just need to tensorize).")

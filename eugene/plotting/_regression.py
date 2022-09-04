@@ -157,6 +157,8 @@ def performance_scatter(
         predictions = [predictions]
     print(targets, predictions)
     for (target, prediction) in zip(targets, predictions):
+        nan_mask = ~np.isnan(sdata.seqs_annot[target])
+        sdata = sdata[nan_mask]
         _plot_performance_scatter(
             sdata, target=target, prediction=prediction, title=title, **kwargs
         )
