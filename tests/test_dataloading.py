@@ -150,3 +150,5 @@ def test_write_csv():
     read_sdata = eu.dl.read_csv(str(path), seq_col="seq", target_col="target")
     assert read_sdata is not None
     assert len(sdata.seqs) == len(read_sdata.seqs)
+
+    os.remove(path)
