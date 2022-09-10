@@ -1,7 +1,7 @@
 from tqdm.auto import tqdm
 from ..dataloading import SeqData
 from ._dataset_preprocess import split_train_test, binarize_values
-from ._seq_preprocess import sanitize_seqs, ohe_alphabet_seqs, reverse_complement_seqs
+from ._seq_preprocess import sanitize_seqs, ohe_seqs, reverse_complement_seqs
 from ..utils._decorators import track
 
 
@@ -26,7 +26,7 @@ def sanitize_sdata(sdata: SeqData, copy=False) -> SeqData:
 
 
 @track
-def reverse_complement_data(sdata: SeqData, alphabet="DNA", copy=False) -> SeqData:
+def reverse_complement_data(sdata: SeqData, vocab="DNA", copy=False) -> SeqData:
     """Reverse complement sequences.
     Parameters
     ----------
@@ -40,14 +40,14 @@ def reverse_complement_data(sdata: SeqData, alphabet="DNA", copy=False) -> SeqDa
         SeqData object with reverse complement sequences.
     """
     sdata = sdata.copy() if copy else sdata
-    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, alphabet)
+    sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, vocab)
     return sdata if copy else None
 
 
 @track
 def one_hot_encode_data(
     sdata: SeqData,
-    alphabet="DNA",
+    vocab="DNA",
     seq_align="start",
     maxlen=None,
     fill_value=None,
@@ -68,18 +68,18 @@ def one_hot_encode_data(
     """
     sdata = sdata.copy() if copy else sdata
     if sdata.seqs is not None and sdata.ohe_seqs is None:
-        sdata.ohe_seqs = ohe_alphabet_seqs(
+        sdata.ohe_seqs = ohe_seqs(
             sdata.seqs,
-            alphabet,
+            vocab,
             seq_align=seq_align,
             maxlen=maxlen,
             fill_value=fill_value,
             **kwargs,
         )
     if sdata.rev_seqs is not None:
-        sdata.ohe_rev_seqs = ohe_alphabet_seqs(
+        sdata.ohe_rev_seqs = ohe_seqs(
             sdata.rev_seqs,
-            alphabet,
+            vocab,
             seq_align=seq_align,
             maxlen=maxlen,
             fill_value=fill_value,

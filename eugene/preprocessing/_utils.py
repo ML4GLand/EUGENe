@@ -1,26 +1,238 @@
-from __future__ import division, print_function
 import numpy as np
-
 np.random.seed(13)
 
 
-def ascii_encode(seq, pad=0):
+DNA = ["A", "C", "G", "T"]
+RNA = ["A", "C", "G", "U"]
+COMPLEMENT_DNA = {"A": "T", "C": "G", "G": "C", "T": "A"}
+COMPLEMENT_RNA = {"A": "U", "C": "G", "G": "C", "U": "A"}
+
+
+def _get_vocab(vocab):
+    if vocab == "DNA":
+        return DNA
+    elif vocab == "RNA":
+        return RNA
+    else:
+        raise ValueError("Invalid vocab, only DNA or RNA are currently supported")
+
+
+# exact concise
+def _get_vocab_dict(vocab):
     """
-    Converts a string of characters to a NumPy array of byte-long ASCII codes.
+    Returns a dictionary mapping each token to its index in the vocabulary.
+    Used in `_tokenize`.
     """
-    encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
-    if pad > 0:
-        encode_seq = np.pad(
-            encode_seq, pad_width=(0, pad), mode="constant", constant_values=36
+    return {l: i for i, l in enumerate(vocab)}
+
+
+# exact concise
+def _get_index_dict(vocab):
+    """
+    Returns a dictionary mapping each token to its index in the vocabulary.
+    """
+    return {i: l for i, l in enumerate(vocab)}
+
+
+# modified concise
+def _tokenize(seq, vocab="DNA", neutral_vocab=["N"]):
+    """
+    Convert sequence to integers based on a vocab
+
+    Parameters
+    ----------
+    seq: 
+        sequence to encode
+    vocab: 
+        vocabulary to use
+    neutral_vocab: 
+        neutral vocabulary -> assign those values to -1
+    
+    Returns
+    -------
+        List of length `len(seq)` with integers from `-1` to `len(vocab) - 1`
+    """
+    vocab = _get_vocab(vocab)
+    if isinstance(neutral_vocab, str):
+        neutral_vocab = [neutral_vocab]
+
+    nchar = len(vocab[0])
+    for l in vocab + neutral_vocab:
+        assert len(l) == nchar
+    assert len(seq) % nchar == 0  # since we are using striding
+
+    vocab_dict = _get_vocab_dict(vocab)
+    for l in neutral_vocab:
+        vocab_dict[l] = -1
+
+    # current performance bottleneck
+    return [
+        vocab_dict[seq[(i * nchar) : ((i + 1) * nchar)]]
+        for i in range(len(seq) // nchar)
+    ]
+
+
+def _sequencize(tvec, vocab="DNA", neutral_value=-1, neutral_char="N"):
+    """
+    Converts a token vector into a sequence of symbols of a vocab.
+    """
+    vocab = _get_vocab(vocab) 
+    index_dict = _get_index_dict(vocab)
+    index_dict[neutral_value] = neutral_char
+    return "".join([index_dict[i] for i in tvec])
+
+
+# modified concise
+def _token2one_hot(tvec, vocab="DNA", fill_value=None):
+    """
+    Converts an L-vector of integers in the range [0, D] into an L x D one-hot
+    encoding. If fill_value is not None, then the one-hot encoding is filled
+    with this value instead of 0.
+
+    Parameters
+    ----------
+    tvec : np.array
+        L-vector of integers in the range [0, D]
+    vocab_size : int
+        D
+    fill_value : float, optional
+        Value to fill the one-hot encoding with. If None, then the one-hot
+    """
+    vocab = _get_vocab(vocab)
+    vocab_size = len(vocab)
+    arr = np.zeros((len(tvec), vocab_size))
+    tvec_range = np.arange(len(tvec))
+    tvec = np.asarray(tvec)
+    arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
+    if fill_value is not None:
+        arr[tvec_range[tvec < 0]] = fill_value
+    return arr.astype(np.int8) if fill_value is None else arr.astype(np.float16)
+
+
+# modified dinuc_shuffle
+def _one_hot2token(one_hot, neutral_value=-1):
+    """
+    Converts a one-hot encoding into a vector of integers in the range [0, D]
+    where D is the number of classes in the one-hot encoding.
+
+    Parameters
+    ----------
+    one_hot : np.array
+        L x D one-hot encoding
+    neutral_value : int, optional
+        Value to use for neutral values.
+    
+    Returns
+    -------
+    np.array
+        L-vector of integers in the range [0, D]
+    """
+    tokens = np.tile(neutral_value, one_hot.shape[0])  # Vector of all D
+    seq_inds, dim_inds = np.where(one_hot==1)
+    tokens[seq_inds] = dim_inds
+    return tokens
+
+
+# pad and subset, exact concise
+def _pad(seq, max_seq_len, value="N", align="end"):
+    seq_len = len(seq)
+    assert max_seq_len >= seq_len
+    if align == "end":
+        n_left = max_seq_len - seq_len
+        n_right = 0
+    elif align == "start":
+        n_right = max_seq_len - seq_len
+        n_left = 0
+    elif align == "center":
+        n_left = (max_seq_len - seq_len) // 2 + (max_seq_len - seq_len) % 2
+        n_right = (max_seq_len - seq_len) // 2
+    else:
+        raise ValueError("align can be of: end, start or center")
+
+    # normalize for the length
+    n_left = n_left // len(value)
+    n_right = n_right // len(value)
+
+    return value * n_left + seq + value * n_right
+
+
+# exact concise
+def _trim(seq, maxlen, align="end"):
+    seq_len = len(seq)
+
+    assert maxlen <= seq_len
+    if align == "end":
+        return seq[-maxlen:]
+    elif align == "start":
+        return seq[0:maxlen]
+    elif align == "center":
+        dl = seq_len - maxlen
+        n_left = dl // 2 + dl % 2
+        n_right = seq_len - dl // 2
+        return seq[n_left:n_right]
+    else:
+        raise ValueError("align can be of: end, start or center")
+
+
+# modified concise
+def _pad_sequences(
+    seqs, 
+    maxlen=None, 
+    align="end", 
+    value="N"
+):
+    """
+    Pads sequences to the same length.
+
+    Parameters
+    ----------
+    seqs : list of str
+        Sequences to pad
+    maxlen : int, optional
+        Length to pad to. If None, then pad to the length of the longest sequence.
+    align : str, optional
+        Alignment of the sequences. One of "start", "end", "center"
+    value : str, optional
+        Value to pad with
+
+    Returns
+    -------
+    np.array
+        Array of padded sequences
+    """
+
+    # neutral element type checking
+    assert isinstance(value, list) or isinstance(value, str)
+    assert isinstance(value, type(seqs[0])) or type(seqs[0]) is np.str_
+    assert not isinstance(seqs, str)
+    assert isinstance(seqs[0], list) or isinstance(seqs[0], str)
+
+    max_seq_len = max([len(seq) for seq in seqs])
+
+    if maxlen is None:
+        maxlen = max_seq_len
+    else:
+        maxlen = int(maxlen)
+
+    if max_seq_len < maxlen:
+        import warnings
+        warnings.warn(
+            f"Maximum sequence length ({max_seq_len}) is smaller than maxlen ({maxlen})."
         )
-    return encode_seq
+        max_seq_len = maxlen
 
+    # check the case when len > 1
+    for seq in seqs:
+        if not len(seq) % len(value) == 0:
+            raise ValueError("All sequences need to be dividable by len(value)")
+    if not maxlen % len(value) == 0:
+        raise ValueError("maxlen needs to be dividable by len(value)")
 
-def ascii_decode(seq):
-    """
-    Converts a NumPy array of byte-long ASCII codes to a string of characters.
-    """
-    return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
+    padded_seqs = [
+        _trim(_pad(seq, max(max_seq_len, maxlen), value=value, align=align), maxlen, align=align)
+        for seq in seqs 
+    ]
+    return padded_seqs
 
 
 def _is_overlapping(a, b):
@@ -74,178 +286,7 @@ def _collapse_pos(positions):
     return ranges
 
 
-def _get_vocab_dict(vocab):
-    """
-    Returns a dictionary mapping each token to its index in the vocabulary.
-    """
-    return {l: i for i, l in enumerate(vocab)}
-
-
-def _get_index_dict(vocab):
-    """
-    Returns a dictionary mapping each token to its index in the vocabulary.
-    """
-    return {i: l for i, l in enumerate(vocab)}
-
-
-def _one_hot2token(arr):
-    return arr.argmax(axis=2)
-
-
-def _tokenize(seq, vocab, neutral_vocab=[]):
-    """
-    Convert sequence to integers
-    Arguments
-        seq: Sequence to encode
-        vocab: Vocabulary to use
-        neutral_vocab: Neutral vocabulary -> assign those values to -1
-
-    Returns
-        List of length `len(seq)` with integers from `-1` to `len(vocab) - 1`
-    """
-    # Req: all vocabs have the same length
-    if isinstance(neutral_vocab, str):
-        neutral_vocab = [neutral_vocab]
-
-    nchar = len(vocab[0])
-    for l in vocab + neutral_vocab:
-        assert len(l) == nchar
-    assert len(seq) % nchar == 0  # since we are using striding
-
-    vocab_dict = _get_vocab_dict(vocab)
-    for l in neutral_vocab:
-        vocab_dict[l] = -1
-
-    # current performance bottleneck
-    return [
-        vocab_dict[seq[(i * nchar) : ((i + 1) * nchar)]]
-        for i in range(len(seq) // nchar)
-    ]
-
-
-def _token2one_hot(tvec, vocab_size, fill_value):
-    """
-    Note: everything out of the vocabulary is transformed into `np.zeros(vocab_size)`
-    """
-    arr = np.zeros((len(tvec), vocab_size))
-
-    tvec_range = np.arange(len(tvec))
-    tvec = np.asarray(tvec)
-    arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
-    if fill_value is not None:
-        arr[tvec_range[tvec < 0]] = fill_value
-
-    return arr.astype(np.int8) if fill_value is None else arr.astype(np.float16)
-
-
-def _pad_sequences(sequence_vec, maxlen=None, align="end", value="N"):
-    """
-    Pad and/or trim a list of sequences to have common length. Procedure:
-        1. Pad the sequence with N's or any other string or list element (`value`)
-        2. Subset the sequence
-    Note
-        See also: https://keras.io/preprocessing/sequence/
-        Aplicable also for lists of characters
-    Arguments
-        sequence_vec: list of chars or lists
-            List of sequences that can have various lengths
-        value: Neutral element to pad the sequence with. Can be `str` or `list`.
-        maxlen: int or None; Final lenght of sequences.
-             If None, maxlen is set to the longest sequence length.
-        align: character; 'start', 'end' or 'center'
-            To which end to align the sequences when triming/padding. See examples bellow.
-    Returns
-        List of sequences of the same class as sequence_vec
-    # Example
-        ```python
-            >>> sequence_vec = ['CTTACTCAGA', 'TCTTTA']
-            >>> pad_sequences(sequence_vec, 10, align="start", value="N")
-            ['CTTACTCAGA', 'TCTTTANNNN']
-            >>> pad_sequences(sequence_vec, 10, align="end", value="N")
-            ['CTTACTCAGA', 'NNNNTCTTTA']
-            >>> pad_sequences(sequence_vec, 4, align="center", value="N")
-            ['ACTC', 'CTTT']
-        ```
-    """
-
-    # neutral element type checking
-    assert isinstance(value, list) or isinstance(value, str)
-    assert isinstance(value, type(sequence_vec[0])) or type(sequence_vec[0]) is np.str_
-    assert not isinstance(sequence_vec, str)
-    assert isinstance(sequence_vec[0], list) or isinstance(sequence_vec[0], str)
-
-    max_seq_len = max([len(seq) for seq in sequence_vec])
-
-    if maxlen is None:
-        maxlen = max_seq_len
-    else:
-        maxlen = int(maxlen)
-
-    if max_seq_len < maxlen:
-        import warnings
-
-        warnings.warn(
-            "Maximum sequence length (%s) is less than maxlen (%s)"
-            % (max_seq_len, maxlen)
-        )
-        max_seq_len = maxlen
-
-    # check the case when len > 1
-    for seq in sequence_vec:
-        if not len(seq) % len(value) == 0:
-            raise ValueError("All sequences need to be dividable by len(value)")
-    if not maxlen % len(value) == 0:
-        raise ValueError("maxlen needs to be dividable by len(value)")
-
-    # pad and subset
-    def pad(seq, max_seq_len, value="N", align="end"):
-        seq_len = len(seq)
-        assert max_seq_len >= seq_len
-        if align == "end":
-            n_left = max_seq_len - seq_len
-            n_right = 0
-        elif align == "start":
-            n_right = max_seq_len - seq_len
-            n_left = 0
-        elif align == "center":
-            n_left = (max_seq_len - seq_len) // 2 + (max_seq_len - seq_len) % 2
-            n_right = (max_seq_len - seq_len) // 2
-        else:
-            raise ValueError("align can be of: end, start or center")
-
-        # normalize for the length
-        n_left = n_left // len(value)
-        n_right = n_right // len(value)
-
-        return value * n_left + seq + value * n_right
-
-    def trim(seq, maxlen, align="end"):
-        seq_len = len(seq)
-
-        assert maxlen <= seq_len
-        if align == "end":
-            return seq[-maxlen:]
-        elif align == "start":
-            return seq[0:maxlen]
-        elif align == "center":
-            dl = seq_len - maxlen
-            n_left = dl // 2 + dl % 2
-            n_right = seq_len - dl // 2
-            return seq[n_left:n_right]
-        else:
-            raise ValueError("align can be of: end, start or center")
-
-    padded_sequence_vec = [
-        pad(seq, max(max_seq_len, maxlen), value=value, align=align)
-        for seq in sequence_vec
-    ]
-    padded_sequence_vec = [
-        trim(seq, maxlen, align=align) for seq in padded_sequence_vec
-    ]
-
-    return padded_sequence_vec
-
-
+# all below are exact dinuc_shuffle
 def _string_to_char_array(seq):
     """
     Converts an ASCII string to a NumPy array of byte-long ASCII codes.

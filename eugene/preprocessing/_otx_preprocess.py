@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.patches as mpatches
 from sklearn.preprocessing import OneHotEncoder
-from ._seq_preprocess import ohe_DNA_seq
+from ._seq_preprocess import ohe_seq
 from ._utils import _merge_intervals, _hamming_distance, _collapse_pos
 
 
@@ -383,7 +383,7 @@ def otxGenomeTracks(seq, importance_scores=None, model_pred=None, seq_name=None,
         ax[1].spines['left'].set_visible(False)
         ax[1].set_yticklabels([])
         ax[1].set_yticks([])
-        importance_scores = ohe_DNA_seq(seq)
+        importance_scores = ohe_seq(seq)
     else:
         ylab = "Importance Score"
 

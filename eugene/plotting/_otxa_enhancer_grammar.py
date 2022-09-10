@@ -140,7 +140,7 @@ def _plot_otx_seq(
         )
 
     if uns_key is None:
-        from ..preprocessing import ohe_DNA_seq
+        from ..preprocessing import ohe_seq
 
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence"
@@ -148,7 +148,7 @@ def _plot_otx_seq(
         ax[1].set_yticklabels([])
         ax[1].set_yticks([])
         print(seq)
-        importance_scores = ohe_DNA_seq(seq)
+        importance_scores = ohe_seq(seq)
     else:
         importance_scores = sdata.uns[uns_key][seq_idx]
         ylab = "Importance Score"

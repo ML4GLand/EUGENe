@@ -135,14 +135,14 @@ def _plot_seq_logo(
     None
     """
     if imp_scores is None:
-        from ..preprocessing import ohe_DNA_seq
+        from ..preprocessing import ohe_seq
 
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
         ax.set_yticklabels([])
         ax.set_yticks([])
-        imp_scores = ohe_DNA_seq(seq)
+        imp_scores = ohe_seq(seq)
     else:
         ylab = "Importance Score" if ylab is None else ylab
 

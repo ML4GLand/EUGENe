@@ -1,13 +1,23 @@
 from ._seq_preprocess import (
+    sanitize_seq,
+    sanitize_seqs,
+) # sanitize seqs
+
+from ._seq_preprocess import (
+    ascii_decode,
+    ascii_encode,
+) # ascii encode/decode
+
+from ._seq_preprocess import (
     reverse_complement_seq,
     reverse_complement_seqs,
 )  # reverse complement
 
 from ._seq_preprocess import (
-    ohe_DNA_seq,
-    ohe_alphabet_seqs,
-    decode_DNA_seq,
-    decode_DNA_seqs,
+    ohe_seq,
+    ohe_seqs,
+    decode_seq,
+    decode_seqs,
 )  # one-hot encode
 
 from ._seq_preprocess import (

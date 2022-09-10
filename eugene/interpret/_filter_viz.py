@@ -57,8 +57,8 @@ def _get_first_conv_layer(model, device="cpu"):
     return None
 
 
-def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
-    from ..preprocessing import decode_DNA_seqs
+def _get_activations_from_layer(layer, sdataloader, device, vocab="DNA"):
+    from ..preprocessing import decode_seqs
 
     activations = []
     sequences = []
@@ -72,9 +72,9 @@ def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
         ID, x, x_rev_comp, y = batch
         with nostdout():
             sequences.append(
-                decode_DNA_seqs(
+                decode_seqs(
                     x.transpose(2, 1).detach().cpu().numpy(),
-                    vocab=alphabet,
+                    vocab=vocab,
                     verbose=False,
                 )
             )

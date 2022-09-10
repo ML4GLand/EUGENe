@@ -5,7 +5,7 @@ from yuzu.naive_ism import naive_ism
 from yuzu.utils import perturbations
 from ._utils import k_largest_index_argsort
 from ..preprocessing import (
-    ohe_alphabet_seqs,
+    ohe_seqs,
     feature_implant_seq,
     feature_implant_across_seq,
 )
@@ -294,8 +294,8 @@ def feature_implant(
     if encoding == "str":
         seq = sdata.seqs[seq_idx]
         implanted_seqs = feature_implant_across_seq(seq, feature, encoding=encoding)
-        implanted_seqs = ohe_alphabet_seqs(
-            implanted_seqs, alphabet="DNA", verbose=False
+        implanted_seqs = ohe_seqs(
+            implanted_seqs, vocab="DNA", verbose=False
         )
         X = torch.from_numpy(implanted_seqs).transpose(1, 2).float()
     elif encoding == "onehot":

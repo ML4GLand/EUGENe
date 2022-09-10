@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from ...preprocessing._utils import ascii_encode
+from ...preprocessing import ascii_encode
 from ..._settings import settings
 
 

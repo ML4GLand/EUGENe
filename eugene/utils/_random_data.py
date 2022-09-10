@@ -5,7 +5,7 @@ import pandas as pd
 
 # EUGENE
 from .._settings import settings
-from ..preprocessing import reverse_complement_seqs, ohe_alphabet_seqs
+from ..preprocessing import reverse_complement_seqs, ohe_seqs
 from ..dataloading._utils import _seq2Fasta
 
 
@@ -57,7 +57,7 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
     pass
 
 
-def generate_random_data(num_seqs, seq_len, num_outputs=1, out_dir=None, dataset_name=None):
+def generate_random_data(num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=None, dataset_name=None):
     """Simple function tp generate commonly used file types for testing EUGENE models"""
     out_dir = out_dir if out_dir is not None else settings.dataset_dir
 
@@ -69,9 +69,9 @@ def generate_random_data(num_seqs, seq_len, num_outputs=1, out_dir=None, dataset
         os.makedirs(out_dir)
 
     seqs = random_seqs(num_seqs, seq_len)
-    ohe_seqs = ohe_DNA_seqs(seqs)
+    ohe_seqs = ohe_seqs(seqs, vocab=vocab)
     rev_seqs = reverse_complement_seqs(seqs)
-    rev_ohe_seqs = ohe_DNA_seqs(rev_seqs)
+    rev_ohe_seqs = ohe_seqs(rev_seqs, vocab=vocab)
     n_digits = len(str(num_seqs-1))
     ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(num_seqs)])
     labels = np.random.randint(0,2,size=(num_seqs, num_outputs))

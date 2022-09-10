@@ -6,7 +6,7 @@ from os import PathLike
 import pyranges as pr
 from .dataloaders import SeqData
 from ._utils import _read_and_concat_dataframes
-from ..preprocessing import decode_DNA_seqs, reverse_complement_seqs
+from ..preprocessing import reverse_complement_seqs, decode_seqs
 
 
 def read_csv(
@@ -414,7 +414,7 @@ def read_bed(
     ids = np.array(list(dna.garray.region2index.keys()))
     ohe_seqs = dna[:][:, :, 0, :]
     targets = cover[:].squeeze()
-    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
     return SeqData(
         names=ids,
@@ -486,7 +486,7 @@ def read_bam(
     ids = np.array(list(dna.garray.region2index.keys()))
     ohe_seqs = dna[:][:, :, 0, :]
     targets = cover[:].squeeze(axis=(2, 3))
-    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
     return SeqData(
         names=ids,
@@ -562,7 +562,7 @@ def read_bigwig(
     ids = np.array(list(dna.garray.region2index.keys()))
     ohe_seqs = dna[:][:, :, 0, :]
     targets = cover[:].squeeze(axis=(2, 3))
-    seqs = np.array(decode_DNA_seqs(ohe_seqs)) if add_seqs else None
+    seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
     return SeqData(
         names=ids,

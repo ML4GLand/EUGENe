@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 import torch
 from ._utils import (
-    _get_index_dict,
-    _one_hot2token,
     _tokenize,
+    _sequencize,
     _token2one_hot,
+    _one_hot2token,
     _pad_sequences,
-)  # concise
+)  # modified concise
 from ._utils import (
     _string_to_char_array,
     _one_hot_to_tokens,
@@ -19,264 +19,147 @@ from ._utils import (
 
 # Vocabularies
 DNA = ["A", "C", "G", "T"]
+RNA = ["A", "C", "G", "U"]
 COMPLEMENT_DNA = {"A": "T", "C": "G", "G": "C", "T": "A"}
 COMPLEMENT_RNA = {"A": "U", "C": "G", "G": "C", "U": "A"}
-RNA = ["A", "C", "G", "U"]
-AMINO_ACIDS = [
-    "A",
-    "R",
-    "N",
-    "D",
-    "B",
-    "C",
-    "E",
-    "Q",
-    "Z",
-    "G",
-    "H",
-    "I",
-    "L",
-    "K",
-    "M",
-    "F",
-    "P",
-    "S",
-    "T",
-    "W",
-    "Y",
-    "V",
-]
-CODONS = [
-    "AAA",
-    "AAC",
-    "AAG",
-    "AAT",
-    "ACA",
-    "ACC",
-    "ACG",
-    "ACT",
-    "AGA",
-    "AGC",
-    "AGG",
-    "AGT",
-    "ATA",
-    "ATC",
-    "ATG",
-    "ATT",
-    "CAA",
-    "CAC",
-    "CAG",
-    "CAT",
-    "CCA",
-    "CCC",
-    "CCG",
-    "CCT",
-    "CGA",
-    "CGC",
-    "CGG",
-    "CGT",
-    "CTA",
-    "CTC",
-    "CTG",
-    "CTT",
-    "GAA",
-    "GAC",
-    "GAG",
-    "GAT",
-    "GCA",
-    "GCC",
-    "GCG",
-    "GCT",
-    "GGA",
-    "GGC",
-    "GGG",
-    "GGT",
-    "GTA",
-    "GTC",
-    "GTG",
-    "GTT",
-    "TAC",
-    "TAT",
-    "TCA",
-    "TCC",
-    "TCG",
-    "TCT",
-    "TGC",
-    "TGG",
-    "TGT",
-    "TTA",
-    "TTC",
-    "TTG",
-    "TTT",
-]
-STOP_CODONS = ["TAG", "TAA", "TGA"]
 
 
 def sanitize_seq(seq):
+    """Make sure all letters are capitalized and remove whitespace for single seq."""
     return seq.strip().upper()
 
 
 def sanitize_seqs(seqs):
+    """Make sure all letters are capitalized and remove whitespace for multiple seqs."""
     return np.array([seq.strip().upper() for seq in seqs])
 
 
-def reverse_complement_seq(seq, alphabet, copy=False):
+def ascii_encode(seq, pad=0):
+    """
+    Converts a string of characters to a NumPy array of byte-long ASCII codes.
+    """
+    encode_seq = np.array([ord(letter) for letter in seq], dtype=int)
+    if pad > 0:
+        encode_seq = np.pad(
+            encode_seq, pad_width=(0, pad), mode="constant", constant_values=36
+        )
+    return encode_seq
+
+
+def ascii_decode(seq):
+    """
+    Converts a NumPy array of byte-long ASCII codes to a string of characters.
+    """
+    return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
+
+
+def reverse_complement_seq(seq, vocab="DNA"):
     """Reverse complement a DNA sequence."""
-    if alphabet == "DNA":
+    if vocab == "DNA":
         return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
-    elif alphabet == "RNA":
+    elif vocab == "RNA":
         return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
     else:
-        raise ValueError("Invalid alphabet")
+        raise ValueError("Invalid vocab, only DNA or RNA are currently supported")
 
 
-def reverse_complement_seqs(seqs, alphabet="DNA", copy=False):
-    """Reverse complement a list of DNA sequences."""
+def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
+    """Reverse complement a list of sequences."""
     return np.array(
         [
-            reverse_complement_seq(seq, alphabet)
+            reverse_complement_seq(seq, vocab)
             for i, seq in tqdm(
                 enumerate(seqs),
                 total=len(seqs),
                 desc="Reverse complementing sequences",
-            )
-        ]
-    )
-
-
-def ohe_DNA_seq(seq, vocab=DNA, fill_value=0, neutral_vocab="N"):
-    """Convert a DNA sequence into one-hot-encoded array."""
-    seq = seq.strip().upper()
-    return _token2one_hot(
-        _tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value=0
-    )
-
-
-def decode_DNA_seq(arr, vocab=DNA, neutral_vocab="N"):
-    """Convert a one-hot encoded array back to string"""
-    tokens = arr.argmax(axis=1)
-    indexToLetter = _get_index_dict(vocab)
-    return "".join([indexToLetter[x] for x in tokens])
-
-
-def _ohe_seqs(
-    seq_vec,
-    vocab,
-    neutral_vocab,
-    maxlen=None,
-    seq_align="start",
-    pad_value="N",
-    encode_type="one_hot",
-    fill_value=None,
-    pad=True,
-    verbose=True,
-):
-    """
-    Convert a list of genetic sequences into one-hot-encoded array.
-    Arguments
-        seq_vec: list of strings (genetic sequences)
-        vocab: list of chars: List of "words" to use as the vocabulary. Can be strings of length>0, but all need to have the same length. For DNA, this is: ["A", "C", "G", "T"].
-        neutral_vocab: list of chars: Values used to pad the sequence or represent unknown-values. For DNA, this is: ["N"].
-        maxlen: int or None, should we trim (subset) the resulting sequence. If None don't trim. Note that trims wrt the align parameter. It should be smaller than the longest sequence.
-        seq_align: character; 'end' or 'start' To which end should we align sequences?
-        encode_type: "one_hot" or "token". "token" represents each vocab element as a positive integer from 1 to len(vocab) + 1. neutral_vocab is represented with 0.
-    Returns
-        Array with shape for encode_type:
-            - "one_hot": `(len(seq_vec), maxlen, len(vocab))`
-            - "token": `(len(seq_vec), maxlen)`
-        If `maxlen=None`, it gets the value of the longest sequence length from `seq_vec`.
-    """
-    if isinstance(neutral_vocab, str):
-        neutral_vocab = [neutral_vocab]
-    if isinstance(seq_vec, str):
-        raise ValueError(
-            "seq_vec should be an iterable returning " + "strings not a string itself"
-        )
-    assert len(vocab[0]) == len(pad_value)
-    assert pad_value in neutral_vocab
-    assert encode_type in ["one_hot", "token"]
-
-    if pad:
-        seq_vec = _pad_sequences(
-            seq_vec, maxlen=maxlen, align=seq_align, value=pad_value
-        )
-
-    if encode_type == "one_hot":
-        arr_list = [
-            _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value)
-            for i, seq in tqdm(
-                enumerate(seq_vec),
-                total=len(seq_vec),
-                desc="One-hot-encoding sequences",
                 disable=not verbose,
             )
         ]
-    elif encode_type == "token":
-        arr_list = [
-            1 + np.array(_tokenize(seq, vocab, neutral_vocab)) for seq in seq_vec
-        ]
-        # we add 1 to be compatible with keras: https://keras.io/layers/embeddings/
-        # indexes > 0, 0 = padding element
+    )
 
+
+def ohe_seq(seq, vocab="DNA", neutral_vocab="N", fill_value=0):
+    """Convert a DNA or RNA sequence into one-hot-encoded array."""
+    seq = seq.strip().upper()
+    return _token2one_hot(
+        _tokenize(seq, vocab, neutral_vocab), vocab, fill_value=fill_value
+    )
+
+
+def ohe_seqs(
+    seqs,
+    vocab="DNA",
+    neutral_vocab="N",
+    maxlen=None,
+    pad=True,
+    pad_value="N",
+    fill_value=None,
+    seq_align="start",
+    verbose=True
+):
+    if isinstance(neutral_vocab, str):
+        neutral_vocab = [neutral_vocab]
+    if isinstance(seqs, str):
+        raise ValueError("seq_vec should be an iterable not a string itself")
+    assert len(vocab[0]) == len(pad_value)
+    assert pad_value in neutral_vocab
+    if pad:
+        seqs_vec = _pad_sequences(
+            seqs, maxlen=maxlen, align=seq_align, value=pad_value
+        )
+    arr_list = [
+        ohe_seq(
+            seq=seqs_vec[i],
+            vocab=vocab,
+            neutral_vocab=neutral_vocab,
+            fill_value=fill_value,
+        )
+        for i in tqdm(
+            range(len(seqs_vec)),
+            total=len(seqs_vec),
+            desc="One-hot encoding sequences",
+            disable=not verbose,
+        )
+    ]
     if pad:
         return np.stack(arr_list)
     else:
         return np.array(arr_list, dtype=object)
 
 
-def ohe_alphabet_seqs(
-    seq_vec,
-    alphabet,
-    maxlen=None,
-    seq_align="start",
-    pad=True,
-    fill_value=None,
-    verbose=True,
-    copy=False,
-):
-    """
-    Convert the sequence into 1-hot-encoding np array
-    Arguments
-        seq_vec: list of chars. List of sequences that can have different lengths
-        RNAbases : bool, Whether or not to use RNA bases in place of DNA bases. Default is false.
-        maxlen: int or None, Should we trim (subset) the resulting sequence. If None don't trim. Note that trims wrt the align parameter. It should be smaller than the longest sequence.
-        seq_align: character; 'end' or 'start' To which end should we align sequences?
-
-    Returns
-        3D np array of shape (len(seq_vec), trim_seq_len(or maximal sequence length if None), 4)"""
-    return _ohe_seqs(
-        seq_vec,
-        vocab=DNA if alphabet == "DNA" else RNA,
-        neutral_vocab="N",
-        maxlen=maxlen,
-        seq_align=seq_align,
-        pad_value="N",
-        encode_type="one_hot",
-        fill_value=fill_value,
-        pad=pad,
-        verbose=verbose,
+def decode_seq(arr, vocab="DNA", neutral_value=-1, neutral_char="N"):
+    """Convert a one-hot encoded array back to string"""
+    return _sequencize(
+        tvec=_one_hot2token(arr, neutral_value), 
+        vocab=vocab, 
+        neutral_value=neutral_value, 
+        neutral_char=neutral_char
     )
 
 
-def decode_DNA_seqs(arr, vocab="DNA", verbose=True):
+def decode_seqs(
+    arr, 
+    vocab="DNA", 
+    neutral_char="N",
+    neutral_value=-1,
+    verbose=True
+):
     """Convert a one-hot encoded array back to string"""
-    if vocab == "DNA":
-        vocab = DNA
-    elif vocab == "RNA":
-        vocab = RNA
-    tokens = _one_hot2token(arr)
-    indexToLetter = _get_index_dict(vocab)
-    if verbose:
-        return np.array(
-            [
-                "".join([indexToLetter[x] for x in row])
-                for i, row in tqdm(
-                    enumerate(tokens), total=len(tokens), desc="Decoding DNA sequences"
-                )
-            ]
+    arr_list = [
+        decode_seq(
+            arr=arr[i],
+            vocab=vocab,
+            neutral_value=neutral_value,
+            neutral_char=neutral_char,
         )
-    else:
-        return ["".join([indexToLetter[x] for x in row]) for row in tokens]
+        for i in tqdm(
+            range(len(arr)),
+            total=len(arr),
+            desc="Decoding sequences",
+            disable=not verbose,
+        )
+    ]
+    return np.array(arr_list)
 
 
 def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
@@ -370,7 +253,8 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     return np.array(all_results)
 
 
-def perturb_seqs(X_0, ds=False):
+# modified yuzu
+def perturb_seqs(X_0, vocab_len=4):
     """Produce all edit-distance-one pertuabtions of a sequence.
     This function will take in a single one-hot encoded sequence of length N
     and return a batch of N*(n_choices-1) sequences, each containing a single
@@ -384,7 +268,7 @@ def perturb_seqs(X_0, ds=False):
     X: torch.Tensor, shape=(n_seqs, (n_choices-1)*seq_len, n_choices, seq_len)
         Each single-position perturbation of seq.
     """
-
+    import warnings
     if not isinstance(X_0, np.ndarray):
         raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
 
@@ -392,6 +276,11 @@ def perturb_seqs(X_0, ds=False):
         raise ValueError(
             "X_0 must have three dimensions: (n_seqs, n_choices, seq_len)."
         )
+    if X_0.shape[1] != 4:
+        warnings.warn(
+            "X_0 has {} choices, but should have 4. Transposing".format(X_0.shape[1])
+        )
+        X_0 = X_0.transpose(0, 2, 1)
 
     n_seqs, n_choices, seq_len = X_0.shape
     idxs = X_0.argmax(axis=1)
@@ -400,7 +289,9 @@ def perturb_seqs(X_0, ds=False):
 
     n = seq_len * (n_choices - 1)
     X = torch.tile(X_0, (n, 1, 1))
+    print(X.shape)
     X = X.reshape(n, n_seqs, n_choices, seq_len).permute(1, 0, 2, 3)
+    print(X.shape)
 
     for i in range(n_seqs):
         for k in range(1, n_choices):
