@@ -13,7 +13,7 @@ from ._seq import (
     lm_multifilter_viz,
 )
 from ._dim_reduce import pca, umap, skree
-from ._seq import kipoi_ism_heatmap
+#from ._seq import kipoi_ism_heatmap
 from ._utils import const_line
 
 # Project Specific Plotting

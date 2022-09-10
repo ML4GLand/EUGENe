@@ -2,13 +2,11 @@ import importlib
 import torch
 from os import PathLike
 from typing import Union, Dict, List, Tuple, Optional
-from .base import init_conv
-from ..utils import Motif, MinimalMEME
-from ..utils._motif import _create_kernel_matrix
+from ..dataloading.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
 
 
 def init_weights(m):
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
+    if isinstance(m, torch.nn.Linear) or isinstance(m, torch.nn.Conv1d):
         torch.nn.init.kaiming_normal_(m.weight)
 
 

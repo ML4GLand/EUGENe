@@ -1,5 +1,4 @@
 import numpy as np
-from .seqplotting_deps import add_letter_to_axis, VOCABS, letter_polygons
 
 
 def center_cmap(cmap, vmax, vmin, center):
@@ -45,6 +44,10 @@ def seqlogo_heatmap(
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
     from matplotlib.collections import PatchCollection
+    try:
+        from .seqplotting_deps import add_letter_to_axis, VOCABS, letter_polygons
+    except ImportError:
+        raise ImportError('Please install kipoi dependencies `pip install eugene[kipoi]`')
 
     if cmap is None:
         cmap = plt.cm.bwr

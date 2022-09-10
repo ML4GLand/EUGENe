@@ -1,9 +1,8 @@
-import os
-import sys
+import os as _os
+import sys as _sys
 
-bin_dir = os.path.dirname(sys.executable)
-os.environ["PATH"] += os.pathsep + bin_dir
-from pybedtools import paths
+_bin_dir = _os.path.dirname(_sys.executable)
+_os.environ["PATH"] += _os.pathsep + _bin_dir
+from pybedtools import paths as _paths
 
-paths._set_bedtools_path(bin_dir)
-from . import data
+_paths._set_bedtools_path(_bin_dir)

@@ -1,4 +1,4 @@
-import swifter
+#import swifter
 import numpy as np
 import pandas as pd
 from itertools import product

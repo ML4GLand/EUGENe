@@ -9,7 +9,7 @@ import logomaker as lm
 from vizsequence import viz_sequence
 from tqdm.auto import tqdm
 from ..preprocessing._utils import _collapse_pos
-from ..external.kipoi_veff.plot import seqlogo_heatmap
+
 
 default_rc_context = {
     "axes.titlesize": 16,
@@ -555,7 +555,8 @@ def lm_multifilter_viz(
 
 
 def kipoi_ism_heatmap(sdata, seq_id, uns_key="NaiveISM_imps", figsize=(15, 2.5)):
+    from ..external.kipoi_veff.plot import seqlogo_heatmap
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
-    val = sdata.uns["NaiveISM_imps"][seq_idx]
+    val = sdata.uns[uns_key][seq_idx]
     fig = plt.figure(figsize=figsize)
     seqlogo_heatmap(val.T, val, ax=plt.subplot())

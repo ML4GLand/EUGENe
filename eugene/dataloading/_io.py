@@ -8,11 +8,6 @@ from .dataloaders import SeqData
 from ._utils import _read_and_concat_dataframes
 from ..preprocessing import decode_DNA_seqs, reverse_complement_seqs
 
-try:
-    from ..external.janggu.data import Bioseq, Cover
-except:
-    print("janggu does not work on this machine, are you using MacOS or Linux?")
-
 
 def read_csv(
     filename: Union[PathLike, List[PathLike]],
@@ -399,6 +394,10 @@ def read_bed(
     sdata : SeqData
         SeqData object containing the peaks.
     """
+    try:
+        from ..external.janggu.data import Bioseq, Cover
+    except ImportError:
+        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
@@ -466,6 +465,10 @@ def read_bam(
     sdata : SeqData
         SeqData object containing the peaks.
     """
+    try:
+        from ..external.janggu.data import Bioseq, Cover
+    except ImportError:
+        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
@@ -538,6 +541,11 @@ def read_bigwig(
     sdata : SeqData
         SeqData object containing the peaks.
     """
+    try:
+        from ..external.janggu.data import Bioseq, Cover
+    except ImportError:
+        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
+    
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
