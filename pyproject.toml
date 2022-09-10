@@ -45,6 +45,13 @@ progress = {version = "^1.6", extras = ["janggu"]}
 keras = {version = "^2.4.3", extras = ["janggu"]}
 tensorflow = {version = "^2.4.1", extras = ["janggu"]}
 logomaker = "^0.8"
+Shapely = {version = "^1.8.1", extras = ["kipoi"]}
+pymemesuite = "^0.1.0a1"
+pyjaspar = "^2.1.0"
+kipoi = {version = "^0.8.6", extras = ["kipoi"]}
+kipoiseq = {version = "^0.7.1", extras = ["kipoi"]}
+xlrd = "^2.0.1"
+jsonargparse = {version = "^4.12.0", extras = ["signatures"]}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]
