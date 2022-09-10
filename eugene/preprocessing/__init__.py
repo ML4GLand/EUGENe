@@ -25,9 +25,15 @@ from ._seq_preprocess import (
     dinuc_shuffle_seqs,
 )  # dinucleotide shuffle
 
-from ._seq_preprocess import perturb_seqs
+from ._seq_preprocess import (
+    perturb_seq,
+    perturb_seqs
+) # perturb
 
-from ._seq_preprocess import feature_implant_seq, feature_implant_across_seq
+from ._seq_preprocess import (
+    feature_implant_seq, 
+    feature_implant_across_seq
+) # feature implant
 
 from ._dataset_preprocess import (
     split_train_test,
@@ -36,20 +42,14 @@ from ._dataset_preprocess import (
 )  # dataset stuff
 
 from ._preprocessing import (
-    sanitize_sdata,
-    one_hot_encode_data,
-    reverse_complement_data,
-    train_test_split_data,
-    binarize_target_sdata,
-    prepare_data,
-    clamp_percentiles,
-    clean_nan_data,
+    sanitize_seqs_sdata,
+    ohe_seqs_sdata,
+    reverse_complement_seqs_sdata,
+    clean_nan_targets_sdata,
+    clamp_targets_sdata,
+    scale_targets_sdata,
+    binarize_targets_sdata,
+    train_test_split_sdata,
+    add_ranges_pos_annot,
+    prepare_seqs_sdata
 )  # core sdata functions
-
-from ._preprocessing import (
-    scale_targets,
-)  # scaling TODO add simpler function to _dataset_preprocess
-from ._preprocessing import add_ranges_annot  # add ranges annotation
-
-# Project specific
-from ._otx_preprocess import randomizeLinkers, convert2pyRanges

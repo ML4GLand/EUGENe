@@ -55,27 +55,34 @@ def ascii_decode(seq):
 
 def reverse_complement_seq(seq, vocab="DNA"):
     """Reverse complement a DNA sequence."""
-    if vocab == "DNA":
-        return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
-    elif vocab == "RNA":
-        return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
-    else:
-        raise ValueError("Invalid vocab, only DNA or RNA are currently supported")
+    if isinstance(seq, str):
+        if vocab == "DNA":
+            return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
+        elif vocab == "RNA":
+            return "".join(COMPLEMENT_RNA.get(base, base) for base in reversed(seq))
+        else:
+            raise ValueError("Invalid vocab, only DNA or RNA are currently supported")
+    elif isinstance(seq, np.ndarray):
+        return seq[::-1, ::-1]
+
 
 
 def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
     """Reverse complement a list of sequences."""
-    return np.array(
-        [
-            reverse_complement_seq(seq, vocab)
-            for i, seq in tqdm(
-                enumerate(seqs),
-                total=len(seqs),
-                desc="Reverse complementing sequences",
-                disable=not verbose,
-            )
-        ]
-    )
+    if isinstance(seqs[0], str):
+        return np.array(
+            [
+                reverse_complement_seq(seq, vocab)
+                for i, seq in tqdm(
+                    enumerate(seqs),
+                    total=len(seqs),
+                    desc="Reverse complementing sequences",
+                    disable=not verbose,
+                )
+            ]
+        )
+    elif isinstance(seqs[0], np.ndarray):
+        return seqs[:, ::-1, ::-1]
 
 
 def ohe_seq(seq, vocab="DNA", neutral_vocab="N", fill_value=0):
@@ -129,6 +136,8 @@ def ohe_seqs(
 
 def decode_seq(arr, vocab="DNA", neutral_value=-1, neutral_char="N"):
     """Convert a one-hot encoded array back to string"""
+    if isinstance(arr, torch.Tensor):
+        arr = arr.numpy()
     return _sequencize(
         tvec=_one_hot2token(arr, neutral_value), 
         vocab=vocab, 
@@ -253,6 +262,38 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     return np.array(all_results)
 
 
+# modified perturb_seqs
+def perturb_seq(X_0, vocab_len=4):
+    import warnings
+    if not isinstance(X_0, np.ndarray):
+        raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
+
+    if len(X_0.shape) != 2:
+        raise ValueError(
+            "X_0 must have two dimensions: (n_choices, seq_len)."
+        )
+
+    if X_0.shape[0] != 4:
+        warnings.warn(
+            "X_0 has {} choices, but should have 4. Transposing".format(X_0.shape[1])
+        )
+        X_0 = X_0.transpose()
+
+    n_choices, seq_len = X_0.shape
+    idx = X_0.argmax(axis=0)
+    X_0 = torch.from_numpy(X_0)
+
+    n = seq_len * (n_choices - 1)
+    X = torch.tile(X_0, (n, 1))
+    X = X.reshape(n, n_choices, seq_len)
+    for k in range(1, n_choices):
+        i = np.arange(seq_len) * (n_choices - 1) + (k - 1)
+        X[i, idx, np.arange(seq_len)] = 0
+        X[i, (idx + k) % n_choices, np.arange(seq_len)] = 1
+
+    return X.numpy()
+
+
 # modified yuzu
 def perturb_seqs(X_0, vocab_len=4):
     """Produce all edit-distance-one pertuabtions of a sequence.
@@ -289,9 +330,8 @@ def perturb_seqs(X_0, vocab_len=4):
 
     n = seq_len * (n_choices - 1)
     X = torch.tile(X_0, (n, 1, 1))
-    print(X.shape)
+    
     X = X.reshape(n, n_seqs, n_choices, seq_len).permute(1, 0, 2, 3)
-    print(X.shape)
 
     for i in range(n_seqs):
         for k in range(1, n_choices):
@@ -303,17 +343,19 @@ def perturb_seqs(X_0, vocab_len=4):
     return X
 
 
-def feature_implant_seq(seq, feature, position, encoding="str", onehot=False):
+def feature_implant_seq(seq, feature, position, vocab="DNA", encoding="str", onehot=False):
     """
     Insert a feature at a given position in a sequence.
     """
     if encoding == "str":
         return seq[:position] + feature + seq[position + len(feature) :]
     elif encoding == "onehot":
+        if feature.shape[0] != seq.shape[0]:
+            feature = feature.transpose()
         if onehot:
-            feature = _token2one_hot(feature.argmax(axis=1), vocab_size=4, fill_value=0)
+            feature = _token2one_hot(feature.argmax(axis=1), vocab=vocab, fill_value=0)
         return np.concatenate(
-            (seq[:position], feature, seq[position + len(feature) :]), axis=0
+            (seq[:, :position], feature, seq[:, position + len(feature):]), axis=1
         )
     else:
         raise ValueError("Encoding not recognized.")
@@ -323,7 +365,15 @@ def feature_implant_across_seq(seq, feature, **kwargs):
     """
     Insert a feature at every position in a sequence.
     """
+    if isinstance(seq, str):
+        assert isinstance(feature, str)
+        seq_len = len(seq)
+        feature_len = len(feature)
+    elif isinstance(seq, np.ndarray):
+        assert isinstance(feature, np.ndarray)
+        seq_len = seq.shape[-1]
+        feature_len = feature.shape[-1]
     implanted_seqs = []
-    for pos in range(len(seq) - len(feature) + 1):
+    for pos in range(seq_len - feature_len + 1):
         implanted_seqs.append(feature_implant_seq(seq, feature, pos, **kwargs))
     return np.array(implanted_seqs)

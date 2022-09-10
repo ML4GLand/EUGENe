@@ -5,13 +5,15 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Dict
 from io import TextIOBase
-
+from ...preprocessing import decode_seq
+from ...preprocessing._utils import _token2one_hot
 
 # Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
 @dataclass
 class Motif:
     identifier: str
     pfm: np.ndarray
+    consensus: str
     alphabet_length: int
     length: int
     name: Optional[str] = None
@@ -39,6 +41,7 @@ class MinimalMEME:
     background = None
     background_source = None
     motifs = None
+    consensus = None
 
     def __init__(self, path):
         self.motifs = {}
@@ -172,9 +175,11 @@ class MinimalMEME:
                     raise RuntimeError(
                         "Provided motif length is not consistent with the letter-probability matrix shape"
                     )
+                consensus = decode_seq(_token2one_hot(pfm.argmax(axis=1)))
                 self.motifs[motif_identifier] = Motif(
                     identifier=motif_identifier,
                     pfm=pfm,
+                    consensus=consensus,
                     alphabet_length=motif_alphabet_length,
                     length=motif_length,
                     name=motif_name,

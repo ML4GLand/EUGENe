@@ -100,17 +100,17 @@ def _token2one_hot(tvec, vocab="DNA", fill_value=None):
     """
     vocab = _get_vocab(vocab)
     vocab_size = len(vocab)
-    arr = np.zeros((len(tvec), vocab_size))
+    arr = np.zeros((vocab_size, len(tvec)))
     tvec_range = np.arange(len(tvec))
     tvec = np.asarray(tvec)
-    arr[tvec_range[tvec >= 0], tvec[tvec >= 0]] = 1
+    arr[tvec[tvec >= 0], tvec_range[tvec >= 0]] = 1
     if fill_value is not None:
-        arr[tvec_range[tvec < 0]] = fill_value
+        arr[:, tvec_range[tvec < 0]] = fill_value
     return arr.astype(np.int8) if fill_value is None else arr.astype(np.float16)
 
 
 # modified dinuc_shuffle
-def _one_hot2token(one_hot, neutral_value=-1):
+def _one_hot2token(one_hot, neutral_value=-1, consensus=False):
     """
     Converts a one-hot encoding into a vector of integers in the range [0, D]
     where D is the number of classes in the one-hot encoding.
@@ -127,8 +127,10 @@ def _one_hot2token(one_hot, neutral_value=-1):
     np.array
         L-vector of integers in the range [0, D]
     """
-    tokens = np.tile(neutral_value, one_hot.shape[0])  # Vector of all D
-    seq_inds, dim_inds = np.where(one_hot==1)
+    if consensus:
+        return np.argmax(one_hot, axis=0)
+    tokens = np.tile(neutral_value, one_hot.shape[1])  # Vector of all D
+    seq_inds, dim_inds = np.where(one_hot.transpose()==1)
     tokens[seq_inds] = dim_inds
     return tokens
 

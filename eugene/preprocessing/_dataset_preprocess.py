@@ -66,4 +66,6 @@ def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     bin_values = np.where(values > upper_threshold, 1, np.nan)
     if lower_threshold is not None:
         bin_values = np.where(values < lower_threshold, 0, bin_values)
+    else:
+        bin_values = np.where(values <= upper_threshold, 0, bin_values)
     return bin_values
