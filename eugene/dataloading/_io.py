@@ -609,7 +609,7 @@ def read(seq_file, *args, **kwargs):
         return
 
 
-def write_csv(sdata, filename, target_key, delim="\t"):
+def write_csv(sdata, filename, target_key=None, delim="\t"):
     """Function for writing sequences to csv files.
 
     Parameters

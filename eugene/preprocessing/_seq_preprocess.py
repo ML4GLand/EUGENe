@@ -130,7 +130,7 @@ def reverse_complement_seq(seq, alphabet, copy=False):
         raise ValueError("Invalid alphabet")
 
 
-def reverse_complement_seqs(seqs, alphabet, copy=False):
+def reverse_complement_seqs(seqs, alphabet="DNA", copy=False):
     """Reverse complement a list of DNA sequences."""
     return np.array(
         [

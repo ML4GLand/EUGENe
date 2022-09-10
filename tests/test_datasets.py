@@ -12,7 +12,7 @@ from pathlib import Path
 def tmp_dataset_dir(tmpdir_factory):
     new_dir = Path(tmpdir_factory.mktemp("eugene_data"))
     old_dir = eu.settings.dataset_dir
-    eu.settings. dataset_dir= new_dir  # Set up
+    eu.settings.dataset_dir= new_dir  # Set up
     yield eu.settings.dataset_dir
     eu.settings. dataset_dir= old_dir  # Tear down
 
@@ -28,7 +28,7 @@ def test_farley15(tmp_dataset_dir):
 
 
 def test_deBoer20(tmp_dataset_dir):
-    data = eu.datasets.deBoer20(0)
+    data = eu.datasets.deBoer20(7)
     assert(data)
 
 
@@ -38,5 +38,9 @@ def test_jores21(tmp_dataset_dir):
 
 
 def test_deAlmeida22(tmp_dataset_dir):
-    data = eu.datasets.deAlmeida22()
+    data = eu.datasets.deAlmeida22("val")
+    assert(data)
+
+def test_ray13(tmp_dataset_dir):
+    data = eu.datasets.ray13("raw")
     assert(data)

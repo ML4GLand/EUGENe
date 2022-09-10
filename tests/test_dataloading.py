@@ -5,13 +5,13 @@ Tests to make sure the example dataloading routines work.
 import eugene as eu
 from pathlib import Path
 from torchvision import transforms
+import os
 
 HERE = Path(__file__).parent
 
 # TODO: Add test_read_and_concat_dataframes() funtions
 # TODO: More comprehesive testing of reading
 # TODO: Add write tests
-
 
 def test_read_csv():
     names, seqs, rev_seqs, targets = eu.dl.read_csv(
@@ -128,3 +128,27 @@ def test_SeqDataModule():
     datamodule.setup()
     dataset = datamodule.train_dataloader().dataset
     assert len(dataset[0]) == 4
+
+def test_write_h5sd():
+    sdata = eu.datasets.random1000()
+    eu.dl.write_h5sd(sdata, "tmp_random1000.h5sd")
+    path = Path(f"{HERE}/tmp_random1000.h5sd")
+    assert path.is_file()
+
+    read_sdata = eu.dl.read_h5sd(path)
+    assert read_sdata is not None
+    assert len(sdata.seqs) == len(read_sdata.seqs)
+
+    os.remove(path)
+
+def test_write_csv():
+    sdata = eu.datasets.random1000()
+    eu.dl.write_csv(sdata, "tmp_random1000.csv",)
+    path = Path(f"{HERE}/tmp_random1000.csv")
+    assert path.is_file()
+
+    read_sdata = eu.dl.read_csv(str(path), seq_col="seq", target_col="target")
+    assert read_sdata is not None
+    assert len(sdata.seqs) == len(read_sdata.seqs)
+
+    os.remove(path)
