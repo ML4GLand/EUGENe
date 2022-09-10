@@ -57,7 +57,7 @@ def _get_first_conv_layer(model, device="cpu"):
     return None
 
 
-def _get_activations_from_layer(layer, sdataloader, device):
+def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
     from ..preprocessing import decode_DNA_seqs
 
     activations = []
@@ -72,7 +72,11 @@ def _get_activations_from_layer(layer, sdataloader, device):
         ID, x, x_rev_comp, y = batch
         with nostdout():
             sequences.append(
-                decode_DNA_seqs(x.transpose(2, 1).detach().cpu().numpy(), verbose=False)
+                decode_DNA_seqs(
+                    x.transpose(2, 1).detach().cpu().numpy(),
+                    vocab=alphabet,
+                    verbose=False,
+                )
             )
         # print(x.shape)
         x = x.to(device)
@@ -149,7 +153,7 @@ def generate_pfms(
     sdataloader = DataLoader(sdataset, batch_size=batch_size, num_workers=num_workers)
     first_layer = _get_first_conv_layer(model, device=device)
     activations, sequences = _get_activations_from_layer(
-        first_layer, sdataloader, device=device
+        first_layer, sdataloader, device=device, alphabet=alphabet
     )
     filter_activators = _get_filter_activators(activations, sequences, first_layer)
     filter_pfms = _get_pfms(
@@ -187,3 +191,46 @@ def meme_generate(W, output_file="meme.txt", prefix="filter"):
         f.write("\n")
 
     f.close()
+
+
+def pwm_to_meme(pwm, output_file_path):
+    """
+    Function to convert pwm array to meme file
+    :param pwm: numpy.array, pwm matrices, shape (U, 4, filter_size), where U - number of units
+    :param output_file_path: string, the name of the output meme file
+    """
+
+    n_filters = pwm.shape[0]
+    filter_size = pwm.shape[2]
+    meme_file = open(output_file_path, "w")
+    meme_file.write("MEME version 4\n\n")
+    meme_file.write("ALPHABET= ACGT\n\n")
+    meme_file.write("strands: + -\n\n")
+    meme_file.write("Background letter frequencies\n")
+    meme_file.write("A 0.25 C 0.25 G 0.25 T 0.25\n")
+
+    print("Saved PWM File as : {}".format(output_file_path))
+
+    for i in range(0, n_filters):
+        if np.sum(pwm[i, :, :]) > 0:
+            meme_file.write("\n")
+            meme_file.write("MOTIF filter%s\n" % i)
+            meme_file.write(
+                "letter-probability matrix: alength= 4 w= %d \n"
+                % np.count_nonzero(np.sum(pwm[i, :, :], axis=0))
+            )
+
+        for j in range(0, filter_size):
+            if np.sum(pwm[i, :, j]) > 0:
+                meme_file.write(
+                    str(pwm[i, 0, j])
+                    + "\t"
+                    + str(pwm[i, 1, j])
+                    + "\t"
+                    + str(pwm[i, 2, j])
+                    + "\t"
+                    + str(pwm[i, 3, j])
+                    + "\n"
+                )
+
+    meme_file.close()

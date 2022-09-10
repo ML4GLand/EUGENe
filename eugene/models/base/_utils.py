@@ -36,31 +36,3 @@ def GetFlattenDim(network, seq_len):
         elif name == "MaxPool1d":
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)
-
-
-def init_weights(m):
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
-        torch.nn.init.kaiming_normal_(m.weight)
-
-
-def init_conv(
-    model,
-    weights: torch.tensor,
-    layer_name: str,
-    kernel_name: str = None,
-    kernel_number: int = None,
-    module_number: int = None,
-):
-    if kernel_name is None:
-        assert module_number is not None
-        assert isinstance(model.__getattr__(layer_name).module[module_number], torch.nn.Conv1d)
-        model.__getattr__(layer_name).module[module_number].weight = nn.Parameter(weights)
-    else:
-        assert kernel_number is not None
-        assert isinstance(
-            model.__getattr__(layer_name).__getattr__(kernel_name)[kernel_number],
-            torch.Tensor,
-        )
-        model.__getattr__(layer_name).__getattr__(kernel_name)[
-            kernel_number
-        ] = nn.Parameter(weights)

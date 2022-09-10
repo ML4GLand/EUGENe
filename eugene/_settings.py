@@ -19,6 +19,7 @@ if torch.cuda.is_available():
 
 eugene_logger = logging.getLogger("eugene")
 
+
 def _type_check(var: Any, varname: str, types: Union[type, Tuple[type, ...]]):
     if isinstance(var, types):
         return
@@ -30,6 +31,7 @@ def _type_check(var: Any, varname: str, types: Union[type, Tuple[type, ...]]):
             ", ".join(type_names[:-1]), type_names[-1]
         )
     raise TypeError(f"{varname} must be of type {possible_types_str}")
+
 
 class EugeneConfig:
     """
@@ -56,10 +58,11 @@ class EugeneConfig:
         batch_size: int = 128,
         seed: int = 13,
         gpus: int = None,
-        dataset_dir = "./datasets/",
-        logging_dir: str = "./eugene_log/",
+        dataset_dir="./eugene_data/",
+        logging_dir: str = "./eugene_logs/",
         output_dir: str = "./eugene_output/",
-        config_dir: str = "./eugene_config/",
+        config_dir: str = "./eugene_configs/",
+        figure_dir: str = "./eugene_figures/",
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
     ):
@@ -71,7 +74,7 @@ class EugeneConfig:
         self.batch_size = batch_size
         self.seed = seed
         self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
-        self.dataset_dir =dataset_dir
+        self.dataset_dir = dataset_dir
         self.logging_dir = logging_dir
         self.output_dir = output_dir
         self.dl_num_workers = dl_num_workers
@@ -149,6 +152,15 @@ class EugeneConfig:
         self._dataset_dir = Path(dataset_dir).resolve()
 
     @property
+    def output_dir(self) -> Path:
+        """Directory for saving output (default `'./eugene_output/'`)."""
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, output_dir: Union[str, Path]):
+        self._output_dir = Path(output_dir).resolve()
+
+    @property
     def config_dir(self) -> Path:
         """Directory for config files (default `'./eugene_config/'`)."""
         return self._config_dir
@@ -156,6 +168,15 @@ class EugeneConfig:
     @config_dir.setter
     def config_dir(self, config_dir: Union[str, Path]):
         self._config_dir = Path(config_dir).resolve()
+
+    @property
+    def figure_dir(self) -> Path:
+        """Directory for saving figures (default `'./eugene_figures/'`)."""
+        return self._figure_dir
+
+    @figure_dir.setter
+    def figure_dir(self, figure_dir: Union[str, Path]):
+        self._figure_dir = Path(figure_dir).resolve()
 
     @property
     def progress_bar_style(self) -> str:
@@ -184,15 +205,6 @@ class EugeneConfig:
     def verbosity(self) -> int:
         """Verbosity level (default `logging.INFO`)."""
         return self._verbosity
-
-    @property
-    def output_dir(self) -> Path:
-        """Directory for saving output (default `'./eugene_output/'`)."""
-        return self._output_dir
-
-    @output_dir.setter
-    def output_dir(self, output_dir: Union[str, Path]):
-        self._output_dir = Path(output_dir).resolve()
 
     @verbosity.setter
     def verbosity(self, level: Union[str, int]):

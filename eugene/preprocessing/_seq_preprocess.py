@@ -147,7 +147,9 @@ def reverse_complement_seqs(seqs, alphabet, copy=False):
 def ohe_DNA_seq(seq, vocab=DNA, fill_value=0, neutral_vocab="N"):
     """Convert a DNA sequence into one-hot-encoded array."""
     seq = seq.strip().upper()
-    return _token2one_hot(_tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value=0)
+    return _token2one_hot(
+        _tokenize(seq, vocab, neutral_vocab), len(vocab), fill_value=0
+    )
 
 
 def decode_DNA_seq(arr, vocab=DNA, neutral_vocab="N"):
@@ -167,7 +169,7 @@ def _ohe_seqs(
     encode_type="one_hot",
     fill_value=None,
     pad=True,
-    verbose=True
+    verbose=True,
 ):
     """
     Convert a list of genetic sequences into one-hot-encoded array.
@@ -206,7 +208,7 @@ def _ohe_seqs(
                 enumerate(seq_vec),
                 total=len(seq_vec),
                 desc="One-hot-encoding sequences",
-                disable=not verbose
+                disable=not verbose,
             )
         ]
     elif encode_type == "token":
@@ -256,8 +258,12 @@ def ohe_alphabet_seqs(
     )
 
 
-def decode_DNA_seqs(arr, vocab=DNA, verbose=True):
+def decode_DNA_seqs(arr, vocab="DNA", verbose=True):
     """Convert a one-hot encoded array back to string"""
+    if vocab == "DNA":
+        vocab = DNA
+    elif vocab == "RNA":
+        vocab = RNA
     tokens = _one_hot2token(arr)
     indexToLetter = _get_index_dict(vocab)
     if verbose:
@@ -411,12 +417,12 @@ def feature_implant_seq(seq, feature, position, encoding="str", onehot=False):
     Insert a feature at a given position in a sequence.
     """
     if encoding == "str":
-        return seq[:position] + feature + seq[position + len(feature):]
+        return seq[:position] + feature + seq[position + len(feature) :]
     elif encoding == "onehot":
         if onehot:
             feature = _token2one_hot(feature.argmax(axis=1), vocab_size=4, fill_value=0)
         return np.concatenate(
-            (seq[:position], feature, seq[position + len(feature):]), axis=0
+            (seq[:position], feature, seq[position + len(feature) :]), axis=0
         )
     else:
         raise ValueError("Encoding not recognized.")
@@ -430,4 +436,3 @@ def feature_implant_across_seq(seq, feature, **kwargs):
     for pos in range(len(seq) - len(feature) + 1):
         implanted_seqs.append(feature_implant_seq(seq, feature, pos, **kwargs))
     return np.array(implanted_seqs)
-

@@ -195,19 +195,22 @@ class MinimalMEME:
                 line = handle.readline()
 
 
-def _create_kernel_matrix(size: tuple, motifs: Dict[str, Motif]) -> np.ndarray:
+def _create_kernel_matrix(
+    size: tuple, motifs: Dict[str, Motif], convert_to_pwm=True
+) -> np.ndarray:
     if len(size) != 3:
         raise RuntimeError("Kernel matrix size must be a tuple of length 3")
     kernel = torch.zeros(size)
     torch.nn.init.xavier_uniform_(kernel)
-
-    # overwrite part of kernel with pfms from motifs
     for i, motif_id in enumerate(motifs):
         motif = motifs[motif_id]
-        # convert PFM to PWM, assume equal background frequency of 0.25
-        # truncates motifs longer than 13bp to 13bp
-        kernel[i, :, : min(len(motif), kernel.shape[2])] = torch.tensor(
-            motif.pfm[: min(len(motif), kernel.shape[2]), :] / 0.25
-        ).transpose(0, 1)
-
+        if convert_to_pwm:
+            new_weight = torch.tensor(
+                motif.pfm[: min(len(motif), kernel.shape[2]), :] / 0.25
+            ).transpose(0, 1)
+        else:
+            new_weight = torch.tensor(
+                motif.pfm[: min(len(motif), kernel.shape[2]), :]
+            ).transpose(0, 1)
+        kernel[i, :, : min(len(motif), kernel.shape[2])] = new_weight
     return kernel
