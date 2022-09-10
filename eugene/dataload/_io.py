@@ -6,7 +6,7 @@ from os import PathLike
 import pyranges as pr
 from .dataloaders import SeqData
 from ._utils import _read_and_concat_dataframes
-from ..preprocessing import reverse_complement_seqs, decode_seqs
+from ..preprocess import reverse_complement_seqs, decode_seqs
 
 
 def read_csv(
@@ -92,7 +92,7 @@ def read_csv(
         else:
             ids = None
     if rev_comp:
-        from ..preprocessing import reverse_complement_seqs
+        from ..preprocess import reverse_complement_seqs
 
         rev_seqs = reverse_complement_seqs(seqs)
     else:
@@ -152,7 +152,7 @@ def read_fasta(
     else:
         targets = None
     if rev_comp:
-        from ..preprocessing import reverse_complement_seqs
+        from ..preprocess import reverse_complement_seqs
 
         rev_seqs = reverse_complement_seqs(seqs)
     else:

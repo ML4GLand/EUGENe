@@ -5,8 +5,8 @@ import pandas as pd
 
 # EUGENE
 from .._settings import settings
-from ..preprocessing import reverse_complement_seqs, ohe_seqs
-from ..dataloading._utils import _seq2Fasta
+from ..preprocess import reverse_complement_seqs, ohe_seqs
+from ..dataload._utils import _seq2Fasta
 
 
 alphabet = np.array(["A", "G", "C", "T"])

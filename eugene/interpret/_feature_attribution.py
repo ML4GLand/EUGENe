@@ -4,7 +4,7 @@ from tqdm.auto import tqdm
 import pyranges as pr
 from captum.attr import InputXGradient, DeepLift, GradientShap
 from yuzu.naive_ism import naive_ism
-from ..preprocessing import dinuc_shuffle_seq, perturb_seqs
+from ..preprocess import dinuc_shuffle_seq, perturb_seqs
 from ..utils import track
 from .._settings import settings
 

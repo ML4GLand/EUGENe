@@ -9,15 +9,15 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from ..dataloading import SeqData, SeqDataset
+from ..dataload import SeqData, SeqDataset
 from .._settings import settings
 
 
 def fit(
     model: LightningModule,
     sdata: SeqData = None,
-    target: Union[str, List[str]] = None,
-    train_key: str = "train",
+    target_keys: Union[str, List[str]] = None,
+    train_key: str = "train_val",
     epochs=10,
     gpus=None,
     batch_size: int = None,
@@ -30,7 +30,7 @@ def fit(
     train_dataloader: DataLoader = None,
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
-    transform_kwargs: dict = {"transpose": True},
+    transform_kwargs: dict = {},
     early_stopping_callback: bool = True,
     early_stopping_metric="val_loss",
     early_stopping_patience=5,
@@ -41,13 +41,13 @@ def fit(
     """
     Train the model.
     """
+    gpus = gpus if gpus is not None else settings.gpus
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     log_dir = log_dir if log_dir is not None else settings.logging_dir
     model_name = model.strand + model.__class__.__name__ + "_" + model.task
     name = name if name is not None else model_name
     seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
-    logging.getLogger("lightning").setLevel(verbosity if verbosity is not None else settings.verbosity)
     if train_dataloader is not None:
         assert val_dataloader is not None
     elif train_dataset is not None:
@@ -59,8 +59,8 @@ def fit(
             val_dataset, batch_size=batch_size, num_workers=num_workers
         )
     elif sdata is not None:
-        assert target is not None
-        targs = sdata.seqs_annot[target].values  
+        assert target_keys is not None
+        targs = sdata.seqs_annot[target_keys].values  
         if len(targs.shape) == 1:
             nan_mask = np.isnan(targs)
         else:
@@ -69,7 +69,7 @@ def fit(
         sdata = sdata[~nan_mask]
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
-            target=target,
+            target=target_keys,
             seq_transforms=seq_transforms,
             transform_kwargs=transform_kwargs,
         )
@@ -78,7 +78,7 @@ def fit(
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(
-            target=target,
+            target=target_keys,
             seq_transforms=seq_transforms,
             transform_kwargs=transform_kwargs,
         )

@@ -8,7 +8,7 @@ import seqlogo
 import logomaker as lm
 from vizsequence import viz_sequence
 from tqdm.auto import tqdm
-from ..preprocessing._utils import _collapse_pos
+from ..preprocess._utils import _collapse_pos
 
 
 default_rc_context = {
@@ -135,7 +135,7 @@ def _plot_seq_logo(
     None
     """
     if imp_scores is None:
-        from ..preprocessing import ohe_seq
+        from ..preprocess import ohe_seq
 
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab

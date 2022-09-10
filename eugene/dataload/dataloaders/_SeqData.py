@@ -299,7 +299,7 @@ class SeqData:
 
     def to_dataset(
         self,
-        target: Union[str, List[str]] = None,
+        target_keys: Union[str, List[str]] = None,
         seq_transforms: List[str] = None,
         transform_kwargs: dict = {}
     ) -> SeqDataset:
@@ -322,18 +322,18 @@ class SeqData:
         from torchvision import transforms as torch_transforms
 
         transforms = []
-        if target is None:
+        if target_keys is None:
             targs = None
         else:
-            targs = self.seqs_annot[target].values  
+            targs = self.seqs_annot[target_keys].values  
 
         if seq_transforms is None:
-            print("No transforms given, assuming just need to tensorize).")
+            print("No transforms given, assuming just need to tensorize.")
             transforms = [ToTensor(**transform_kwargs)]
             return SeqDataset(
                 self.ohe_seqs,
                 names=self.names,
-                targets=targs if target is not None else None,
+                targets=targs if target_keys is not None else None,
                 rev_seqs=self.ohe_rev_seqs,
                 transform=torch_transforms.Compose(transforms),
             )
@@ -364,7 +364,7 @@ class SeqData:
             return SeqDataset(
                 self.ohe_seqs,
                 names=self.names,
-                targets=targs if target is not None else None,
+                targets=targs if target_keys is not None else None,
                 rev_seqs=self.ohe_rev_seqs,
                 transform=torch_transforms.Compose(transforms),
             )
@@ -372,7 +372,7 @@ class SeqData:
             return SeqDataset(
                 self.seqs,
                 names=self.names,
-                targets=targs if target is not None else None,
+                targets=targs if target_keys is not None else None,
                 rev_seqs=self.rev_seqs,
                 transform=torch_transforms.Compose(transforms),
             )

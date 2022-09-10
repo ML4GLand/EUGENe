@@ -58,7 +58,7 @@ def _get_first_conv_layer(model, device="cpu"):
 
 
 def _get_activations_from_layer(layer, sdataloader, device, vocab="DNA"):
-    from ..preprocessing import decode_seqs
+    from ..preprocess import decode_seqs
 
     activations = []
     sequences = []

@@ -1,6 +1,6 @@
 import torch
-from ..preprocessing._otx_preprocess import randomizeLinkers
-from ..preprocessing import ohe_seq
+from ..preprocess._otx_preprocess import randomizeLinkers
+from ..preprocess import ohe_seq
 
 
 # Suite of sequence transforms that can be composed using torchvision

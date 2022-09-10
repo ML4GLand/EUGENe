@@ -5,8 +5,8 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Dict
 from io import TextIOBase
-from ...preprocessing import decode_seq
-from ...preprocessing._utils import _token2one_hot
+from ...preprocess import decode_seq
+from ...preprocess._utils import _token2one_hot
 
 # Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
 @dataclass

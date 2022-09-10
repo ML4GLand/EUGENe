@@ -2,8 +2,8 @@ from pathlib import Path
 import pandas as pd
 import pyranges as pr
 from .._compat import Literal
-from ..dataloading._io import read_csv
-from ..dataloading import SeqData
+from ..dataload._io import read_csv
+from ..dataload import SeqData
 
 HERE = Path(__file__).parent
 pkg_resources = None

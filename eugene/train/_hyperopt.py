@@ -8,7 +8,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities.cli import LightningCLI
 
 # EUGENE
-from ..dataloading.dataloaders import SeqDataModule
+from ..dataload.dataloaders import SeqDataModule
 from ..models import CNN
 
 

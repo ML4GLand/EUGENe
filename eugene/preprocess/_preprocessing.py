@@ -1,6 +1,6 @@
 from tqdm.auto import tqdm
 import numpy as np
-from ..dataloading import SeqData
+from ..dataload import SeqData
 from ._dataset_preprocess import split_train_test, binarize_values
 from ._seq_preprocess import sanitize_seqs, ohe_seqs, reverse_complement_seqs
 from ..utils._decorators import track

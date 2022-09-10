@@ -2,7 +2,7 @@ import importlib
 import torch
 from os import PathLike
 from typing import Union, Dict, List, Tuple, Optional
-from ..dataloading.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
+from ..dataload.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
 
 
 def init_weights(m):

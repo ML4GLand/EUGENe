@@ -4,8 +4,8 @@ import numpy as np
 import pyranges as pr
 from .._compat import Literal
 from ._utils import try_download_urls
-from ..dataloading._io import read, read_csv, read_fasta
-from ..dataloading import SeqData
+from ..dataload._io import read, read_csv, read_fasta
+from ..dataload import SeqData
 
 
 HERE = Path(__file__).parent

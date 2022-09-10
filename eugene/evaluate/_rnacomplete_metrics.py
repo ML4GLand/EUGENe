@@ -1,79 +1,14 @@
-#import swifter
 import numpy as np
 import pandas as pd
 from itertools import product
 from tqdm.auto import tqdm
-
 tqdm.pandas()
-from sklearn.metrics import auc, roc_auc_score
+from sklearn.metrics import auc
 from sklearn.metrics import r2_score
 from scipy.stats import pearsonr, spearmanr
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-
-# Useful helpers for generating and checking for kmers
-def generate_all_possible_kmers(n=7, alphabet="AGCU"):
-    """
-    Generate all possible kmers of length and alphabet provided
-    """
-    return ["".join(c) for c in product(alphabet, repeat=n)]
-
-
-def kmer_in_seqs(seqs, kmer):
-    """
-    Return a 0/1 array of whether a kmer is in each of the passed in sequences
-    """
-    seqs_s = pd.Series(seqs)
-    kmer_binary = seqs_s.str.contains(kmer).astype(int).values
-    return kmer_binary
-
-
-def median_calc(y_true, y_score):
-    if isinstance(y_score, pd.Series):
-        y_score = y_score.values
-    if isinstance(y_true, pd.Series):
-        y_true = y_true.values
-    nan_mask = ~np.isnan(y_score)
-    y_score = y_score[nan_mask]
-    y_true = y_true[nan_mask]
-    indeces_1 = np.where(y_true == 1)[0]
-    return np.median(y_score[indeces_1])
-
-
-def auc_calc(y_true, y_score):
-    if isinstance(y_score, pd.Series):
-        y_score = y_score.values
-    if isinstance(y_true, pd.Series):
-        y_true = y_true.values
-    nan_mask = ~np.isnan(y_score)
-    y_true = y_true[nan_mask]
-    y_score = y_score[nan_mask]
-    return roc_auc_score(y_true, y_score)
-
-
-def escore(y_true, y_score):
-    if isinstance(y_score, pd.Series):
-        y_score = y_score.values
-    if isinstance(y_true, pd.Series):
-        y_true = y_true.values
-    nan_mask = ~np.isnan(y_score)
-    y_score = y_score[nan_mask]
-    y_true = y_true[nan_mask]
-    l_0 = np.where(y_true == 0)[0]
-    l_1 = np.where(y_true == 1)[0]
-    y_0 = y_score[l_0]
-    y_1 = y_score[l_1]
-    indeces_y_0, indeces_y_1 = np.argsort(y_0)[::-1], np.argsort(y_1)[::-1]
-    sorted_y_0, sorted_y_1 = np.sort(y_0)[::-1], np.sort(y_1)[::-1]
-    indeces_y_0_top = indeces_y_0[: int(len(sorted_y_0) / 2)]
-    indeces_y_1_top = indeces_y_1[: int(len(sorted_y_1) / 2)]
-    sorted_y_0_top = sorted_y_0[: int(len(sorted_y_0) / 2)]
-    sorted_y_1_top = sorted_y_1[: int(len(sorted_y_1) / 2)]
-    l_0_top = l_0[indeces_y_0_top]
-    l_1_top = l_1[indeces_y_1_top]
-    l_top = np.concatenate([l_0_top, l_1_top])
-    return auc_calc(y_true[l_top], y_score[l_top])
+from ._metrics import median_calc, auc_calc, escore
 
 
 def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=False):
@@ -248,6 +183,7 @@ def rnacomplete_metrics_sdata_plot(
     )
 
     plt.tight_layout()
+
 
 
 def rnacomplete_metrics_sdata_table(

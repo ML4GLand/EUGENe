@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from ...preprocessing import ascii_encode
+from ...preprocess import ascii_encode
 from ..._settings import settings
 
 
@@ -89,9 +89,9 @@ class SeqDataset(Dataset):
             rev_seq = np.array([-1.0])
 
         sample = np.array([name, seq, rev_seq, target], dtype=object)
-
         if self.transform:
             sample = self.transform(sample)
+        
         return sample
 
     def to_dataloader(

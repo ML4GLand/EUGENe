@@ -4,7 +4,7 @@ from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
 from yuzu.utils import perturbations
 from ._utils import k_largest_index_argsort
-from ..preprocessing import (
+from ..preprocess import (
     ohe_seqs,
     feature_implant_seq,
     feature_implant_across_seq,

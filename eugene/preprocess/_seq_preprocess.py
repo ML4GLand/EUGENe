@@ -63,7 +63,7 @@ def reverse_complement_seq(seq, vocab="DNA"):
         else:
             raise ValueError("Invalid vocab, only DNA or RNA are currently supported")
     elif isinstance(seq, np.ndarray):
-        return seq[::-1, ::-1]
+        return torch.from_numpy(np.flip(seq, axis=(0, 1)).copy()).numpy()
 
 
 
@@ -82,7 +82,7 @@ def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
             ]
         )
     elif isinstance(seqs[0], np.ndarray):
-        return seqs[:, ::-1, ::-1]
+        return torch.from_numpy(np.flip(seqs, axis=(1, 2)).copy()).numpy()
 
 
 def ohe_seq(seq, vocab="DNA", neutral_vocab="N", fill_value=0):

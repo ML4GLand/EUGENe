@@ -3,8 +3,8 @@ import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from vizsequence import viz_sequence
-from ..preprocessing._utils import _collapse_pos
-from ..preprocessing._otx_preprocess import defineTFBS
+from ..preprocess._utils import _collapse_pos
+from ..preprocess._otx_preprocess import defineTFBS
 
 
 def _plot_otx_seq(
@@ -140,7 +140,7 @@ def _plot_otx_seq(
         )
 
     if uns_key is None:
-        from ..preprocessing import ohe_seq
+        from ..preprocess import ohe_seq
 
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence"
