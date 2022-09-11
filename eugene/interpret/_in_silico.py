@@ -2,97 +2,14 @@ import torch
 import numpy as np
 from tqdm.auto import tqdm
 from yuzu.naive_ism import naive_ism
-from yuzu.utils import perturbations
-from ._utils import k_largest_index_argsort
+from ._utils import _k_largest_index_argsort, _naive_ism
 from ..preprocess import (
     ohe_seqs,
     feature_implant_seq,
     feature_implant_across_seq,
 )
+from ..utils import track
 from .. import settings
-
-
-@torch.inference_mode()
-def _naive_ism(model, X_0, batch_size=128, device="cpu"):
-    """In-silico mutagenesis saliency scores.
-    This function will perform in-silico mutagenesis in a naive manner, i.e.,
-    where each input sequence has a single mutation in it and the entirety
-    of the sequence is run through the given model. It returns the ISM score,
-    which is a vector of the L1 difference between the reference sequence
-    and the perturbed sequences with one value for each output of the model.
-    Parameters
-    ----------
-    model: torch.nn.Module
-        The model to use.
-    X_0: numpy.ndarray
-        The one-hot encoded sequence to calculate saliency for.
-    batch_size: int, optional
-        The size of the batches.
-    device: str, optional
-        Whether to use a 'cpu' or 'gpu'.
-    Returns
-    -------
-    X_ism: numpy.ndarray
-        The saliency score for each perturbation.
-    """
-
-    n_seqs, n_choices, seq_len = X_0.shape
-    X_idxs = X_0.argmax(axis=1)
-
-    X = perturbations(X_0)
-    X_0_np = X_0
-    X_0 = torch.from_numpy(X_0)
-
-    if device[:4] != str(next(model.parameters()).device):
-        model = model.to(device)
-
-    if device[:4] != X_0.device:
-        X_0 = X_0.to(device)
-
-    model = model.eval()
-    reference = model(X_0).unsqueeze(1)
-    starts = np.arange(0, X.shape[1], batch_size)
-    isms = []
-    for i in range(n_seqs):
-        X = perturbations(np.expand_dims(X_0_np[i], 0))
-        y = []
-
-        for start in starts:
-            X_ = X[0, start : start + batch_size]
-            if device[:4] == "cuda":
-                X_ = X_.to(device)
-
-            y_ = model(X_)
-            y.append(y_)
-            del X_
-
-        y = torch.cat(y)
-
-        ism = (y - reference[i]).sum(axis=-1)
-        if len(ism.shape) == 2:
-            ism = ism.sum(axis=-1)
-        isms.append(ism)
-
-        if device[:4] == "cuda":
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
-
-    isms = torch.stack(isms)
-    isms = isms.reshape(n_seqs, seq_len, n_choices - 1)
-
-    j_idxs = torch.arange(n_seqs * seq_len)
-    X_ism = torch.zeros(n_seqs * seq_len, n_choices, device=device)
-    for i in range(1, n_choices):
-        i_idxs = (X_idxs.flatten() + i) % n_choices
-        X_ism[j_idxs, i_idxs] = isms[:, :, i - 1].flatten()
-
-    X_ism = X_ism.reshape(n_seqs, seq_len, n_choices).permute(0, 2, 1)
-
-    if device[:4] == "cuda":
-        X_ism = X_ism.cpu()
-
-    X_ism = X_ism.numpy()
-    return X_ism
 
 
 def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndarray:
@@ -130,24 +47,23 @@ def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndar
     X = torch.Tensor(X).float().numpy()
     X_ism = _naive_ism(model, X, device=device, batch_size=1)
     X_ism = X_ism.squeeze(axis=0)
-    inds = k_largest_index_argsort(X_ism, k)
+    inds = _k_largest_index_argsort(X_ism, k)
     locs = inds[:, 1]
     maxs = np.max(X_ism, axis=0)[locs]
-    # print(inds, locs, maxs)
-    # _max, ind = np.max(X_ism), np.unravel_index(X_ism.argmax(), X_ism.shape)
-    mut_Xs = np.zeros((k, X.shape[2], X.shape[1]))
-    # print(mut_Xs.shape)
+    mut_Xs = np.zeros((k, X.shape[1], X.shape[2]))
     for i in range(k):
-        mut_X = X.copy().transpose(0, 2, 1).squeeze(axis=0)
-        mut_X[inds[i][1]] = np.zeros(mut_X.shape[1])
-        mut_X[inds[i][1]][inds[i][0]] = 1
-        # print(mut_X.shape)
+        mut_X = X.copy().squeeze(axis=0)
+        mut_X[:, inds[i][1]] = np.zeros(mut_X.shape[0])
+        mut_X[:, inds[i][1]][inds[i][0]] = 1
         mut_Xs[i] = mut_X
     return mut_Xs, maxs, locs
 
 
 def best_mut_seqs(
-    model, X: np.ndarray, batch_size: int = None, device: str = None
+    model, 
+    X: np.ndarray, 
+    batch_size: int = None, 
+    device: str = None
 ) -> np.ndarray:
     """
     Find and return the highest scoring sequence for each sequence
@@ -186,17 +102,14 @@ def best_mut_seqs(
     batch_size = settings.batch_size if batch_size is None else batch_size
     X = X.transpose(0, 2, 1) if X.shape[2] == 4 else X
     X = torch.Tensor(X).float().numpy()
-    # print(X.shape)
-    X_ism = naive_ism(model, X, device=device, batch_size=batch_size)
-    maxs, inds, mut_X = [], [], X.copy().transpose(0, 2, 1)
-    # print(mut_X.shape)
+    X_ism = _naive_ism(model, X, device=device, batch_size=batch_size)
+    maxs, inds, mut_X = [], [], X.copy()
     for i in range(len(mut_X)):
         maxs.append(np.max(X_ism[i]))
         ind = np.unravel_index(X_ism[i].argmax(), X_ism[i].shape)
-        # print(ind)
         inds.append(ind[1])
-        mut_X[i][ind[1]] = np.zeros(mut_X.shape[2])
-        mut_X[i][ind[1]][ind[0]] = 1
+        mut_X[i][:, ind[1]] = np.zeros(mut_X.shape[1])
+        mut_X[i][:, ind[1]][ind[0]] = 1
     return mut_X, np.array(maxs), np.array(inds)
 
 
@@ -204,10 +117,10 @@ def evolution(
     model,
     X: np.ndarray,
     rounds: int = 10,
-    force_different: bool = True,
     k: int = 10,
+    force_different: bool = True,
     batch_size: int = None,
-    device: str = None,
+    device: str = "cpu",
 ) -> np.ndarray:
     """
     Perform rounds rounds of in-silico evolution on a single sequence X.
@@ -238,8 +151,7 @@ def evolution(
     curr_X = X.copy()
     mutated_positions, mutated_scores = [], []
     for r in range(rounds):
-        mut_X, score, positions = best_k_muts(model, curr_X, k=10, device=device)
-        # print(mut_X.shape, positions)
+        mut_X, score, positions = best_k_muts(model, curr_X, k=k, device=device)
         if force_different:
             for i, p in enumerate(positions):
                 if p not in mutated_positions:
@@ -251,11 +163,20 @@ def evolution(
             curr_X = mut_X[0]
             mutated_positions.append(positions[0])
             mutated_scores.append(score[0])
-        # print(decode_DNA_seq(curr_X))
     return curr_X, mutated_scores, mutated_positions
 
 
-def evolve_sdata(model, sdata, rounds, return_seqs=False, **kwargs):
+@track
+def evolve_seqs_sdata(
+    model, 
+    sdata, 
+    rounds, 
+    return_seqs=False,
+    device: str = "cpu",
+    copy=False,
+    **kwargs
+):
+    sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     evolved_seqs = np.zeros(sdata.ohe_seqs.shape)
@@ -264,17 +185,19 @@ def evolve_sdata(model, sdata, rounds, return_seqs=False, **kwargs):
     ):
         evolved_seq = evolution(model, ohe_seq, rounds=rounds, device=device)[0]
         evolved_seqs[i] = evolved_seq
-    orig_seqs = torch.Tensor(sdata.ohe_seqs.transpose(0, 2, 1)).to(device)
-    evolved_seqs = torch.Tensor(evolved_seqs.transpose(0, 2, 1)).to(device)
+    orig_seqs = torch.Tensor(sdata.ohe_seqs).to(device)
+    evolved_seqs = torch.Tensor(evolved_seqs).to(device)
     original_scores = model(orig_seqs).detach().cpu().numpy()
     evolved_scores = model(evolved_seqs).detach().cpu().numpy()
     sdata["original_scores"] = original_scores
     sdata[f"evolved_{rounds}_scores"] = evolved_scores
     if return_seqs:
         return evolved_seqs
+    return sdata if copy else None
 
 
-def feature_implant(
+#@track
+def feature_implant_seq_sdata(
     model,
     sdata,
     seq_id,
@@ -282,12 +205,14 @@ def feature_implant(
     feature_name="feature",
     encoding="str",
     onehot=False,
+    store=True,
     device="cpu",
-    store=False,
+    copy=False,
 ):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
+    sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.to(device)
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
@@ -297,13 +222,13 @@ def feature_implant(
         implanted_seqs = ohe_seqs(
             implanted_seqs, vocab="DNA", verbose=False
         )
-        X = torch.from_numpy(implanted_seqs).transpose(1, 2).float()
+        X = torch.from_numpy(implanted_seqs).float()
     elif encoding == "onehot":
         seq = sdata.ohe_seqs[seq_idx]
         implanted_seqs = feature_implant_across_seq(
             seq, feature, encoding=encoding, onehot=onehot
         )
-        X = torch.from_numpy(implanted_seqs).transpose(1, 2).float()
+        X = torch.from_numpy(implanted_seqs).float()
     else:
         raise ValueError("Encoding not recognized.")
     X = X.to(device)
@@ -313,17 +238,26 @@ def feature_implant(
     return preds
 
 
-def feature_implant_sdata(model, sdata, seqsm_key=None, **kwargs):
+#@track
+def feature_implant_seqs_sdata(
+    model, 
+    sdata, 
+    feature,
+    seqsm_key=None, 
+    copy=False,
+    **kwargs
+):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
+    sdata = sdata.copy() if copy else sdata
     predictions = []
     for i, seq_id in tqdm(
         enumerate(sdata.seqs_annot.index),
-        desc="Implanting feature",
+        desc="Implanting feature in all seqs of sdata",
         total=len(sdata.seqs_annot),
     ):
-        predictions.append(feature_implant(model, sdata, seq_id, **kwargs))
+        predictions.append(feature_implant_seq_sdata(model, sdata, seq_id, feature, store=False, **kwargs))
     if seqsm_key is not None:
         sdata.seqsm[seqsm_key] = np.array(predictions)
     else:

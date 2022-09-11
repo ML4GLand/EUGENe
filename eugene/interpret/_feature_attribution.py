@@ -6,107 +6,152 @@ from captum.attr import InputXGradient, DeepLift, GradientShap
 from yuzu.naive_ism import naive_ism
 from ..preprocess import dinuc_shuffle_seq, perturb_seqs
 from ..utils import track
+from ._utils import _naive_ism
 from .._settings import settings
 
 
-def _ism_explain(model, inputs, ism_type="naive", device="cpu", batch_size=None):
+def _ism_explain(
+    model, 
+    inputs, 
+    ism_type="naive", 
+    score_type="delta", 
+    device=None, 
+    batch_size=None
+):
+    batch_size = batch_size if batch_size is not None else settings.batch_size
+    device = device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval()
+    if isinstance(inputs, torch.Tensor):
+        inputs = inputs.detach().cpu().numpy()
     if ism_type == "naive":
-        inputs = inputs[0].requires_grad_().detach().cpu().numpy()
-        # Eventually make it capable of working with ds and ts
-        attrs = naive_ism(model=model, X_0=inputs, device=device, batch_size=batch_size)
+        if model.strand != "ss":
+            raise ValueError("Naive ISM currrently only works for single strand models")
+        attrs = _naive_ism(model=model, X_0=inputs, type=score_type, device=device, batch_size=batch_size)
     else:
         raise ValueError("ISM type not supported")
     return attrs
 
 
-def _grad_explain(model, inputs, target=None, device="cpu"):
-    model.train()
+def _grad_explain(
+    model, 
+    inputs, 
+    target=None, 
+    device="cpu"
+):
+    device = device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval()
     model.to(device)
     grad_explainer = InputXGradient(model)
     forward_inputs = inputs[0].requires_grad_().to(device)
     reverse_inputs = inputs[1].requires_grad_().to(device)
-    attrs = grad_explainer.attribute(
-        forward_inputs, target=target, additional_forward_args=reverse_inputs
-    )
-    return attrs.to("cpu").detach().numpy()
+    if model.strand == "ss":
+        attrs = grad_explainer.attribute(
+            forward_inputs, target=target, additional_forward_args=reverse_inputs
+        )
+        return attrs.to("cpu").detach().numpy()
+    else:
+        attrs = grad_explainer.attribute(
+            (forward_inputs, reverse_inputs), target=target
+        )
+        return (attrs[0].to("cpu").detach().numpy(), attrs[1].to("cpu").detach().numpy())
 
 
-def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
-    model.train()
+def _deeplift_explain(
+    model, 
+    inputs, 
+    ref_type="zero", 
+    target=None, 
+    device="cpu"
+):
+    if model.strand == "ds":
+        raise ValueError("DeepLift currently only works for ss and ts strand models")
+    device = device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval()
     model.to(device)
-    deep_lift = DeepLift(model)
+    deeplift_explainer = DeepLift(model)
     forward_inputs = inputs[0].requires_grad_().to(device)
     reverse_inputs = inputs[1].requires_grad_().to(device)
     if ref_type == "zero":
         forward_ref = torch.zeros(inputs[0].size()).to(device)
         reverse_ref = torch.zeros(inputs[1].size()).to(device)
     elif ref_type == "shuffle":
-        forward_shuffled = forward_inputs.detach().to("cpu").squeeze(dim=0).numpy()
-        forward_shuffled = reverse_inputs.detach().to("cpu").squeeze(dim=0).numpy()
+        from ..preprocess import dinuc_shuffle_seq
         forward_ref = (
-            torch.tensor(dinuc_shuffle_seq(forward_shuffled))
-            .unsqueeze(dim=0)
+            torch.tensor([dinuc_shuffle_seq(forward_inputs.detach().to("cpu").numpy()[i].transpose()).transpose() for i in range(forward_inputs.shape[0])])
             .requires_grad_()
             .to(device)
         )
         reverse_ref = (
-            torch.tensor(dinuc_shuffle_seq(reverse_ref))
-            .unsqueeze(dim=0)
+            torch.tensor([dinuc_shuffle_seq(reverse_inputs.detach().to("cpu").numpy()[i].transpose()).transpose() for i in range(reverse_inputs.shape[0])])
             .requires_grad_()
             .to(device)
         )
     elif ref_type == "gc":
-        ref = (
+        forward_ref = (
             torch.tensor([0.3, 0.2, 0.2, 0.3])
-            .expand(forward_inputs.size()[1], 4)
+            .expand(forward_inputs.size()[2], 4)
             .unsqueeze(dim=0)
-            .to(device)
+            .to(device).transpose(2,1)
         )
-    attrs = deep_lift.attribute(
-        inputs=forward_inputs,
-        baselines=forward_ref,
-        additional_forward_args=reverse_inputs,
-    )
-    return attrs.to("cpu").detach().numpy()
+        reverse_ref = forward_ref.clone()
+    if model.strand == "ss":
+        attrs = deeplift_explainer.attribute(
+            forward_inputs,
+            baselines=forward_ref,
+            target=target,
+            additional_forward_args=reverse_inputs,
+        )
+        return attrs.to("cpu").detach().numpy()
+    else:
+        attrs = deeplift_explainer.attribute(
+            (forward_inputs, reverse_inputs), baselines=(forward_ref, reverse_ref), target=target
+        )
+        return (attrs[0].to("cpu").detach().numpy(), attrs[1].to("cpu").detach().numpy())
 
 
 def _gradientshap_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
-    model.train()
+    device = device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval()
     model.to(device)
-    gradient_shap = GradientShap(model)
+    gradientshap_explainer = GradientShap(model)
     forward_inputs = inputs[0].requires_grad_().to(device)
     reverse_inputs = inputs[1].requires_grad_().to(device)
     if ref_type == "zero":
         forward_ref = torch.zeros(inputs[0].size()).to(device)
         reverse_ref = torch.zeros(inputs[1].size()).to(device)
     elif ref_type == "shuffle":
-        forward_shuffled = forward_inputs.detach().to("cpu").squeeze(dim=0).numpy()
-        forward_shuffled = reverse_inputs.detach().to("cpu").squeeze(dim=0).numpy()
+        from ..preprocess import dinuc_shuffle_seq
         forward_ref = (
-            torch.tensor(dinuc_shuffle_seq(forward_shuffled))
-            .unsqueeze(dim=0)
+            torch.tensor([dinuc_shuffle_seq(forward_inputs.detach().to("cpu").numpy()[i].transpose()).transpose() for i in range(forward_inputs.shape[0])])
             .requires_grad_()
             .to(device)
         )
         reverse_ref = (
-            torch.tensor(dinuc_shuffle_seq(reverse_ref))
-            .unsqueeze(dim=0)
+            torch.tensor([dinuc_shuffle_seq(reverse_inputs.detach().to("cpu").numpy()[i].transpose()).transpose() for i in range(reverse_inputs.shape[0])])
             .requires_grad_()
             .to(device)
         )
     elif ref_type == "gc":
-        ref = (
+        forward_ref = (
             torch.tensor([0.3, 0.2, 0.2, 0.3])
-            .expand(forward_inputs.size()[1], 4)
+            .expand(forward_inputs.size()[2], 4)
             .unsqueeze(dim=0)
-            .to(device)
+            .to(device).transpose(2,1)
         )
-    attrs = gradient_shap.attribute(
-        inputs=forward_inputs,
-        baselines=forward_ref,
-        additional_forward_args=reverse_inputs,
-    )
-    return attrs.to("cpu").detach().numpy()
+        reverse_ref = forward_ref.clone()
+    if model.strand == "ss":
+        attrs = gradientshap_explainer.attribute(
+            forward_inputs,
+            baselines=forward_ref,
+            target=target,
+            additional_forward_args=reverse_inputs,
+        )
+        return attrs.to("cpu").detach().numpy()
+    else:
+        attrs = gradientshap_explainer.attribute(
+            (forward_inputs, reverse_inputs), baselines=(forward_ref, reverse_ref), target=target
+        )
+        return (attrs[0].to("cpu").detach().numpy(), attrs[1].to("cpu").detach().numpy())
 
 
 def nn_explain(
@@ -118,6 +163,7 @@ def nn_explain(
     device="cpu",
     batch_size=None,
     abs_value=False,
+    **kwargs
 ):
     if saliency_type == "DeepLift":
         attrs = _deeplift_explain(
@@ -132,6 +178,7 @@ def nn_explain(
             ism_type="naive",
             device=device,
             batch_size=batch_size,
+            **kwargs
         )
     elif saliency_type == "GradientSHAP":
         attrs = _gradientshap_explain(
@@ -145,57 +192,71 @@ def nn_explain(
 
 
 @track
-def feature_attribution(
+def feature_attribution_sdata(
     model,
     sdata,
+    method="InputXGradient",
     target=None,
-    saliency_method="InputXGradient",
-    prefix="",
-    suffix="",
     batch_size: int = None,
     num_workers: int = None,
     device="cpu",
-    transform_kwargs={"transpose": True},
+    transform_kwargs={},
+    prefix="",
+    suffix="",
     copy=False,
+    **kwargs
 ):
-    if saliency_method == "NaiveISM":
-        print(
-            "Note: NaiveISM is not implemented yet for models other than single stranded ones"
-        )
+    sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
-    sdata = sdata.copy() if copy else sdata
-    sdataset = sdata.to_dataset(target=None, transform_kwargs=transform_kwargs)
+    sdataset = sdata.to_dataset(target_keys=None, transform_kwargs=transform_kwargs)
     sdataloader = sdataset.to_dataloader(batch_size=batch_size, shuffle=False)
     dataset_len = len(sdataloader.dataset)
     example_shape = sdataloader.dataset[0][1].numpy().shape
-    all_explanations = np.zeros((dataset_len, *example_shape))
+    all_forward_explanations = np.zeros((dataset_len, *example_shape))
+    if model.strand != "ss":
+        all_reverse_explanations = np.zeros((dataset_len, *example_shape))
     for i_batch, batch in tqdm(
         enumerate(sdataloader),
         total=int(dataset_len / batch_size),
-        desc="Computing saliency on batches",
+        desc=f"Computing saliency on batches of size {batch_size}"
     ):
-        ID, x, x_rev_comp, y = batch
+        _, x, x_rev_comp, y = batch
         curr_explanations = nn_explain(
             model,
             (x, x_rev_comp),
             target=target,
-            saliency_type=saliency_method,
+            saliency_type=method,
             device=device,
             batch_size=batch_size,
+            **kwargs
         )
         if (i_batch + 1) * batch_size < dataset_len:
-            all_explanations[
-                i_batch * batch_size : (i_batch + 1) * batch_size
-            ] = curr_explanations
+            if model.strand == "ss":
+                all_forward_explanations[i_batch * batch_size : (i_batch + 1) * batch_size] = curr_explanations
+            else:
+                all_forward_explanations[i_batch * batch_size : (i_batch + 1) * batch_size] = curr_explanations[0]
+                all_reverse_explanations[i_batch * batch_size : (i_batch + 1) * batch_size] = curr_explanations[1]
         else:
-            all_explanations[i_batch * batch_size : dataset_len] = curr_explanations
-    sdata.uns[f"{prefix}{saliency_method}_imps{suffix}"] = all_explanations
+            if model.strand == "ss":
+                all_forward_explanations[i_batch * batch_size : dataset_len] = curr_explanations
+            else:
+                all_forward_explanations[i_batch * batch_size : dataset_len] = curr_explanations[0]
+                all_reverse_explanations[i_batch * batch_size : dataset_len] = curr_explanations[1]
+    if model.strand == "ss":
+        sdata.uns[f"{prefix}{method}_imps{suffix}"] = all_forward_explanations
+    else:
+        sdata.uns[f"{prefix}{method}_forward_imps{suffix}"] = all_forward_explanations
+        sdata.uns[f"{prefix}{method}_reverse_imps{suffix}"] = all_reverse_explanations
     return sdata if copy else None
 
 
-def aggregate_importance(sdata, uns_key):
+@track
+def aggregate_importances_sdata(
+    sdata, 
+    uns_key
+):
     vals = sdata.uns[uns_key]
     df = sdata.pos_annot.df
     agg_scores = []

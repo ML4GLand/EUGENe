@@ -350,10 +350,10 @@ def feature_implant_seq(seq, feature, position, vocab="DNA", encoding="str", one
     if encoding == "str":
         return seq[:position] + feature + seq[position + len(feature) :]
     elif encoding == "onehot":
-        if feature.shape[0] != seq.shape[0]:
-            feature = feature.transpose()
         if onehot:
             feature = _token2one_hot(feature.argmax(axis=1), vocab=vocab, fill_value=0)
+        if feature.shape[0] != seq.shape[0]:
+            feature = feature.transpose()
         return np.concatenate(
             (seq[:, :position], feature, seq[:, position + len(feature):]), axis=1
         )
