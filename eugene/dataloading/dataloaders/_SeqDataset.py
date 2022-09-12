@@ -7,23 +7,29 @@ from ..._settings import settings
 
 
 class SeqDataset(Dataset):
-    """Sequence based PyTorch dataset definition"""
+    """
+    Sequence based PyTorch dataset definition.
+
+    Parameters
+    ----------
+    seqs : iterable
+        List of sequences to serve as input into models.
+    names : iterable
+        List of identifiers for sequences.
+    targets : iterable
+        List of targets for sequences.
+    rev_seqs : iterable, optional
+        Optional reverse complements of sequences.
+    transforms : callable, optional
+        Optional transform to be applied on a sample.
+
+    Returns
+    -------
+    sdataset : SeqDataset
+        SeqDataset object.
+    """
 
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
-        """
-
-        Parameters:
-        seqs (iterable):
-            list of sequences to serve as input into models
-        names (iterable, optional):
-            list of identifiers for sequences
-        targets (iterable):
-            aligned list of targets for each sequence
-        rev_seqs (iterable, optional):
-            Optional reverse complements of seqs
-        transform (callable, optional):
-            Optional transform to be applied on a sample.
-        """
         self.names = names
         self.seqs = seqs
         self.rev_seqs = rev_seqs

@@ -95,6 +95,8 @@ def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     ----------
     return_sdata : bool, optional
         If True, return SeqData object with the Farley15 dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -145,10 +147,12 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
 
     Parameters
     ----------
-    datasets : list of str
-        List of datasets to read.
+    datasets : list of ints
+        List of datasets indices to read.
     return_sdata : bool, optional
         If True, return SeqData object with the deBoer20 dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -198,6 +202,8 @@ def ray13(dataset="norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
         Dataset to read, can either be "norm" or "raw". The default is "norm".
     return_sdata : bool, optional
         If True, return SeqData object with the RNAcomplete dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -253,6 +259,8 @@ def jores21(
         If True, add metadata to the SeqData object. The default is False.
     return_sdata : bool, optional
         If True, return SeqData object with the Jores21 dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -319,6 +327,8 @@ def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFr
         Dataset to read. Either train or test. The default is "train".
     return_sdata : bool, optional
         If True, return SeqData object with the deAlmeida22 dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -342,7 +352,7 @@ def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFr
     paths = try_download_urls(urls, urls_list, "deAlmeida22")
     if return_sdata:
         sdata = read_fasta(seq_file=paths[0])
-        sdata.seqs_annot = pd.read_csv(paths[1], sep="\t")
+        sdata.seqs_annot = pd.read_csv(paths[1], sep="\t", **kwargs)
         sdata.seqs_annot.index = sdata.names
         return sdata
     else:
