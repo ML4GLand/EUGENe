@@ -31,6 +31,37 @@ except ImportError:
 
 
 class SeqData:
+    """
+    SeqData object used to store data.
+
+    Parameters
+    ----------
+    seqs : np.ndarray
+        Numpy array of sequences.
+    names : np.ndarray
+        Numpy array of names.
+    rev_seqs : np.ndarray
+        Numpy array of reverse complement sequences.
+    seqs_annot : pr.PyRanges
+        PyRanges object or dict of sequences annotations.
+    pos_annot : pr.PyRanges
+        PyRanges object or dict of positions annotations.
+    ohe_seqs : np.ndarray
+        Numpy array of one-hot encoded sequences.
+    ohe_rev_seqs : np.ndarray
+        Numpy array of one-hot encoded reverse complement sequences.
+    seqsm : np.ndarray
+        Numpy array of sequences or dict of sequences.
+    uns : dict
+        Dict of additional/unstructured information.
+    seqsidx : Index1D
+        Index of sequences to use.
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object.
+    """
     def __init__(
         self,
         seqs: np.ndarray = None,
@@ -44,19 +75,6 @@ class SeqData:
         uns: Optional[Mapping[str, Any]] = None,
         seqidx: Index1D = None,
     ):
-        """Initialize SeqData object.
-        Args:
-            seqs: numpy array of sequences.
-            names: numpy array of names.
-            rev_seqs: numpy array of reverse complement sequences.
-            seqs_annot: pandas DataFrame or dict of sequences annotations.
-            pos_annot: PyRanges object or dict of positions annotations.
-            ohe_seqs: numpy array of one-hot encoded sequences.
-            ohe_rev_seqs: numpy array of one-hot encoded reverse complement sequences.
-            seqsm: numpy array of sequences or dict of sequences.
-            uns: dict of additional information.
-            seqidx: Index of sequences to use.
-        """
 
         if seqs is not None:
             self.seqidx = (

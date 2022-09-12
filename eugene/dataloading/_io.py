@@ -11,7 +11,7 @@ from ..preprocessing import decode_DNA_seqs, reverse_complement_seqs
 try:
     from ..external.janggu.data import Bioseq, Cover
 except:
-    print("janggu does not work on this machine, are you using MacOS or Linux?")
+    pass
 
 
 def read_csv(
@@ -29,47 +29,47 @@ def read_csv(
     compression: str = "infer",
     **kwargs,
 ):
-    """Function for loading sequences into SeqData object from csv/tsv files.
+    r"""Function for loading sequences into SeqData object from csv/tsv files.
 
     Also allows for returning np.ndarray and pd.DataFrame objects if specified.
 
     Parameters
     ----------
     file : PathLike
-        file path to read the data from
+        File path to read the data from.
     seq_col : str, optional
-        column name containing sequences. Defaults to "SEQ".
+        Column name containing sequences. Defaults to "SEQ".
     name_col : str, optional
-        column name containing identifiers. Defaults to None.
+        Column name containing identifiers. Defaults to None.
     target_col : str, optional
-        column name containing targets. Defaults to None.
+        Column name containing targets. Defaults to None.
     rev_comp : bool, optional
-        whether to generate reverse complements for sequences. Defaults to False.
+        Whether to generate reverse complements for sequences. Defaults to False.
     sep : str, optional
-        delimiter to use. Defaults to "\t".
+        Delimiter to use. Defaults to "\\t".
     low_memory : bool, optional
-        whether to use low memory mode. Defaults to False.
+        Whether to use low memory mode. Defaults to False.
     return_numpy : bool, optional
-        whether to return numpy arrays. Defaults to False.
+        Whether to return numpy arrays. Defaults to False.
     return_dataframe : bool, optional
-        whether to return pandas dataframe. Defaults to False.
+        Whether to return pandas dataframe. Defaults to False.
     col_names : Iterable, optional
-        column names to use. Defaults to None. If not provided, uses first line of file.
+        Column names to use. Defaults to None. If not provided, uses first line of file.
     auto_name : bool, optional
-        whether to automatically generate identifiers. Defaults to True.
+        Whether to automatically generate identifiers. Defaults to True.
     compression : str, optional
-        compression type to use. Defaults to "infer".
-    **kwargs : dict, optional
-        keyword arguments to pass to pandas.read_csv. Defaults to {}.
+        Compression type to use. Defaults to "infer".
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to pandas.read_csv. Defaults to {}.
 
     Returns
     -------
-    sdata: SeqData
-        Returns SeqData object containing sequences and identifiers by defualt
-    tuple:
-        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets
-        if return_numpy is True. If any are not provided they are set to none.
-    dataframe: pandas.DataFrame
+    sdata : SeqData
+        Returns SeqData object containing sequences and identifiers by default
+    tuple :
+        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+        If return_numpy is True. If any are not provided they are set to none.
+    dataframe : pandas.DataFrame
         Returns pandas dataframe containing sequences and identifiers if return_dataframe is True.
     """
     dataframe = _read_and_concat_dataframes(
@@ -122,24 +122,24 @@ def read_fasta(
 
     Parameters
     ----------
-    seq_file (str):
-        fasta file path to read
-    target_file (str):
+    seq_file : str
+        Fasta file path to read
+    target_file : str
         .npy or .txt file path containing targets. Defaults to None.
-    rev_comp (bool, optional):
-        whether to generate reverse complements for sequences. Defaults to False.
-    is_target_text (bool, optional):
-        whether the file is compressed or plaintext. Defaults to False.
-    return_numpy (bool, optional):
-        whether to return numpy arrays. Defaults to False.
+    rev_comp : bool, optional
+        Whether to generate reverse complements for sequences. Defaults to False.
+    is_target_text : bool, optional
+        Whether the file is compressed or plaintext. Defaults to False.
+    return_numpy : bool, optional
+        Whether to return numpy arrays. Defaults to False.
 
     Returns
     -------
-    sdata:
-        Returns SeqData object containing sequences and identifiers by defualt
-    tuple:
-        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets
-        if return_numpy is True. If any are not provided they are set to none
+    sdata : SeqData
+        Returns SeqData object containing sequences and identifiers by default
+    tuple :
+        Returns numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+        If return_numpy is True. If any are not provided they are set to none.
     """
     seqs = np.array([x.rstrip() for (i, x) in enumerate(open(seq_file)) if i % 2 == 1])
     ids = np.array(
@@ -187,41 +187,39 @@ def read_numpy(
     ohe=False,
     return_numpy=False,
 ):
-    """Function for loading sequences into numpy objects from numpy compressed files.
-
-    Note if you pass only one hot encoded sequences in, you must pass in reverse complements
-    if you want them to be included
+    r"""Function for loading sequences into numpy objects from numpy compressed files.
+    Note if you pass only one hot encoded sequences in, you must pass in reverse complements if you want them to be included.
 
     Parameters
     ----------
-        seq_file (str):
-            .npy file path containing sequences
-        names_file (str):
-            .npy or .txt file path containing identifiers. Defaults to None.
-        target_file (str):
-            .npy or .txt file path containing targets. Defaults to None.
-        rev_seq_file (str, optional):
-            .npy or .txt file path containing reverse complement sequences. Defaults to None.
-        is_names_text (bool, optional):
-            whether the file is compressed (.npy) or plaintext (.txt). Defaults to False.
-        is_seq_text (bool, optional):
-            whether the file is (.npy) or plaintext (.txt). Defaults to False.
-        is_target_text (bool, optional):
-            whether the file is (.npy) or plaintext (.txt). Defaults to False.
-        delim (str, optional):
-            Defaults to "\n".
-        ohe (bool, optional):
-            whether the sequences are one hot encoded. Defaults to False.
-        return_numpy (bool, optional):
-            whether to return numpy arrays. Defaults to False.
+    seq_file : str
+        .npy file path containing sequences.
+    names_file : str
+        .npy or .txt file path containing identifiers. Defaults to None.
+    target_file : str
+        .npy or .txt file path containing targets. Defaults to None.
+    rev_seq_file : str, optional
+        .npy or .txt file path containing reverse complement sequences. Defaults to None.
+    is_names_text : bool, optional
+        Whether the file is compressed (.npy) or plaintext (.txt). Defaults to False.
+    is_seq_text : bool, optional
+         Whether the file is (.npy) or plaintext (.txt). Defaults to False.
+    is_target_text : bool, optional
+        Whether the file is (.npy) or plaintext (.txt). Defaults to False.
+    delim : str, optional
+        Defaults to "\\n".
+    ohe : bool, optional
+        Whether the sequences are one hot encoded. Defaults to False.
+    return_numpy : bool, optional
+        Whether to return numpy arrays. Defaults to False.
 
-    Returns:
+    Returns
     --------
-    sdata: SeqData
-        Returns SeqData object containing sequences and identifiers by defualt
-    tuple:
-        numpy arrays of identifiers, sequences, reverse complement sequences and targets
-        if return_numpy is True. If any are not provided they are set to none
+    sdata : SeqData
+        Returns SeqData object containing sequences and identifiers by default.
+    tuple :
+        Numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+        If return_numpy is True. If any are not provided they are set to none.
     """
     if is_seq_text:
         seqs = np.loadtxt(seq_file, dtype=str, delim=delim)
@@ -274,15 +272,15 @@ def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
     Parameters
     ----------
     filename (str):
-        .h5sd file path to read
+        .h5sd file path to read.
     sdata (SeqData, optional):
         SeqData object to load data into. Defaults to None.
     mode (str, optional):
-        mode to open file. Defaults to "r".
+        Mode to open file. Defaults to "r".
 
     Returns
     -------
-        sdata: SeqData object containing sequences and identifiers
+        sdata: SeqData object containing sequences and identifiers.
     """
     with h5py.File(filename, "r") as f:
         d = {}
@@ -392,7 +390,7 @@ def read_bed(
     return_janggu : bool, optional
         Return a Janggu object. Defaults to False.
     **kwargs : dict
-        Additional arguments to pass to as Janggu's parameters for loading
+        Additional arguments to pass to as Janggu's parameters for loading.
 
     Returns
     -------
@@ -459,7 +457,7 @@ def read_bam(
     return_janggu : bool, optional
         Return a Janggu object. Defaults to False.
     **kwargs : dict
-        Additional arguments to pass to as Janggu's parameters for loading
+        Additional arguments to pass to as Janggu's parameters for loading.
 
     Returns
     -------
@@ -531,7 +529,7 @@ def read_bigwig(
     return_janggu : bool, optional
         Return a Janggu object. Defaults to False.
     **kwargs : dict
-        Additional arguments to pass to as Janggu's parameters for loading
+        Additional arguments to pass to as Janggu's parameters for loading.
 
     Returns
     -------
@@ -570,24 +568,24 @@ def read_bigwig(
 
 
 def read(seq_file, *args, **kwargs):
-    """Wrapper function around read_csv, read_fasta, read_numpy to read sequence based input
+    """Wrapper function around read_csv, read_fasta, read_numpy, etc, to read sequence based input
 
     Parameters
     ----------
-    seq_file (str):
-        file path containing sequences
-    args:
-        positional arguments from read_csv, read_fasta, read_numpy, read_h5sd
-    kwargs:
-        keyword arguments from read_csv, read_fasta, read_numpy, read_h5sd
+    seq_file : str
+        File path containing sequences.
+    *args : dict
+        Positional arguments from read_csv, read_fasta, read_numpy, etc.
+    **kwargs : dict
+        Keyword arguments from read_csv, read_fasta, read_numpy, etc.
 
     Returns
     -------
-    sdata: SeqData
+    sdata : SeqData
         SeqData object containing sequences and identifiers
-    tuple:
-        numpy arrays of identifiers, sequences, reverse complement sequences and targets.
-        If any are not provided they are set to none
+    tuple :
+        Numpy arrays of identifiers, sequences, reverse complement sequences and targets.
+        If any are not provided they are set to none.
     """
     seq_file_extension = seq_file.split(".")[-1]
     if seq_file_extension in ["csv", "tsv"]:
@@ -605,27 +603,23 @@ def read(seq_file, *args, **kwargs):
     elif seq_file_extension in ["bw"]:
         return read_bigwig(seq_file, *args, **kwargs)
     else:
-        print("Sequence file type not currently supported")
+        print("Sequence file type not currently supported. Seethe.")
         return
 
 
 def write_csv(sdata, filename, target_key=None, delim="\t"):
-    """Function for writing sequences to csv files.
+    r"""Function for writing sequences to csv files.
 
     Parameters
     ----------
-    sdata (SeqData):
-        SeqData object containing sequences and identifiers
-    filename (str):
-        file path to write to
-    target_key (str):
-        key in sdata.seqs_annot to use as target
-    delim (str, optional):
-        delimiter to use. Defaults to "\t".
-
-    Returns
-    -------
-    None
+    sdata : SeqData
+        SeqData object containing sequences and identifiers.
+    filename : str
+        File path to write to.
+    target_key : str
+        Key in sdata.seqs_annot to use as target.
+    delim : str, optional
+        Delimiter to use. Defaults to "\\t".
     """
     dataframe = pd.DataFrame(data={"name": sdata.names, "seq": sdata.seqs})
     dataframe = dataframe.merge(sdata.seqs_annot, left_on="name", right_index=True)
@@ -637,10 +631,10 @@ def write_fasta(sdata, filename):
 
     Parameters
     ----------
-    sdata (SeqData):
-        SeqData object containing sequences and identifiers
-    filename (str):
-        file path to write to
+    sdata : SeqData
+        SeqData object containing sequences and identifiers.
+    filename : str
+        File path to write to.
     """
     with open(filename, "w") as f:
         for i in range(len(sdata.seqs)):
@@ -653,19 +647,20 @@ def write_numpy(sdata, filename, ohe=False, target_key=None):
 
     Parameters
     ----------
-    sdata (SeqData):
-        SeqData object containing sequences and identifiers
-    filename (str):
-        file path to write to
-
-    Returns
-    -------
-    None
+    sdata : SeqData
+        SeqData object containing sequences and identifiers.
+    filename : str
+        File path to write to.
+    ohe : bool
+        Whether to include ohe sequences in a separate file.
+    target_key : str, optional
+        Optionally save targets from a SeqData object using a key.
     """
     if ohe:
         np.save(filename + "_ohe_seqs.npy", sdata.ohe_seqs)
-    else:
-        np.save(filename + "_seqs.npy", sdata.seqs)
+
+    np.save(filename + "_seqs.npy", sdata.seqs)
+
     if target_key is not None:
         np.save(filename + "_targets.npy", sdata.seqs_annot[target_key])
 
@@ -675,12 +670,12 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
 
     Parameters
     ----------
-    sdata (SeqData):
-        SeqData object containing sequences and identifiers
-    filename (str, optional):
-        file path to write to. Defaults to None.
-    mode (str, optional):
-        mode to open file. Defaults to "w".
+    sdata : SeqData
+        SeqData object containing sequences and identifiers.
+    filename : str, optional
+        File path to write to. Defaults to None.
+    mode : str, optional
+        Mode to open file. Defaults to "w".
     """
     with h5py.File(filename, mode) as f:
         f = f["/"]
@@ -745,18 +740,18 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
 
 
 def write(sdata, filename, *args, **kwargs):
-    """Wrapper function around write_csv, write_fasta, write_numpy to write sequence based input
+    """Wrapper function around write_csv, write_fasta, write_numpy to write sequence based input.
 
     Parameters
     ----------
-    sdata (SeqData):
-        SeqData object containing sequences and identifiers
-    filename (str):
-        file path to write to
-    args:
-        positional arguments from write_csv, write_fasta, write_numpy, write_h5sd
-    kwargs:
-        keyword arguments from write_csv, write_fasta, write_numpy, write_h5sd
+    sdata : SeqData
+        SeqData object containing sequences and identifiers.
+    filename : str
+        File path to write to.
+    *args : args, dict
+        Positional arguments from write_csv, write_fasta, write_numpy.
+    **kwargs : kwargs, dict
+        Keyword arguments from write_csv, write_fasta, write_numpy.
     """
     seq_file_extension = filename.split(".")[-1]
     if seq_file_extension in ["csv", "tsv"]:
@@ -768,5 +763,5 @@ def write(sdata, filename, *args, **kwargs):
     elif seq_file_extension in ["h5sd", "h5"]:
         write_h5sd(sdata, filename, *args, **kwargs)
     else:
-        print("Sequence file type not currently supported")
+        print("Sequence file type not currently supported.")
         return
