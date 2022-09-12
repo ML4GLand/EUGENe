@@ -145,7 +145,7 @@ def _get_pfms(
 
 
 @track
-def generate_pfms(
+def generate_pfms_sdata(
     model,
     sdata,
     method="Alipahani15",

@@ -34,6 +34,7 @@ def fit(
     early_stopping_callback: bool = True,
     early_stopping_metric="val_loss",
     early_stopping_patience=5,
+    early_stopping_verbose=False,
     seed: int = None,
     verbosity = None,
     **kwargs
@@ -69,7 +70,7 @@ def fit(
         sdata = sdata[~nan_mask]
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
-            target=target_keys,
+            target_keys=target_keys,
             seq_transforms=seq_transforms,
             transform_kwargs=transform_kwargs,
         )
@@ -78,7 +79,7 @@ def fit(
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(
-            target=target_keys,
+            target_keys=target_keys,
             seq_transforms=seq_transforms,
             transform_kwargs=transform_kwargs,
         )
@@ -101,7 +102,7 @@ def fit(
             monitor=early_stopping_metric,
             patience=early_stopping_patience,
             mode="min",
-            verbose=True,
+            verbose=early_stopping_verbose,
         )
         callbacks.append(early_stopping_callback)
     if model.scheduler is not None:

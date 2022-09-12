@@ -205,7 +205,9 @@ def feature_attribution_sdata(
     suffix="",
     copy=False,
     **kwargs
-):
+):  
+    torch.backends.cudnn.enabled = False
+    print(torch.backends.cudnn.enabled)
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size

@@ -2,11 +2,13 @@ import numpy as np
 import pandas as pd
 import torch
 import re
+import os
 from dataclasses import dataclass
 from typing import Optional, Dict
 from io import TextIOBase
 from ...preprocess import decode_seq
 from ...preprocess._utils import _token2one_hot
+from ... import settings
 
 # Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
 @dataclass
@@ -265,31 +267,38 @@ def pwm_to_meme(pwm, output_file_path):
     meme_file.close()
 
 
-# Adapted from gopher
-def meme_generate(W, output_file="meme.txt", prefix="filter"):
-    """generate a meme file for a set of filters, W ∈ (N,L,A)"""
-
-    # background frequency
-    nt_freqs = [1.0 / 4 for i in range(4)]
-
-    # open file for writing
-    f = open(output_file, "w")
-
-    # print intro material
-    f.write("MEME version 4\n")
-    f.write("\n")
-    f.write("ALPHABET= ACGT\n")
-    f.write("\n")
-    f.write("Background letter frequencies:\n")
-    f.write("A %.4f C %.4f G %.4f T %.4f \n" % tuple(nt_freqs))
-    f.write("\n")
-
-    for j, pwm in enumerate(W):
-        L, A = pwm.shape
-        f.write("MOTIF %s%d \n" % (prefix, j))
-        f.write("letter-probability matrix: alength= 4 w= %d nsites= %d \n" % (L, L))
-        for i in range(L):
-            f.write("%.4f %.4f %.4f %.4f \n" % tuple(pwm[i, :]))
-        f.write("\n")
-
-    f.close()
+def filters_to_meme_sdata(
+    sdata,
+    output_dir: str = None,
+    file_name="filter.meme",
+    uns_key = "pfms",
+    filter_ids: int = None,
+    convert_to_pfm: bool = False,
+    change_length_axis=False,
+    return_pfms=False
+):
+    """
+    Function to convert a single filter to a meme file
+    :param sdata: SingleData, single cell data
+    :param filter_ids: int, index of the filter to convert
+    :param output_file_path: string, the name of the output meme file
+    :param convert_to_pwm: bool, whether to convert the filter to a pwm
+    """
+    try:
+        pfms = sdata.uns.get(uns_key)
+    except KeyError:
+        print("No filters found in sdata.uns['{}']".format(uns_key))
+    if filter_ids is None:
+        filter_ids = len(sdata.uns.get(uns_key))
+    if output_dir is None:
+        output_file_path = os.path.join(settings.output_dir, file_name)
+    else:
+        output_file_path = os.path.join(output_dir, file_name)
+    pwms = np.array([pfms[key].values for key in filter_ids])
+    if convert_to_pfm:
+        pwms/pwms.sum(axis=2, keepdims=True)
+    if change_length_axis:
+        pwms = pwms.transpose(0, 2, 1)
+    pwm_to_meme(pwms, output_file_path)
+    if return_pfms:
+        return pwms

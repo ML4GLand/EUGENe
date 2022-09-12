@@ -167,9 +167,28 @@ def boxplot(
         return ax
 
 
+def _violin_long(
+    sdata,
+    groups,
+    xlabel="variable",
+    ylabel="value",
+    save=None
+):
+    if isinstance(groups, str):
+        groups=[groups]
+    long = sdata.seqs_annot.melt(value_vars=groups)
+    fig, ax = plt.subplots(1, 1, figsize=(8,8))
+    sns.violinplot(data=long, x="variable", y="value", ax=ax)
+    sns.stripplot(data=long, x="variable", y="value", ax=ax, color="black", alpha=0.5)
+    ax.set_xlabel(xlabel, fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=14)
+    if save:
+        plt.savefig(save)
+
+
 def violinplot(
     sdata,
-    keys: Union[str, Sequence[str]],
+    keys: Union[str, Sequence[str]] = None,
     groupby: str = None,
     orient: str = "v",
     rc_context: Mapping[str, str] = default_rc_context,
@@ -201,14 +220,17 @@ def violinplot(
          None
     """
     with plt.rc_context(rc_context):
-        ax = _plot_seaborn(
-            sdata.seqs_annot,
-            keys,
-            func=sns.violinplot,
-            groupby=groupby,
-            orient=orient,
-            **kwargs
-        )
+        if groupby is not None and isinstance(groupby, Iterable):
+            _violin_long(sdata, groupby, **kwargs)
+        else:
+            ax = _plot_seaborn(
+                sdata.seqs_annot,
+                keys,
+                func=sns.violinplot,
+                groupby=groupby,
+                orient=orient,
+                **kwargs
+            )
     if return_axes:
         return ax
 

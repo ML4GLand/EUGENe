@@ -42,6 +42,7 @@ def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndar
         The indeces along the length of the sequences where the mutations can be found
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval().to(device)
     X = np.expand_dims(X, axis=0) if X.ndim == 2 else X
     X = X.transpose(0, 2, 1) if X.shape[2] == 4 else X
     X = torch.Tensor(X).float().numpy()
@@ -97,9 +98,9 @@ def best_mut_seqs(
         The indeces along the length of the sequences where the mutations can be found
 
     """
-
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = settings.batch_size if batch_size is None else batch_size
+    model.eval().to(device)
     X = X.transpose(0, 2, 1) if X.shape[2] == 4 else X
     X = torch.Tensor(X).float().numpy()
     X_ism = _naive_ism(model, X, device=device, batch_size=batch_size)
@@ -148,6 +149,7 @@ def evolution(
 
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = settings.batch_size if batch_size is None else batch_size
+    model.eval().to(device)
     curr_X = X.copy()
     mutated_positions, mutated_scores = [], []
     for r in range(rounds):
@@ -196,7 +198,6 @@ def evolve_seqs_sdata(
     return sdata if copy else None
 
 
-#@track
 def feature_implant_seq_sdata(
     model,
     sdata,
@@ -207,12 +208,10 @@ def feature_implant_seq_sdata(
     onehot=False,
     store=True,
     device="cpu",
-    copy=False,
 ):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
-    sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.to(device)
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
@@ -238,19 +237,16 @@ def feature_implant_seq_sdata(
     return preds
 
 
-#@track
 def feature_implant_seqs_sdata(
     model, 
     sdata, 
     feature,
     seqsm_key=None, 
-    copy=False,
     **kwargs
 ):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
-    sdata = sdata.copy() if copy else sdata
     predictions = []
     for i, seq_id in tqdm(
         enumerate(sdata.seqs_annot.index),
