@@ -225,6 +225,7 @@ def feature_implant_seq_sdata(
     else:
         raise ValueError("Encoding not recognized.")
     X = X.to(device)
+    print(X.shape)
     preds = model(X).cpu().detach().numpy().squeeze()
     if store:
         sdata.seqsm[f"{seq_id}_{feature_name}_slide"] = preds

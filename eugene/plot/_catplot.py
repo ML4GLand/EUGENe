@@ -172,14 +172,15 @@ def _violin_long(
     groups,
     xlabel="variable",
     ylabel="value",
-    save=None
+    save=None,
+    **kwargs
 ):
     if isinstance(groups, str):
         groups=[groups]
     long = sdata.seqs_annot.melt(value_vars=groups)
     fig, ax = plt.subplots(1, 1, figsize=(8,8))
-    sns.violinplot(data=long, x="variable", y="value", ax=ax)
-    sns.stripplot(data=long, x="variable", y="value", ax=ax, color="black", alpha=0.5)
+    sns.violinplot(data=long, x="variable", y="value", ax=ax, **kwargs)
+    sns.stripplot(data=long, x="variable", y="value", ax=ax, color="black", alpha=0.75)
     ax.set_xlabel(xlabel, fontsize=14)
     ax.set_ylabel(ylabel, fontsize=14)
     if save:

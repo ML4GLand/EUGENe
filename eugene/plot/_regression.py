@@ -155,7 +155,6 @@ def performance_scatter(
     else:
         targets = [targets]
         predictions = [predictions]
-    print(targets, predictions)
     for (target, prediction) in zip(targets, predictions):
         nan_mask = ~np.isnan(sdata.seqs_annot[target])
         sdata = sdata[nan_mask]

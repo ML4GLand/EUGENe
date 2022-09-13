@@ -274,7 +274,7 @@ def filters_to_meme_sdata(
     uns_key = "pfms",
     filter_ids: int = None,
     convert_to_pfm: bool = False,
-    change_length_axis=False,
+    change_length_axis=True,
     return_pfms=False
 ):
     """
