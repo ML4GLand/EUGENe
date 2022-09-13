@@ -1,5 +1,5 @@
 # Data and sequences
-from ._random_data import generate_random_data
+from ._random_data import random_base, random_seq, random_seqs, generate_random_data
 
 # Training and prediction
 from ._custom_callbacks import PredictionWriter

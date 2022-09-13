@@ -66,7 +66,6 @@ def reverse_complement_seq(seq, vocab="DNA"):
         return torch.from_numpy(np.flip(seq, axis=(0, 1)).copy()).numpy()
 
 
-
 def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
     """Reverse complement a list of sequences."""
     if isinstance(seqs[0], str):
@@ -102,7 +101,7 @@ def ohe_seqs(
     pad_value="N",
     fill_value=None,
     seq_align="start",
-    verbose=True
+    verbose=True,
 ):
     if isinstance(neutral_vocab, str):
         neutral_vocab = [neutral_vocab]
@@ -111,9 +110,7 @@ def ohe_seqs(
     assert len(vocab[0]) == len(pad_value)
     assert pad_value in neutral_vocab
     if pad:
-        seqs_vec = _pad_sequences(
-            seqs, maxlen=maxlen, align=seq_align, value=pad_value
-        )
+        seqs_vec = _pad_sequences(seqs, maxlen=maxlen, align=seq_align, value=pad_value)
     arr_list = [
         ohe_seq(
             seq=seqs_vec[i],
@@ -139,20 +136,14 @@ def decode_seq(arr, vocab="DNA", neutral_value=-1, neutral_char="N"):
     if isinstance(arr, torch.Tensor):
         arr = arr.numpy()
     return _sequencize(
-        tvec=_one_hot2token(arr, neutral_value), 
-        vocab=vocab, 
-        neutral_value=neutral_value, 
-        neutral_char=neutral_char
+        tvec=_one_hot2token(arr, neutral_value),
+        vocab=vocab,
+        neutral_value=neutral_value,
+        neutral_char=neutral_char,
     )
 
 
-def decode_seqs(
-    arr, 
-    vocab="DNA", 
-    neutral_char="N",
-    neutral_value=-1,
-    verbose=True
-):
+def decode_seqs(arr, vocab="DNA", neutral_char="N", neutral_value=-1, verbose=True):
     """Convert a one-hot encoded array back to string"""
     arr_list = [
         decode_seq(
@@ -265,13 +256,12 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
 # modified perturb_seqs
 def perturb_seq(X_0, vocab_len=4):
     import warnings
+
     if not isinstance(X_0, np.ndarray):
         raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
 
     if len(X_0.shape) != 2:
-        raise ValueError(
-            "X_0 must have two dimensions: (n_choices, seq_len)."
-        )
+        raise ValueError("X_0 must have two dimensions: (n_choices, seq_len).")
 
     if X_0.shape[0] != 4:
         warnings.warn(
@@ -310,6 +300,7 @@ def perturb_seqs(X_0, vocab_len=4):
         Each single-position perturbation of seq.
     """
     import warnings
+
     if not isinstance(X_0, np.ndarray):
         raise ValueError("X_0 must be of type np.ndarray, not {}".format(type(X_0)))
 
@@ -330,7 +321,7 @@ def perturb_seqs(X_0, vocab_len=4):
 
     n = seq_len * (n_choices - 1)
     X = torch.tile(X_0, (n, 1, 1))
-    
+
     X = X.reshape(n, n_seqs, n_choices, seq_len).permute(1, 0, 2, 3)
 
     for i in range(n_seqs):
@@ -343,7 +334,9 @@ def perturb_seqs(X_0, vocab_len=4):
     return X
 
 
-def feature_implant_seq(seq, feature, position, vocab="DNA", encoding="str", onehot=False):
+def feature_implant_seq(
+    seq, feature, position, vocab="DNA", encoding="str", onehot=False
+):
     """
     Insert a feature at a given position in a sequence.
     """
@@ -355,7 +348,7 @@ def feature_implant_seq(seq, feature, position, vocab="DNA", encoding="str", one
         if feature.shape[0] != seq.shape[0]:
             feature = feature.transpose()
         return np.concatenate(
-            (seq[:, :position], feature, seq[:, position + len(feature):]), axis=1
+            (seq[:, :position], feature, seq[:, position + feature.shape[-1] :]), axis=1
         )
     else:
         raise ValueError("Encoding not recognized.")
@@ -372,8 +365,12 @@ def feature_implant_across_seq(seq, feature, **kwargs):
     elif isinstance(seq, np.ndarray):
         assert isinstance(feature, np.ndarray)
         seq_len = seq.shape[-1]
-        feature_len = feature.shape[-1]
+        if feature.shape[0] != seq.shape[0]:
+            feature_len = feature.shape[0]
+        else:
+            feature_len = feature.shape[-1]
     implanted_seqs = []
     for pos in range(seq_len - feature_len + 1):
-        implanted_seqs.append(feature_implant_seq(seq, feature, pos, **kwargs))
+        seq_implanted = feature_implant_seq(seq, feature, pos, **kwargs)
+        implanted_seqs.append(seq_implanted)
     return np.array(implanted_seqs)

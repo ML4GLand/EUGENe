@@ -509,11 +509,15 @@ def lm_filter_viz(
 
     pfm = sdata.uns[uns_key][filter_id]
     if pfm["A"].dtype == "float64":
+        pfm.fillna(0.25, inplace=True)
         info_mat = lm.transform_matrix(
             pfm, from_type="probability", to_type="information"
         )
     elif pfm["A"].dtype == "int64":
-        info_mat = lm.transform_matrix(pfm, from_type="counts", to_type="information")
+        pfm.fillna(1, inplace=True)
+        info_mat = lm.transform_matrix(
+            pfm, from_type="counts", to_type="information", allow_nan=True
+        )
     if "N" in pfm.columns:
         info_mat = info_mat.drop("N", axis=1)
     logo = lm.Logo(info_mat, **kwargs)

@@ -209,7 +209,7 @@ def feature_implant_seq_sdata(
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    model.to(device)
+    model.eval().to(device)
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     if encoding == "str":
         seq = sdata.seqs[seq_idx]
@@ -225,7 +225,6 @@ def feature_implant_seq_sdata(
     else:
         raise ValueError("Encoding not recognized.")
     X = X.to(device)
-    print(X.shape)
     preds = model(X).cpu().detach().numpy().squeeze()
     if store:
         sdata.seqsm[f"{seq_id}_{feature_name}_slide"] = preds
@@ -236,6 +235,8 @@ def feature_implant_seqs_sdata(model, sdata, feature, seqsm_key=None, **kwargs):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    model.eval().to(device)
     predictions = []
     for i, seq_id in tqdm(
         enumerate(sdata.seqs_annot.index),
