@@ -10,10 +10,7 @@ from ..utils import track
 from .._settings import settings
 
 
-def _get_first_conv_layer(
-    model, 
-    device="cpu"
-):
+def _get_first_conv_layer(model, device="cpu"):
     """
     Get the first convolutional layer in a model.
 
@@ -53,12 +50,7 @@ def _get_first_conv_layer(
     return None
 
 
-def _get_activations_from_layer(
-    layer, 
-    sdataloader, 
-    device="cpu", 
-    vocab="DNA"
-):
+def _get_activations_from_layer(layer, sdataloader, device="cpu", vocab="DNA"):
     from ..preprocess import decode_seqs
 
     activations = []
@@ -72,11 +64,7 @@ def _get_activations_from_layer(
     ):
         ID, x, x_rev_comp, y = batch
         sequences.append(
-            decode_seqs(
-                x.detach().cpu().numpy(),
-                vocab=vocab,
-                verbose=False
-            )
+            decode_seqs(x.detach().cpu().numpy(), vocab=vocab, verbose=False)
         )
         x = x.to(device)
         layer = layer.to(device)
@@ -87,17 +75,25 @@ def _get_activations_from_layer(
 
 
 def _get_filter_activators(
-    activations, 
-    sequences, 
+    activations,
+    sequences,
     kernel_size,
+    num_filters=None,
     method="Alipahani15",
     threshold=0.5,
-    num_seqlets=100
+    num_seqlets=100,
 ):
+    num_filters = num_filters if num_filters is not None else activations.shape[1]
     if method == "Alipahani15":
-        assert threshold is not None, "Threshold must be specified for Alipanahi15 method."
+        assert (
+            threshold is not None
+        ), "Threshold must be specified for Alipanahi15 method."
         filter_activators = []
-        for filt in range(activations.shape[1]):
+        for i, filt in tqdm(
+            enumerate(range(num_filters)),
+            desc=f"Getting filter activators for {num_filters} filters",
+            total=num_filters,
+        ):
             single_filter = activations[:, filt, :]
             max_val = np.max(single_filter)
             activators = []
@@ -107,23 +103,33 @@ def _get_filter_activators(
                     activators.append(sequences[i][start : start + kernel_size])
             filter_activators.append(activators)
     elif method == "Minnoye20":
-        assert num_seqlets is not None, "num_seqlets must be specified for Minnoye20 method."
+        assert (
+            num_seqlets is not None
+        ), "num_seqlets must be specified for Minnoye20 method."
         filter_activators = []
-        for filt in range(activations.shape[1]):
+        for i, filt in tqdm(
+            enumerate(range(num_filters)),
+            desc=f"Getting filter activators for {num_filters} filters",
+            total=num_filters,
+        ):
             single_filter = activations[:, filt, :]
             inds = _k_largest_index_argsort(single_filter, num_seqlets)
-            filter_activators.append([seq[inds[i][1]:inds[i][1]+kernel_size] for i, seq in enumerate(sequences[inds[:, 0]])])
+            filter_activators.append(
+                [
+                    seq[inds[i][1] : inds[i][1] + kernel_size]
+                    for i, seq in enumerate(sequences[inds[:, 0]])
+                ]
+            )
     return filter_activators
 
 
 def _get_pfms(
-    filter_activators, 
-    kernel_size, 
+    filter_activators,
+    kernel_size,
     vocab="DNA",
 ):
     filter_pfms = {}
     vocab = _get_vocab(vocab)
-    print(vocab)
     for i, activators in tqdm(
         enumerate(filter_activators),
         total=len(filter_activators),
@@ -134,11 +140,13 @@ def _get_pfms(
             vocab[1]: np.zeros(kernel_size),
             vocab[2]: np.zeros(kernel_size),
             vocab[3]: np.zeros(kernel_size),
+            "N": np.zeros(kernel_size),
         }
         for seq in activators:
             for j, nt in enumerate(seq):
                 pfm[nt][j] += 1
         filter_pfm = pd.DataFrame(pfm)
+        filter_pfm = filter_pfm.drop("N", axis=1)
         filter_pfms[i] = filter_pfm
         filter_pfms[i] = filter_pfms[i].div(filter_pfms[i].sum(axis=1), axis=0)
     return filter_pfms
@@ -150,6 +158,7 @@ def generate_pfms_sdata(
     sdata,
     method="Alipahani15",
     vocab="DNA",
+    num_filters=None,
     threshold=0.5,
     num_seqlets=100,
     batch_size=None,
@@ -158,29 +167,29 @@ def generate_pfms_sdata(
     transform_kwargs={},
     key_name="pfms",
     copy=False,
-    **kwargs
+    **kwargs,
 ):
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
-    sdataset = sdata.to_dataset(
-        target_keys=None, transform_kwargs=transform_kwargs
-    )
+    sdataset = sdata.to_dataset(target_keys=None, transform_kwargs=transform_kwargs)
     sdataloader = DataLoader(
         sdataset, batch_size=batch_size, num_workers=num_workers, shuffle=False
     )
-    first_layer = _get_first_conv_layer(
-        model, device=device
-    )
+    first_layer = _get_first_conv_layer(model, device=device)
     activations, sequences = _get_activations_from_layer(
         first_layer, sdataloader, device=device, vocab=vocab
     )
     filter_activators = _get_filter_activators(
-        activations, sequences, first_layer.kernel_size[0], method=method, threshold=threshold, num_seqlets=num_seqlets
+        activations,
+        sequences,
+        first_layer.kernel_size[0],
+        num_filters=num_filters,
+        method=method,
+        threshold=threshold,
+        num_seqlets=num_seqlets,
     )
-    filter_pfms = _get_pfms(
-        filter_activators, first_layer.kernel_size[0], vocab=vocab
-    )
+    filter_pfms = _get_pfms(filter_activators, first_layer.kernel_size[0], vocab=vocab)
     sdata.uns[key_name] = filter_pfms
     return sdata if copy else None

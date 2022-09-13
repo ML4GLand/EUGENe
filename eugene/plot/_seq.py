@@ -509,9 +509,13 @@ def lm_filter_viz(
 
     pfm = sdata.uns[uns_key][filter_id]
     if pfm["A"].dtype == "float64":
-        info_mat = lm.transform_matrix(pfm, from_type="probability", to_type="information")
+        info_mat = lm.transform_matrix(
+            pfm, from_type="probability", to_type="information"
+        )
     elif pfm["A"].dtype == "int64":
-       info_mat = lm.transform_matrix(pfm, from_type="counts", to_type="information")
+        info_mat = lm.transform_matrix(pfm, from_type="counts", to_type="information")
+    if "N" in pfm.columns:
+        info_mat = info_mat.drop("N", axis=1)
     logo = lm.Logo(info_mat, **kwargs)
     logo.style_xticks(spacing=5, anchor=25, rotation=45, fmt="%d", fontsize=14)
     logo.style_spines(visible=False)
@@ -559,20 +563,19 @@ def lm_multifilter_viz(
 
 def kipoi_ism_heatmap(sdata, seq_id, uns_key="NaiveISM_imps", figsize=(15, 2.5)):
     from ..external.kipoi.kipoi_veff.plot import seqlogo_heatmap
+
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     val = sdata.uns[uns_key][seq_idx]
     fig = plt.figure(figsize=figsize)
     seqlogo_heatmap(val.T, val, ax=plt.subplot())
 
 
-def feature_implant_plot(
-    sdata,
-    seqsm_keys,
-    save=None
-):
+def feature_implant_plot(sdata, seqsm_keys, save=None):
     concat_df = pd.DataFrame()
     for seqsm_key in seqsm_keys:
-        df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(var_name="Position", value_name="Score", ignore_index=False)
+        df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(
+            var_name="Position", value_name="Score", ignore_index=False
+        )
         df["feature"] = seqsm_key
         concat_df = pd.concat([concat_df, df])
     concat_df.reset_index(drop=True, inplace=True)

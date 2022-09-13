@@ -10,7 +10,8 @@ from ...preprocess import decode_seq
 from ...preprocess._utils import _token2one_hot
 from ... import settings
 
-# Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
+
+# Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipyn
 @dataclass
 class Motif:
     identifier: str
@@ -224,21 +225,25 @@ def _create_kernel_matrix(
 
 
 # modified from nnexplain
-def pwm_to_meme(pwm, output_file_path):
+def pwm_to_meme(pwm, output_file_path, vocab="DNA"):
     """
     Function to convert pwm array to meme file
     :param pwm: numpy.array, pwm matrices, shape (U, 4, filter_size), where U - number of units
     :param output_file_path: string, the name of the output meme file
     """
+    from ...preprocess._utils import _get_vocab
 
+    vocab = "".join(_get_vocab(vocab))
     n_filters = pwm.shape[0]
     filter_size = pwm.shape[2]
     meme_file = open(output_file_path, "w")
     meme_file.write("MEME version 4\n\n")
-    meme_file.write("ALPHABET= ACGT\n\n")
+    meme_file.write(f"ALPHABET= {vocab}\n\n")
     meme_file.write("strands: + -\n\n")
     meme_file.write("Background letter frequencies\n")
-    meme_file.write("A 0.25 C 0.25 G 0.25 T 0.25\n")
+    meme_file.write(
+        f"{vocab[0]} 0.25 {vocab[1]} 0.25 {vocab[2]} 0.25 {vocab[3]} 0.25\n"
+    )
 
     print("Saved PWM File as : {}".format(output_file_path))
 
@@ -271,11 +276,12 @@ def filters_to_meme_sdata(
     sdata,
     output_dir: str = None,
     file_name="filter.meme",
-    uns_key = "pfms",
+    uns_key="pfms",
     filter_ids: int = None,
+    vocab="DNA",
     convert_to_pfm: bool = False,
     change_length_axis=True,
-    return_pfms=False
+    return_pfms=False,
 ):
     """
     Function to convert a single filter to a meme file
@@ -289,16 +295,16 @@ def filters_to_meme_sdata(
     except KeyError:
         print("No filters found in sdata.uns['{}']".format(uns_key))
     if filter_ids is None:
-        filter_ids = len(sdata.uns.get(uns_key))
+        filter_ids = list(sdata.uns[uns_key].keys())
     if output_dir is None:
         output_file_path = os.path.join(settings.output_dir, file_name)
     else:
         output_file_path = os.path.join(output_dir, file_name)
     pwms = np.array([pfms[key].values for key in filter_ids])
     if convert_to_pfm:
-        pwms/pwms.sum(axis=2, keepdims=True)
+        pwms / pwms.sum(axis=2, keepdims=True)
     if change_length_axis:
         pwms = pwms.transpose(0, 2, 1)
-    pwm_to_meme(pwms, output_file_path)
+    pwm_to_meme(pwms, output_file_path, vocab=vocab)
     if return_pfms:
         return pwms
