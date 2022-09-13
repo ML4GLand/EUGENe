@@ -61,10 +61,7 @@ def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndar
 
 
 def best_mut_seqs(
-    model, 
-    X: np.ndarray, 
-    batch_size: int = None, 
-    device: str = None
+    model, X: np.ndarray, batch_size: int = None, device: str = None
 ) -> np.ndarray:
     """
     Find and return the highest scoring sequence for each sequence
@@ -170,30 +167,29 @@ def evolution(
 
 @track
 def evolve_seqs_sdata(
-    model, 
-    sdata, 
-    rounds, 
-    return_seqs=False,
-    device: str = "cpu",
-    copy=False,
-    **kwargs
+    model, sdata, rounds, return_seqs=False, device: str = "cpu", copy=False, **kwargs
 ):
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     evolved_seqs = np.zeros(sdata.ohe_seqs.shape)
+    deltas = np.zeros((sdata.n_obs, rounds))
     for i, ohe_seq in tqdm(
         enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"
     ):
-        evolved_seq = evolution(model, ohe_seq, rounds=rounds, device=device)[0]
+        evolved_seq, delta, _ = evolution(model, ohe_seq, rounds=rounds, device=device)
         evolved_seqs[i] = evolved_seq
+        deltas[i, :] = deltas[i, :] + delta
     orig_seqs = torch.Tensor(sdata.ohe_seqs).to(device)
-    evolved_seqs = torch.Tensor(evolved_seqs).to(device)
-    original_scores = model(orig_seqs).detach().cpu().numpy()
-    evolved_scores = model(evolved_seqs).detach().cpu().numpy()
-    sdata["original_scores"] = original_scores
-    sdata[f"evolved_{rounds}_scores"] = evolved_scores
+    original_scores = model(orig_seqs).detach().cpu().numpy().squeeze()
+    sdata["original_score"] = original_scores
+    sdata["evolved_1_score"] = original_scores + deltas[:, 0]
+    for i in range(2, rounds + 1):
+        sdata.seqs_annot[f"evolved_{i}_score"] = (
+            sdata.seqs_annot[f"evolved_{i-1}_score"] + deltas[:, i - 1]
+        )
     if return_seqs:
+        evolved_seqs = torch.Tensor(evolved_seqs).to(device)
         return evolved_seqs
     return sdata if copy else None
 
@@ -218,9 +214,7 @@ def feature_implant_seq_sdata(
     if encoding == "str":
         seq = sdata.seqs[seq_idx]
         implanted_seqs = feature_implant_across_seq(seq, feature, encoding=encoding)
-        implanted_seqs = ohe_seqs(
-            implanted_seqs, vocab="DNA", verbose=False
-        )
+        implanted_seqs = ohe_seqs(implanted_seqs, vocab="DNA", verbose=False)
         X = torch.from_numpy(implanted_seqs).float()
     elif encoding == "onehot":
         seq = sdata.ohe_seqs[seq_idx]
@@ -237,13 +231,7 @@ def feature_implant_seq_sdata(
     return preds
 
 
-def feature_implant_seqs_sdata(
-    model, 
-    sdata, 
-    feature,
-    seqsm_key=None, 
-    **kwargs
-):
+def feature_implant_seqs_sdata(model, sdata, feature, seqsm_key=None, **kwargs):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
     """
@@ -253,7 +241,11 @@ def feature_implant_seqs_sdata(
         desc="Implanting feature in all seqs of sdata",
         total=len(sdata.seqs_annot),
     ):
-        predictions.append(feature_implant_seq_sdata(model, sdata, seq_id, feature, store=False, **kwargs))
+        predictions.append(
+            feature_implant_seq_sdata(
+                model, sdata, seq_id, feature, store=False, **kwargs
+            )
+        )
     if seqsm_key is not None:
         sdata.seqsm[seqsm_key] = np.array(predictions)
     else:
