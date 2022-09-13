@@ -6,14 +6,14 @@ import logging
 from ._constants import REGISTRY_KEYS
 from ._settings import settings
 
-from . import preprocessing as pp
-from . import dataloading as dl
+from . import preprocess as pp
+from . import dataload as dl
 from . import datasets
 from . import models
 from . import train
-from . import predict
+from . import evaluate
 from . import interpret
-from . import plotting as pl
+from . import plot as pl
 from . import external
 from . import utils
 
@@ -30,4 +30,4 @@ settings.verbosity = logging.INFO
 eugene_logger = logging.getLogger("eugene")
 eugene_logger.propagate = False
 
-__all__ = ["settings", "REGISTRY_KEYS", "datasets", "dataloading", "preprocessing", "models", "train", "predict", "interpret", "plotting", "external", "utils"]
+__all__ = ["settings", "REGISTRY_KEYS", "datasets", "dataload", "preprocess", "models", "train", "evaluate", "interpret", "plot", "external", "utils"]

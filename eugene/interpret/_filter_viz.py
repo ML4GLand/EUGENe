@@ -4,35 +4,31 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.nn as nn
 from tqdm.auto import tqdm
+from ..preprocess._utils import _get_vocab
+from ._utils import _k_largest_index_argsort
 from ..utils import track
 from .._settings import settings
-from ..utils._decorators import nostdout
 
 
-def _get_activation(name):
-    activation = {}
+def _get_first_conv_layer(
+    model, 
+    device="cpu"
+):
+    """
+    Get the first convolutional layer in a model.
 
-    def hook(model, input, output):
-        activation[name] = output.detach()
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to get the first convolutional layer from.
+    device : str, optional
+        The device to move the model to, by default "cpu"
 
-    return hook
-
-
-def _get_first_conv_layer_params(model):
-    if model.__class__.__name__ == "Jores21CNN":
-        return model.biconv.kernels[0].cpu()
-    elif model.__class__.__name__ == "Kopp21CNN":
-        return model.conv.cpu()
-    for layer in model.convnet.module:
-        name = layer.__class__.__name__
-        if name == "Conv1d":
-            pwms = next(layer.parameters()).cpu()
-            return pwms
-    print("No Conv1d layer found, returning None")
-    return None
-
-
-def _get_first_conv_layer(model, device="cpu"):
+    Returns
+    -------
+    torch.nn.Module
+        The first convolutional layer in the model.
+    """
     if model.__class__.__name__ == "Jores21CNN":
         layer_shape = model.biconv.kernels[0].shape
         kernels = model.biconv.kernels[0]
@@ -57,8 +53,13 @@ def _get_first_conv_layer(model, device="cpu"):
     return None
 
 
-def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
-    from ..preprocessing import decode_DNA_seqs
+def _get_activations_from_layer(
+    layer, 
+    sdataloader, 
+    device="cpu", 
+    vocab="DNA"
+):
+    from ..preprocess import decode_seqs
 
     activations = []
     sequences = []
@@ -70,15 +71,13 @@ def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
         desc="Getting maximial activating seqlets",
     ):
         ID, x, x_rev_comp, y = batch
-        with nostdout():
-            sequences.append(
-                decode_DNA_seqs(
-                    x.transpose(2, 1).detach().cpu().numpy(),
-                    vocab=alphabet,
-                    verbose=False,
-                )
+        sequences.append(
+            decode_seqs(
+                x.detach().cpu().numpy(),
+                vocab=vocab,
+                verbose=False
             )
-        # print(x.shape)
+        )
         x = x.to(device)
         layer = layer.to(device)
         activations.append(F.relu(layer(x)).detach().cpu().numpy())
@@ -87,150 +86,101 @@ def _get_activations_from_layer(layer, sdataloader, device, alphabet="DNA"):
     return np_act, np_seq
 
 
-def _get_filter_activators(activations, sequences, layer):
-    kernel_size = layer.kernel_size[0]
-    filter_activators = []
-    for filt in range(activations.shape[1]):
-        single_filter = activations[:, filt, :]
-        max_val = np.max(single_filter)
-        activators = []
-        for i in range(len(single_filter)):
-            starts = np.where(single_filter[i] > max_val / 2)[0]
-            for start in starts:
-                activators.append(sequences[i][start : start + kernel_size])
-        filter_activators.append(activators)
+def _get_filter_activators(
+    activations, 
+    sequences, 
+    kernel_size,
+    method="Alipahani15",
+    threshold=0.5,
+    num_seqlets=100
+):
+    if method == "Alipahani15":
+        assert threshold is not None, "Threshold must be specified for Alipanahi15 method."
+        filter_activators = []
+        for filt in range(activations.shape[1]):
+            single_filter = activations[:, filt, :]
+            max_val = np.max(single_filter)
+            activators = []
+            for i in range(len(single_filter)):
+                starts = np.where(single_filter[i] >= max_val * threshold)[0]
+                for start in starts:
+                    activators.append(sequences[i][start : start + kernel_size])
+            filter_activators.append(activators)
+    elif method == "Minnoye20":
+        assert num_seqlets is not None, "num_seqlets must be specified for Minnoye20 method."
+        filter_activators = []
+        for filt in range(activations.shape[1]):
+            single_filter = activations[:, filt, :]
+            inds = _k_largest_index_argsort(single_filter, num_seqlets)
+            filter_activators.append([seq[inds[i][1]:inds[i][1]+kernel_size] for i, seq in enumerate(sequences[inds[:, 0]])])
     return filter_activators
 
 
-def _get_pfms(filter_activators, kernel_size, alphabet):
+def _get_pfms(
+    filter_activators, 
+    kernel_size, 
+    vocab="DNA",
+):
     filter_pfms = {}
-    DNA = ["A", "C", "G", "T"]
-    RNA = ["A", "C", "G", "U"]
-    if alphabet == "DNA":
-        bases = DNA
-    elif alphabet == "RNA":
-        bases = RNA
-    else:
-        raise ValueError("Alphabet must be either 'DNA' or 'RNA'.")
-
+    vocab = _get_vocab(vocab)
+    print(vocab)
     for i, activators in tqdm(
         enumerate(filter_activators),
         total=len(filter_activators),
         desc="Getting PFMs from filters",
     ):
         pfm = {
-            bases[0]: np.zeros(kernel_size),
-            bases[1]: np.zeros(kernel_size),
-            bases[2]: np.zeros(kernel_size),
-            bases[3]: np.zeros(kernel_size),
+            vocab[0]: np.zeros(kernel_size),
+            vocab[1]: np.zeros(kernel_size),
+            vocab[2]: np.zeros(kernel_size),
+            vocab[3]: np.zeros(kernel_size),
         }
         for seq in activators:
             for j, nt in enumerate(seq):
                 pfm[nt][j] += 1
         filter_pfm = pd.DataFrame(pfm)
         filter_pfms[i] = filter_pfm
+        filter_pfms[i] = filter_pfms[i].div(filter_pfms[i].sum(axis=1), axis=0)
     return filter_pfms
 
 
 @track
-def generate_pfms(
+def generate_pfms_sdata(
     model,
     sdata,
+    method="Alipahani15",
+    vocab="DNA",
+    threshold=0.5,
+    num_seqlets=100,
     batch_size=None,
     num_workers=None,
+    device="cpu",
+    transform_kwargs={},
     key_name="pfms",
-    alphabet="DNA",
     copy=False,
-    device=None,
+    **kwargs
 ):
+    sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
-    sdata = sdata.copy() if copy else sdata
     sdataset = sdata.to_dataset(
-        target=None, seq_transforms=None, transform_kwargs={"transpose": True}
+        target_keys=None, transform_kwargs=transform_kwargs
     )
-    sdataloader = DataLoader(sdataset, batch_size=batch_size, num_workers=num_workers)
-    first_layer = _get_first_conv_layer(model, device=device)
+    sdataloader = DataLoader(
+        sdataset, batch_size=batch_size, num_workers=num_workers, shuffle=False
+    )
+    first_layer = _get_first_conv_layer(
+        model, device=device
+    )
     activations, sequences = _get_activations_from_layer(
-        first_layer, sdataloader, device=device, alphabet=alphabet
+        first_layer, sdataloader, device=device, vocab=vocab
     )
-    filter_activators = _get_filter_activators(activations, sequences, first_layer)
+    filter_activators = _get_filter_activators(
+        activations, sequences, first_layer.kernel_size[0], method=method, threshold=threshold, num_seqlets=num_seqlets
+    )
     filter_pfms = _get_pfms(
-        filter_activators, first_layer.kernel_size[0], alphabet=alphabet
+        filter_activators, first_layer.kernel_size[0], vocab=vocab
     )
     sdata.uns[key_name] = filter_pfms
     return sdata if copy else None
-
-
-# Adapted from gopher
-def meme_generate(W, output_file="meme.txt", prefix="filter"):
-    """generate a meme file for a set of filters, W ∈ (N,L,A)"""
-
-    # background frequency
-    nt_freqs = [1.0 / 4 for i in range(4)]
-
-    # open file for writing
-    f = open(output_file, "w")
-
-    # print intro material
-    f.write("MEME version 4\n")
-    f.write("\n")
-    f.write("ALPHABET= ACGT\n")
-    f.write("\n")
-    f.write("Background letter frequencies:\n")
-    f.write("A %.4f C %.4f G %.4f T %.4f \n" % tuple(nt_freqs))
-    f.write("\n")
-
-    for j, pwm in enumerate(W):
-        L, A = pwm.shape
-        f.write("MOTIF %s%d \n" % (prefix, j))
-        f.write("letter-probability matrix: alength= 4 w= %d nsites= %d \n" % (L, L))
-        for i in range(L):
-            f.write("%.4f %.4f %.4f %.4f \n" % tuple(pwm[i, :]))
-        f.write("\n")
-
-    f.close()
-
-
-def pwm_to_meme(pwm, output_file_path):
-    """
-    Function to convert pwm array to meme file
-    :param pwm: numpy.array, pwm matrices, shape (U, 4, filter_size), where U - number of units
-    :param output_file_path: string, the name of the output meme file
-    """
-
-    n_filters = pwm.shape[0]
-    filter_size = pwm.shape[2]
-    meme_file = open(output_file_path, "w")
-    meme_file.write("MEME version 4\n\n")
-    meme_file.write("ALPHABET= ACGT\n\n")
-    meme_file.write("strands: + -\n\n")
-    meme_file.write("Background letter frequencies\n")
-    meme_file.write("A 0.25 C 0.25 G 0.25 T 0.25\n")
-
-    print("Saved PWM File as : {}".format(output_file_path))
-
-    for i in range(0, n_filters):
-        if np.sum(pwm[i, :, :]) > 0:
-            meme_file.write("\n")
-            meme_file.write("MOTIF filter%s\n" % i)
-            meme_file.write(
-                "letter-probability matrix: alength= 4 w= %d \n"
-                % np.count_nonzero(np.sum(pwm[i, :, :], axis=0))
-            )
-
-        for j in range(0, filter_size):
-            if np.sum(pwm[i, :, j]) > 0:
-                meme_file.write(
-                    str(pwm[i, 0, j])
-                    + "\t"
-                    + str(pwm[i, 1, j])
-                    + "\t"
-                    + str(pwm[i, 2, j])
-                    + "\t"
-                    + str(pwm[i, 3, j])
-                    + "\n"
-                )
-
-    meme_file.close()

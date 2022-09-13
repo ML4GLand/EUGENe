@@ -34,7 +34,7 @@ def model():
 
 
 def test_predictions(sdata, model):
-    eu.predict.predictions(
+    eu.evaluate.predictions(
         model,
         sdata=sdata,
         target="target",
@@ -51,7 +51,7 @@ def test_predictions(sdata, model):
 
 
 def test_train_val_predictions(sdata, model):
-    eu.predict.train_val_predictions(
+    eu.evaluate.train_val_predictions(
         model, sdata=sdata, target="target", train_key="train", out_dir=f"{HERE}/_out/"
     )
     saved_t = pd.read_csv(f"{HERE}/_out/train_predictions.tsv", index_col=0, sep="\t")

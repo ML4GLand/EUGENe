@@ -1,7 +1,7 @@
 import numpy as np
 import inspect
 from functools import wraps
-from ..dataloading import SeqData
+from ..dataload import SeqData
 
 
 def get_default_args(func):
@@ -23,18 +23,24 @@ def track(func):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
 
-        # print(kwargs, args, type(args[0]))
-        if type(args[0]) == SeqData:
-            sdata = args[0]
-        elif args[0].__repr__()[:7] == "SeqData":
-            sdata = args[0]
-        elif isinstance(args[0], SeqData):
-            sdata = args[0]
-        else:
-            if "sdata" in kwargs:
+        if "sdata" in kwargs:
                 sdata = kwargs["sdata"]
-            else:
-                sdata = args[1]
+        else:
+            if len(args) > 0:
+                if type(args[0]) == SeqData:
+                    sdata = args[0]
+                elif args[0].__repr__()[:7] == "SeqData":
+                    sdata = args[0]
+                elif isinstance(args[0], SeqData):
+                    sdata = args[0]
+                elif type(args[1]) == SeqData:
+                    sdata = args[1]
+                elif args[1].__repr__()[:7] == "SeqData":
+                    sdata = args[1]
+                elif isinstance(args[1], SeqData):
+                    sdata = args[1]
+                else:
+                    raise ValueError("No SeqData object found for tracking.")
 
         old_attr = list_attributes(sdata)
 

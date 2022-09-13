@@ -57,6 +57,7 @@ jsonargparse = {version = "^4.12.0", extras = ["signatures"]}
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8"]
 dev = ["black", "pre-commit", "pytest", "codecov"]
 janggu = ["pyBigWig", "pybedtools", "biopython", "progress", "keras", "tensorflow"]
+kipoi = ["Shapely", "kipoi", "kipoiseq"]
 
 [tool.poetry.dev-dependencies]
 

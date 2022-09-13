@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.model_summary import ModelSummary
-from ...preprocessing._utils import ascii_decode
+from ...preprocess import ascii_decode
 from ..._settings import settings
 
 

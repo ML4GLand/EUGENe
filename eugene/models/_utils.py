@@ -1,10 +1,5 @@
 import importlib
-import torch
 from os import PathLike
-from typing import Union, Dict, List, Tuple, Optional
-from .base import init_conv
-from ..utils import Motif, MinimalMEME
-from ..utils._motif import _create_kernel_matrix
 
 
 def load_config(arch, model_config):

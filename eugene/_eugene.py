@@ -1,4 +1,4 @@
-from .dataloading import SeqData
+from .dataload import SeqData
 from .models import FCN, CNN, RNN, Hybrid
 
 
