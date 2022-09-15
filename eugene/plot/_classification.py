@@ -162,6 +162,7 @@ def auprc(
     predictions: Union[Sequence[str], str],
     labels: Union[Sequence[str], str] = "",
     colors: Union[Sequence[str], str] = "bgrcmyk",
+    save: bool = False,
     **kwargs,
 ) -> None:
     targets, predictions, labels = _check_input(sdata, targets, predictions, labels)
@@ -176,3 +177,5 @@ def auprc(
         ax.set_ylabel("Precision", fontsize=20)
         ax.legend(loc="lower right")
         plt.tight_layout()
+    if save:
+        fig.savefig(save, dpi=300)
