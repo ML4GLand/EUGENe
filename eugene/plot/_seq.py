@@ -449,7 +449,7 @@ def lm_seq_track(
     if return_ax:
         return nn_logo.ax
     if save is not None:
-        plt.savefig(save)
+        plt.savefig(save, dpi=300)
 
 
 def lm_multiseq_track(
@@ -501,6 +501,7 @@ def lm_filter_viz(
     sdata,
     filter_id=None,
     uns_key="pfms",
+    vocab="DNA",
     return_ax: bool = False,
     save: str = None,
     title=None,
@@ -508,6 +509,8 @@ def lm_filter_viz(
 ):
 
     pfm = sdata.uns[uns_key][filter_id]
+    if isinstance(pfm, np.ndarray):
+        pfm = pd.DataFrame(pfm, columns=alphabet_dict[vocab])
     if pfm["A"].dtype == "float64":
         pfm.fillna(0.25, inplace=True)
         info_mat = lm.transform_matrix(
