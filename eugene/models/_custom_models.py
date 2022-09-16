@@ -6,7 +6,7 @@ from .base import BaseModel, BiConv1D
 
 class Jores21CNN(BaseModel):
     """
-    JORES-21 model. Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+    Jores21CNN model. Uses a custom BiConv1D module converted from tf implementation to PyTorch from
     url (which was adapted from url).
 
     Parameters

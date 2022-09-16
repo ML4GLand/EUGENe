@@ -478,7 +478,7 @@ def lm_multiseq_track(
         len(uns_keys) * 4 if height is None else height
     )  # make each sequence height proportional to the number of uns_keys
     _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0):
+    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0, total=len(uns_keys)):
         for j, seq_id in enumerate(seq_ids):
             lm_seq_track(
                 sdata,
@@ -494,7 +494,7 @@ def lm_multiseq_track(
     if return_axes:
         return ax
     if save is not None:
-        plt.savefig(save)
+        plt.savefig(save, dpi=300)
 
 
 def lm_filter_viz(
@@ -586,6 +586,7 @@ def feature_implant_plot(sdata, seqsm_keys, save=None):
         df["feature"] = seqsm_key
         concat_df = pd.concat([concat_df, df])
     concat_df.reset_index(drop=True, inplace=True)
-    sns.lineplot(data=concat_df, x="Position", y="Score", hue="feature")
+    g = sns.lineplot(data=concat_df, x="Position", y="Score", hue="feature")
+    print("ylim", g.get_ylim())
     if save:
         plt.savefig(save)

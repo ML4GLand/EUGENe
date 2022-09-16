@@ -224,8 +224,13 @@ def feature_implant_seq_sdata(
         X = torch.from_numpy(implanted_seqs).float()
     else:
         raise ValueError("Encoding not recognized.")
-    X = X.to(device)
-    preds = model(X).cpu().detach().numpy().squeeze()
+    if model.strand == "ss":
+        X = X.to(device)
+        X_rev = X
+    else:
+        X = X.to(device)
+        X_rev = torch.flip(X, [1, 2]).to(device)
+    preds = model(X, X_rev).cpu().detach().numpy().squeeze()
     if store:
         sdata.seqsm[f"{seq_id}_{feature_name}_slide"] = preds
     return preds
