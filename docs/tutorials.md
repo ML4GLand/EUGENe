@@ -1,14 +1,21 @@
 # Tutorials
 
-## Basisc Workflows
+## Basic Workflows
 
-### Single Task Regression
+```{eval-rst}
+.. nbgallery::
+    :caption: This is a thumbnail gallery:
+    :glob:
 
-### Binary Classification
-
-### Multitask
+    ../tutorials/single_task_regression
+    ../tutorials/binary_classification_tutorial
+    ../tutorials/multi_task_tutorial
+    ../tutorials/multiclass_classification
+```
 
 ## Advanced Topics
+
+Coming soon!
 
 ### Working with MEME files
 

@@ -4,10 +4,10 @@ EUGENe is a Python package, and can be installed using `pip`:
 
 ```bash
 ```shell
-pip install 'eugene'
+pip install 'eugene-tools'
 ```
 
-The extras `[janggu, kipoi]` installs dependencies that are needed to use functions from the Janggu and Kipoi packages.
+The extras `[janggu, kipoi, memesuite]` installs dependencies that are needed to use functions from the Janggu, Kipoi and MEME suite
 
 ## Development Version
 

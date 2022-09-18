@@ -21,7 +21,7 @@ try:
     import importlib.metadata as importlib_metadata
 except ModuleNotFoundError:
     import importlib_metadata
-package_name = "eugene"
+package_name = "eugene-tools"
 __version__ = importlib_metadata.version(package_name)
 
 settings.verbosity = logging.INFO
@@ -30,4 +30,17 @@ settings.verbosity = logging.INFO
 eugene_logger = logging.getLogger("eugene")
 eugene_logger.propagate = False
 
-__all__ = ["settings", "REGISTRY_KEYS", "datasets", "dataload", "preprocess", "models", "train", "evaluate", "interpret", "plot", "external", "utils"]
+__all__ = [
+    "settings",
+    "REGISTRY_KEYS",
+    "datasets",
+    "dataload",
+    "preprocess",
+    "models",
+    "train",
+    "evaluate",
+    "interpret",
+    "plot",
+    "external",
+    "utils",
+]
