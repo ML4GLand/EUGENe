@@ -47,6 +47,7 @@ def metric_curve(
     ylab = metric if ylab is None else ylab
     tb_event_path = glob.glob(os.path.join(log_path, "events.out.tfevents.*"))
     dataframe = many_logs2pandas(tb_event_path)
+    print(dataframe)
     dataframe = dataframe[dataframe["metric"].str.contains(metric)]
     dataframe = dataframe[~dataframe["metric"].str.contains("step")]
     ax = _plot_seaborn(
@@ -122,5 +123,5 @@ def training_summary(
     loss_curve(log_path, return_axes=True, **kwargs)
     metric_curve(log_path, metric=metrics, return_axes=True, **kwargs)
     if save is not None:
-        plt.savefig(save)
+        plt.savefig(save, dpi=300)
     return None
