@@ -58,7 +58,7 @@ def random_seqs_to_file(file, ext="csv", **kwargs):
 
 
 def generate_random_data(num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=None, dataset_name=None):
-    """Simple function tp generate commonly used file types for testing EUGENE models"""
+    """Simple function tp generate commonly used file types for testing EUGENe models"""
     out_dir = out_dir if out_dir is not None else settings.dataset_dir
 
     if dataset_name is None:
@@ -69,21 +69,21 @@ def generate_random_data(num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=
         os.makedirs(out_dir)
 
     seqs = random_seqs(num_seqs, seq_len)
-    ohe_seqs = ohe_seqs(seqs, vocab=vocab)
+    oheseqs = ohe_seqs(seqs, vocab=vocab)
     rev_seqs = reverse_complement_seqs(seqs)
     rev_ohe_seqs = ohe_seqs(rev_seqs, vocab=vocab)
     n_digits = len(str(num_seqs-1))
     ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(num_seqs)])
     labels = np.random.randint(0,2,size=(num_seqs, num_outputs))
     activities = np.random.rand(num_seqs, num_outputs)
-    label_cols = ["LABEL_{}".format(i) for i in range(num_outputs)]
-    activity_cols = ["ACTIVITY_{}".format(i) for i in range(num_outputs)]
-    d = dict(dict(NAME=ids, SEQ=seqs), **dict(zip(label_cols, labels.T)), **dict(zip(activity_cols, activities.T)))
+    label_cols = ["label_{}".format(i) for i in range(num_outputs)]
+    activity_cols = ["activity_{}".format(i) for i in range(num_outputs)]
+    d = dict(dict(name=ids, seq=seqs), **dict(zip(label_cols, labels.T)), **dict(zip(activity_cols, activities.T)))
     pd.DataFrame(d).to_csv(os.path.join(out_dir, f"{dataset_name}_seqs.tsv"), sep="\t", index=False)
     np.save(os.path.join(out_dir, f"{dataset_name}_seqs"), seqs)
-    np.save(os.path.join(out_dir, f"{dataset_name}_ohe_seqs"), ohe_seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_ohe_seqs"), oheseqs)
     np.save(os.path.join(out_dir, f"{dataset_name}_rev_seqs"), rev_seqs)
-    np.save(os.path.join(out_dir, f"{dataset_name}_rev_ohe_seqs"), rev_ohe_seqs)
+    np.save(os.path.join(out_dir, f"{dataset_name}_ohe_rev_seqs"), rev_ohe_seqs)
     np.save(os.path.join(out_dir, f"{dataset_name}_ids"), ids)
     np.save(os.path.join(out_dir, f"{dataset_name}_labels"), labels)
     np.save(os.path.join(out_dir, f"{dataset_name}_activities"), activities)

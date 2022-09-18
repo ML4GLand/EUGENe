@@ -28,14 +28,14 @@ def get_dataset_info():
     return pd.read_csv(stream, index_col=0)
 
 
-def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
+def random1000(**kwargs: dict) -> pd.DataFrame:
     """
-    Reads in the random1000 dataset.
+    Reads in the random1000 dataset (deprecated).
 
     Parameters
     ----------
-    binary : bool, optional
-        If True, return binary target data. The default is False.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
 
     Returns
     -------
@@ -43,51 +43,19 @@ def random1000(binary=False, **kwargs: dict) -> pd.DataFrame:
         SeqData object with the random1000 dataset.
     """
     filename = f"{HERE}/random1000/random1000_seqs.tsv"
-    if binary:
-        sdata = read(
-            filename, seq_col="SEQ", name_col="NAME", target_col="LABEL", **kwargs
-        )
-    else:
-        sdata = read(
-            filename, seq_col="SEQ", name_col="NAME", target_col="ACTIVITY", **kwargs
-        )
-    sdata.pos_annot = pr.read_bed(f"{HERE}/random1000/random1000_pos_annot.bed")
-    return sdata
-
-
-def random1000_10(binary=False, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the random1000_10 dataset (deprecated).
-
-    Parameters
-    ----------
-    binary : bool, optional
-        If True, return binary target data. The default is False.
-
-    Returns
-    -------
-    sdata : SeqData
-        SeqData object with the random1000_10 dataset.
-    """
-    filename = f"{HERE}/random1000_10/random1000_10_seqs.tsv"
-    if binary:
-        raise NotImplementedError(
-            "random1000_10 dataset does not need to support binary data."
-        )
-    else:
-        sdataframe = read(filename, return_dataframe=True)
-        n_digits = len(str(len(sdataframe) - 1))
-        ids = np.array(
-            [
-                "seq{num:0{width}}".format(num=i, width=n_digits)
-                for i in range(len(sdataframe))
-            ]
-        )
-        sdata = SeqData(
-            seqs=sdataframe["SEQ"],
-            names=ids,
-            seqs_annot=sdataframe.drop(columns=["NAME", "SEQ"]),
-        )
+    sdataframe = read(filename, return_dataframe=True)
+    n_digits = len(str(len(sdataframe) - 1))
+    ids = np.array(
+        [
+            "seq{num:0{width}}".format(num=i, width=n_digits)
+            for i in range(len(sdataframe))
+        ]
+    )
+    sdata = SeqData(
+        seqs=sdataframe["seq"],
+        names=ids,
+        seqs_annot=sdataframe.drop(columns=["name", "seq"]),
+    )
     return sdata
 
 

@@ -14,8 +14,4 @@ from ._seq import (
     feature_implant_plot
 )
 from ._dim_reduce import pca, umap, skree
-#from ._seq import kipoi_ism_heatmap
 from ._utils import const_line
-
-# Project Specific Plotting
-from ._otxa_enhancer_grammar import otx_seq, prettier_boxplot

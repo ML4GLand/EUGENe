@@ -1,5 +1,4 @@
 import torch
-from ..preprocess._otx_preprocess import randomizeLinkers
 from ..preprocess import ohe_seq
 
 
@@ -15,27 +14,6 @@ class ReverseComplement(object):
         complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
         rev_seq = "".join(complement.get(base, base) for base in reversed(seq))
         sample[2] = rev_seq
-        return sample
-
-
-class Augment(object):
-    """Perform augmentation of the MPRA dataset using a set of predfined parameters"""
-
-    def __init__(
-        self, randomize_linker_p=0.1, modify_features_p=0, enhancer=None, **kwargs
-    ):
-        self.randomize_linker_p = randomize_linker_p
-        self.modify_features_p = modify_features_p
-        self.enhancer = enhancer
-
-    def __call__(self, sample):
-        sequence = sample[1]
-        seq_len = len(sequence)
-        if torch.rand(1).item() < self.randomize_linker_p:
-            tsfm_sequence = randomizeLinkers(sequence, enhancer=self.enhancer)
-            if len(tsfm_sequence) == seq_len:
-                sequence = tsfm_sequence
-        sample[1] = sequence
         return sample
 
 

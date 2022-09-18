@@ -11,7 +11,7 @@ from ..preprocess import reverse_complement_seqs, decode_seqs
 
 def read_csv(
     filename: Union[PathLike, List[PathLike]],
-    seq_col: Optional[str] = "SEQ",
+    seq_col: Optional[str] = "seq",
     name_col: Optional[str] = None,
     target_col: Union[str, Iterable[str]] = None,
     rev_comp: bool = False,
@@ -33,7 +33,7 @@ def read_csv(
     file : PathLike
         File path to read the data from.
     seq_col : str, optional
-        Column name containing sequences. Defaults to "SEQ".
+        Column name containing sequences. Defaults to "seq".
     name_col : str, optional
         Column name containing identifiers. Defaults to None.
     target_col : str, optional

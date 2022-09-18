@@ -1,13 +1,9 @@
 # User-defined
 EUGENe_paper
 archive/
-./data/
-results/
-bin/*/err/
-bin/*/out/
-*.err
-*.out
-.vscode/
+
+
+# Tests
 tests/_datasets
 tests/_data/datasets
 tests/notebooks/lightning_logs
@@ -18,8 +14,10 @@ tests/_output/
 tests/_out/
 tests/_data/datasets/
 tests/_figures/
+
+# Misc
 *.DS_store
-docs/_static
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

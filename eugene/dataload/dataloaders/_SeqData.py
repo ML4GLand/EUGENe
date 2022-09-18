@@ -335,7 +335,7 @@ class SeqData:
         -------
         SeqDataset
         """
-        from .._transforms import Augment, ReverseComplement, OneHotEncode, ToTensor
+        from .._transforms import ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
 
         transforms = []
@@ -353,13 +353,7 @@ class SeqData:
                 targets=targs if target_keys is not None else None,
                 rev_seqs=self.ohe_rev_seqs,
                 transform=torch_transforms.Compose(transforms),
-            )
-
-        if "augment" in seq_transforms:
-            if self.seqs is not None:
-                transforms.append(Augment(**transform_kwargs))
-            else:
-                Raise(ValueError("Cannot augment sequences if seqs is None"))
+            ) 
 
         if "reverse_complement" in seq_transforms:
             if self.seqs is not None:

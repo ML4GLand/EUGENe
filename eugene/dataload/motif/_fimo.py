@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-from pyjaspar import jaspardb
 import pyranges as pr
-from pymemesuite.common import MotifFile, Sequence
-from pymemesuite.fimo import FIMO
 from ...utils import track
 
 
@@ -27,6 +24,12 @@ def get_jaspar_motifs(
     assert (
         motif_accs or motif_names or collection
     ), "Must provide either motif_accs, motif_names, or collection"
+    try:
+        from pyjaspar import jaspardb
+    except ImportError:
+        raise ImportError(
+            "Please install pyjaspar dependency with `pip install pyjaspar`"
+        )
     jdb_obj = jaspardb(release=release)
     if motif_accs:
         motifs = [jdb_obj.fetch_motif_by_id(acc) for acc in motif_accs]
@@ -98,6 +101,12 @@ def load_meme(filename):
         Background
     """
     memesuite_motifs = []
+    try:
+        from pymemesuite.common import MotifFile
+    except ImportError:
+        raise ImportError(
+            "Please install pymemesuite dependency with `pip install pymemesuite`"
+        )
     with MotifFile(filename) as motif_file:
         for motif in motif_file:
             memesuite_motifs.append(motif)
@@ -123,6 +132,13 @@ def fimo_motifs(sdata, pymeme_motifs, background):
     list of list
         List of FIMO scores
     """
+    try:
+        from pymemesuite.common import MotifFile, Sequence
+        from pymemesuite.fimo import FIMO
+    except ImportError:
+        raise ImportError(
+            "Please install pymemesuite dependency with `pip install pymemesuite`"
+        )
     pymeme_seqs = [
         Sequence(str(seq), name.encode()) for seq, name in zip(sdata.seqs, sdata.names)
     ]
