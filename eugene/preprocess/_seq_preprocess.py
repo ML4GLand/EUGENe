@@ -25,12 +25,12 @@ COMPLEMENT_RNA = {"A": "U", "C": "G", "G": "C", "U": "A"}
 
 
 def sanitize_seq(seq):
-    """Make sure all letters are capitalized and remove whitespace for single seq."""
+    """Capitalizes and removes whitespace for single seq."""
     return seq.strip().upper()
 
 
 def sanitize_seqs(seqs):
-    """Make sure all letters are capitalized and remove whitespace for multiple seqs."""
+    """Capitalizes and removes whitespace for a set of sequences."""
     return np.array([seq.strip().upper() for seq in seqs])
 
 
@@ -54,7 +54,7 @@ def ascii_decode(seq):
 
 
 def reverse_complement_seq(seq, vocab="DNA"):
-    """Reverse complement a DNA sequence."""
+    """Reverse complement a single sequence."""
     if isinstance(seq, str):
         if vocab == "DNA":
             return "".join(COMPLEMENT_DNA.get(base, base) for base in reversed(seq))
@@ -67,7 +67,7 @@ def reverse_complement_seq(seq, vocab="DNA"):
 
 
 def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
-    """Reverse complement a list of sequences."""
+    """Reverse complement set of sequences."""
     if isinstance(seqs[0], str):
         return np.array(
             [
@@ -85,7 +85,7 @@ def reverse_complement_seqs(seqs, vocab="DNA", verbose=True):
 
 
 def ohe_seq(seq, vocab="DNA", neutral_vocab="N", fill_value=0):
-    """Convert a DNA or RNA sequence into one-hot-encoded array."""
+    """Convert a sequence into one-hot-encoded array."""
     seq = seq.strip().upper()
     return _token2one_hot(
         _tokenize(seq, vocab, neutral_vocab), vocab, fill_value=fill_value
@@ -103,6 +103,7 @@ def ohe_seqs(
     seq_align="start",
     verbose=True,
 ):
+    """Convert a set of sequences into one-hot-encoded array."""
     if isinstance(neutral_vocab, str):
         neutral_vocab = [neutral_vocab]
     if isinstance(seqs, str):
@@ -132,7 +133,7 @@ def ohe_seqs(
 
 
 def decode_seq(arr, vocab="DNA", neutral_value=-1, neutral_char="N"):
-    """Convert a one-hot encoded array back to string"""
+    """Convert a single one-hot encoded array back to string"""
     if isinstance(arr, torch.Tensor):
         arr = arr.numpy()
     return _sequencize(
@@ -144,7 +145,7 @@ def decode_seq(arr, vocab="DNA", neutral_value=-1, neutral_char="N"):
 
 
 def decode_seqs(arr, vocab="DNA", neutral_char="N", neutral_value=-1, verbose=True):
-    """Convert a one-hot encoded array back to string"""
+    """Convert a one-hot encoded array back to set of sequences"""
     arr_list = [
         decode_seq(
             arr=arr[i],
@@ -166,6 +167,8 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
     """
     Creates shuffles of the given sequence, in which dinucleotide frequencies
     are preserved.
+
+    Credits: This is taken from https://github.com/kundajelab/deeplift/blob/master/deeplift/dinuc_shuffle.py
     Arguments:
         `seq`: either a string of length L, or an L x D np array of one-hot
             encodings
@@ -253,8 +256,12 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     return np.array(all_results)
 
 
-# modified perturb_seqs
 def perturb_seq(X_0, vocab_len=4):
+    """
+    Produce all edit-distance-one pertuabtions for a single of sequences.
+
+    Credits: This is modified from yuzu
+    """
     import warnings
 
     if not isinstance(X_0, np.ndarray):
@@ -286,14 +293,19 @@ def perturb_seq(X_0, vocab_len=4):
 
 # modified yuzu
 def perturb_seqs(X_0, vocab_len=4):
-    """Produce all edit-distance-one pertuabtions of a sequence.
+    """Produce all edit-distance-one pertuabtions for a set of sequences.
+
+    Credits: This is modified from yuzu
+
     This function will take in a single one-hot encoded sequence of length N
     and return a batch of N*(n_choices-1) sequences, each containing a single
     perturbation from the given sequence.
+
     Parameters
     ----------
     X_0: np.ndarray, shape=(n_seqs, n_choices, seq_len)
         A one-hot encoded sequence to generate all potential perturbations.
+
     Returns
     -------
     X: torch.Tensor, shape=(n_seqs, (n_choices-1)*seq_len, n_choices, seq_len)
@@ -338,7 +350,7 @@ def feature_implant_seq(
     seq, feature, position, vocab="DNA", encoding="str", onehot=False
 ):
     """
-    Insert a feature at a given position in a sequence.
+    Insert a feature at a given position in a single sequence.
     """
     if encoding == "str":
         return seq[:position] + feature + seq[position + len(feature) :]
@@ -356,7 +368,7 @@ def feature_implant_seq(
 
 def feature_implant_across_seq(seq, feature, **kwargs):
     """
-    Insert a feature at every position in a sequence.
+    Insert a feature at every position for a single sequence.
     """
     if isinstance(seq, str):
         assert isinstance(feature, str)

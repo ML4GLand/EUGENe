@@ -11,9 +11,14 @@ from ...preprocess._utils import _token2one_hot
 from ... import settings
 
 
-# Taken from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipyn
 @dataclass
 class Motif:
+    """
+    Motif class for storing motif information.
+
+    Adapted from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
+    """
+
     identifier: str
     pfm: np.ndarray
     consensus: str
@@ -28,7 +33,12 @@ class Motif:
 
 
 class MinimalMEME:
-    """http://meme-suite.org/doc/meme-format.html"""
+    """
+    Minimal MEME parser for MEME files.
+
+    Adapted from https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/blob/main/CNN/CNN_train%2Bevaluate.ipynb
+    MEME format: http://meme-suite.org/doc/meme-format.html
+    """
 
     __version_regex = re.compile("^MEME version ([0-9]+)$")
     __background_regex = re.compile(
@@ -224,12 +234,17 @@ def _create_kernel_matrix(
     return kernel
 
 
-# modified from nnexplain
 def pwm_to_meme(pwm, output_file_path, vocab="DNA"):
     """
-    Function to convert pwm array to meme file
-    :param pwm: numpy.array, pwm matrices, shape (U, 4, filter_size), where U - number of units
-    :param output_file_path: string, the name of the output meme file
+    Function to convert pwm as ndarray to meme file
+    Adapted from:: nnexplain GitHub:
+
+    Parameters
+    ----------
+    pwm:
+        numpy.array, pwm matrices, shape (U, 4, filter_size), where U - number of units
+    output_file_path:
+        string, the name of the output meme file
     """
     from ...preprocess._utils import _get_vocab
 
@@ -285,10 +300,15 @@ def filters_to_meme_sdata(
 ):
     """
     Function to convert a single filter to a meme file
-    :param sdata: SingleData, single cell data
-    :param filter_ids: int, index of the filter to convert
-    :param output_file_path: string, the name of the output meme file
-    :param convert_to_pwm: bool, whether to convert the filter to a pwm
+
+    sdata:
+        SingleData, single cell data
+    filter_ids:
+        int, index of the filter to convert
+    output_file_path:
+        string, the name of the output meme file
+    convert_to_pwm:
+        bool, whether to convert the filter to a pwm
     """
     try:
         pfms = sdata.uns.get(uns_key)

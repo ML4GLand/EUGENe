@@ -22,7 +22,7 @@ from ..._settings import settings
 class BaseModel(LightningModule):
     """Base model for all models
 
-    Attributes:
+    Paramters:
     ----------
 
     input_len (int):

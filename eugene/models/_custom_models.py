@@ -6,7 +6,9 @@ from .base import BaseModel, BiConv1D
 
 class Jores21CNN(BaseModel):
     """
-    Jores21CNN model. Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+    Jores21CNN model.
+
+    :class: Uses a custom BiConv1D module converted from tf implementation to PyTorch from
     url (which was adapted from url).
 
     Parameters
@@ -90,6 +92,38 @@ class Jores21CNN(BaseModel):
 
 
 class Kopp21CNN(BaseModel):
+    """
+    Kopp21CNN model.
+
+    :class: Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+
+    Parameters
+    ----------
+    input_len : int
+        Length of the input sequence.
+    output_dim : int
+        Dimension of the output.
+    strand : str, optional
+        Strand of the input. Either "ss" or "ds".
+    task : str, optional
+        Task of the model. Either "regression" or "classification".
+    aggr : str, optional
+        Aggregation method. Either "concat", "max", or "ave".
+    filters : list, optional
+        Number of filters in the convolutional layers.
+    conv_kernel_size : list, optional
+        Kernel size of the convolutional layers.
+    maxpool_kernel_size : int, optional
+        Kernel size of the maxpooling layer.
+    stride : int, optional
+        Stride of the convolutional layers.
+
+    Returns
+    -------
+    model : torch.nn.Module
+        Kopp21 model.
+    """
+
     def __init__(
         self,
         input_len,

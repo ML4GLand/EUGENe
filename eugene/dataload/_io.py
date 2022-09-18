@@ -24,7 +24,7 @@ def read_csv(
     compression: str = "infer",
     **kwargs,
 ):
-    r"""Function for loading sequences into SeqData object from csv/tsv files.
+    """Read sequences into SeqData object from csv/tsv files.
 
     Also allows for returning np.ndarray and pd.DataFrame objects if specified.
 
@@ -113,7 +113,7 @@ def read_csv(
 def read_fasta(
     seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False
 ):
-    """Function for loading sequences into SeqData object from fasta files.
+    """Read sequences into SeqData object from fasta files.
 
     Parameters
     ----------
@@ -182,7 +182,8 @@ def read_numpy(
     ohe=False,
     return_numpy=False,
 ):
-    r"""Function for loading sequences into numpy objects from numpy compressed files.
+    """Read sequences into numpy objects from numpy compressed files.
+
     Note if you pass only one hot encoded sequences in, you must pass in reverse complements if you want them to be included.
 
     Parameters
@@ -260,9 +261,9 @@ def read_numpy(
         )
 
 
-# TODO: Clean up the hacky bits
 def read_h5sd(filename: Optional[PathLike], sdata=None, mode: str = "r"):
-    """Function for loading sequences into SeqData objects from h5sd files.
+    """
+    Read sequences into SeqData objects from h5sd files.
 
     Parameters
     ----------
@@ -364,7 +365,7 @@ def read_bed(
     **kwargs,
 ):
     """
-    Read a BED file and return a DataFrame.
+    Read sequences from a BED file.
 
     Parameters
     ----------
@@ -395,7 +396,9 @@ def read_bed(
     try:
         from ..external.janggu.data import Bioseq, Cover
     except ImportError:
-        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
+        raise ImportError(
+            "Please install janggu dependencies `pip install eugene[janggu]`"
+        )
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
@@ -435,7 +438,7 @@ def read_bam(
     **kwargs,
 ):
     """
-    Read a BAM file and return a DataFrame.
+    Read sequences from a BAM file.
 
     Parameters
     ----------
@@ -466,7 +469,9 @@ def read_bam(
     try:
         from ..external.janggu.data import Bioseq, Cover
     except ImportError:
-        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
+        raise ImportError(
+            "Please install janggu dependencies `pip install eugene[janggu]`"
+        )
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
@@ -511,7 +516,7 @@ def read_bigwig(
     **kwargs,
 ):
     """
-    Read a bigwig file and return a DataFrame.
+    Read sequences from a BigWig file.
 
     Parameters
     ----------
@@ -542,8 +547,10 @@ def read_bigwig(
     try:
         from ..external.janggu.data import Bioseq, Cover
     except ImportError:
-        raise ImportError('Please install janggu dependencies `pip install eugene[janggu]`')
-    
+        raise ImportError(
+            "Please install janggu dependencies `pip install eugene[janggu]`"
+        )
+
     dna = Bioseq.create_from_refgenome(
         name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
     )
@@ -576,7 +583,7 @@ def read_bigwig(
 
 
 def read(seq_file, *args, **kwargs):
-    """Wrapper function around read_csv, read_fasta, read_numpy, etc, to read sequence based input
+    """Wrapper function to read sequences based on file extension.
 
     Parameters
     ----------
@@ -616,7 +623,7 @@ def read(seq_file, *args, **kwargs):
 
 
 def write_csv(sdata, filename, target_key=None, delim="\t"):
-    r"""Function for writing sequences to csv files.
+    r"""Write sequences from SeqData to csv files.
 
     Parameters
     ----------
@@ -635,7 +642,7 @@ def write_csv(sdata, filename, target_key=None, delim="\t"):
 
 
 def write_fasta(sdata, filename):
-    """Function for writing sequences to fasta files.
+    """Write sequences from SeqData to fasta files.
 
     Parameters
     ----------
@@ -651,7 +658,7 @@ def write_fasta(sdata, filename):
 
 
 def write_numpy(sdata, filename, ohe=False, target_key=None):
-    """Function for writing sequences to numpy files.
+    """Write sequences from SeqData to numpy files.
 
     Parameters
     ----------
@@ -748,7 +755,7 @@ def write_h5sd(sdata, filename: Optional[PathLike] = None, mode: str = "w"):
 
 
 def write(sdata, filename, *args, **kwargs):
-    """Wrapper function around write_csv, write_fasta, write_numpy to write sequence based input.
+    """Wrapper function to write SeqData objects to various file types.
 
     Parameters
     ----------

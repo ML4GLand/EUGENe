@@ -8,7 +8,7 @@ from ..._settings import settings
 
 class SeqDataset(Dataset):
     """
-    Sequence based PyTorch dataset definition.
+    PyTorch dataset definition for sequences.
 
     Parameters
     ----------
@@ -97,7 +97,7 @@ class SeqDataset(Dataset):
         sample = np.array([name, seq, rev_seq, target], dtype=object)
         if self.transform:
             sample = self.transform(sample)
-        
+
         return sample
 
     def to_dataloader(

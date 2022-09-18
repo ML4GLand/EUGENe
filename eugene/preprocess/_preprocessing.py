@@ -7,13 +7,10 @@ from ..utils._decorators import track
 
 
 @track
-def sanitize_seqs_sdata(
-    sdata: SeqData, 
-    copy=False
-) -> SeqData:
+def sanitize_seqs_sdata(sdata: SeqData, copy=False) -> SeqData:
     """
     Sanitize sequences in SeqData object.
-    
+
     Parameters
     ----------
     sdata : SeqData
@@ -45,7 +42,9 @@ def ohe_seqs_sdata(
     copy=False,
     **kwargs,
 ) -> SeqData:
-    """One-hot encode sequences.
+    """
+    One-hot encode sequences in SeqData object.
+
     Parameters
     ----------
     sdata : SeqData
@@ -91,12 +90,11 @@ def ohe_seqs_sdata(
 
 @track
 def reverse_complement_seqs_sdata(
-    sdata: SeqData, 
-    vocab="DNA", 
-    rc_seqs=False, 
-    copy=False
+    sdata: SeqData, vocab="DNA", rc_seqs=False, copy=False
 ) -> SeqData:
-    """Reverse complement one hot encoded sequences.
+    """
+    Reverse complement sequences in SeqData object.
+
     Parameters
     ----------
     sdata : SeqData
@@ -130,7 +128,8 @@ def clean_nan_targets_sdata(
     fill_value=np.nan,
     copy=False,
 ):
-    """Remove targets with excessive NaN values.
+    """
+    Remove targets with excessive NaN values in a SeqData object.
 
     Parameters
     ----------
@@ -180,7 +179,7 @@ def clamp_targets_sdata(
     copy=False,
 ) -> SeqData:
     """
-    Clamp targets to a given percentile if they are above that percentile.
+    Clamp targets to a given percentile if they are above that percentile in a SeqData object.
 
     Parameters
     ----------
@@ -198,13 +197,13 @@ def clamp_targets_sdata(
         Whether to store the clamp numbers in the SeqData object, by default False
     copy : bool, optional
         Whether to return a copy of the SeqData object, by default False
-    
+
     Returns
     -------
     SeqData
         SeqData object with clamped targets. If copy is True, a copy of the SeqData
         object is returned, else the original SeqData object is modified in place.
-    """    
+    """
     sdata = sdata.copy() if copy else sdata
     if type(target_keys) is str:
         target_keys = [target_keys]
@@ -221,8 +220,10 @@ def clamp_targets_sdata(
     else:
         assert len(clamp_nums) == len(target_keys)
     sdata.seqs_annot[
-            [f"{target_key}_clamped" for target_key in target_keys] if suffix else target_keys
-        ] = sdata.seqs_annot[target_keys].clip(upper=clamp_nums, axis=1)
+        [f"{target_key}_clamped" for target_key in target_keys]
+        if suffix
+        else target_keys
+    ] = sdata.seqs_annot[target_keys].clip(upper=clamp_nums, axis=1)
     if store_clamp_nums:
         sdata.uns["clamp_nums"] = clamp_nums
     return sdata if copy else None
@@ -239,7 +240,7 @@ def scale_targets_sdata(
     copy=False,
 ) -> SeqData:
     """
-    Scale targets to zero mean and unit variance.
+    Scale targets to zero mean and unit variance in a SeqData object.
 
     Parameters
     ----------
@@ -266,6 +267,7 @@ def scale_targets_sdata(
     """
     sdata = sdata.copy() if copy else sdata
     from sklearn.preprocessing import StandardScaler
+
     if type(target_keys) is str:
         target_keys = [target_keys]
     if train_key is not None:
@@ -282,7 +284,9 @@ def scale_targets_sdata(
     assert scaler.n_features_in_ == len(target_keys)
     # Remove _scaled to help with fragmentation?
     sdata.seqs_annot[
-        [f"{target_key}_scaled" for target_key in target_keys] if suffix else target_keys 
+        [f"{target_key}_scaled" for target_key in target_keys]
+        if suffix
+        else target_keys
     ] = scaler.transform(to_scale)
     if store_scaler:
         sdata.uns["scaler"] = scaler
@@ -300,7 +304,7 @@ def binarize_targets_sdata(
     **kwargs,
 ) -> SeqData:
     """
-    Binarize target values based on passed in thresholds.
+    Binarize target values based on passed in thresholds in a SeqData object.
 
     Parameters
     ----------
@@ -314,7 +318,7 @@ def binarize_targets_sdata(
         Lower threshold to binarize, by default None
     copy : bool, optional
         Whether to return a copy of the SeqData object, by default False
-    
+
     Returns
     -------
     SeqData
@@ -323,26 +327,34 @@ def binarize_targets_sdata(
     """
     sdata = sdata.copy() if copy else sdata
     if type(target_keys) is str:
-        target_keys = [target_keys]   
+        target_keys = [target_keys]
     for target_key in target_keys:
         sdata.seqs_annot[
             f"{target_key}_binarized" if suffix else target_key
-        ] = binarize_values(sdata[target_key], upper_threshold, lower_threshold, **kwargs)
+        ] = binarize_values(
+            sdata[target_key], upper_threshold, lower_threshold, **kwargs
+        )
     return sdata if copy else None
 
 
 @track
 def train_test_split_sdata(
-    sdata: SeqData, 
-    train_key="train_val", 
-    chr=None, 
-    copy=False, 
-    **kwargs
+    sdata: SeqData, train_key="train_val", chr=None, copy=False, **kwargs
 ) -> SeqData:
-    """Train test split.
+    """
+    Train test split a SeqData object.
+
     Parameters
     ----------
-    sdata : SeqData"""
+    sdata : SeqData
+        SeqData object.
+    train_key : str, optional
+        Key to use for train/val split, by default "train_val"
+    chr : str, optional
+        Chromosome to use for train/val split, by default None
+    copy : bool, optional
+        Whether to return a copy of the SeqData object, by default False
+    """
     sdata = sdata.copy() if copy else sdata
     if chr is not None:
         chr = [chr] if isinstance(chr, str) else chr
@@ -358,16 +370,20 @@ def train_test_split_sdata(
 
 @track
 def add_ranges_pos_annot(
-    sdata: SeqData, 
-    chr_delim=":", 
-    rng_delim="-", 
-    copy=False
+    sdata: SeqData, chr_delim=":", rng_delim="-", copy=False
 ) -> SeqData:
-    """Add position annotation.
+    """
+    Add position annotations to a SeqData object.
+
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
+    chr_delim : str, optional
+        Delimiter to use for chromosome, by default ":"
+    rng_delim : str, optional
+        Delimiter to use for range, by default "-"
+
     Returns
     -------
     SeqData
@@ -393,14 +409,16 @@ def prepare_seqs_sdata(
     copy=False,
 ) -> SeqData:
     """
-    Prepare sequences for modeling.
-    
+    Wrapper functions to run multiple preprocessing steps at once
+    that prepare most SeqData objects for modeling.
+
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
     steps : list, optional
         List of steps to perform, by default ["one_hot_encode", "reverse_complement", "train_test_split"]
+
     Returns
     -------
     SeqData

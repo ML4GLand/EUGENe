@@ -8,7 +8,7 @@ from os import PathLike
 from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
-from copy import copy, deepcopy
+from copy import deepcopy
 from ._SeqDataset import SeqDataset
 
 
@@ -32,7 +32,7 @@ except ImportError:
 
 class SeqData:
     """
-    SeqData object used to store data.
+    SeqData object used to store data for EUGENe workflows.
 
     Parameters
     ----------
@@ -62,6 +62,7 @@ class SeqData:
     sdata : SeqData
         SeqData object.
     """
+
     def __init__(
         self,
         seqs: np.ndarray = None,
@@ -298,11 +299,9 @@ class SeqData:
                     descr += f"\n{attr}: None"
         return descr
 
-
     def copy(self):
-        """Return a copy of the object."""
+        """Return a copy of the SeqData object."""
         return deepcopy(self)
-
 
     def write_h5sd(self, path: PathLike, mode: str = "w"):
         """Write SeqData object to h5sd file.
@@ -319,9 +318,9 @@ class SeqData:
         self,
         target_keys: Union[str, List[str]] = None,
         seq_transforms: List[str] = None,
-        transform_kwargs: dict = {}
+        transform_kwargs: dict = {},
     ) -> SeqDataset:
-        """Convert SeqData object to SeqDataset.
+        """Convert SeqData object to SeqDataset PyTorch dataset.
 
         Parameters
         ----------
@@ -343,7 +342,7 @@ class SeqData:
         if target_keys is None:
             targs = None
         else:
-            targs = self.seqs_annot[target_keys].values  
+            targs = self.seqs_annot[target_keys].values
 
         if seq_transforms is None:
             print("No transforms given, assuming just need to tensorize.")

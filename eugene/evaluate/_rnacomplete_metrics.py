@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from itertools import product
 from tqdm.auto import tqdm
+
 tqdm.pandas()
 from sklearn.metrics import auc
 from sklearn.metrics import r2_score
@@ -12,6 +13,12 @@ from ._metrics import median_calc, auc_calc, escore
 
 
 def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=False):
+    """
+    Calculate the RNAcomplete metrics for a set of kmers and intensities.
+
+    Parameters
+    ----------
+    """
     y_score = intensities
     df = pd.DataFrame(kmer_presence_mtx).astype(np.int8)
     if verbose:
@@ -68,7 +75,13 @@ def rnacomplete_metrics_sdata_plot(
     preds_suffix="_predictions",
     **kwargs,
 ):
+    """
+    Calculate the RNAcomplete metrics for a set of kmers and intensities in a SeqData object.
 
+    Parameters
+    ----------
+
+    """
     observed = sdata[target_key].values
     preds = sdata[f"{target_key}{preds_suffix}"].values
 
@@ -185,7 +198,6 @@ def rnacomplete_metrics_sdata_plot(
     plt.tight_layout()
 
 
-
 def rnacomplete_metrics_sdata_table(
     sdata,
     kmer_presence_mtx,
@@ -195,6 +207,9 @@ def rnacomplete_metrics_sdata_table(
     preds_suffix="_predictions",
     **kwargs,
 ):
+    """
+    Generate a table of RNAcomplete metrics for a list of target keys.
+    """
     if isinstance(target_keys, str):
         target_keys = [target_keys]
     spearman_summary = pd.DataFrame()

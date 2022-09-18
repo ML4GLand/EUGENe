@@ -9,6 +9,44 @@ mode_dict = {"dna": 1, "rbp": 2}
 
 
 class DeepBind(BaseModel):
+    """
+    DeepBind model
+
+    :class DeepBind is a model that takes in a DNA sequence and outputs a
+    probability of binding for a given transcription factor.
+
+    Parameters
+    ----------
+    input_len : int
+        Length of input sequence
+    output_dim : int
+        Number of output classes
+    mode : str
+        Mode of model, either "dna" or "rbp"
+    strand : str
+        Strand of model, either "ss", "ds", or "ts"
+    task : str
+        Task of model, either "regression" or "classification"
+    aggr : str
+        Aggregation method of model, either "max" or "avg"
+    loss_fxn : str
+        Loss function of model, either "mse" or "cross_entropy"
+    optimizer : str
+        Optimizer of model, either "adam" or "sgd"
+    lr : float
+        Learning rate of model
+    scheduler : str
+        Scheduler of model, either "lr_scheduler" or "plateau"
+    scheduler_patience : int
+        Scheduler patience of model
+    mp_kwargs : dict
+        Keyword arguments for multiprocessing
+    conv_kwargs : dict
+        Keyword arguments for convolutional layers
+    fc_kwargs : dict
+        Keyword arguments for fully connected layers
+    """
+
     def __init__(
         self,
         input_len,
@@ -164,13 +202,21 @@ class DeepSEA(BaseModel):
     ):
         """
         Generates a PyTorch module with architecture matching the convnet part of DeepSea. Default parameters are those specified in the DeepSea paper
+
+        :class:`DeepSEA <DeepSEA>`.
+
         Parameters
         ----------
-        input_len : int, input sequence length
-        channels : list-like or int, channel width for each conv layer. If int each of the three layers will be the same channel width
-        conv_kernels : list-like or int, conv kernel size for each conv layer. If int will be the same for all conv layers
-        pool_kernels : list-like or int, maxpooling kernel size for the first two conv layers. If int will be the same for all conv layers
-        dropout_rates : list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
+        input_len:
+            int, input sequence length
+        channels:
+            list-like or int, channel width for each conv layer. If int each of the three layers will be the same channel width
+        conv_kernels:
+            list-like or int, conv kernel size for each conv layer. If int will be the same for all conv layers
+        pool_kernels:
+            list-like or int, maxpooling kernel size for the first two conv layers. If int will be the same for all conv layers
+        dropout_rates:
+            list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
         """
         super().__init__(input_len, output_dim, strand, task, aggr)
         self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)

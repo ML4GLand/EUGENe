@@ -15,13 +15,21 @@ class FCN(BaseModel):
         **kwargs
     ):
         """Initialize the FCN model.
-        Args:
-            input_len: The length of the input sequence.
-            output_dim: The dimension of the output.
-            strand: The strand of the model.
-            task: The task of the model.
-            aggr: The aggregation function.
-            fc_kwargs: The keyword arguments for the fully connected layer.
+
+        Parameters
+        ----------
+        input_len:
+            The length of the input sequence.
+        output_dim:
+            The dimension of the output.
+        strand:
+            The strand of the model.
+        task:
+            The task of the model.
+        aggr:
+            The aggregation function.
+        fc_kwargs:
+            The keyword arguments for the fully connected layer.
         """
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         self.flattened_input_dims = 4 * input_len
@@ -73,14 +81,21 @@ class CNN(BaseModel):
         **kwargs
     ):
         """Initialize the CNN model.
-        Args:
-            input_len: The length of the input sequence.
-            output_dim: The dimension of the output.
-            conv_kwargs: The keyword arguments for the convolutional layer.
-            strand: The strand of the model.
-            task: The task of the model.
-            aggr: The aggregation function.
-            fc_kwargs: The keyword arguments for the fully connected layer.
+
+        Parameters
+        ----------
+        input_len:
+            The length of the input sequence.
+        output_dim:
+            The dimension of the output.
+        strand:
+            The strand of the model.
+        task:
+            The task of the model.
+        aggr:
+            The aggregation function.
+        fc_kwargs:
+            The keyword arguments for the fully connected layer.
         """
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
@@ -133,14 +148,21 @@ class RNN(BaseModel):
         **kwargs
     ):
         """Initialize the RNN model.
-        Args:
-            input_len: The length of the input sequence.
-            output_dim: The dimension of the output.
-            rnn_kwargs: The keyword arguments for the RNN layer.
-            strand: The strand of the model.
-            task: The task of the model.
-            aggr: The aggregation function.
-            fc_kwargs: The keyword arguments for the fully connected layer.
+
+        Parameters
+        ----------
+        input_len:
+            The length of the input sequence.
+        output_dim:
+            The dimension of the output.
+        strand:
+            The strand of the model.
+        task:
+            The task of the model.
+        aggr:
+            The aggregation function.
+        fc_kwargs:
+            The keyword arguments for the fully connected layer.
         """
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
@@ -178,15 +200,21 @@ class RNN(BaseModel):
 class Hybrid(BaseModel):
     """
     The hybrid model.
-    Args:
-        input_len: The length of the input sequence.
-        output_dim: The dimension of the output.
-        conv_kwargs: The keyword arguments for the convolutional layer.
-        rnn_kwargs: The keyword arguments for the RNN layer.
-        strand: The strand of the model.
-        task: The task of the model.
-        aggr: The aggregation function.
-        fc_kwargs: The keyword arguments for the fully connected layer.
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    strand:
+        The strand of the model.
+    task:
+        The task of the model.
+    aggr:
+        The aggregation function.
+    fc_kwargs:
+        The keyword arguments for the fully connected layer.
     """
 
     def __init__(

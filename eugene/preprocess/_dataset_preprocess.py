@@ -5,7 +5,9 @@ from sklearn.model_selection import train_test_split
 
 def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
     """
-    Function to perform train test splitting with added bonus of defining a subset for testing
+    Function to perform train test splitting
+
+    Wraps sklearn train_test_split function with allowance for a subset of the data to be used
 
     Parameters
     ----------
@@ -36,7 +38,20 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
 
 
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
-    """Function to standardize features based on passed in indeces and optionally save stats"""
+    """
+    Function to standardize features based on passed in indeces and optionally save stats
+
+    Parameters
+    ----------
+    train_X: numpy.ndarray
+        The training data
+    test_X: numpy.ndarray
+        The testing data
+    indeces: list of int, optional
+        The indeces of the features to standardize
+    stats_file: str, optional
+        The file to save the stats to
+    """
     if indeces is not None:
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
@@ -61,8 +76,19 @@ def standardize_features(train_X, test_X, indeces=None, stats_file=None):
     return train_X_scaled, test_X_scaled
 
 
-# Remove sequences in the middle range. TODO: Add this to EUGENe.
 def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
+    """
+    Function to binarize values based on thresholds
+
+    Parameters
+    ----------
+    values: numpy.ndarray
+        The values to binarize
+    upper_threshold: float, optional
+        The upper threshold to use
+    lower_threshold: float, optional
+        The lower threshold to use
+    """
     bin_values = np.where(values > upper_threshold, 1, np.nan)
     if lower_threshold is not None:
         bin_values = np.where(values < lower_threshold, 0, bin_values)

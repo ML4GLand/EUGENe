@@ -4,12 +4,26 @@ from pyjaspar import jaspardb
 import pyranges as pr
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
-#from ...utils import track
+from ...utils import track
 
 
 def get_jaspar_motifs(
     motif_accs=None, motif_names=None, collection=None, release="JASPAR2022"
 ):
+    """
+    Get and return motifs from JASPAR database
+
+    Parameters
+    ----------
+    motif_accs : list of str, optional
+        List of motif accessions, by default None
+    motif_names : list of str, optional
+        List of motif names, by default None
+    collection : str, optional
+        Collection name, by default None
+    release : str, optional
+        JASPAR release, by default "JASPAR2020"
+    """
     assert (
         motif_accs or motif_names or collection
     ), "Must provide either motif_accs, motif_names, or collection"
@@ -28,6 +42,16 @@ def get_jaspar_motifs(
 
 
 def save_motifs_as_meme(jaspar_motifs, filename):
+    """
+    Save motifs as MEME file
+
+    Parameters
+    ----------
+    jaspar_motifs : list of pyjaspar.core.Motif
+        List of JASPAR motifs
+    filename : str
+        Output filename
+    """
     meme_file = open(filename, "w")
     meme_file.write("MEME version 4 \n")
     print(f"Saved PWM File as : {filename}")
@@ -58,6 +82,21 @@ def save_motifs_as_meme(jaspar_motifs, filename):
 
 
 def load_meme(filename):
+    """
+    Load MEME file
+
+    Parameters
+    ----------
+    filename : str
+        MEME filename
+
+    Returns
+    -------
+    list of pymemesuite.motif.Motif
+        List of motifs
+    pymemesuite.background.Background
+        Background
+    """
     memesuite_motifs = []
     with MotifFile(filename) as motif_file:
         for motif in motif_file:
@@ -67,6 +106,23 @@ def load_meme(filename):
 
 
 def fimo_motifs(sdata, pymeme_motifs, background):
+    """
+    Run FIMO on a list of motifs
+
+    Parameters
+    ----------
+    sdata : eugene.data.SeqData
+        SeqData object
+    pymeme_motifs : list of pymemesuite.motif.Motif
+        List of motifs
+    background : pymemesuite.background.Background
+        Background
+
+    Returns
+    -------
+    list of list
+        List of FIMO scores
+    """
     pymeme_seqs = [
         Sequence(str(seq), name.encode()) for seq, name in zip(sdata.seqs, sdata.names)
     ]
@@ -99,6 +155,24 @@ def score_seqs(
     release="JASPAR2020",
     filename="motifs.meme",
 ):
+    """
+    Score sequences with JASPAR motifs
+
+    Parameters
+    ----------
+    sdata : eugene.data.SeqData
+        SeqData object
+    motif_accs : list of str, optional
+        List of motif accessions, by default None
+    motif_names : list of str, optional
+        List of motif names, by default None
+    collection : str, optional
+        Collection name, by default None
+    release : str, optional
+        JASPAR release, by default "JASPAR2020"
+    filename : str, optional
+        MEME filename, by default "motifs.meme"
+    """
     assert (
         motif_accs or motif_names or collection
     ), "Must provide either motif_accs, motif_names, or collection"
@@ -130,7 +204,7 @@ def score_seqs(
     return dataframe
 
 
-# @track
+@track
 def jaspar_annots_sdata(
     sdata,
     motif_accs=None,
@@ -140,6 +214,31 @@ def jaspar_annots_sdata(
     filename="motifs.meme",
     copy=False,
 ):
+    """
+    Annotate SeqData with JASPAR motifs
+
+    Parameters
+    ----------
+    sdata : eugene.data.SeqData
+        SeqData object
+    motif_accs : list of str, optional
+        List of motif accessions, by default None
+    motif_names : list of str, optional
+        List of motif names, by default None
+    collection : str, optional
+        Collection name, by default None
+    release : str, optional
+        JASPAR release, by default "JASPAR2020"
+    filename : str, optional
+        MEME filename, by default "motifs.meme"
+    copy : bool, optional
+        Copy SeqData, by default False
+
+    Returns
+    -------
+    eugene.data.SeqData
+        SeqData object
+    """
     sdata = sdata.copy() if copy else sdata
     sdata.pos_annot = score_seqs(
         sdata,
