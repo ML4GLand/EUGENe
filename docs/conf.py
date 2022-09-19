@@ -19,7 +19,7 @@ suppress_warnings = [
 project = "EUGENe"
 copyright = "2022, Adam Klie, Hayden Stites"
 author = "Adam Klie, Hayden Stites"
-release = "0.0.0"
+release = "0.0.4"
 
 # default settings
 templates_path = ["_templates"]
@@ -36,8 +36,11 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
     "myst_parser",
+    "nbsphinx",
+    "sphinx_gallery.load_style",
 ]
 
 autosummary_generate = True
@@ -54,5 +57,9 @@ api_dir = HERE / "api"  # function_images
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
+html_title = "EUGENe"
 html_static_path = ["_static"]
 html_show_sphinx = False
+
+# -- Options for extensions -------------------------------------------------------------------------------
+nbsphinx_execute = "never"

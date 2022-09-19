@@ -5,14 +5,14 @@
 
 .. autoclass:: DeepSEA
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~DeepSEA.__init__
       ~DeepSEA.add_module
       ~DeepSEA.add_to_queue
@@ -154,15 +154,15 @@
       ~DeepSEA.validation_step_end
       ~DeepSEA.xpu
       ~DeepSEA.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~DeepSEA.CHECKPOINT_HYPER_PARAMS_KEY
       ~DeepSEA.CHECKPOINT_HYPER_PARAMS_NAME
       ~DeepSEA.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -184,3 +184,5 @@
       ~DeepSEA.on_gpu
       ~DeepSEA.truncated_bptt_steps
       ~DeepSEA.training
+   
+   

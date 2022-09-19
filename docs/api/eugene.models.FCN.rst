@@ -5,14 +5,14 @@
 
 .. autoclass:: FCN
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~FCN.__init__
       ~FCN.add_module
       ~FCN.add_to_queue
@@ -153,15 +153,15 @@
       ~FCN.validation_step_end
       ~FCN.xpu
       ~FCN.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~FCN.CHECKPOINT_HYPER_PARAMS_KEY
       ~FCN.CHECKPOINT_HYPER_PARAMS_NAME
       ~FCN.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~FCN.on_gpu
       ~FCN.truncated_bptt_steps
       ~FCN.training
+   
+   

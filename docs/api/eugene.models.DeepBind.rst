@@ -5,14 +5,14 @@
 
 .. autoclass:: DeepBind
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~DeepBind.__init__
       ~DeepBind.add_module
       ~DeepBind.add_to_queue
@@ -154,15 +154,15 @@
       ~DeepBind.validation_step_end
       ~DeepBind.xpu
       ~DeepBind.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~DeepBind.CHECKPOINT_HYPER_PARAMS_KEY
       ~DeepBind.CHECKPOINT_HYPER_PARAMS_NAME
       ~DeepBind.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -184,3 +184,5 @@
       ~DeepBind.on_gpu
       ~DeepBind.truncated_bptt_steps
       ~DeepBind.training
+   
+   

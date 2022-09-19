@@ -5,14 +5,14 @@
 
 .. autoclass:: CNN
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~CNN.__init__
       ~CNN.add_module
       ~CNN.add_to_queue
@@ -153,15 +153,15 @@
       ~CNN.validation_step_end
       ~CNN.xpu
       ~CNN.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~CNN.CHECKPOINT_HYPER_PARAMS_KEY
       ~CNN.CHECKPOINT_HYPER_PARAMS_NAME
       ~CNN.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~CNN.on_gpu
       ~CNN.truncated_bptt_steps
       ~CNN.training
+   
+   

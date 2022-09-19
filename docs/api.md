@@ -16,7 +16,7 @@ import eugene as eu
 ```
 
 ```{note}
-EUGENe is a package that is still active development, so you will likely run into errors and small typos if you choose to use hdWGCNA before its first stable release.
+EUGENe is a package that is still active development, so there's a good chance you'll hit an error to if you use EUGENe before its first stable release.
 ```
 
 ## Datasets

@@ -7,22 +7,12 @@
     :caption: This is a thumbnail gallery:
     :glob:
 
-    ../tutorials/single_task_regression
-    ../tutorials/binary_classification_tutorial
-    ../tutorials/multi_task_tutorial
-    ../tutorials/multiclass_classification
+    tutorials/basic_workflows/single_task_regression_tutorial
+    tutorials/basic_workflows/binary_classification_tutorial
+    tutorials/basic_workflows/multitask_regression_tutorial
+    tutorials/basic_workflows/multiclass_classification_tutorial
 ```
 
 ## Advanced Topics
 
 Coming soon!
-
-### Working with MEME files
-
-### Reading BED, BAM, and BigWig with Janggu
-
-### Benchmarking Kipoi models
-
-### Preprocessing
-
-### Visualization

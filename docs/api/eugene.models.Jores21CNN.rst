@@ -5,14 +5,14 @@
 
 .. autoclass:: Jores21CNN
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~Jores21CNN.__init__
       ~Jores21CNN.add_module
       ~Jores21CNN.add_to_queue
@@ -153,15 +153,15 @@
       ~Jores21CNN.validation_step_end
       ~Jores21CNN.xpu
       ~Jores21CNN.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~Jores21CNN.CHECKPOINT_HYPER_PARAMS_KEY
       ~Jores21CNN.CHECKPOINT_HYPER_PARAMS_NAME
       ~Jores21CNN.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~Jores21CNN.on_gpu
       ~Jores21CNN.truncated_bptt_steps
       ~Jores21CNN.training
+   
+   

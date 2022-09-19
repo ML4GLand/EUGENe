@@ -5,14 +5,14 @@
 
 .. autoclass:: Kopp21CNN
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~Kopp21CNN.__init__
       ~Kopp21CNN.add_module
       ~Kopp21CNN.add_to_queue
@@ -153,15 +153,15 @@
       ~Kopp21CNN.validation_step_end
       ~Kopp21CNN.xpu
       ~Kopp21CNN.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~Kopp21CNN.CHECKPOINT_HYPER_PARAMS_KEY
       ~Kopp21CNN.CHECKPOINT_HYPER_PARAMS_NAME
       ~Kopp21CNN.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~Kopp21CNN.on_gpu
       ~Kopp21CNN.truncated_bptt_steps
       ~Kopp21CNN.training
+   
+   

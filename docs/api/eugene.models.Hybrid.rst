@@ -5,14 +5,14 @@
 
 .. autoclass:: Hybrid
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~Hybrid.__init__
       ~Hybrid.add_module
       ~Hybrid.add_to_queue
@@ -153,15 +153,15 @@
       ~Hybrid.validation_step_end
       ~Hybrid.xpu
       ~Hybrid.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~Hybrid.CHECKPOINT_HYPER_PARAMS_KEY
       ~Hybrid.CHECKPOINT_HYPER_PARAMS_NAME
       ~Hybrid.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~Hybrid.on_gpu
       ~Hybrid.truncated_bptt_steps
       ~Hybrid.training
+   
+   

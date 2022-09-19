@@ -5,14 +5,14 @@
 
 .. autoclass:: RNN
 
-
+   
    .. automethod:: __init__
 
-
+   
    .. rubric:: Methods
 
    .. autosummary::
-
+   
       ~RNN.__init__
       ~RNN.add_module
       ~RNN.add_to_queue
@@ -153,15 +153,15 @@
       ~RNN.validation_step_end
       ~RNN.xpu
       ~RNN.zero_grad
+   
+   
 
-
-
-
-
+   
+   
    .. rubric:: Attributes
 
    .. autosummary::
-
+   
       ~RNN.CHECKPOINT_HYPER_PARAMS_KEY
       ~RNN.CHECKPOINT_HYPER_PARAMS_NAME
       ~RNN.CHECKPOINT_HYPER_PARAMS_TYPE
@@ -183,3 +183,5 @@
       ~RNN.on_gpu
       ~RNN.truncated_bptt_steps
       ~RNN.training
+   
+   
