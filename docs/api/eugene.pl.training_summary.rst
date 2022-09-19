@@ -1,6 +1,12 @@
-﻿eugene.pl.training\_summary
+﻿:github_url: eugene.pl.training_summary
+
+eugene.pl.training\_summary
 ===========================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.training_summary
 
-.. autofunction:: pl.training_summary
+.. _sphx_glr_backref_eugene.pl.training_summary:
+
+.. minigallery:: eugene.pl.training_summary
+   :add-heading: Gallery
+   :heading-level: -

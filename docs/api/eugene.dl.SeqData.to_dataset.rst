@@ -1,4 +1,6 @@
-﻿eugene.dl.SeqData.to\_dataset
+﻿:github_url: eugene.dl.SeqData.to_dataset
+
+eugene.dl.SeqData.to\_dataset
 =============================
 
 .. currentmodule:: eugene

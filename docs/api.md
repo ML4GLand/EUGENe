@@ -43,7 +43,7 @@ You can get a list of available datasets returned as a `pandas.DataFrame` using 
 
 ## Dataload `dl`
 
-This module is designed to handle both the loading of data into Python objects and the compilation of those objects into Dlers for neural network training. This module is fundamental for the package and handles both the extraction and load aspects of the extract-transform-load steps.
+This module is designed to handle both the loading of data into Python objects and the compilation of those objects into dataloaders for neural network training. This module is fundamental for the package and handles both the extraction and load aspects of the extract-transform-load steps.
 
 ### Input/Output (IO)
 

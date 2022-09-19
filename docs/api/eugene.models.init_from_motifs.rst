@@ -1,6 +1,12 @@
-﻿eugene.models.init\_from\_motifs
+﻿:github_url: eugene.models.init_from_motifs
+
+eugene.models.init\_from\_motifs
 ================================
 
-.. currentmodule:: eugene.models
+.. autofunction:: eugene.models.init_from_motifs
 
-.. autofunction:: init_from_motifs
+.. _sphx_glr_backref_eugene.models.init_from_motifs:
+
+.. minigallery:: eugene.models.init_from_motifs
+   :add-heading: Gallery
+   :heading-level: -

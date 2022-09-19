@@ -1,6 +1,12 @@
-﻿eugene.pl.metric\_curve
+﻿:github_url: eugene.pl.metric_curve
+
+eugene.pl.metric\_curve
 =======================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.metric_curve
 
-.. autofunction:: pl.metric_curve
+.. _sphx_glr_backref_eugene.pl.metric_curve:
+
+.. minigallery:: eugene.pl.metric_curve
+   :add-heading: Gallery
+   :heading-level: -

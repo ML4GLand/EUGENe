@@ -1,6 +1,12 @@
-﻿eugene.pp.sanitize\_seqs\_sdata
+﻿:github_url: eugene.pp.sanitize_seqs_sdata
+
+eugene.pp.sanitize\_seqs\_sdata
 ===============================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.sanitize_seqs_sdata
 
-.. autofunction:: pp.sanitize_seqs_sdata
+.. _sphx_glr_backref_eugene.pp.sanitize_seqs_sdata:
+
+.. minigallery:: eugene.pp.sanitize_seqs_sdata
+   :add-heading: Gallery
+   :heading-level: -

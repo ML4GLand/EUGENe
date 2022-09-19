@@ -1,6 +1,12 @@
-﻿eugene.utils.random\_base
+﻿:github_url: eugene.utils.random_base
+
+eugene.utils.random\_base
 =========================
 
-.. currentmodule:: eugene.utils
+.. autofunction:: eugene.utils.random_base
 
-.. autofunction:: random_base
+.. _sphx_glr_backref_eugene.utils.random_base:
+
+.. minigallery:: eugene.utils.random_base
+   :add-heading: Gallery
+   :heading-level: -

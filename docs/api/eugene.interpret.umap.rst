@@ -1,6 +1,12 @@
-﻿eugene.interpret.umap
+﻿:github_url: eugene.interpret.umap
+
+eugene.interpret.umap
 =====================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.umap
 
-.. autofunction:: umap
+.. _sphx_glr_backref_eugene.interpret.umap:
+
+.. minigallery:: eugene.interpret.umap
+   :add-heading: Gallery
+   :heading-level: -

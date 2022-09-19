@@ -1,6 +1,12 @@
-﻿eugene.pl.loss\_curve
+﻿:github_url: eugene.pl.loss_curve
+
+eugene.pl.loss\_curve
 =====================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.loss_curve
 
-.. autofunction:: pl.loss_curve
+.. _sphx_glr_backref_eugene.pl.loss_curve:
+
+.. minigallery:: eugene.pl.loss_curve
+   :add-heading: Gallery
+   :heading-level: -

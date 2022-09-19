@@ -1,6 +1,12 @@
-﻿eugene.utils.random\_seq
+﻿:github_url: eugene.utils.random_seq
+
+eugene.utils.random\_seq
 ========================
 
-.. currentmodule:: eugene.utils
+.. autofunction:: eugene.utils.random_seq
 
-.. autofunction:: random_seq
+.. _sphx_glr_backref_eugene.utils.random_seq:
+
+.. minigallery:: eugene.utils.random_seq
+   :add-heading: Gallery
+   :heading-level: -

@@ -1,6 +1,12 @@
-﻿eugene.dl.write\_fasta
+﻿:github_url: eugene.dl.write_fasta
+
+eugene.dl.write\_fasta
 ======================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.dl.write_fasta
 
-.. autofunction:: dl.write_fasta
+.. _sphx_glr_backref_eugene.dl.write_fasta:
+
+.. minigallery:: eugene.dl.write_fasta
+   :add-heading: Gallery
+   :heading-level: -

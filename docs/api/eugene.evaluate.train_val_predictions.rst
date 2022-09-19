@@ -1,6 +1,12 @@
-﻿eugene.evaluate.train\_val\_predictions
+﻿:github_url: eugene.evaluate.train_val_predictions
+
+eugene.evaluate.train\_val\_predictions
 =======================================
 
-.. currentmodule:: eugene.evaluate
+.. autofunction:: eugene.evaluate.train_val_predictions
 
-.. autofunction:: train_val_predictions
+.. _sphx_glr_backref_eugene.evaluate.train_val_predictions:
+
+.. minigallery:: eugene.evaluate.train_val_predictions
+   :add-heading: Gallery
+   :heading-level: -

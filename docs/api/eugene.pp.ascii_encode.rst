@@ -1,6 +1,12 @@
-﻿eugene.pp.ascii\_encode
+﻿:github_url: eugene.pp.ascii_encode
+
+eugene.pp.ascii\_encode
 =======================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.ascii_encode
 
-.. autofunction:: pp.ascii_encode
+.. _sphx_glr_backref_eugene.pp.ascii_encode:
+
+.. minigallery:: eugene.pp.ascii_encode
+   :add-heading: Gallery
+   :heading-level: -

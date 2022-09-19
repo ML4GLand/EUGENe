@@ -1,6 +1,12 @@
-﻿eugene.pp.scale\_targets\_sdata
+﻿:github_url: eugene.pp.scale_targets_sdata
+
+eugene.pp.scale\_targets\_sdata
 ===============================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.scale_targets_sdata
 
-.. autofunction:: pp.scale_targets_sdata
+.. _sphx_glr_backref_eugene.pp.scale_targets_sdata:
+
+.. minigallery:: eugene.pp.scale_targets_sdata
+   :add-heading: Gallery
+   :heading-level: -

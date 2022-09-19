@@ -1,6 +1,12 @@
-﻿eugene.pl.lm\_multifilter\_viz
+﻿:github_url: eugene.pl.lm_multifilter_viz
+
+eugene.pl.lm\_multifilter\_viz
 ==============================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.lm_multifilter_viz
 
-.. autofunction:: pl.lm_multifilter_viz
+.. _sphx_glr_backref_eugene.pl.lm_multifilter_viz:
+
+.. minigallery:: eugene.pl.lm_multifilter_viz
+   :add-heading: Gallery
+   :heading-level: -

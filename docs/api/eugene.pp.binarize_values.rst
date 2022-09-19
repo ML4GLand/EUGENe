@@ -1,6 +1,12 @@
-﻿eugene.pp.binarize\_values
+﻿:github_url: eugene.pp.binarize_values
+
+eugene.pp.binarize\_values
 ==========================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.binarize_values
 
-.. autofunction:: pp.binarize_values
+.. _sphx_glr_backref_eugene.pp.binarize_values:
+
+.. minigallery:: eugene.pp.binarize_values
+   :add-heading: Gallery
+   :heading-level: -

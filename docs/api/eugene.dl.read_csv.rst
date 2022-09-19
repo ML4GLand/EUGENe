@@ -1,6 +1,12 @@
-﻿eugene.dl.read\_csv
+﻿:github_url: eugene.dl.read_csv
+
+eugene.dl.read\_csv
 ===================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.dl.read_csv
 
-.. autofunction:: dl.read_csv
+.. _sphx_glr_backref_eugene.dl.read_csv:
+
+.. minigallery:: eugene.dl.read_csv
+   :add-heading: Gallery
+   :heading-level: -

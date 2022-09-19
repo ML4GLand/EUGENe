@@ -1,6 +1,12 @@
-﻿eugene.interpret.feature\_implant\_seqs\_sdata
+﻿:github_url: eugene.interpret.feature_implant_seqs_sdata
+
+eugene.interpret.feature\_implant\_seqs\_sdata
 ==============================================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.feature_implant_seqs_sdata
 
-.. autofunction:: feature_implant_seqs_sdata
+.. _sphx_glr_backref_eugene.interpret.feature_implant_seqs_sdata:
+
+.. minigallery:: eugene.interpret.feature_implant_seqs_sdata
+   :add-heading: Gallery
+   :heading-level: -

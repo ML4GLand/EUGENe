@@ -1,6 +1,12 @@
-﻿eugene.pl.pca
+﻿:github_url: eugene.pl.pca
+
+eugene.pl.pca
 =============
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.pca
 
-.. autofunction:: pl.pca
+.. _sphx_glr_backref_eugene.pl.pca:
+
+.. minigallery:: eugene.pl.pca
+   :add-heading: Gallery
+   :heading-level: -

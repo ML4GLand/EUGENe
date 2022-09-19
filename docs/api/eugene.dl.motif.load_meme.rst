@@ -1,6 +1,12 @@
-﻿eugene.dl.motif.load\_meme
+﻿:github_url: eugene.dl.motif.load_meme
+
+eugene.dl.motif.load\_meme
 ==========================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.dl.motif.load_meme
 
-.. autofunction:: dl.motif.load_meme
+.. _sphx_glr_backref_eugene.dl.motif.load_meme:
+
+.. minigallery:: eugene.dl.motif.load_meme
+   :add-heading: Gallery
+   :heading-level: -

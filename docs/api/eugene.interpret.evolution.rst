@@ -1,6 +1,12 @@
-﻿eugene.interpret.evolution
+﻿:github_url: eugene.interpret.evolution
+
+eugene.interpret.evolution
 ==========================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.evolution
 
-.. autofunction:: evolution
+.. _sphx_glr_backref_eugene.interpret.evolution:
+
+.. minigallery:: eugene.interpret.evolution
+   :add-heading: Gallery
+   :heading-level: -

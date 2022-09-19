@@ -1,6 +1,12 @@
-﻿eugene.pl.auroc
+﻿:github_url: eugene.pl.auroc
+
+eugene.pl.auroc
 ===============
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.auroc
 
-.. autofunction:: pl.auroc
+.. _sphx_glr_backref_eugene.pl.auroc:
+
+.. minigallery:: eugene.pl.auroc
+   :add-heading: Gallery
+   :heading-level: -

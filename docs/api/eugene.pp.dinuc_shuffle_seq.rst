@@ -1,6 +1,12 @@
-﻿eugene.pp.dinuc\_shuffle\_seq
+﻿:github_url: eugene.pp.dinuc_shuffle_seq
+
+eugene.pp.dinuc\_shuffle\_seq
 =============================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.dinuc_shuffle_seq
 
-.. autofunction:: pp.dinuc_shuffle_seq
+.. _sphx_glr_backref_eugene.pp.dinuc_shuffle_seq:
+
+.. minigallery:: eugene.pp.dinuc_shuffle_seq
+   :add-heading: Gallery
+   :heading-level: -

@@ -1,6 +1,12 @@
-﻿eugene.evaluate.escore
+﻿:github_url: eugene.evaluate.escore
+
+eugene.evaluate.escore
 ======================
 
-.. currentmodule:: eugene.evaluate
+.. autofunction:: eugene.evaluate.escore
 
-.. autofunction:: escore
+.. _sphx_glr_backref_eugene.evaluate.escore:
+
+.. minigallery:: eugene.evaluate.escore
+   :add-heading: Gallery
+   :heading-level: -

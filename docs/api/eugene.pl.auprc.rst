@@ -1,6 +1,12 @@
-﻿eugene.pl.auprc
+﻿:github_url: eugene.pl.auprc
+
+eugene.pl.auprc
 ===============
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.auprc
 
-.. autofunction:: pl.auprc
+.. _sphx_glr_backref_eugene.pl.auprc:
+
+.. minigallery:: eugene.pl.auprc
+   :add-heading: Gallery
+   :heading-level: -

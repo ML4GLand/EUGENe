@@ -1,6 +1,12 @@
-﻿eugene.evaluate.rnacomplete\_metrics
+﻿:github_url: eugene.evaluate.rnacomplete_metrics
+
+eugene.evaluate.rnacomplete\_metrics
 ====================================
 
-.. currentmodule:: eugene.evaluate
+.. autofunction:: eugene.evaluate.rnacomplete_metrics
 
-.. autofunction:: rnacomplete_metrics
+.. _sphx_glr_backref_eugene.evaluate.rnacomplete_metrics:
+
+.. minigallery:: eugene.evaluate.rnacomplete_metrics
+   :add-heading: Gallery
+   :heading-level: -

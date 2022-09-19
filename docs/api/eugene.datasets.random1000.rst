@@ -1,6 +1,12 @@
-﻿eugene.datasets.random1000
+﻿:github_url: eugene.datasets.random1000
+
+eugene.datasets.random1000
 ==========================
 
-.. currentmodule:: eugene.datasets
+.. autofunction:: eugene.datasets.random1000
 
-.. autofunction:: random1000
+.. _sphx_glr_backref_eugene.datasets.random1000:
+
+.. minigallery:: eugene.datasets.random1000
+   :add-heading: Gallery
+   :heading-level: -

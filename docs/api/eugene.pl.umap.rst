@@ -1,6 +1,12 @@
-﻿eugene.pl.umap
+﻿:github_url: eugene.pl.umap
+
+eugene.pl.umap
 ==============
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.umap
 
-.. autofunction:: pl.umap
+.. _sphx_glr_backref_eugene.pl.umap:
+
+.. minigallery:: eugene.pl.umap
+   :add-heading: Gallery
+   :heading-level: -

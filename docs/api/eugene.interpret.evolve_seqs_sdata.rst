@@ -1,6 +1,12 @@
-﻿eugene.interpret.evolve\_seqs\_sdata
+﻿:github_url: eugene.interpret.evolve_seqs_sdata
+
+eugene.interpret.evolve\_seqs\_sdata
 ====================================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.evolve_seqs_sdata
 
-.. autofunction:: evolve_seqs_sdata
+.. _sphx_glr_backref_eugene.interpret.evolve_seqs_sdata:
+
+.. minigallery:: eugene.interpret.evolve_seqs_sdata
+   :add-heading: Gallery
+   :heading-level: -

@@ -1,6 +1,12 @@
-﻿eugene.interpret.best\_k\_muts
+﻿:github_url: eugene.interpret.best_k_muts
+
+eugene.interpret.best\_k\_muts
 ==============================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.best_k_muts
 
-.. autofunction:: best_k_muts
+.. _sphx_glr_backref_eugene.interpret.best_k_muts:
+
+.. minigallery:: eugene.interpret.best_k_muts
+   :add-heading: Gallery
+   :heading-level: -

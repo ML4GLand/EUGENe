@@ -1,6 +1,12 @@
-﻿eugene.pp.decode\_seqs
+﻿:github_url: eugene.pp.decode_seqs
+
+eugene.pp.decode\_seqs
 ======================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pp.decode_seqs
 
-.. autofunction:: pp.decode_seqs
+.. _sphx_glr_backref_eugene.pp.decode_seqs:
+
+.. minigallery:: eugene.pp.decode_seqs
+   :add-heading: Gallery
+   :heading-level: -

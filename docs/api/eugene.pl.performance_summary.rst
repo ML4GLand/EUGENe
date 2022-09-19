@@ -1,6 +1,12 @@
-﻿eugene.pl.performance\_summary
+﻿:github_url: eugene.pl.performance_summary
+
+eugene.pl.performance\_summary
 ==============================
 
-.. currentmodule:: eugene
+.. autofunction:: eugene.pl.performance_summary
 
-.. autofunction:: pl.performance_summary
+.. _sphx_glr_backref_eugene.pl.performance_summary:
+
+.. minigallery:: eugene.pl.performance_summary
+   :add-heading: Gallery
+   :heading-level: -

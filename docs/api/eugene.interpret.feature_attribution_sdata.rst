@@ -1,6 +1,12 @@
-﻿eugene.interpret.feature\_attribution\_sdata
+﻿:github_url: eugene.interpret.feature_attribution_sdata
+
+eugene.interpret.feature\_attribution\_sdata
 ============================================
 
-.. currentmodule:: eugene.interpret
+.. autofunction:: eugene.interpret.feature_attribution_sdata
 
-.. autofunction:: feature_attribution_sdata
+.. _sphx_glr_backref_eugene.interpret.feature_attribution_sdata:
+
+.. minigallery:: eugene.interpret.feature_attribution_sdata
+   :add-heading: Gallery
+   :heading-level: -

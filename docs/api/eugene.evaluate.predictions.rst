@@ -1,6 +1,12 @@
-﻿eugene.evaluate.predictions
+﻿:github_url: eugene.evaluate.predictions
+
+eugene.evaluate.predictions
 ===========================
 
-.. currentmodule:: eugene.evaluate
+.. autofunction:: eugene.evaluate.predictions
 
-.. autofunction:: predictions
+.. _sphx_glr_backref_eugene.evaluate.predictions:
+
+.. minigallery:: eugene.evaluate.predictions
+   :add-heading: Gallery
+   :heading-level: -
