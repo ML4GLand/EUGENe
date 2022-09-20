@@ -1,35 +1,38 @@
-﻿eugene.dl.motif.Motif
+﻿:github_url: eugene.dl.motif.Motif
+
+eugene.dl.motif.Motif
 =====================
 
 .. currentmodule:: eugene
 
 .. autoclass:: dl.motif.Motif
 
-   
-   .. automethod:: __init__
 
-   
-   .. rubric:: Methods
 
-   .. autosummary::
-   
-      ~dl.motif.Motif.__init__
-   
-   
-
-   
-   
    .. rubric:: Attributes
 
    .. autosummary::
-   
-      ~dl.motif.Motif.name
-      ~dl.motif.Motif.source_evalue
-      ~dl.motif.Motif.source_sites
-      ~dl.motif.Motif.identifier
-      ~dl.motif.Motif.pfm
-      ~dl.motif.Motif.consensus
-      ~dl.motif.Motif.alphabet_length
-      ~dl.motif.Motif.length
-   
-   
+      :toctree: .
+
+      ~eugene.dl.motif.Motif.name
+      ~eugene.dl.motif.Motif.source_evalue
+      ~eugene.dl.motif.Motif.source_sites
+      ~eugene.dl.motif.Motif.identifier
+      ~eugene.dl.motif.Motif.pfm
+      ~eugene.dl.motif.Motif.consensus
+      ~eugene.dl.motif.Motif.alphabet_length
+      ~eugene.dl.motif.Motif.length
+
+
+
+
+
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: .
+
+
+
+
+.. _sphx_glr_backref_eugene.dl.motif.Motif:

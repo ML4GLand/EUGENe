@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Union
 from typing import Any, Union, Optional, Iterable, TextIO
 from typing import Tuple, List, ContextManager
 
@@ -77,6 +76,8 @@ class EugeneConfig:
         self.dataset_dir = dataset_dir
         self.logging_dir = logging_dir
         self.output_dir = output_dir
+        self.config_dir = config_dir
+        self.figure_dir = figure_dir
         self.dl_num_workers = dl_num_workers
         self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
 

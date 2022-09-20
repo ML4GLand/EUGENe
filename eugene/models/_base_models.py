@@ -14,7 +14,10 @@ class FCN(BaseModel):
         fc_kwargs={},
         **kwargs
     ):
-        """Initialize the FCN model.
+        """\
+        Initialize a purely fully connected neural network. By default, this architecture
+        flattens the one-hot encoded sequence and passes it through a set of layers that are
+        fully connected.
 
         Parameters
         ----------

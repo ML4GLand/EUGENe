@@ -47,7 +47,6 @@ def metric_curve(
     ylab = metric if ylab is None else ylab
     tb_event_path = glob.glob(os.path.join(log_path, "events.out.tfevents.*"))
     dataframe = many_logs2pandas(tb_event_path)
-    print(dataframe)
     dataframe = dataframe[dataframe["metric"].str.contains(metric)]
     dataframe = dataframe[~dataframe["metric"].str.contains("step")]
     ax = _plot_seaborn(

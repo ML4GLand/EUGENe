@@ -6,7 +6,3 @@ eugene.evaluate.escore
 .. autofunction:: eugene.evaluate.escore
 
 .. _sphx_glr_backref_eugene.evaluate.escore:
-
-.. minigallery:: eugene.evaluate.escore
-   :add-heading: Gallery
-   :heading-level: -

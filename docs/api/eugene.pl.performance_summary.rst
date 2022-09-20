@@ -6,7 +6,3 @@ eugene.pl.performance\_summary
 .. autofunction:: eugene.pl.performance_summary
 
 .. _sphx_glr_backref_eugene.pl.performance_summary:
-
-.. minigallery:: eugene.pl.performance_summary
-   :add-heading: Gallery
-   :heading-level: -

@@ -6,7 +6,3 @@ eugene.dl.motif.jaspar\_annots\_sdata
 .. autofunction:: eugene.dl.motif.jaspar_annots_sdata
 
 .. _sphx_glr_backref_eugene.dl.motif.jaspar_annots_sdata:
-
-.. minigallery:: eugene.dl.motif.jaspar_annots_sdata
-   :add-heading: Gallery
-   :heading-level: -

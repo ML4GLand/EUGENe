@@ -6,7 +6,3 @@ eugene.pl.histplot
 .. autofunction:: eugene.pl.histplot
 
 .. _sphx_glr_backref_eugene.pl.histplot:
-
-.. minigallery:: eugene.pl.histplot
-   :add-heading: Gallery
-   :heading-level: -

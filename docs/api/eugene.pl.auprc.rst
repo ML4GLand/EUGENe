@@ -6,7 +6,3 @@ eugene.pl.auprc
 .. autofunction:: eugene.pl.auprc
 
 .. _sphx_glr_backref_eugene.pl.auprc:
-
-.. minigallery:: eugene.pl.auprc
-   :add-heading: Gallery
-   :heading-level: -

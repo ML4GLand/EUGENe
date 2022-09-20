@@ -22,11 +22,6 @@ class SeqDataset(Dataset):
         Optional reverse complements of sequences.
     transforms : callable, optional
         Optional transform to be applied on a sample.
-
-    Returns
-    -------
-    sdataset : SeqDataset
-        SeqDataset object.
     """
 
     def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):

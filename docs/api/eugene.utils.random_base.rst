@@ -6,7 +6,3 @@ eugene.utils.random\_base
 .. autofunction:: eugene.utils.random_base
 
 .. _sphx_glr_backref_eugene.utils.random_base:
-
-.. minigallery:: eugene.utils.random_base
-   :add-heading: Gallery
-   :heading-level: -

@@ -1,34 +1,37 @@
-﻿eugene.dl.motif.MinimalMEME
+﻿:github_url: eugene.dl.motif.MinimalMEME
+
+eugene.dl.motif.MinimalMEME
 ===========================
 
 .. currentmodule:: eugene
 
 .. autoclass:: dl.motif.MinimalMEME
 
-   
-   .. automethod:: __init__
 
-   
-   .. rubric:: Methods
 
-   .. autosummary::
-   
-      ~dl.motif.MinimalMEME.__init__
-   
-   
-
-   
-   
    .. rubric:: Attributes
 
    .. autosummary::
-   
-      ~dl.motif.MinimalMEME.alphabet
-      ~dl.motif.MinimalMEME.background
-      ~dl.motif.MinimalMEME.background_source
-      ~dl.motif.MinimalMEME.consensus
-      ~dl.motif.MinimalMEME.motifs
-      ~dl.motif.MinimalMEME.strands
-      ~dl.motif.MinimalMEME.version
-   
-   
+      :toctree: .
+
+      ~eugene.dl.motif.MinimalMEME.alphabet
+      ~eugene.dl.motif.MinimalMEME.background
+      ~eugene.dl.motif.MinimalMEME.background_source
+      ~eugene.dl.motif.MinimalMEME.consensus
+      ~eugene.dl.motif.MinimalMEME.motifs
+      ~eugene.dl.motif.MinimalMEME.strands
+      ~eugene.dl.motif.MinimalMEME.version
+
+
+
+
+
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: .
+
+
+
+
+.. _sphx_glr_backref_eugene.dl.motif.MinimalMEME:

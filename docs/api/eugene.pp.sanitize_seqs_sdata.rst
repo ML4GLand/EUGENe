@@ -6,7 +6,3 @@ eugene.pp.sanitize\_seqs\_sdata
 .. autofunction:: eugene.pp.sanitize_seqs_sdata
 
 .. _sphx_glr_backref_eugene.pp.sanitize_seqs_sdata:
-
-.. minigallery:: eugene.pp.sanitize_seqs_sdata
-   :add-heading: Gallery
-   :heading-level: -

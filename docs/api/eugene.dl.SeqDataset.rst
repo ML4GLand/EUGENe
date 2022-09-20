@@ -1,23 +1,25 @@
-﻿eugene.dl.SeqDataset
+﻿:github_url: eugene.dl.SeqDataset
+
+eugene.dl.SeqDataset
 ====================
 
 .. currentmodule:: eugene
 
 .. autoclass:: dl.SeqDataset
 
-   
-   .. automethod:: __init__
 
-   
+
+
+
+
+
    .. rubric:: Methods
 
    .. autosummary::
-   
-      ~dl.SeqDataset.__init__
-      ~dl.SeqDataset.to_dataloader
-   
-   
+      :toctree: .
 
-   
-   
-   
+      ~eugene.dl.SeqDataset.to_dataloader
+
+
+
+.. _sphx_glr_backref_eugene.dl.SeqDataset:

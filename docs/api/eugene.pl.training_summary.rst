@@ -6,7 +6,3 @@ eugene.pl.training\_summary
 .. autofunction:: eugene.pl.training_summary
 
 .. _sphx_glr_backref_eugene.pl.training_summary:
-
-.. minigallery:: eugene.pl.training_summary
-   :add-heading: Gallery
-   :heading-level: -

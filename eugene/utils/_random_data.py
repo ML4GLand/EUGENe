@@ -14,11 +14,7 @@ alphabet = np.array(["A", "G", "C", "T"])
 
 def random_base():
     """
-    Generate a random base.
-    Args:
-        None
-    Returns:
-        Random base.
+    Generate a random base from the AGCT alpahbet.
     """
     return np.random.choice(alphabet)
 
@@ -26,10 +22,15 @@ def random_base():
 def random_seq(seq_len):
     """
     Generate a random sequence of length seq_len.
-    Args:
-        seq_len (int): length of sequence to return
-    Returns:
-        Random sequence.
+
+    Parameters
+    ----------
+    seq_len : int
+        Length of sequence to return.
+
+    Returns
+    -------
+    Random sequence.
     """
     return "".join([np.random.choice(alphabet) for i in range(seq_len)])
 
@@ -37,28 +38,42 @@ def random_seq(seq_len):
 def random_seqs(seq_num, seq_len):
     """
     Generate seq_num random sequences of length seq_len
-    Args
-        seq_num (int): number of sequences to return
-        seq_len (int): length of sequence to return
-    Returns:
-        numpy array of random sequences.
+
+    Parameters
+    ----------
+    seq_num (int):
+        number of sequences to return
+    seq_len (int):
+        length of sequence to return
+
+    Returns
+    -------
+    numpy array of random sequences.
     """
     return np.array([random_seq(seq_len) for i in range(seq_num)])
 
 
-def random_seqs_to_file(file, ext="csv", **kwargs):
+def generate_random_data(
+    num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=None, dataset_name=None
+):
     """
-    Generate a random sequence of length seq_len and save to file
-    Args
-        seq_len (int): length of sequence to return
-    Returns:
-        Random sequence.
+    Simple function tp generate commonly used file types for testing EUGENe models
+
+    Parameters
+    ----------
+    num_seqs (int):
+        number of sequences to generate
+    seq_len (int):
+        length of sequences to generate
+    vocab (str):
+        vocabulary to use for sequence generation. Default is DNA.
+    num_outputs (int):
+        number of outputs to generate. Default is 1.
+    out_dir (str):
+        directory to save files to. Default is None.
+    dataset_name (str):
+        name of dataset. Default is None.
     """
-    pass
-
-
-def generate_random_data(num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=None, dataset_name=None):
-    """Simple function tp generate commonly used file types for testing EUGENe models"""
     out_dir = out_dir if out_dir is not None else settings.dataset_dir
 
     if dataset_name is None:
@@ -72,14 +87,22 @@ def generate_random_data(num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=
     oheseqs = ohe_seqs(seqs, vocab=vocab)
     rev_seqs = reverse_complement_seqs(seqs)
     rev_ohe_seqs = ohe_seqs(rev_seqs, vocab=vocab)
-    n_digits = len(str(num_seqs-1))
-    ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(num_seqs)])
-    labels = np.random.randint(0,2,size=(num_seqs, num_outputs))
+    n_digits = len(str(num_seqs - 1))
+    ids = np.array(
+        ["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(num_seqs)]
+    )
+    labels = np.random.randint(0, 2, size=(num_seqs, num_outputs))
     activities = np.random.rand(num_seqs, num_outputs)
     label_cols = ["label_{}".format(i) for i in range(num_outputs)]
     activity_cols = ["activity_{}".format(i) for i in range(num_outputs)]
-    d = dict(dict(name=ids, seq=seqs), **dict(zip(label_cols, labels.T)), **dict(zip(activity_cols, activities.T)))
-    pd.DataFrame(d).to_csv(os.path.join(out_dir, f"{dataset_name}_seqs.tsv"), sep="\t", index=False)
+    d = dict(
+        dict(name=ids, seq=seqs),
+        **dict(zip(label_cols, labels.T)),
+        **dict(zip(activity_cols, activities.T)),
+    )
+    pd.DataFrame(d).to_csv(
+        os.path.join(out_dir, f"{dataset_name}_seqs.tsv"), sep="\t", index=False
+    )
     np.save(os.path.join(out_dir, f"{dataset_name}_seqs"), seqs)
     np.save(os.path.join(out_dir, f"{dataset_name}_ohe_seqs"), oheseqs)
     np.save(os.path.join(out_dir, f"{dataset_name}_rev_seqs"), rev_seqs)

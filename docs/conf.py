@@ -1,16 +1,11 @@
 import os
 import sys
-from pathlib import Path
+import sphinx_rtd_theme
 
-HERE = Path(__file__).parent
 sys.path.insert(0, os.path.abspath(".."))
-import eugene  # noqa
-
-on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 # -- General configuration ---------------------------------------------------
 
-nitpicky = True  # Warn about broken links. This is here for a reason: Do not change.
 needs_sphinx = "2.0"  # Nicer param docs
 suppress_warnings = [
     "ref.citation",
@@ -29,13 +24,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 pygments_style = "sphinx"
 
 extensions = [
-    "myst_parser",
-    "sphinx.ext.duration",
-    "sphinx.ext.doctest",
-    "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
     "myst_parser",
@@ -44,7 +34,8 @@ extensions = [
 ]
 
 autosummary_generate = True
-autodoc_member_order = "bysource"
+# autodoc_inherit_docstrings = False
+# autodoc_mock_imports = ["pytorch_lightning", "torch"]
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
@@ -52,14 +43,19 @@ napoleon_use_rtype = True  # having a separate entry generally helps readability
 napoleon_use_param = True
 napoleon_custom_sections = [("Params", "Parameters")]
 todo_include_todos = False
-api_dir = HERE / "api"  # function_images
 
 # -- Options for HTML output -------------------------------------------------
-
 html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_title = "EUGENe"
 html_static_path = ["_static"]
 html_show_sphinx = False
+
+# Thumbnail selection for nbsphinx gallery
+nbsphinx_thumbnails = {
+    "tutorials/single_task_regression_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
+    "tutorials/binary_classification_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
+}
 
 # -- Options for extensions -------------------------------------------------------------------------------
 nbsphinx_execute = "never"

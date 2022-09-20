@@ -6,7 +6,3 @@ eugene.interpret.best\_k\_muts
 .. autofunction:: eugene.interpret.best_k_muts
 
 .. _sphx_glr_backref_eugene.interpret.best_k_muts:
-
-.. minigallery:: eugene.interpret.best_k_muts
-   :add-heading: Gallery
-   :heading-level: -

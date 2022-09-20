@@ -21,16 +21,19 @@ EUGENe is a package that is still active development, so there's a good chance y
 
 ## Datasets
 
-Every bioinformatician knows the pain of trying to track down and format a dataset for their needs. This module is designed to load several published datasets into SeqData objects with simple function calls. You can find a list of available datasets in the `datasets.csv` file or a live version here.
+```{eval-rst}
+.. module:: eugene.datasets
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
 
 ### Available datasets
 
 You can get a list of available datasets returned as a `pandas.DataFrame` using the {func}`~eugene.datasets.get_dataset_info` function.
 
 ```{eval-rst}
-.. module:: eugene.datasets
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -43,14 +46,19 @@ You can get a list of available datasets returned as a `pandas.DataFrame` using 
 
 ## Dataload `dl`
 
-This module is designed to handle both the loading of data into Python objects and the compilation of those objects into dataloaders for neural network training. This module is fundamental for the package and handles both the extraction and load aspects of the extract-transform-load steps.
+```{eval-rst}
+.. module:: eugene.dl
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
 
 ### Input/Output (IO)
 
-```{eval-rst}
-.. module:: eugene.dl
-.. currentmodule:: eugene
+The (`io`) functions handle reading and writing from and to files on disk.
 
+```{eval-rst}
 .. autosummary::
    :toctree: api/
 
@@ -71,11 +79,9 @@ This module is designed to handle both the loading of data into Python objects a
 ```
 
 ### SeqData
+These are the few core functions you can call on SeqData objects
 
 ```{eval-rst}
-.. module:: eugene.dl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -87,12 +93,9 @@ This module is designed to handle both the loading of data into Python objects a
 
 ### SeqDataset
 
-We need to be able to fluidly go between SeqData and PT datasets and DataLoaders. To do this we have implemented the SeqDataset class and attached a to_dataset() method to SeqData.
+We need to be able to fluidly go between SeqData and PyTorch datasets and DataLoaders. To do this we have implemented the SeqDataset class and attached a to_dataset() method to SeqData.
 
 ```{eval-rst}
-.. module:: eugene.dl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -100,6 +103,8 @@ We need to be able to fluidly go between SeqData and PT datasets and DataLoaders
 ```
 
 ### Motif
+
+These functions are for working with MEME format. They are used to read in MEME files and convert them to SeqData objects.
 
 ```{eval-rst}
 .. module:: eugene.dl.motif
@@ -122,14 +127,19 @@ We need to be able to fluidly go between SeqData and PT datasets and DataLoaders
 
 ## Preprocess (`pp`)
 
+```{eval-rst}
+.. module:: eugene.pp
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 This module is designed to let users interact and modify SeqData objects to prepare for model training and to allow for more in depth analysis. There are several classes of preprocessing functions that act on more familiar objects. These functions are agnostic of SeqData
 
 ### Sequence preprocessing
 
 ```{eval-rst}
-.. module:: eugene.pp
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -154,9 +164,6 @@ This module is designed to let users interact and modify SeqData objects to prep
 ### Dataset preprocessing
 
 ```{eval-rst}
-.. module:: eugene.pp
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -168,9 +175,6 @@ This module is designed to let users interact and modify SeqData objects to prep
 ### SeqData preprocessing
 
 ```{eval-rst}
-.. module:: eugene.pp
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -188,17 +192,22 @@ This module is designed to let users interact and modify SeqData objects to prep
 
 ## Models
 
+```{eval-rst}
+.. module:: eugene.models
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 This module is designed to allow users to easily build and initialize several neural network architectures that are designed for biological sequences
 We specify three main classes of model: base_model, sota_model, and custom_model
 
 ### `BaseModels`
 
 ```{eval-rst}
-.. module:: eugene.models
-.. currentmodule:: eugene
-
 .. autosummary::
-   :toctree: api/
+   :toctree: api/classes
 
    models.FCN
    models.CNN
@@ -209,11 +218,8 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ### SOTA Models
 
 ```{eval-rst}
-.. module:: eugene.models
-.. currentmodule:: eugene
-
 .. autosummary::
-   :toctree: api/
+   :toctree: api/classes
 
    models.DeepBind
    models.DeepSEA
@@ -222,11 +228,8 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ### Custom Models
 
 ```{eval-rst}
-.. module:: eugene.models
-.. currentmodule:: eugene
-
 .. autosummary::
-   :toctree: api/
+   :toctree: api/classes
 
    models.Jores21CNN
    models.Kopp21CNN
@@ -235,9 +238,6 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ### Initialization
 
 ```{eval-rst}
-.. module:: eugene.models
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -247,14 +247,19 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 
 ## Training
 
+```{eval-rst}
+.. module:: eugene.train
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 Similarly to prediction, I feel like PL Trainers will take care of most of this. But I guess their are some considerations listed below
 
 ### Basic Training
 
 ```{eval-rst}
-.. module:: eugene.train
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -263,12 +268,17 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 
 ## Evaluate
 
+```{eval-rst}
+.. module:: eugene.evaluate
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 ### Predictions
 
 ```{eval-rst}
-.. module:: eugene.evaluate
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -279,9 +289,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Metrics
 
 ```{eval-rst}
-.. module:: eugene.evaluate
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -295,12 +302,17 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 
 ## Interpret
 
+```{eval-rst}
+.. module:: eugene.intepret
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 ### Filter visualization
 
 ```{eval-rst}
-.. module:: eugene.interpret
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -310,9 +322,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Feature attributions
 
 ```{eval-rst}
-.. module:: eugene.interpret
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -324,9 +333,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### *In silico*
 
 ```{eval-rst}
-.. module:: eugene.interpret
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -341,9 +347,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Dimensionality reduction
 
 ```{eval-rst}
-.. module:: eugene.interpret
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -353,12 +356,17 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 
 ## Plotting
 
+```{eval-rst}
+.. module:: eugene.pl
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 ### Categorical plotting
 
 ```{eval-rst}
-.. module:: eugene.pl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -372,9 +380,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Training summaries
 
 ```{eval-rst}
-.. module:: eugene.pl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -386,9 +391,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Performance
 
 ```{eval-rst}
-.. module:: eugene.pl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -403,9 +405,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Sequences
 
 ```{eval-rst}
-.. module:: eugene.pl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -422,9 +421,6 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 ### Dimensionality reduction
 
 ```{eval-rst}
-.. module:: eugene.pl
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 
@@ -435,12 +431,17 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 
 ## Utilities
 
+```{eval-rst}
+.. module:: eugene.utils
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
 ### Random sequence generation
 
 ```{eval-rst}
-.. module:: eugene.utils
-.. currentmodule:: eugene
-
 .. autosummary::
    :toctree: api/
 

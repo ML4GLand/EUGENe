@@ -6,7 +6,3 @@ eugene.evaluate.rnacomplete\_metrics\_sdata\_plot
 .. autofunction:: eugene.evaluate.rnacomplete_metrics_sdata_plot
 
 .. _sphx_glr_backref_eugene.evaluate.rnacomplete_metrics_sdata_plot:
-
-.. minigallery:: eugene.evaluate.rnacomplete_metrics_sdata_plot
-   :add-heading: Gallery
-   :heading-level: -

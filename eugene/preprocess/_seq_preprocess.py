@@ -168,19 +168,29 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
     Creates shuffles of the given sequence, in which dinucleotide frequencies
     are preserved.
 
-    Credits: This is taken from https://github.com/kundajelab/deeplift/blob/master/deeplift/dinuc_shuffle.py
-    Arguments:
-        `seq`: either a string of length L, or an L x D np array of one-hot
-            encodings
-        `num_shufs`: the number of shuffles to create, N; if unspecified, only
-            one shuffle will be created
-        `rng`: a np RandomState object, to use for performing shuffles
     If `seq` is a string, returns a list of N strings of length L, each one
     being a shuffled version of `seq`. If `seq` is a 2D np array, then the
     result is an N x L x D np array of shuffled versions of `seq`, also
     one-hot encoded. If `num_shufs` is not specified, then the first dimension
     of N will not be present (i.e. a single string will be returned, or an L x D
     array).
+
+    Parameters
+    ----------
+    seq : str
+        The sequence to shuffle.
+    num_shufs : int, optional
+        The number of shuffles to create. If None, only one shuffle is created.
+    rng : np.random.RandomState, optional
+        The random number generator to use. If None, a new one is created.
+
+    Returns
+    -------
+    list of str or np.array
+        The shuffled sequences.
+    Credits
+    -------
+    This is taken from https://github.com/kundajelab/deeplift/blob/master/deeplift/dinuc_shuffle.py
     """
     if type(seq) is str or type(seq) is np.str_:
         arr = _string_to_char_array(seq)
@@ -189,7 +199,6 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
         arr = _one_hot_to_tokens(seq)
     else:
         raise ValueError("Expected string or one-hot encoded array")
-
     if not rng:
         rng = np.random.RandomState()
 
@@ -243,6 +252,24 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     Shuffle the sequences in `seqs` in the same way as `dinuc_shuffle_seq`.
     If `num_shufs` is not specified, then the first dimension of N will not be
     present (i.e. a single string will be returned, or an L x D array).
+
+    Parameters
+    ----------
+    seqs : np.ndarray
+        Array of sequences to shuffle
+    num_shufs : int, optional
+        Number of shuffles to create, by default None
+    rng : np.random.RandomState, optional
+        Random state to use for shuffling, by default None
+
+    Returns
+    -------
+    np.ndarray
+        Array of shuffled sequences
+
+    Credits
+    -------
+        This is taken from DeepLIFT
     """
     if not rng:
         rng = np.random.RandomState()
@@ -260,7 +287,9 @@ def perturb_seq(X_0, vocab_len=4):
     """
     Produce all edit-distance-one pertuabtions for a single of sequences.
 
-    Credits: This is modified from yuzu
+    Credits
+    -------
+    This is modified from Yuzu
     """
     import warnings
 
@@ -291,11 +320,9 @@ def perturb_seq(X_0, vocab_len=4):
     return X.numpy()
 
 
-# modified yuzu
 def perturb_seqs(X_0, vocab_len=4):
-    """Produce all edit-distance-one pertuabtions for a set of sequences.
-
-    Credits: This is modified from yuzu
+    """
+    Produce all edit-distance-one pertuabtions for a set of sequences.
 
     This function will take in a single one-hot encoded sequence of length N
     and return a batch of N*(n_choices-1) sequences, each containing a single
@@ -310,6 +337,10 @@ def perturb_seqs(X_0, vocab_len=4):
     -------
     X: torch.Tensor, shape=(n_seqs, (n_choices-1)*seq_len, n_choices, seq_len)
         Each single-position perturbation of seq.
+
+    Credits
+    -------
+    This is modified from Yuzu
     """
     import warnings
 

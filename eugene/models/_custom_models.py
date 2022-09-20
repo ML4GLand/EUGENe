@@ -8,7 +8,7 @@ class Jores21CNN(BaseModel):
     """
     Jores21CNN model.
 
-    :class: Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+    Uses a custom BiConv1D module converted from tf implementation to PyTorch from
     url (which was adapted from url).
 
     Parameters
@@ -35,11 +35,6 @@ class Jores21CNN(BaseModel):
         Dropout probability.
     hidden_dim : int, optional
         Dimension of the hidden layer.
-
-    Returns
-    -------
-    model : torch.nn.Module
-        JORES-21 model.
     """
 
     def __init__(
@@ -95,7 +90,7 @@ class Kopp21CNN(BaseModel):
     """
     Kopp21CNN model.
 
-    :class: Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+    Uses a custom BiConv1D module converted from tf implementation to PyTorch from
 
     Parameters
     ----------
@@ -117,11 +112,6 @@ class Kopp21CNN(BaseModel):
         Kernel size of the maxpooling layer.
     stride : int, optional
         Stride of the convolutional layers.
-
-    Returns
-    -------
-    model : torch.nn.Module
-        Kopp21 model.
     """
 
     def __init__(

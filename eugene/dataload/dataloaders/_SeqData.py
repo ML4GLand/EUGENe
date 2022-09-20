@@ -56,11 +56,6 @@ class SeqData:
         Dict of additional/unstructured information.
     seqsidx : Index1D
         Index of sequences to use.
-
-    Returns
-    -------
-    sdata : SeqData
-        SeqData object.
     """
 
     def __init__(
@@ -353,7 +348,7 @@ class SeqData:
                 targets=targs if target_keys is not None else None,
                 rev_seqs=self.ohe_rev_seqs,
                 transform=torch_transforms.Compose(transforms),
-            ) 
+            )
 
         if "reverse_complement" in seq_transforms:
             if self.seqs is not None:

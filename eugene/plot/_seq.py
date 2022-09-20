@@ -478,7 +478,9 @@ def lm_multiseq_track(
         len(uns_keys) * 4 if height is None else height
     )  # make each sequence height proportional to the number of uns_keys
     _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0, total=len(uns_keys)):
+    for i, uns_key in tqdm(
+        enumerate(uns_keys), desc="Importance values", position=0, total=len(uns_keys)
+    ):
         for j, seq_id in enumerate(seq_ids):
             lm_seq_track(
                 sdata,
@@ -577,7 +579,7 @@ def kipoi_ism_heatmap(sdata, seq_id, uns_key="NaiveISM_imps", figsize=(15, 2.5))
     seqlogo_heatmap(val.T, val, ax=plt.subplot())
 
 
-def feature_implant_plot(sdata, seqsm_keys, save=None):
+def feature_implant_plot(sdata, seqsm_keys, save=None, return_axes=False):
     concat_df = pd.DataFrame()
     for seqsm_key in seqsm_keys:
         df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(
@@ -590,3 +592,5 @@ def feature_implant_plot(sdata, seqsm_keys, save=None):
     print("ylim", g.get_ylim())
     if save:
         plt.savefig(save)
+    if return_axes:
+        return g

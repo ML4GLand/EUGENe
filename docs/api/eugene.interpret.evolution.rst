@@ -6,7 +6,3 @@ eugene.interpret.evolution
 .. autofunction:: eugene.interpret.evolution
 
 .. _sphx_glr_backref_eugene.interpret.evolution:
-
-.. minigallery:: eugene.interpret.evolution
-   :add-heading: Gallery
-   :heading-level: -

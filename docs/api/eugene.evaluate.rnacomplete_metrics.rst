@@ -6,7 +6,3 @@ eugene.evaluate.rnacomplete\_metrics
 .. autofunction:: eugene.evaluate.rnacomplete_metrics
 
 .. _sphx_glr_backref_eugene.evaluate.rnacomplete_metrics:
-
-.. minigallery:: eugene.evaluate.rnacomplete_metrics
-   :add-heading: Gallery
-   :heading-level: -

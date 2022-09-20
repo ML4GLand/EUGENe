@@ -1,7 +1,9 @@
 # User-defined
 EUGENe_paper
 archive/
-
+tutorials/tutorial_logs
+tutorials/tutorial_output
+tutorials/tutorial_dataset
 
 # Tests
 tests/_datasets

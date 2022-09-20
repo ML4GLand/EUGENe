@@ -12,7 +12,7 @@ class DeepBind(BaseModel):
     """
     DeepBind model
 
-    :class DeepBind is a model that takes in a DNA sequence and outputs a
+    DeepBind is a model that takes in a DNA sequence and outputs a
     probability of binding for a given transcription factor.
 
     Parameters
@@ -202,8 +202,6 @@ class DeepSEA(BaseModel):
     ):
         """
         Generates a PyTorch module with architecture matching the convnet part of DeepSea. Default parameters are those specified in the DeepSea paper
-
-        :class:`DeepSEA <DeepSEA>`.
 
         Parameters
         ----------
