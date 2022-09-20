@@ -1,4 +1,4 @@
-# EUGENE (**E**lucidating and **U**nderstanding **G**rammar of **E**lements with **Ne**uralnets)
+# EUGENe (**E**lucidating the **U**tility of **G**enomic **E**lements with **Ne**uralnets)
 
 EUGENe represents a computational framework for machine learning based modeling of regulatory sequences. It is designed after the [Scanpy](https://scanpy.readthedocs.io/en/stable/) package for single cell analysis in Python and is meant to make the development of deep learning worlflows in the genomics field more findable, accessible, interoperitable and reproducible (FAIR). EUGENe consists of several modules for handling data and for building, training, evaluating and interpreting deep learners that predict annotations of biological sequences. EUGENe is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. Jupyter).
 
