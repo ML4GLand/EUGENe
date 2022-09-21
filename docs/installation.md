@@ -6,7 +6,17 @@ EUGENe is a Python package, and can be installed using `pip`:
 pip install 'eugene-tools'
 ```
 
-The extras `[janggu, kipoi, memesuite]` install dependencies that are needed to use functions from the [Janggu](https://janggu.readthedocs.io), [Kipoi](https://kipoi.org/) and [MEME](https://meme-suite.org/meme) suite respectively.
+The extras `[janggu,kipoi,memesuite]` install dependencies that are needed to use functions from the [Janggu](https://janggu.readthedocs.io), [Kipoi](https://kipoi.org/) and [MEME](https://meme-suite.org/meme) suite respectively. You can install them using:
+
+```bash
+pip install 'eugene-tools[janggu,kipoi,memesuite]'
+```
+
+Or if you only want a single extra:
+
+```bash
+pip install 'eugene-tools[janggu]'
+```
 
 You can run a quick test of your installation, by opening an interactive Python prompt and running
 
@@ -31,6 +41,10 @@ Then, install the package in development mode:
 
 ```bash
 pip install -e .
+```
+
+```{note}
+If you want to edit the docs, you will also need to install the `pandoc` package through conda: `conda install -c conda-forge pandoc`
 ```
 
 ## Troubleshooting

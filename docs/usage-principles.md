@@ -43,7 +43,7 @@ In many cases, we also have *a priori* knowledge of the sequence features contai
 The other piece of data of fundamental importance to almost all EUGENe workflows are per sequence metadata. These are often the targets that we wish to predict in a supervised learning setting, but can also represent important variables used for visualizations, preprocessing or dataset splitting. The `seqs_annot` attribute of `SeqData` is meant to hold any annotations that are per sequence, and is implemented as a `pandas DataFrame`.
 
 ##### Positional annotations (`pos_annot`)
-We have also included an attribute along the positional axis of a sequence dataset, namely `pos_annot`. These positional annotations are implemented as a [`PyRanges`]() object that has built functions for many genomic range utilities like merging and subtraction. This object can also easily function as a `pandas DataFrame` and is meant to contain any kind of positional annotations for sequences. In its current implementation, it functions as a in memory bed file for the sequences and does not currently align along the positional axis (the x-axis dimension in the schematic above).
+We have also included an attribute along the positional axis of a sequence dataset, namely `pos_annot`. These positional annotations are implemented as a [`PyRanges`](https://pyranges.readthedocs.io/en/latest/index.html) object that has built functions for many genomic range utilities like merging and subtraction. This object can also easily function as a `pandas DataFrame` and is meant to contain any kind of positional annotations for sequences. In its current implementation, it functions as a in memory bed file for the sequences and does not currently align along the positional axis (the x-axis dimension in the schematic above).
 
 ##### Unstructured data (`uns`)
 For all unstructured data that does not align or annotate sequences or positions, we have implemented the uns attribute as a an ordered Python dictionary. This is the default home of position frequency matrices, feature attributions, dataset transformation objects and any other data you generate on your sequences and don't really know what to do with.
@@ -67,7 +67,7 @@ An important concept we want to note up front. You are not required to use a `Se
 
 The BaseModel class in EUGENe is the scaffold upon which all models are built. BaseModel is the class that all new and built-in model files must be inherited from in order to fully take advantage of all of EUGENe's functionality.
 
-EUGENe offers several customizable architectures as built-in, including flexible fully connected, convolutional, recurrent, hybrid architectures and seminal DeepBind and DeepSEA architectures. We also provide implementations of models introduced in Jores et al and Kopp et al. However, this set of provided modules may not be sufficient for a users training task and many users may need to add custom architectures to the library. 
+EUGENe offers several customizable architectures as built-in, including flexible fully connected, convolutional, recurrent, hybrid architectures and seminal DeepBind and DeepSEA architectures. We also provide implementations of models introduced in Jores et al and Kopp et al. However, this set of provided modules may not be sufficient for a users training task and many users may need to add custom architectures to the library.
 
 ```{note}
 We are working on documentation and tutorials for how to do this and will update this section when they are ready!
@@ -148,7 +148,7 @@ This module is designed to allow users to easily build and initialize several ne
 
 Check out the [`models` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.models) for a list of models and model building functions.
 
-### `train`
+### `train` -- Fit parameters to your data
 For basic trianing, this module is mainly a wrapper around [PyTorch Lightning's trainers](https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html). In future releases, we will add more advanced training functionality for doing things like hyperparameter optimization, GAN training, and more.
 
 1. Logging is handled by PyTorch Lightning via the Tensorboard logger
@@ -165,14 +165,14 @@ Check out the [`train` API](https://eugene-tools.readthedocs.io/en/latest/api.ht
 
 ## Evaluate and Interpret (EI)
 
-### `evaluate`
+### `evaluate` -- Validate and explore models on new data
 Similarly to training, this module is mainly a wrapper around [PyTorch Lightning's trainers](https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html). However, we have also have begun a metrics library to help users calculate training metrics on their SeqData objects (more details coming soon!).
 
     1. Predictions on a SeqData are saved in `seqs_annot` attribute and to disk by default (with column names and file paths specified by the user)
 
 Check out the [`evaluate` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.evaluate) for more info on the current evaluate functions, including how to save train and validation set prediction ouptuts separately.
 
-### `interpret`
+### `interpret` -- Investigate learned model behavior
 There is no shortage of ways one could come up with to try to interpret a trained model. We have included three core intepretation categories in EUGENe with many more to come (more coming soon):
 
 1. Visualize filters as PWMs
@@ -183,16 +183,17 @@ There is no shortage of ways one could come up with to try to interpret a traine
 
 Check out the [`interpret` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.interpret) for more info on the current interpret functions available.
 
-### `plot`
-This module is meant to be a wrapper around matplotlib and seaborn to make it easier to visualize SeqData objects and model predictions.
-
-1. We have a few core plotting functions that are meant to be used in conjunction with the interpret module
-
-2. We have a few core plotting functions that are meant to be used in conjunction with the evaluate module
-
-3. We have a few core plotting functions that are meant to be used in conjunction with the preprocess module
+### `plot` -- Visualize it all as you go
+```{note}
+Details coming soon!
+```
 
 Check out the [`plot` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.plot) for more info on the current plot functions available.
+
+## `external` -- Work with and compare to other tools and methods
+```{note}
+Details coming soon!
+```
 
 ## `utils` -- Miscellaneous utilities
 This module is designed to be a catch all for functions that don't fit into the other modules. This includes functions for things like plotting, saving/loading models, and more.

@@ -3,7 +3,6 @@ EUGENe_paper
 archive/
 tutorials/tutorial_logs
 tutorials/tutorial_output
-tutorials/tutorial_dataset
 
 # Tests
 tests/_datasets
@@ -93,6 +92,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/api
 
 # PyBuilder
 .pybuilder/
