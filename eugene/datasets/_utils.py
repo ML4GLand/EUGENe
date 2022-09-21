@@ -102,7 +102,7 @@ def try_download_urls(
             else:
                 paths.append(path)
         else:
-            print(f"Dataset {ds_name} {base_name} has already been dowloaded.")
+            print(f"Dataset {ds_name} {base_name} has already been downloaded.")
             paths.append(os.path.join(ds_path, base_name))
 
     return paths
