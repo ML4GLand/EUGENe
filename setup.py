@@ -8,7 +8,7 @@ with open("README.md", "r") as readme_file:
 requirements = []
 
 setup(
-    name="eugene-tools",
+    name="eugene",
     version="0.0.4",
     author="Adam Klie",
     author_email="aklie@eng.ucsd.edu",
