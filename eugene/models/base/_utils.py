@@ -1,16 +1,25 @@
-import torch
 import torch.nn as nn
 import numpy as np
 
 
-def BuildFullyConnected(layers, activation="relu", dropout_rate=0.0, batchnorm=False):
-    """
+def BuildFullyConnected(
+    layers, 
+    activation="relu", 
+    dropout_rate=0.0, 
+    batchnorm=False
+):
+    """Build a fully connected network with the specified number of layers, activation, dropout, and batchnorm.
+
     Parameters
     ----------
     layers : int
+        number of layers in the network
     activation : str
+        activation function to use, by default "relu". Options are "relu", "sigmoid"
     dropout_rate : float
+        dropout rate to use, by default 0.0
     batchnorm: boolean
+        whether to use batchnorm, by default False
     """
     net = []
     for i in range(1, len(layers) - 1):
@@ -28,6 +37,21 @@ def BuildFullyConnected(layers, activation="relu", dropout_rate=0.0, batchnorm=F
 
 
 def GetFlattenDim(network, seq_len):
+    """Get the dimension of the flattened output of a convolutional network with 
+    only conv1d and maxpool1d layers.
+
+    Parameters
+    ----------
+    network : nn.Module
+        network to get flattened dimension of
+    seq_len : int
+        length of the sequence to flatten
+
+    Returns
+    -------
+    int
+        flattened dimension of the network
+    """
     output_len = seq_len
     for module in network:
         name = module.__class__.__name__

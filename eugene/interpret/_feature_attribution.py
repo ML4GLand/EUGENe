@@ -11,13 +11,42 @@ from .._settings import settings
 
 
 def _ism_explain(
-    model, inputs, ism_type="naive", score_type="delta", device=None, batch_size=None
+    model: torch.nn.Module, 
+    inputs: tuple, 
+    ism_type: str = "naive", 
+    score_type: str = "delta", 
+    device: str = None, 
+    batch_size: int = None
 ):
+    """
+    Compute in silico saturation mutagenesis scores using a model on a set of inputs
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model to use for computing ISM scores. Can be a EUGENe trained model or one you trained with PyTorch
+        or PL
+    inputs : tuple
+        Tuple of forward and reverse inputs to compute ISM scores on. If the model is a ss model, then the tuple
+        should only contain the forward inputs
+    ism_type: str
+        Type of ISM to use. We currently only support naive ISM
+    score_type: str
+        Type of score to compute, currently support "delta", "l1" or "l2"
+    device: str
+        Device to use for computing ISM scores. If None, will use the device specified from the EUGENe settings
+    batch_size: int
+        Batch size to use for computing ISM scores. If None, will use the batch size specified from the EUGENe settings
+    
+    Returns
+    -------
+    nd.array
+        Array of ISM scores
+    """
     batch_size = batch_size if batch_size is not None else settings.batch_size
-    device = device = (
-        "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    )
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval()
+    model.to(device)
     if isinstance(inputs, torch.Tensor):
         inputs = inputs.detach().cpu().numpy()
     if ism_type == "naive":
@@ -35,10 +64,31 @@ def _ism_explain(
     return attrs
 
 
-def _grad_explain(model, inputs, target=None, device="cpu"):
-    device = device = (
-        "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    )
+def _grad_explain(
+    model: torch.nn.Module, 
+    inputs: tuple,
+    target: int = None, 
+    device: str = "cpu"
+):
+    """
+    Compute InputXGradient feature attribution scores using a model on a set of inputs.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model to use for computing InputXGradient scores. 
+        Can be a EUGENe trained model or one you trained with PyTorch or PL.
+    inputs : tuple
+        Tuple of forward and reverse complement inputs to compute InputXGradient scores on. 
+        If the model is a ss model, then the scores will only be computed on the forward inputs.
+    target: int
+        Index of the target class to compute scores for if there are multiple outputs. If there
+        is a single output, this should be None
+    device: str
+        Device to use for computing InputXGradient scores. 
+        EUGENe will always use a gpu if available
+    """
+    device "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval()
     model.to(device)
     grad_explainer = InputXGradient(model)
@@ -46,12 +96,15 @@ def _grad_explain(model, inputs, target=None, device="cpu"):
     reverse_inputs = inputs[1].requires_grad_().to(device)
     if model.strand == "ss":
         attrs = grad_explainer.attribute(
-            forward_inputs, target=target, additional_forward_args=reverse_inputs
+            forward_inputs, 
+            target=target, 
+            additional_forward_args=reverse_inputs
         )
         return attrs.to("cpu").detach().numpy()
     else:
         attrs = grad_explainer.attribute(
-            (forward_inputs, reverse_inputs), target=target
+            (forward_inputs, reverse_inputs), 
+            target=target
         )
         return (
             attrs[0].to("cpu").detach().numpy(),
@@ -59,12 +112,42 @@ def _grad_explain(model, inputs, target=None, device="cpu"):
         )
 
 
-def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
+def _deeplift_explain(
+    model: torch.nn.Module, 
+    inputs: tuple,
+    ref_type: str = "zero", 
+    target: int = None, 
+    device: str = "cpu"
+):
+    """
+    Compute DeepLIFT feature attribution scores using a model on a set of inputs.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model to use for computing DeepLIFT scores.
+        Can be a EUGENe trained model or one you trained with PyTorch or PL.
+    inputs : tuple
+        Tuple of forward and reverse complement inputs to compute DeepLIFT scores on.
+        If the model is a ss model, then the scores will only be computed on the forward inputs.
+    ref_type: str
+        Type of reference to use for computing DeepLIFT scores. By default this is an all zeros reference,
+        but we also support a dinucleotide shuffled reference and one based on GC content
+    target: int
+        Index of the target class to compute scores for if there are multiple outputs. If there
+        is a single output, this should be None
+    device: str
+        Device to use for computing DeepLIFT scores.
+        EUGENe will always use a gpu if available
+    
+    Returns
+    -------
+    nd.array
+        Array of DeepLIFT scores
+    """
     if model.strand == "ds":
         raise ValueError("DeepLift currently only works for ss and ts strand models")
-    device = device = (
-        "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    )
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval()
     model.to(device)
     deeplift_explainer = DeepLift(model)
@@ -75,7 +158,6 @@ def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu")
         reverse_ref = torch.zeros(inputs[1].size()).to(device)
     elif ref_type == "shuffle":
         from ..preprocess import dinuc_shuffle_seq
-
         forward_ref = (
             torch.tensor(
                 [
@@ -129,10 +211,40 @@ def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu")
         )
 
 
-def _gradientshap_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
-    device = device = (
-        "cuda" if settings.gpus > 0 else "cpu" if device is None else device
-    )
+def _gradientshap_explain(
+    model: torch.nn.Module,
+    inputs: tuple,
+    ref_type: str = "zero", 
+    target: int = None,
+    device: str = "cpu"
+):
+    """
+    Compute GradientSHAP feature attribution scores using a model on a set of inputs.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model to use for computing GradientSHAP scores.
+    Can be a EUGENe trained model or one you trained with PyTorch or PL.
+    inputs : tuple
+        Tuple of forward and reverse complement inputs to compute GradientSHAP scores on.
+        If the model is a ss model, then the scores will only be computed on the forward inputs.
+    ref_type: str
+        Type of reference to use for computing GradientSHAP scores. By default this is an all zeros reference,
+        but we also support a dinucleotide shuffled reference and one based on GC content
+    target: int
+        Index of the target class to compute scores for if there are multiple outputs. If there
+        is a single output, this should be None
+    device: str
+        Device to use for computing GradientSHAP scores.
+        EUGENe will always use a gpu if available
+    
+    Returns
+    -------
+    nd.array
+        Array of GradientSHAP scores
+    """
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval()
     model.to(device)
     gradientshap_explainer = GradientShap(model)
@@ -198,16 +310,63 @@ def _gradientshap_explain(model, inputs, ref_type="zero", target=None, device="c
 
 
 def nn_explain(
-    model,
-    inputs,
-    saliency_type,
-    target=None,
-    ref_type="zero",
-    device="cpu",
-    batch_size=None,
-    abs_value=False,
-    **kwargs,
+    model: torch.nn.Module,
+    inputs: tuple,  
+    saliency_type: str,
+    target: int = None,
+    ref_type: str = "zero",
+    device: str = "cpu",
+    batch_size: int = None,
+    abs_value: bool = False,
+    **kwargs
 ):
+    """
+    Wrapper function for computing feature attribution scores using a model on a set of inputs.
+    Allows for computing scores using different methods and different reference types on any task.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+       PyTorch model to use for computing feature attribution scores.
+        Can be a EUGENe trained model or one you trained with PyTorch or PL.
+    inputs : tuple
+        Tuple of forward and reverse complement inputs to compute feature attribution scores on.
+        If the model is a ss model, then the scores will only be computed on the forward inputs.
+    saliency_type: str
+        Type of saliency to use for computing feature attribution scores.
+        Can be one of the following:
+        - "saliency" (vanilla saliency)
+        - "grad" (vanilla gradients)
+        - "gradxinput" (gradients x inputs)
+        - "intgrad" (integrated gradients)
+        - "intgradxinput" (integrated gradients x inputs)
+        - "smoothgrad" (smooth gradients)
+        - "smoothgradxinput" (smooth gradients x inputs)
+        - "deeplift" (DeepLIFT)
+        - "gradientshap" (GradientSHAP)
+    target: int
+        Index of the target class to compute scores for if there are multiple outputs. If there
+        is a single output, this should be None
+    ref_type: str
+        Type of reference to use for computing feature attribution scores. By default this is an all zeros reference,
+        but we also support a dinucleotide shuffled reference and one based on GC content
+    device: str
+        Device to use for computing feature attribution scores.
+        EUGENe will always use a gpu if available
+    batch_size: int
+        Batch size to use for computing feature attribution scores. If not specified, will use the
+        default batch size of the model
+    abs_value: bool
+        Whether to take the absolute value of the scores. By default this is False
+    **kwargs
+        Additional arguments to pass to the saliency method. For example, you can pass the number of
+        samples to use for SmoothGrad and Integrated Gradients
+
+    Returns
+    -------
+    nd.array
+        Array of feature attribution scores 
+    """
     model.eval()
     if saliency_type == "DeepLift":
         attrs = _deeplift_explain(
@@ -237,19 +396,72 @@ def nn_explain(
 
 @track
 def feature_attribution_sdata(
-    model,
+    model: torch.nn.Module,
     sdata,
-    method="InputXGradient",
-    target=None,
+    method: str = "InputXGradient",
+    target: int = None,
     batch_size: int = None,
     num_workers: int = None,
-    device="cpu",
-    transform_kwargs={},
-    prefix="",
-    suffix="",
-    copy=False,
-    **kwargs,
+    device: str = "cpu",
+    transform_kwargs: dict = {},
+    prefix: str = "",
+    suffix: str = "",
+    copy: bool = False,
+    **kwargs
 ):
+    """
+    Wrapper function to compute feature attribution scores for a set of sequences in a SeqData object.
+    Allows for computing scores using different methods and different reference types on any task.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+       PyTorch model to use for computing feature attribution scores.
+        Can be a EUGENe trained model or one you trained with PyTorch or PL.
+    sdata : SeqData
+        SeqData object containing the sequences to compute feature attribution scores on.
+    method: str
+        Type of saliency to use for computing feature attribution scores.
+        Can be one of the following:
+        - "saliency" (vanilla saliency)
+        - "grad" (vanilla gradients)
+        - "gradxinput" (gradients x inputs)
+        - "intgrad" (integrated gradients)
+        - "intgradxinput" (integrated gradients x inputs)
+        - "smoothgrad" (smooth gradients)
+        - "smoothgradxinput" (smooth gradients x inputs)
+        - "deeplift" (DeepLIFT)
+        - "gradientshap" (GradientSHAP)
+    target: int
+        Index of the target class to compute scores for if there are multiple outputs. If there
+        is a single output, this should be None
+    batch_size: int
+        Batch size to use for computing feature attribution scores. If not specified, will use the
+        default batch size of the model
+    num_workers: int
+        Number of workers to use for computing feature attribution scores. If not specified, will use
+        the default number of workers of the model
+    device: str
+        Device to use for computing feature attribution scores.
+        EUGENe will always use a gpu if available
+    transform_kwargs: dict
+        Dictionary of keyword arguments to pass to the transform method of the model
+    prefix: str
+        Prefix to add to the feature attribution scores
+    suffix: str
+        Suffix to add to the feature attribution scores
+    copy: bool
+        Whether to copy the SeqData object before computing feature attribution scores. By default
+        this is False
+    **kwargs
+        Additional arguments to pass to the saliency method. For example, you can pass the number of
+        samples to use for SmoothGrad and Integrated Gradients
+
+    Returns
+    -------
+    SeqData
+        SeqData object containing the feature attribution scores
+    """
     torch.backends.cudnn.enabled = False
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device

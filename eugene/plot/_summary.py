@@ -1,10 +1,14 @@
+from os import PathLike
+from typing import Union
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.metrics import accuracy_score, roc_auc_score, average_precision_score, precision_score, recall_score, f1_score
 from scipy.stats import spearmanr, pearsonr, kendalltau
-from ._utils import _create_matplotlib_axes, _label_plot, _plot_seaborn
+from ._utils import _plot_seaborn, _save_fig
+from .. import settings
+
 
 metric_dict = {
     "r2": r2_score,
@@ -20,79 +24,50 @@ metric_dict = {
     "f1": f1_score
 }
 
-default_rc_context = {
-    "axes.titlesize": 16,
-    "axes.labelsize": 14,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "legend.fontsize": 12,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-}
-
 
 def _model_performances_across_groups(
-    sdataframe,
-    target,
-    prediction_labels=None,
-    prediction_groups=None,
-    groupby=None,
-    metrics="r2",
-    clf_thresh=0,
+    sdataframe: pd.DataFrame,
+    target_key: str,
+    prediction_keys: list = None,
+    prediction_groups: list = None,
+    groupby: str = None,
+    metrics: str = "r2",
+    clf_thresh: float = 0,
+    **kwargs
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
-    prediction_labels = (
+    prediction_keys = (
         sdataframe.columns[sdataframe.columns.str.contains("predictions")]
-        if prediction_labels is None
-        else prediction_labels
+        if prediction_keys is None
+        else prediction_keys 
     )
     conc = pd.DataFrame()
     for group, data in sdataframe.groupby(groupby):
-        predicts = data[prediction_labels]
+        predicts = data[prediction_keys]
         bin_predicts = (predicts >= clf_thresh).astype(int)
-        true = data[target]
+        true = data[target_key]
         scores = pd.DataFrame()
         for metric in metrics:
             func = metric_dict[metric]
             if metric in ["r2", "mse"]:
                 scores = pd.concat(
-                    [
-                        scores,
-                        predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                            name=metric
-                        ),
-                    ],
+                    [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                     axis=1,
                 )
             elif metric in ["spearman", "pearson", "kendall"]:
                 scores = pd.concat(
-                    [
-                        scores,
-                        predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(
-                            name=metric
-                        ),
-                    ],
+                    [scores, predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(name=metric)],
                     axis=1,
                 )
             elif metric in ["accuracy", "precision", "recall"]:
                 scores = pd.concat(
-                    [
-                        scores,
-                        bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                            name=metric
-                        ),
-                    ],
+                    [scores, bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                     axis=1,
                 )
             elif metric in ["roc_auc", "average_precision"]:
                 scores = pd.concat(
-                    [
-                        scores,
-                        predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                            name=metric
-                        ),
-                    ],
+                    [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                     axis=1,
                 )
         scores[groupby] = group
@@ -103,59 +78,42 @@ def _model_performances_across_groups(
 
 
 def _model_performances(
-    sdataframe, target, prediction_labels=None, prediction_groups=None, metrics="r2", clf_thresh=0
+    sdataframe: pd.DataFrame, 
+    target_key: str,
+    prediction_keys: list = None, 
+    prediction_groups: list = None, 
+    metrics: str = "r2", 
+    clf_thresh: float = 0
 ):
     if isinstance(metrics, str):
         metrics = [metrics]
-    true = sdataframe[target]
-    prediction_labels = (
+    true = sdataframe[target_key]
+    prediction_keys = (
         sdataframe.columns[sdataframe.columns.str.contains("predictions")]
-        if prediction_labels is None
-        else prediction_labels
+        if prediction_keys is None
+        else prediction_keys 
     )
-    predicts = sdataframe[prediction_labels]
+    predicts = sdataframe[prediction_keys]
     bin_predicts = (predicts >= clf_thresh).astype(int)
     scores = pd.DataFrame()
     for metric in metrics:
         func = metric_dict[metric]
         if metric in ["r2", "mse"]:
             scores = pd.concat(
-                [
-                    scores,
-                    predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                        name=metric
-                    ),
-                ],
+                [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                 axis=1,
             )
         elif metric in ["spearman", "pearson", "kendall"]:
-            scores = pd.concat(
-                [
-                    scores,
-                    predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(
-                        name=metric
-                    ),
-                ],
+            scores = pd.concat([scores, predicts.apply(lambda x: func(true, x)[0], axis=0).to_frame(name=metric)],
                 axis=1,
             )
         elif metric in ["accuracy", "precision", "recall", "f1"]:
-            scores = pd.concat(
-                [
-                    scores,
-                    bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                        name=metric
-                    ),
-                ],
+            scores = pd.concat([scores, bin_predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                 axis=1,
             )
         elif metric in ["roc_auc", "average_precision"]:
             scores = pd.concat(
-                [
-                    scores,
-                    predicts.apply(lambda x: func(true, x), axis=0).to_frame(
-                        name=metric
-                    ),
-                ],
+                [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                 axis=1,
             )
     if prediction_groups is not None:
@@ -165,26 +123,36 @@ def _model_performances(
 
 def performance_summary(
     sdata,
-    target,
-    prediction_labels=None,
-    prediction_groups=None,
-    groupby=None,
-    add_swarm=False,
-    size=5,
-    metrics="r2",
-    orient="v",
-    rc_context=default_rc_context,
-    return_axes=False,
+    target_key: str,
+    prediction_keys: list = None,
+    prediction_groups: list = None,
+    groupby: str = None,
+    add_swarm: bool = False,
+    size: int = 5,
+    metrics: Union[str, list] = "r2",
+    orient: str = "v",
+    rc_context=settings.rc_context,
+    return_axes: bool = False,
+    save: PathLike = None,
     **kwargs
 ):
     sdataframe = sdata.seqs_annot
     if groupby is None:
         scores = _model_performances(
-            sdataframe, target, prediction_labels, prediction_groups, metrics
+            sdataframe, 
+            target_key, 
+            prediction_keys, 
+            prediction_groups, 
+            metrics
         )
     else:
         scores = _model_performances_across_groups(
-            sdataframe, target, prediction_labels, prediction_groups, groupby, metrics
+            sdataframe, 
+            target_key, 
+            prediction_keys, 
+            prediction_groups, 
+            groupby, 
+            metrics
         )
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
@@ -208,6 +176,8 @@ def performance_summary(
                 ax=ax,
                 **kwargs
             )
+    if save is not None:
+        _save_fig(save)
     if return_axes:
         return ax
     else:

@@ -1,17 +1,41 @@
 import os
+from os import PathLike
 
-# Function to generate a gkSVM slurm script
 def gkmsvm_slurm_train_script(
-    input_dir,
-    pos_seqs,
-    neg_seqs,
-    val_seqs,
-    result_dir,
-    hyperparams,
-    preprocess,
-    features="fasta",
-    architecture="gkmSVM",
+    input_dir: PathLike,
+    pos_seqs: str,
+    neg_seqs: str,
+    val_seqs: str,
+    result_dir: PathLike,
+    hyperparams: str,
+    preprocess: str,
+    features: str = "fasta",
+    architecture: str = "gkmSVM",
 ):
+    """
+    Generate a slurm script for training a gkmSVM model.
+
+    Parameters
+    ----------
+    input_dir : PathLike
+        Path to directory containing input data.
+    pos_seqs : str
+        Path to file containing positive sequences.
+    neg_seqs : str
+        Path to file containing negative sequences.
+    val_seqs : str
+        Path to file containing validation sequences.
+    result_dir : PathLike
+        Path to directory to store results.
+    hyperparams : str
+        Path to file containing hyperparameters.
+    preprocess : str
+        Preprocessing to perform on input sequences.
+    features : str
+        Features to use for training.
+    architecture : str
+        Architecture to use for training.
+    """
     if not os.path.exists(result_dir):
         print("{} does not exist, making dir".format(result_dir))
         os.makedirs(result_dir)

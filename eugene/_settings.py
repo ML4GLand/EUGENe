@@ -1,13 +1,11 @@
 import logging
 from pathlib import Path
-from typing import Any, Union, Optional, Iterable, TextIO
-from typing import Tuple, List, ContextManager
-
+from typing import Any, Union
+from typing import Tuple
 import pytorch_lightning as pl
 import torch
 from rich.console import Console
 from rich.logging import RichHandler
-
 from ._compat import Literal
 
 if torch.cuda.is_available():
@@ -15,6 +13,7 @@ if torch.cuda.is_available():
     print(f"Number of GPUs: {torch.cuda.device_count()}")
     print(f"Current GPU: {torch.cuda.current_device()}")
     print(f"GPUs: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+
 
 eugene_logger = logging.getLogger("eugene")
 
@@ -53,33 +52,136 @@ class EugeneConfig:
     def __init__(
         self,
         verbosity: int = logging.INFO,
-        progress_bar_style: Literal["rich", "tqdm"] = "tqdm",
-        batch_size: int = 128,
         seed: int = 13,
+        progress_bar_style: Literal["rich", "tqdm"] = "tqdm",
+        rc_context: dict = None,
+        dpi: int = 300,
+        batch_size: int = 128,
         gpus: int = None,
+        dl_num_workers: int = 0,
+        dl_pin_memory_gpu_training: bool = False,
         dataset_dir="./eugene_data/",
         logging_dir: str = "./eugene_logs/",
         output_dir: str = "./eugene_output/",
         config_dir: str = "./eugene_configs/",
         figure_dir: str = "./eugene_figures/",
-        dl_num_workers: int = 0,
-        dl_pin_memory_gpu_training: bool = False,
     ):
 
         self.verbosity = verbosity
+        self.seed = seed
         if progress_bar_style not in ["rich", "tqdm"]:
             raise ValueError("Progress bar style must be in ['rich', 'tqdm']")
         self.progress_bar_style = progress_bar_style
+        self.rc_context = rc_context
+        self.dpi = dpi
         self.batch_size = batch_size
-        self.seed = seed
         self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
+        self.dl_num_workers = dl_num_workers
+        self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
         self.dataset_dir = dataset_dir
         self.logging_dir = logging_dir
         self.output_dir = output_dir
         self.config_dir = config_dir
         self.figure_dir = figure_dir
-        self.dl_num_workers = dl_num_workers
-        self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
+
+    @property
+    def verbosity(self) -> int:
+        """Verbosity level (default `logging.INFO`)."""
+        return self._verbosity
+
+    @verbosity.setter
+    def verbosity(self, level: Union[str, int]):
+        """
+        Sets logging configuration for eugene based on chosen level of verbosity.
+        If "eugene" logger has no StreamHandler, add one.
+        Else, set its level to `level`.
+        Parameters
+        ----------
+        level
+            Sets "eugene" logging level to `level`
+        force_terminal
+            Rich logging option, set to False if piping to file output.
+        """
+        self._verbosity = level
+        eugene_logger.setLevel(level)
+        if len(eugene_logger.handlers) == 0:
+            console = Console(force_terminal=True)
+            if console.is_jupyter is True:
+                console.is_jupyter = False
+            ch = RichHandler(
+                level=level, show_path=False, console=console, show_time=False
+            )
+            formatter = logging.Formatter("%(message)s")
+            ch.setFormatter(formatter)
+            eugene_logger.addHandler(ch)
+        else:
+            eugene_logger.setLevel(level)
+
+    def reset_logging_handler(self):
+        """
+        Resets "eugene" log handler to a basic RichHandler().
+        This is useful if piping outputs to a file.
+        """
+        eugene_logger.removeHandler(eugene_logger.handlers[0])
+        ch = RichHandler(level=self._verbosity, show_path=False, show_time=False)
+        formatter = logging.Formatter("%(message)s")
+        ch.setFormatter(formatter)
+        eugene_logger.addHandler(ch)
+
+    @property
+    def seed(self) -> int:
+        """Random seed for torch and numpy."""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed: int):
+        """Random seed for torch and numpy."""
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        pl.utilities.seed.seed_everything(seed)
+        self._seed = seed
+
+    @property
+    def progress_bar_style(self) -> str:
+        """Library to use for progress bar."""
+        return self._pbar_style
+
+    @progress_bar_style.setter
+    def progress_bar_style(self, pbar_style: Literal["tqdm", "rich"]):
+        """Library to use for progress bar."""
+        self._pbar_style = pbar_style
+
+    @property
+    def rc_context(self) -> dict:
+        """Matplotlib rc_context."""
+        return self._rc_context
+
+    default_rc_context = {
+        "axes.titlesize": 16,
+        "axes.labelsize": 14,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "legend.fontsize": 12,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+    @rc_context.setter
+    def rc_context(self, rc_context: dict):
+        """Matplotlib rc_context."""
+        if rc_context is None:
+            self._rc_context = self.default_rc_context
+        else:
+            self._rc_context = rc_context
+
+    @property
+    def dpi(self) -> int:
+        """Matplotlib dpi."""
+        return self._dpi
+
+    @dpi.setter
+    def dpi(self, dpi: int):
+        """Matplotlib dpi."""
+        self._dpi = dpi
 
     @property
     def batch_size(self) -> int:
@@ -178,73 +280,6 @@ class EugeneConfig:
     @figure_dir.setter
     def figure_dir(self, figure_dir: Union[str, Path]):
         self._figure_dir = Path(figure_dir).resolve()
-
-    @property
-    def progress_bar_style(self) -> str:
-        """Library to use for progress bar."""
-        return self._pbar_style
-
-    @progress_bar_style.setter
-    def progress_bar_style(self, pbar_style: Literal["tqdm", "rich"]):
-        """Library to use for progress bar."""
-        self._pbar_style = pbar_style
-
-    @property
-    def seed(self) -> int:
-        """Random seed for torch and numpy."""
-        return self._seed
-
-    @seed.setter
-    def seed(self, seed: int):
-        """Random seed for torch and numpy."""
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        pl.utilities.seed.seed_everything(seed)
-        self._seed = seed
-
-    @property
-    def verbosity(self) -> int:
-        """Verbosity level (default `logging.INFO`)."""
-        return self._verbosity
-
-    @verbosity.setter
-    def verbosity(self, level: Union[str, int]):
-        """
-        Sets logging configuration for eugene based on chosen level of verbosity.
-        If "eugene" logger has no StreamHandler, add one.
-        Else, set its level to `level`.
-        Parameters
-        ----------
-        level
-            Sets "eugene" logging level to `level`
-        force_terminal
-            Rich logging option, set to False if piping to file output.
-        """
-        self._verbosity = level
-        eugene_logger.setLevel(level)
-        if len(eugene_logger.handlers) == 0:
-            console = Console(force_terminal=True)
-            if console.is_jupyter is True:
-                console.is_jupyter = False
-            ch = RichHandler(
-                level=level, show_path=False, console=console, show_time=False
-            )
-            formatter = logging.Formatter("%(message)s")
-            ch.setFormatter(formatter)
-            eugene_logger.addHandler(ch)
-        else:
-            eugene_logger.setLevel(level)
-
-    def reset_logging_handler(self):
-        """
-        Resets "eugene" log handler to a basic RichHandler().
-        This is useful if piping outputs to a file.
-        """
-        eugene_logger.removeHandler(eugene_logger.handlers[0])
-        ch = RichHandler(level=self._verbosity, show_path=False, show_time=False)
-        formatter = logging.Formatter("%(message)s")
-        ch.setFormatter(formatter)
-        eugene_logger.addHandler(ch)
 
 
 settings = EugeneConfig()

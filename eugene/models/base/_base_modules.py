@@ -3,7 +3,8 @@ from ._utils import GetFlattenDim, BuildFullyConnected
 
 
 class BasicFullyConnectedModule(nn.Module):
-    """General fully connected module.
+    """Instantiate a PyTorch module with a bseic fully connected module.
+    (i.e. input, output, layers, activation, dropout, and batchnorm)
 
     Parameters
     ----------
@@ -18,10 +19,16 @@ class BasicFullyConnectedModule(nn.Module):
 
     Returns
     -------
-        nn.Module
+    nn.Module
+        The instantiated fully connected module.
     """
-
-    def __init__(self, input_dim: int, output_dim: int, hidden_dims=[], **kwargs):
+    def __init__(
+        self, 
+        input_dim: int, 
+        output_dim: int, 
+        hidden_dims=[], 
+        **kwargs
+    ):
         super(BasicFullyConnectedModule, self).__init__()
         dlayers = [input_dim] + hidden_dims + [output_dim]
         self.module = BuildFullyConnected(dlayers, **kwargs)
@@ -51,19 +58,23 @@ class BasicConv1D(nn.Module):
         implementation of batch normalization on output.
     omit_final_pool : boolean
         omit final max pooling after activation.
-    """
 
+    Returns
+    -------
+    nn.Module
+        The instantiated 1D convolutional module.
+    """
     def __init__(
         self,
-        input_len,
-        channels,
-        conv_kernels,
-        pool_kernels,
-        activation="relu",
-        pool_strides=None,
-        dropout_rates=0.0,
-        batchnorm=False,
-        omit_final_pool=False,
+        input_len: int,
+        channels: list,
+        conv_kernels: list,
+        pool_kernels: list,
+        activation: str = "relu",
+        pool_strides: list = None,
+        dropout_rates: float = 0.0,
+        batchnorm: bool = False,
+        omit_final_pool: bool =False
     ):
         super(BasicConv1D, self).__init__()
         if pool_strides is None:
@@ -75,35 +86,23 @@ class BasicConv1D(nn.Module):
                 assert len(dropout_rates) == len(channels) - 1
         net = []
         for i in range(1, len(channels)):
-            net.append(
-                nn.Conv1d(channels[i - 1], channels[i], kernel_size=conv_kernels[i - 1])
-            )
+            net.append(nn.Conv1d(channels[i - 1], channels[i], kernel_size=conv_kernels[i - 1]))
             if activation == "relu":
                 net.append(nn.ReLU(inplace=False))
             elif activation == "sigmoid":
                 net.append(nn.Sigmoid())
             if i == len(channels) - 1:  # Only omit max pool on final iteration
                 if not omit_final_pool:
-                    net.append(
-                        nn.MaxPool1d(
-                            kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]
-                        )
-                    )
+                    net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
             else:
-                net.append(
-                    nn.MaxPool1d(
-                        kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]
-                    )
-                )
+                net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
             if dropout_rates != 0.0:
                 net.append(nn.Dropout(dropout_rates[i - 1]))
             if batchnorm:
                 net.append(nn.BatchNorm1d(channels[i]))
         self.module = nn.Sequential(*net)
         self.out_channels = channels[-1]
-        self.flatten_dim = (
-            GetFlattenDim(self.module, seq_len=input_len) * self.out_channels
-        )
+        self.flatten_dim = (GetFlattenDim(self.module, seq_len=input_len) * self.out_channels)
 
     def forward(self, x):
         return self.module(x)
@@ -111,7 +110,7 @@ class BasicConv1D(nn.Module):
 
 # Recurrent modules
 class BasicRecurrent(nn.Module):
-    """Basic recurrent module.
+    """Instantiate a PyTorch module with a basic 1D recurrent architecture
 
     Parameters
     ----------
@@ -129,10 +128,15 @@ class BasicRecurrent(nn.Module):
     Returns
     -------
     nn.Module
+        The instantiated recurrent module.
     """
-
     def __init__(
-        self, input_dim, output_dim, unit_type="lstm", bidirectional=False, **kwargs
+        self, 
+        input_dim: int, 
+        output_dim: int, 
+        unit_type: str ="lstm", 
+        bidirectional: bool = False, 
+        **kwargs
     ):
         super(BasicRecurrent, self).__init__()
         if unit_type == "lstm":

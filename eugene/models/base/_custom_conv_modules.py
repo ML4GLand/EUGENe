@@ -5,8 +5,37 @@ from ._utils import GetFlattenDim, BuildFullyConnected
 
 
 class BiConv1D(nn.Module):
+    """Generates a PyTorch module with the convolutional architecture described in:
+    TODO: Add paper reference
+
+    Parameters
+    ----------
+    input_len : int
+        Length of the input sequence
+    filters : int
+        Number of filters in the convolutional layers. Applies the same number to all layers
+    kernel_size : int
+        Size of the kernel in the convolutional layers. Applies the same size to all layers
+    layers : int
+        Number of convolutional layers
+    stride : int
+        Stride of the convolutional layers. Applies the same stride to all layers
+    dropout_rate : float
+        Dropout rate of the convolutional layers. Applies the same rate to all layers
+    
+    Returns
+    -------
+    torch.nn.Module
+        TODO: Add description
+    """
     def __init__(
-        self, filters, kernel_size, input_size=4, layers=1, stride=1, dropout_rate=0.15
+        self, 
+        filters: int,
+        kernel_size: int,
+        input_size: int = 4, 
+        layers: int = 1, 
+        stride: int = 1, 
+        dropout_rate: float = 0.15
     ):
         super().__init__()
         self.filters = filters

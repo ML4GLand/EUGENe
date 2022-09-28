@@ -1,6 +1,4 @@
-import logging
 import numpy as np
-import pandas as pd
 from os import PathLike
 from typing import Union, List
 from torch.utils.data import DataLoader
@@ -18,8 +16,8 @@ def fit(
     sdata: SeqData = None,
     target_keys: Union[str, List[str]] = None,
     train_key: str = "train_val",
-    epochs=10,
-    gpus=None,
+    epochs: int = 10,
+    gpus: int = None,
     batch_size: int = None,
     num_workers: int = None,
     log_dir: PathLike = None,
@@ -37,10 +35,67 @@ def fit(
     early_stopping_verbose=False,
     seed: int = None,
     verbosity = None,
+    return_trainer: bool = False,
     **kwargs
 ):
     """
-    Train the model.
+    Train the model using PyTorch Lightning.
+
+    Parameters
+    ----------
+    model : BaseModel
+        The model to train.
+    sdata : SeqData
+        The SeqData object to train on.
+    target_keys : str or list of str
+        The target keys in sdata's seqs_annot attribute to train on.
+    train_key : str
+        The key in sdata's seqs_annot attribute to split into train and validation set
+    epochs : int
+        The number of epochs to train for.
+    gpus : int
+        The number of gpus to use. EUGENe will automatically use all available gpus if available.
+    batch_size : int
+        The batch size to use.
+    num_workers : int
+        The number of workers to use for the dataloader.
+    log_dir : PathLike
+        The directory to save the logs to.
+    name : str
+        The name of the experiment.
+    version : str
+        The version of the experiment.
+    train_dataset : SeqDataset
+        The training dataset to use. If None, will be created from sdata.
+    val_dataset : SeqDataset
+        The validation dataset to use. If None, will be created from sdata.
+    train_dataloader : DataLoader
+        The training dataloader to use. If None, will be created from train_dataset.
+    val_dataloader : DataLoader
+        The validation dataloader to use. If None, will be created from val_dataset.
+    seq_transforms : list of str
+        The sequence transforms to apply to the data.
+    transform_kwargs : dict
+        The keyword arguments to pass to the sequence transforms.
+    early_stopping_callback : bool
+        Whether to use early stopping.
+    early_stopping_metric : str
+        The metric to use for early stopping.
+    early_stopping_patience : int
+        The number of epochs to wait before stopping.
+    early_stopping_verbose : bool
+        Whether to print early stopping messages.
+    seed : int
+        The seed to use for reproducibility.
+    verbosity : int
+        The verbosity level.
+    kwargs : dict
+        Additional keyword arguments to pass to the PL Trainer.
+
+    Returns
+    -------
+    trainer : Trainer
+        The PyTorch Lightning Trainer object.
     """
     gpus = gpus if gpus is not None else settings.gpus
     batch_size = batch_size if batch_size is not None else settings.batch_size
@@ -113,3 +168,5 @@ def fit(
     trainer.fit(
         model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader
     )
+    if return_trainer:
+        return trainer

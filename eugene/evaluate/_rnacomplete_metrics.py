@@ -1,23 +1,28 @@
 import numpy as np
 import pandas as pd
-from itertools import product
 from tqdm.auto import tqdm
-
+from typing import List
 tqdm.pandas()
-from sklearn.metrics import auc
-from sklearn.metrics import r2_score
 from scipy.stats import pearsonr, spearmanr
 import matplotlib.pyplot as plt
-import seaborn as sns
 from ._metrics import median_calc, auc_calc, escore
 
 
-def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=False):
+def rnacomplete_metrics(
+    kmer_presence_mtx: np.ndarray, 
+    intensities: np.ndarray, 
+    verbose: bool = True, 
+    swifter: bool = False
+):
     """
-    Calculate the RNAcomplete metrics for a set of kmers and intensities.
+    Calculate the RNAcomplete metrics for a set of k-mers and scores for a set of sequences.
 
     Parameters
     ----------
+    kmer_presence_mtx : np.ndarray
+        A binary matrix of k-mers x samples. A 1 in entry (i, j) indicates that sequence j contains k-mer i. 
+    intensities : np.ndarray
+        A vector of scores for each sequence.
     """
     y_score = intensities
     df = pd.DataFrame(kmer_presence_mtx).astype(np.int8)
@@ -34,6 +39,12 @@ def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=Fa
                 axis=1,
             )
         else:
+            try:
+                import swifter
+            except ImportError:
+                raise ImportError(
+                    "swifter is not installed. Please install swifter to use this feature."
+                )
             rbp_eval = df.swifter.apply(
                 lambda y_true: pd.Series(
                     {
@@ -68,19 +79,30 @@ def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=Fa
 
 def rnacomplete_metrics_sdata_plot(
     sdata,
-    kmer_presence_mtx,
-    target_key,
-    return_cors=False,
-    verbose=True,
-    preds_suffix="_predictions",
-    **kwargs,
+    kmer_presence_mtx: np.ndarray,
+    target_key: str,
+    return_cors: bool = False,
+    verbose: bool = True,
+    preds_suffix: str = "_predictions",
+    **kwargs
 ):
     """
-    Calculate the RNAcomplete metrics for a set of kmers and intensities in a SeqData object.
+    Calculate the RNAcomplete metrics for a set of k-mers and intensities in a SeqData object.
 
     Parameters
     ----------
-
+    sdata : SeqData
+        A SeqData object containing the intensities for each sequence in seqs_annot.
+    kmer_presence_mtx : np.ndarray
+        A binary matrix of k-mers x samples. A 1 in entry (i, j) indicates that sequence j contains k-mer i.
+    target_key : str
+        The key in sdata.seqs_annot to use for the intensities.
+    return_cors : bool, optional
+        Whether to return the Pearson and Spearman correlations, by default False (plots only) 
+    verbose : bool, optional
+        Whether to show a progress bar for all the k-mers, by default True
+    preds_suffix : str, optional
+        The suffix to use for the predictions, by default "_predictions"
     """
     observed = sdata[target_key].values
     preds = sdata[f"{target_key}{preds_suffix}"].values
@@ -200,24 +222,42 @@ def rnacomplete_metrics_sdata_plot(
 
 def rnacomplete_metrics_sdata_table(
     sdata,
-    kmer_presence_mtx,
-    target_keys,
-    num_kmers=100,
-    verbose=False,
-    preds_suffix="_predictions",
-    **kwargs,
+    kmer_presence_mtx: np.ndarray,
+    target_keys: List[str],
+    num_kmers: int = 100,
+    verbose: bool = False,
+    preds_suffix: str = "_predictions",
+    **kwargs
 ):
     """
     Generate a table of RNAcomplete metrics for a list of target keys.
+
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object with observed and predicted scores in columns of seqs_annot
+    kmer_presence_mtx : np.ndarray
+       A binary matrix of k-mers x samples. A 1 in entry (i, j) indicates that sequence j contains k-mer i.
+    target_keys : List[str]
+        List of target keys to compute metrics for
+    num_kmers : int, optional
+        Number of k-mers to sample to compute metrics, by default 100. For large sets of k-mers this can take long
+    verbose : bool, optional
+        Whether to print progress, by default False
+    preds_suffix : str, optional
+        Suffix of predicted scores in seqs_annot, by default "_predictions"
+    
+    Returns
+    -------
+    pd.DataFrame
+        A table of RNAcomplete metrics for each target key
     """
     if isinstance(target_keys, str):
         target_keys = [target_keys]
     spearman_summary = pd.DataFrame()
     pearson_summary = pd.DataFrame()
     if num_kmers is not None:
-        random_kmers = np.random.choice(
-            np.arange(kmer_presence_mtx.shape[0]), size=num_kmers
-        )
+        random_kmers = np.random.choice(np.arange(kmer_presence_mtx.shape[0]), size=num_kmers)
         kmer_presence_mtx = kmer_presence_mtx[random_kmers, :]
     valid_kmers = np.where(np.sum(kmer_presence_mtx, axis=1) > 155)[0]
     kmer_presence_mtx = kmer_presence_mtx[valid_kmers, :]

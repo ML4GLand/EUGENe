@@ -1,22 +1,9 @@
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from typing import Optional, Union, Mapping  # Special
-from typing import Sequence, Collection, Iterable  # Acol_indexB
-from typing import Tuple, List  # Classes
-from ._utils import _create_matplotlib_axes, _label_plot, _plot_seaborn
-
-
-default_rc_context = {
-    "axes.titlesize": 16,
-    "axes.labelsize": 14,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "legend.fontsize": 12,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-}
+from typing import Union, Mapping 
+from typing import Sequence, Iterable
+from ._utils import _plot_seaborn, _violin_long
+from .. import settings
 
 
 def countplot(
@@ -24,25 +11,29 @@ def countplot(
     keys: Union[str, Sequence[str]],
     groupby: str = None,
     orient: str = "h",
-    rc_context: Mapping[str, str] = default_rc_context,
+    rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
 ) -> None:
     """
-    Plots a countplot using seaborn. This function was written by Copilot
+    Plots a countplot of a column(s) in seqs_annot using Seaborn.
+
+    This function can be used to show the counts of observations in a single
+    or multiple columns of seqs_annot within a SeqData. If a groupby is 
+    provided then the counts are grouped by the groupby column.  
 
     Parameters
     ----------
     sdata : SeqData
-        SeqData object.
+        SeqData object that contains keys in seqs_annot.
     keys : str or list of str
-        Keys to plot.
+        Keys to plot. Will be plotted in separate adjacent subplots.
     groupby : str
-        Key to group by.
+        Key to group by. If None, will plot counts of each key.
     orient : str
-        Orientation of plot.
+        Orientation of plot. Either "h" (horizontal) or "v" (vertical).
     rc_context : Mapping[str, str]
-        Matplotlib rc context.
+        Matplotlib rc context. Default is eugene.settings.rc_context.
     return_axes : bool
         Return axes.
     **kwargs
@@ -69,12 +60,16 @@ def histplot(
     sdata,
     keys: Union[str, Sequence[str]],
     orient: str = "v",
-    rc_context: Mapping[str, str] = default_rc_context,
+    rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
 ) -> None:
     """
-    Plots a histogram using seaborn.
+    Plots a histogram of a column(s) in seqs_annot using seaborn.
+
+    This function can be used to show the distribution of a single or multiple
+    columns of seqs_annot within a SeqData. If a groupby is provided then the
+    distribution is grouped by the groupby column.
 
     Parameters
     ----------
@@ -116,12 +111,16 @@ def boxplot(
     groupby: str = None,
     orient: str = "v",
     jitter=False,
-    rc_context: Mapping[str, str] = default_rc_context,
+    rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
 ) -> None:
     """
-    Plots a boxplot using seaborn.
+    Plots a boxplot of a column(s) in seqs_annot using Seaborn.
+
+    This function can be used to show the distribution of a single or multiple 
+    columns of seqs_annot within a SeqData. If a groupby is provided then the
+    distribution is grouped by the groupby column.
 
     Parameters
     ----------
@@ -167,37 +166,21 @@ def boxplot(
         return ax
 
 
-def _violin_long(
-    sdata,
-    groups,
-    xlabel="variable",
-    ylabel="value",
-    save=None,
-    **kwargs
-):
-    if isinstance(groups, str):
-        groups=[groups]
-    long = sdata.seqs_annot.melt(value_vars=groups)
-    fig, ax = plt.subplots(1, 1, figsize=(8,8))
-    sns.violinplot(data=long, x="variable", y="value", ax=ax, **kwargs)
-    sns.stripplot(data=long, x="variable", y="value", ax=ax, color="black", alpha=0.75)
-    ax.set_xlabel(xlabel, fontsize=14)
-    ax.set_ylabel(ylabel, fontsize=14)
-    if save:
-        plt.savefig(save)
-
-
 def violinplot(
     sdata,
     keys: Union[str, Sequence[str]] = None,
     groupby: str = None,
     orient: str = "v",
-    rc_context: Mapping[str, str] = default_rc_context,
+    rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
 ) -> None:
     """
-     Plots a violinplot using seaborn.
+    Plots a violinplot of a column(s) in seqs_annot using Seaborn.
+
+    This function can be used to show the distribution of a single or multiple
+    columns of seqs_annot within a SeqData as a violin plot. If a groupby is provided 
+    then the distribution is grouped by the groupby column.
 
     Parameters
      ----------
@@ -210,7 +193,7 @@ def violinplot(
      orient : str
          Orientation of plot.
      rc_context : Mapping[str, str]
-         Matplotlib rc context.
+         Matplotlib rc context. Uses settings by default.
      return_axes : bool
          Return axes.
      **kwargs
@@ -236,9 +219,20 @@ def violinplot(
         return ax
 
 
-def scatterplot(sdata, x: str, y: str, seq_idx=None, **kwargs):
+def scatterplot(
+    sdata, 
+    x: str, 
+    y: str, 
+    seq_idx: Sequence[int] = None,
+    return_axes: bool = False,
+    **kwargs
+) -> None:
     """
-    Plots a scatterplot using seaborn.
+    Plots a scatterplot of two columns in seqs_annot using Seaborn.
+
+    This function can be used to show the relationship between two columns of
+    seqs_annot within a SeqData. If seq_idx is provided then only the sequences
+    with the given indices are plotted.
 
     Parameters
     ----------
@@ -250,12 +244,22 @@ def scatterplot(sdata, x: str, y: str, seq_idx=None, **kwargs):
         Key for y-axis.
     seq_idx : int or list of int
         Index of sequences to plot.
-    **kwargs
-
+    **kwargs: dict
+        Additional keyword arguments to pass to _plot_seaborn.    
     Returns
     -------
     None
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    _plot_seaborn(sdata.seqs_annot, x, sns.scatterplot, y, ylab=y, **kwargs)
+    ax = _plot_seaborn(
+        sdata.seqs_annot, 
+        keys=x, 
+        func=sns.scatterplot, 
+        groupby=y, 
+        xlab=x,
+        ylab=y, 
+        **kwargs
+    )
+    if return_axes:
+        return ax

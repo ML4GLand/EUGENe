@@ -1,9 +1,6 @@
-# Classics
 import os
 import numpy as np
 import pandas as pd
-
-# EUGENE
 from .._settings import settings
 from ..preprocess import reverse_complement_seqs, ohe_seqs
 from ..dataload._utils import _seq2Fasta
@@ -54,7 +51,12 @@ def random_seqs(seq_num, seq_len):
 
 
 def generate_random_data(
-    num_seqs, seq_len, vocab="DNA", num_outputs=1, out_dir=None, dataset_name=None
+    num_seqs: int, 
+    seq_len: int, 
+    vocab: str = "DNA", 
+    num_outputs: int = 1, 
+    out_dir: str = None, 
+    dataset_name: str = None
 ):
     """
     Simple function tp generate commonly used file types for testing EUGENe models

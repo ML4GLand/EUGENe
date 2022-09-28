@@ -6,10 +6,10 @@ from .base import BaseModel, BiConv1D
 
 class Jores21CNN(BaseModel):
     """
-    Jores21CNN model.
+    Custom convolutional model used in Jores et al. 2021 paper
 
-    Uses a custom BiConv1D module converted from tf implementation to PyTorch from
-    url (which was adapted from url).
+    PyTorch implementation of the TensorFlow model described here:
+    https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ class Jores21CNN(BaseModel):
     task : str, optional
         Task of the model. Either "regression" or "classification".
     aggr : str, optional
-        Aggregation method. Either "mean" or "sum".
+        Aggregation method. Does not apply to this model
     filters : int, optional
         Number of filters in the convolutional layers.
     kernel_size : int, optional
@@ -36,13 +36,12 @@ class Jores21CNN(BaseModel):
     hidden_dim : int, optional
         Dimension of the hidden layer.
     """
-
     def __init__(
         self,
-        input_len,
-        output_dim,
-        strand="ss",
-        task="regression",
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
         aggr=None,
         filters: int = 128,
         kernel_size: int = 13,
@@ -88,9 +87,10 @@ class Jores21CNN(BaseModel):
 
 class Kopp21CNN(BaseModel):
     """
-    Kopp21CNN model.
+    Custom convolutional model used in Kopp et al. 2021 paper
 
-    Uses a custom BiConv1D module converted from tf implementation to PyTorch from
+    PyTorch implementation of the TensorFlow model described here:
+    https://github.com/wkopp/janggu_usecases/tree/master/01_jund_prediction
 
     Parameters
     ----------
@@ -99,13 +99,13 @@ class Kopp21CNN(BaseModel):
     output_dim : int
         Dimension of the output.
     strand : str, optional
-        Strand of the input. Either "ss" or "ds".
+        Strand of the input. By default "ds" for this model.
     task : str, optional
-        Task of the model. Either "regression" or "classification".
+        Task for this model. By default "binary_classification" for this mode
     aggr : str, optional
-        Aggregation method. Either "concat", "max", or "ave".
+        Aggregation method. Either "concat", "max", or "ave". By default "max" for this model.
     filters : list, optional
-        Number of filters in the convolutional layers.
+        Number of filters in the convolutional layers. 
     conv_kernel_size : list, optional
         Kernel size of the convolutional layers.
     maxpool_kernel_size : int, optional
@@ -113,15 +113,14 @@ class Kopp21CNN(BaseModel):
     stride : int, optional
         Stride of the convolutional layers.
     """
-
     def __init__(
         self,
-        input_len,
-        output_dim,
-        strand="ds",
-        task="binary_classification",
-        aggr="max",
-        loss_fxn="bce",
+        input_len: int,
+        output_dim: int,
+        strand: str ="ds",
+        task: str = "binary_classification",
+        aggr: str = "max",
+        loss_fxn: str = "bce",
         filters: list = [10, 8],
         conv_kernel_size: list = [11, 3],
         maxpool_kernel_size: int = 30,

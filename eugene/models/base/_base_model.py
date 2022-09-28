@@ -20,7 +20,7 @@ from ..._settings import settings
 
 
 class BaseModel(LightningModule):
-    """Base model for all models
+    """Base model class to be inherited by all models in EUGENe
 
     Paramters:
     ----------
@@ -42,27 +42,24 @@ class BaseModel(LightningModule):
     kwargs (dict):
         additional arguments to pass to the model
     """
-
     def __init__(
         self,
-        input_len,
-        output_dim,
-        strand="ss",
-        task="regression",
-        aggr=None,
-        loss_fxn="mse",
-        optimizer="adam",
-        lr=1e-3,
-        scheduler="lr_scheduler",
-        scheduler_patience=2,
-        hp_metric=None,
-        optimizer_kwargs={},
-        seed=None,
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        loss_fxn: str = "mse",
+        optimizer: str = "adam",
+        lr: float = 1e-3,
+        scheduler: str = "lr_scheduler",
+        scheduler_patience: int = 2,
+        hp_metric: str = None,
+        optimizer_kwargs: dict = {},
+        seed: int = None,
         **kwargs,
     ):
         super().__init__()
-
-        # Instance variables
         self.input_len = input_len
         self.output_dim = output_dim
         self.strand = strand
@@ -80,13 +77,11 @@ class BaseModel(LightningModule):
         self.optimizer_kwargs = optimizer_kwargs
         seed_everything(seed) if seed is not None else None
         self.kwargs = kwargs
-
-        # Save hyperparameters
         self.save_hyperparameters()
 
     def forward(self, x, x_rev_comp=None) -> torch.Tensor:
         """
-        Forward pass of the model
+        Forward pass of the model. This method must be implemented by the child class.
 
         Parameters:
         ----------
@@ -121,8 +116,8 @@ class BaseModel(LightningModule):
 
         Returns:
         ----------
-        dict:
-            dictionary of predictions
+        np.ndarray:
+            predictions with the format ID, prediction, true value
         """
         ID, x, x_rev_comp, y = batch
         ID = np.array(
@@ -171,6 +166,15 @@ class BaseModel(LightningModule):
         return loss
 
     def configure_optimizers(self):
+        """Configure optimizers
+
+        Returns:
+        ----------
+        torch.optim.Optimizer:
+            optimizer
+        torch.optim.lr_scheduler._LRScheduler:
+            learning rate scheduler
+        """
         optimizer = optimizer_dict[self.optimizer](
             self.parameters(), lr=self.lr, **self.optimizer_kwargs
         )
@@ -186,7 +190,7 @@ class BaseModel(LightningModule):
         }
 
     def _calculate_metric(self, outs, y):
-        """Calculate metric
+        """Calculate metrics on set of predictions
 
         Parameters:
         ----------
@@ -212,7 +216,7 @@ class BaseModel(LightningModule):
             return self.hp_metric(preds, y.long())
 
     def summary(self):
-        """Summary of the model"""
+        """Print a summary of the model"""
         print(f"Model: {self.__class__.__name__}")
         print(f"Input length: {self.input_len}")
         print(f"Output dimension: {self.output_dim}")

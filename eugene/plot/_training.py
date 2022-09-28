@@ -1,15 +1,14 @@
 import os
+from os import PathLike
 import glob
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Union, Sequence
 from ._utils import (
-    _create_matplotlib_axes,
-    _label_plot,
     _plot_seaborn,
-    tflog2pandas,
     many_logs2pandas,
+    _save_fig,
 )
+from .. import settings
 
 
 def metric_curve(
@@ -19,6 +18,7 @@ def metric_curve(
     title: str = None,
     xlab: str = "minibatch step",
     ylab: str = None,
+    ax = None,
     return_axes: bool = False,
     **kwargs
 ) -> None:
@@ -59,6 +59,7 @@ def metric_curve(
         xlab=xlab,
         ylab=ylab,
         hue=hue,
+        ax=ax,
         **kwargs
     )
     if return_axes:
@@ -66,10 +67,11 @@ def metric_curve(
 
 
 def loss_curve(
-    log_path,
+    log_path: PathLike,
     title: str = None,
-    xlab: str = None,
+    xlab: str = "minibatch_step",
     ylab: str = "loss",
+    ax = None,
     return_axes: bool = False,
     **kwargs
 ) -> None:
@@ -96,14 +98,25 @@ def loss_curve(
     If return_axes is True, returns the axes object.
     """
     ax = metric_curve(
-        log_path, metric="loss", title=title, xlab="loss", ylab=ylab, **kwargs
+        log_path, 
+        metric="loss", 
+        title=title, 
+        xlab=xlab, 
+        ylab=ylab, 
+        ax=ax,
+        **kwargs
     )
     if return_axes:
         return ax
 
 
 def training_summary(
-    log_path: str, metrics: Union[str, Sequence[str]] = None, save: str = None, **kwargs
+    log_path: PathLike, 
+    metric: str, 
+    figsize=(12, 6),
+    save: str = None, 
+    return_axes: bool = False,
+    **kwargs
 ) -> None:
     """
     Plots the training summary from a training run. Convenience function to plot loss and metric together.
@@ -119,8 +132,10 @@ def training_summary(
     -------
     None
     """
-    loss_curve(log_path, return_axes=True, **kwargs)
-    metric_curve(log_path, metric=metrics, return_axes=True, **kwargs)
+    _, ax = plt.subplots(1, 2, figsize=figsize)
+    loss_curve(log_path, ax=ax[0], **kwargs)
+    metric_curve(log_path, metric=metric, ax=ax[1], **kwargs)
     if save is not None:
-        plt.savefig(save, dpi=300)
-    return None
+        _save_fig(save)
+    if return_axes:
+        return ax

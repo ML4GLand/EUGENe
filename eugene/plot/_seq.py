@@ -1,3 +1,5 @@
+from typing import Union
+from os import PathLike
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -9,19 +11,14 @@ import logomaker as lm
 from vizsequence import viz_sequence
 from tqdm.auto import tqdm
 from ..preprocess._utils import _collapse_pos
+from ._utils import _save_fig
+from .. import settings
 
 
-default_rc_context = {
-    "axes.titlesize": 16,
-    "axes.labelsize": 14,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "legend.fontsize": 12,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
+vocab_dict = {
+    "DNA": ["A", "C", "G", "T"], 
+    "RNA": ["A", "C", "G", "U"]
 }
-
-alphabet_dict = {"DNA": ["A", "C", "G", "T"], "RNA": ["A", "C", "G", "U"]}
 
 
 def _plot_seq_features(
@@ -31,7 +28,9 @@ def _plot_seq_features(
     additional_annots: list = [],
 ):
     """
-    Plot sequence features.
+    Plot sequence features using matplotlib.
+
+    This 
 
     Parameters
     ----------
@@ -60,7 +59,7 @@ def _plot_seq_features(
     ax.hlines(0.2, 1, len(seq), color="black")  #  Backbone to plot boxes on top of
 
     # Build rectangles for each TFBS into a dictionary
-    for row, annot in annots.iterrows():
+    for _, annot in annots.iterrows():
         start = annot["Start"]
         end = annot["End"]
         name = annot["Name"] if annot["Name"] else "Unknown"
@@ -113,7 +112,7 @@ def _plot_seq_logo(
     **kwargs,
 ):
     """
-    Plot sequence logo.
+    Plot sequence logo using viz_sequence
 
     Parameters
     ----------
@@ -133,10 +132,14 @@ def _plot_seq_logo(
     Returns
     -------
     None
+
+    Note
+    ----
+    This was adapted from the viz_sequence package:
+    https://github.com/kundajelab/vizsequence
     """
     if imp_scores is None:
         from ..preprocess import ohe_seq
-
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
@@ -174,7 +177,7 @@ def _plot_seq_logo(
         ax.hlines(1, len(seq), threshold / 10, color="red")
 
 
-def seq_track(
+def seq_track_features(
     sdata,
     seq_id: str,
     uns_key: str = None,
@@ -189,7 +192,9 @@ def seq_track(
     **kwargs,
 ):
     """
-    Function to plot tracks from a SeqData object
+    Function to plot tracks from a SeqData objec using matplotlib and viz_sequence.
+    This function allows users to also add features from the pos_annot attribute
+
 
     Parameters
     ----------
@@ -277,10 +282,10 @@ def seq_track(
     if return_axes:
         return ax
     if save is not None:
-        plt.savefig(save)
+        _save_fig(save)
 
 
-def multiseq_track(
+def multiseq_track_features(
     sdata,
     seq_ids: list,
     uns_keys: str = None,
@@ -292,8 +297,10 @@ def multiseq_track(
     **kwargs,
 ):
     """
-    Function to plot tracks from a SeqData object
-
+    Wrapper around seq_track_features function to plot multiple tracks from a SeqData object
+    using matplotlib and viz_sequence. This function allows users to also add features from the 
+    pos_annot attribute
+    
     Parameters
     ----------
     sdata : SeqData object
@@ -319,9 +326,8 @@ def multiseq_track(
 
     Returns
     -------
-    if return_axes:
-        ax : matplotlib.axes.Axes
-            The axes object
+    ax : matplotlib.axes.Axes
+        The axes object
     """
     if isinstance(seq_ids, str):
         seq_ids = [seq_ids]
@@ -356,12 +362,18 @@ def multiseq_track(
     if return_axes:
         return ax
     if save is not None:
-        plt.savefig(save)
+        _save_fig(save)
 
 
-def _plot_logo(matrix, **kwargs):
+def _plot_logo_seqlogo(
+    matrix, 
+    **kwargs
+):
     """
-    Plot a sequence logo using the SeqLogo package.
+    Plot a sequence logo using the SeqLogo package. 
+    
+    This function is deprecated because there is no easy way to save these as
+    figures because they are not matplotlib axes.
 
     Parameters
     ----------
@@ -369,18 +381,26 @@ def _plot_logo(matrix, **kwargs):
         The matrix to plot
     **kwargs : dict
         Additional keyword arguments to pass to the SeqLogo object
-
-    Returns
-    -------
     """
     cpm = seqlogo.CompletePm(pfm=matrix)
     logo = seqlogo.seqlogo(cpm, ic_scale=True, format="png", **kwargs)
     display(logo)
+    return logo
 
 
-def filter_viz(sdata, filter_id=None, uns_key="pfms", save: str = None, **kwargs):
-    """Plot the logo of the pfm generated for a passed in filter.  If a filter_id is given,
-    the logo will be filtered to only show the features that match the filter_id.
+def filter_viz_seqlogo(
+    sdata, 
+    filter_id: Union[str, list], 
+    uns_key: str = "pfms", 
+    return_logo: bool = False,
+    **kwargs
+):
+    """Plot the logo of the pfm generated for a passed in filter.  
+    
+    This function is deprecated because there is no easy way to save these as
+    figures because they are not matplotlib axes.
+    
+    If a filter_id is given, the logo will be filtered to only show the features that match the filter_id.
     The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
     The kwargs are passed to the SeqLogo object. See the SeqLogo documentation for more details.
 
@@ -400,33 +420,32 @@ def filter_viz(sdata, filter_id=None, uns_key="pfms", save: str = None, **kwargs
     ax : matplotlib.axes._subplots.AxesSubplot
         The matplotlib axes object
     """
-    ax = _plot_logo(sdata.uns[uns_key][filter_id], **kwargs)
-    if save is not None:
-        plt.savefig(save)
-    return ax
+    logo = _plot_logo_seqlogo(sdata.uns[uns_key][filter_id], **kwargs)
+    if return_logo:
+        return logo
 
 
-def lm_seq_track(
+def seq_track(
     sdata,
-    seq_id,
-    uns_key,
-    alphabet="DNA",
+    seq_id: str,
+    uns_key: str,
+    vocab: str = "DNA",
     highlights: list = [],
     highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
-    ylabel="Saliency",
-    title="",
+    title: str ="",
+    ylab: str = "Saliency",
+    xlab: str = "Position",
     return_ax: bool = False,
-    save=None,
+    save: PathLike = None,
     **kwargs,
 ):
     if isinstance(highlights, tuple):
         highlights = [highlights]
     if isinstance(highlight_colors, str):
         highlight_colors = [highlight_colors] * len(highlights)
-
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
-    viz_seq = pd.DataFrame(imp_scores.T, columns=alphabet_dict[alphabet])
+    viz_seq = pd.DataFrame(imp_scores.T, columns=vocab_dict[vocab])
     viz_seq.index.name = "pos"
     y_max = np.max(viz_seq.values)
     y_min = np.min(viz_seq.values)
@@ -440,25 +459,28 @@ def lm_seq_track(
     nn_logo.ax.set_xlim([0, len(viz_seq)])
     nn_logo.ax.set_xticks([])
     nn_logo.ax.set_ylim([y_min, y_max])
-    nn_logo.ax.set_ylabel(ylabel)
+    nn_logo.ax.set_ylabel(ylab)
+    nn_logo.ax.set_xlabel(xlab)
     nn_logo.ax.set_title(title)
     for i, highlight in enumerate(highlights):
         nn_logo.highlight_position_range(
-            pmin=highlight[0], pmax=highlight[1], color=highlight_colors[i]
+            pmin=highlight[0], 
+            pmax=highlight[1], 
+            color=highlight_colors[i]
         )
+    if save is not None:
+        _save_fig(save)
     if return_ax:
         return nn_logo.ax
-    if save is not None:
-        plt.savefig(save, dpi=300)
 
 
-def lm_multiseq_track(
+def multiseq_track(
     sdata,
     seq_ids: list,
     uns_keys: str = None,
     ylabels: list = None,
-    width=None,
-    height=None,
+    width: int = None,
+    height: int = None,
     return_axes: bool = False,
     save: str = None,
     **kwargs,
@@ -482,7 +504,7 @@ def lm_multiseq_track(
         enumerate(uns_keys), desc="Importance values", position=0, total=len(uns_keys)
     ):
         for j, seq_id in enumerate(seq_ids):
-            lm_seq_track(
+            seq_track(
                 sdata,
                 seq_id=seq_id,
                 uns_key=uns_key,
@@ -493,35 +515,40 @@ def lm_multiseq_track(
                 **kwargs,
             )
     plt.tight_layout()
+    if save is not None:
+        _save_fig(save)
     if return_axes:
         return ax
-    if save is not None:
-        plt.savefig(save, dpi=300)
 
 
-def lm_filter_viz(
+def filter_viz(
     sdata,
-    filter_id=None,
-    uns_key="pfms",
-    vocab="DNA",
+    filter_id: Union[str, int],
+    uns_key: str = "pfms",
+    vocab: str = "DNA",
+    title: str = None,
     return_ax: bool = False,
     save: str = None,
-    title=None,
     **kwargs,
 ):
-
     pfm = sdata.uns[uns_key][filter_id]
     if isinstance(pfm, np.ndarray):
-        pfm = pd.DataFrame(pfm, columns=alphabet_dict[vocab])
-    if pfm["A"].dtype == "float64":
+        pfm = pd.DataFrame(pfm, columns=vocab_dict[vocab])
+    vocab = vocab_dict[vocab]
+    if pfm[vocab.keys[0]].dtype == "float64":
         pfm.fillna(0.25, inplace=True)
         info_mat = lm.transform_matrix(
-            pfm, from_type="probability", to_type="information"
+            pfm, 
+            from_type="probability", 
+            to_type="information"
         )
-    elif pfm["A"].dtype == "int64":
+    elif pfm[vocab.keys[0]].dtype == "int64":
         pfm.fillna(1, inplace=True)
         info_mat = lm.transform_matrix(
-            pfm, from_type="counts", to_type="information", allow_nan=True
+            pfm, 
+            from_type="counts", 
+            to_type="information", 
+            allow_nan=True
         )
     if "N" in pfm.columns:
         info_mat = info_mat.drop("N", axis=1)
@@ -535,27 +562,27 @@ def lm_filter_viz(
     logo.ax.set_ylabel("bits")
     logo.ax.set_title(title if title is not None else filter_id)
     if save is not None:
-        plt.savefig(save)
+        _save_fig(save)
     if return_ax:
         return logo.ax
 
 
-def lm_multifilter_viz(
+def multifilter_viz(
     sdata,
     filter_ids: list,
     num_rows: int = None,
     num_cols: int = None,
-    uns_key="pfms",
+    uns_key: str = "pfms",
     titles: list = None,
     save: str = None,
     **kwargs,
 ):
 
-    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12, 10))
+    _, ax = plt.subplots(num_rows, num_cols, figsize=(12, 10))
     for i in range(num_rows):
         for j in range(num_cols):
             filter_id = filter_ids[i * num_cols + j]
-            lm_filter_viz(
+            filter_viz(
                 sdata,
                 filter_id=filter_id,
                 uns_key=uns_key,
@@ -567,30 +594,48 @@ def lm_multifilter_viz(
 
     plt.tight_layout()
     if save is not None:
-        plt.savefig(save)
+        _save_fig(save)
 
 
-def kipoi_ism_heatmap(sdata, seq_id, uns_key="NaiveISM_imps", figsize=(15, 2.5)):
+def kipoi_ism_heatmap(
+    sdata, 
+    seq_id: Union[str, int], 
+    uns_key="NaiveISM_imps", 
+    figsize=(15, 2.5),
+    save: PathLike = None,
+    return_axes: bool = False
+):
     from ..external.kipoi.kipoi_veff.plot import seqlogo_heatmap
-
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     val = sdata.uns[uns_key][seq_idx]
-    fig = plt.figure(figsize=figsize)
+    ax = plt.figure(figsize=figsize)
     seqlogo_heatmap(val.T, val, ax=plt.subplot())
+    if save:
+        _save_fig(save)
+    if return_axes:
+        return ax
 
 
-def feature_implant_plot(sdata, seqsm_keys, save=None, return_axes=False):
+def feature_implant_plot(
+    sdata, 
+    seqsm_keys, 
+    xlab="Position",
+    ylab="Predicted Score",
+    save=None, 
+    return_axes=False
+):
     concat_df = pd.DataFrame()
     for seqsm_key in seqsm_keys:
         df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(
-            var_name="Position", value_name="Score", ignore_index=False
+            var_name="Position", 
+            value_name="Score", 
+            ignore_index=False
         )
         df["feature"] = seqsm_key
         concat_df = pd.concat([concat_df, df])
     concat_df.reset_index(drop=True, inplace=True)
-    g = sns.lineplot(data=concat_df, x="Position", y="Score", hue="feature")
-    print("ylim", g.get_ylim())
+    g = sns.lineplot(data=concat_df, x=xlab, y=ylab, hue="feature")
     if save:
-        plt.savefig(save)
+        _save_fig(save)
     if return_axes:
         return g

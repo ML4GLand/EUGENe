@@ -1,29 +1,29 @@
-"""
-Python script with functions for preprocessing data
-"""
-
-# Basic imports
-import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from umap import UMAP
+from ..utils import track
 
-# Function definitions
-def pca(sdata, uns_key, n_comp=30, copy=False):
+
+@track
+def pca(
+    sdata, 
+    uns_key: str, 
+    n_comp: int = 30, 
+    copy: bool = False
+):
     """
     Function to perform scaling and PCA on an input matrix
 
     Parameters
     ----------
-    mtx : sample by feature
-    n_comp : number of pcs to return
-    index_name : name of index if part of input
-
-    Returns
-    sklearn pca object and pca dataframe
-    -------
-
+    sdata: SeqData
+        SeqData object to pull data to dimensionally reduce
+    uns_key: str
+        Key in sdata.uns to pull data from
+    n_comp: int
+        Number of components to reduce to
+    copy: bool
+        Whether to copy the SeqData object or not
     """
     print("Make sure your matrix is sample by feature")
     sdata = sdata.copy if copy else sdata
@@ -40,19 +40,27 @@ def pca(sdata, uns_key, n_comp=30, copy=False):
     return sdata if copy else None
 
 
-def umap(sdata, seqsm_key=None, uns_key=None, copy=False, **kwargs):
+@track
+def umap(
+    sdata, 
+    seqsm_key=None, 
+    uns_key=None, 
+    copy=False, 
+    **kwargs
+):
     """
-    Function to perform scaling and UMAP on an input matrix
-
+    Function to perform scaling and UMAP on SeqData object data
+    
     Parameters
     ----------
-    mtx : sample by feature
-    index_name : name of index if part of input
-
-    Returns
-    umap object and umap dataframe
-    -------
-
+    sdata: SeqData
+        SeqData object to pull data to dimensionally reduce
+    seqsm_key: str
+        Key in sdata.seqsm to pull data from
+    uns_key: str
+        Key in sdata.uns to store data in
+    copy: bool
+        Whether to copy the SeqData object or not
     """
     print("Make sure your matrix is sample by feature")
     sdata = sdata.copy if copy else sdata

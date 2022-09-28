@@ -5,6 +5,9 @@ from ..dataload import SeqData
 
 
 def get_default_args(func):
+    """
+    Helper function to get default arguments for a function
+    """
     signature = inspect.signature(func)
     return {
         k: v.default
@@ -17,7 +20,6 @@ def track(func):
     """
     Track changes in SeqData object after applying function.
     """
-
     @wraps(func)
     def wrapper(*args, **kwds):
         kwargs = get_default_args(func)
@@ -56,8 +58,6 @@ def track(func):
         out += "SeqData object modified:"
 
         modified = False
-        # print(old_attr)
-        # print(new_attr)
         for attr in old_attr.keys():
             if attr == "n_obs":
                 if old_attr["n_obs"] != new_attr["n_obs"]:
@@ -85,9 +85,7 @@ def track(func):
 
         if modified:
             print(out)
-        # print(out)
         return out_sdata if kwargs["copy"] else None
-
     return wrapper
 
 
@@ -107,24 +105,9 @@ def list_attributes(sdata):
             found_attr[attr] = None
             continue
         if attr in ["seqs", "names", "rev_seqs", "ohe_seqs", "ohe_rev_seqs"]:
-            # print(attr)
             vals = getattr(sdata, attr)
             found_attr[attr] = vals
         elif attr in ["seqs_annot", "pos_annot"]:
             keys = set(getattr(sdata, attr).keys())
             found_attr[attr] = keys
-
     return found_attr
-
-
-import contextlib
-import io
-import sys
-
-
-@contextlib.contextmanager
-def nostdout():
-    save_stdout = sys.stdout
-    sys.stdout = io.BytesIO()
-    yield
-    sys.stdout = save_stdout

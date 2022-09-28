@@ -10,7 +10,7 @@ mode_dict = {"dna": 1, "rbp": 2}
 
 class DeepBind(BaseModel):
     """
-    DeepBind model
+    DeepBind model implemented from Alipanahi et al 2015 in PyTorch
 
     DeepBind is a model that takes in a DNA sequence and outputs a
     probability of binding for a given transcription factor.
@@ -46,23 +46,21 @@ class DeepBind(BaseModel):
     fc_kwargs : dict
         Keyword arguments for fully connected layers
     """
-
     def __init__(
         self,
-        input_len,
-        output_dim,
-        mode="rbp",
-        strand="ss",
-        task="regression",
-        aggr="max",
-        loss_fxn="mse",
-        optimizer="adam",
-        lr=1e-3,
-        scheduler="lr_scheduler",
-        scheduler_patience=2,
-        mp_kwargs={},
-        conv_kwargs={},
-        fc_kwargs={},
+        input_len: int,
+        output_dim: int,
+        mode: str = "rbp",
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = "max",
+        loss_fxn: str ="mse",
+        optimizer: str = "adam",
+        lr: float = 1e-3,
+        scheduler: str = "lr_scheduler",
+        scheduler_patience: int = 2,
+        conv_kwargs: dict = {},
+        fc_kwargs: dict = {},
         **kwargs
     ):
         super().__init__(
@@ -78,8 +76,8 @@ class DeepBind(BaseModel):
             scheduler_patience,
             **kwargs
         )
-        self.mp_kwargs, self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(
-            mp_kwargs, conv_kwargs, fc_kwargs
+        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(
+            conv_kwargs, fc_kwargs
         )
         self.mode = mode
         self.mode_multiplier = mode_dict[self.mode]
@@ -171,52 +169,55 @@ class DeepBind(BaseModel):
                 )
         return x
 
-    # Sets default kwargs if not specified
-    def kwarg_handler(self, mp_kwargs, conv_kwargs, fc_kwargs):
-        # Add conv_kwargs for stride
+    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 16])
         conv_kwargs.setdefault("conv_kernels", [16])
         conv_kwargs.setdefault("pool_kernels", [8])
         conv_kwargs.setdefault("omit_final_pool", True)
         conv_kwargs.setdefault("dropout_rates", 0.25)
         conv_kwargs.setdefault("batchnorm", False)
-
-        # Add fc_kwargs
         fc_kwargs.setdefault("hidden_dims", [32])
         fc_kwargs.setdefault("dropout_rate", 0.25)
         fc_kwargs.setdefault("batchnorm", False)
 
-        return mp_kwargs, conv_kwargs, fc_kwargs
+        return conv_kwargs, fc_kwargs
 
 
 class DeepSEA(BaseModel):
+    """DeepSEA model implementation for EUGENe
+    Default parameters are those specified in the DeepSEA paper
+
+    Parameters
+    ----------
+    input_len:
+        int, input sequence length
+    channels:
+        list-like or int, channel width for each conv layer. If int each of the three layers will be the same channel width
+    conv_kernels:
+        list-like or int, conv kernel size for each conv layer. If int will be the same for all conv layers
+    pool_kernels:
+        list-like or int, maxpooling kernel size for the first two conv layers. If int will be the same for all conv layers
+    dropout_rates:
+        list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
+    """
     def __init__(
         self,
-        input_len=1000,
-        output_dim=1,
-        strand="ss",
-        task="regression",
-        aggr=None,
-        conv_kwargs={},
-        fc_kwargs={},
+        input_len: int = 1000,
+        output_dim: int = 1,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        conv_kwargs: dict = {},
+        fc_kwargs: dict = {},
     ):
-        """
-        Generates a PyTorch module with architecture matching the convnet part of DeepSea. Default parameters are those specified in the DeepSea paper
-
-        Parameters
-        ----------
-        input_len:
-            int, input sequence length
-        channels:
-            list-like or int, channel width for each conv layer. If int each of the three layers will be the same channel width
-        conv_kernels:
-            list-like or int, conv kernel size for each conv layer. If int will be the same for all conv layers
-        pool_kernels:
-            list-like or int, maxpooling kernel size for the first two conv layers. If int will be the same for all conv layers
-        dropout_rates:
-            list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
-        """
-        super().__init__(input_len, output_dim, strand, task, aggr)
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand, 
+            task, 
+            aggr
+        )
         self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
         self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
         self.fcn = BasicFullyConnectedModule(
@@ -230,6 +231,7 @@ class DeepSEA(BaseModel):
         return x
 
     def kwarg_handler(self, conv_kwargs, fc_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 320, 480, 960])
         conv_kwargs.setdefault("conv_kernels", [8, 8, 8])
         conv_kwargs.setdefault("pool_kernels", [4, 4, 4])

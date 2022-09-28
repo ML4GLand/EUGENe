@@ -5,17 +5,16 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurr
 class FCN(BaseModel):
     def __init__(
         self,
-        input_len,
-        output_dim,
-        strand="ss",
-        task="regression",
-        aggr=None,
-        loss_fxn="mse",
-        fc_kwargs={},
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        loss_fxn: str = "mse",
+        fc_kwargs: dict = {},
         **kwargs
     ):
-        """\
-        Initialize a purely fully connected neural network. By default, this architecture
+        """Initialize a purely fully connected neural network. By default, this architecture
         flattens the one-hot encoded sequence and passes it through a set of layers that are
         fully connected.
 
@@ -73,17 +72,18 @@ class FCN(BaseModel):
 class CNN(BaseModel):
     def __init__(
         self,
-        input_len,
-        output_dim,
-        conv_kwargs,
-        strand="ss",
-        task="regression",
-        aggr=None,
-        loss_fxn="mse",
-        fc_kwargs={},
+        input_len: int,
+        output_dim: int,
+        conv_kwargs: dict,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        loss_fxn: str = "mse",
+        fc_kwargs: dict = {},
         **kwargs
     ):
-        """Initialize the CNN model.
+        """Instantiate a CNN model with a set of convolutional layers and a set of fully
+        connected layers.
 
         Parameters
         ----------
@@ -96,9 +96,12 @@ class CNN(BaseModel):
         task:
             The task of the model.
         aggr:
-            The aggregation function.
+            The aggregation function to use.
         fc_kwargs:
-            The keyword arguments for the fully connected layer.
+            The keyword arguments for the fully connected layer. If not provided, the
+            default passes the flattened output of the convolutional layers directly to 
+            the output layer.
+
         """
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
@@ -140,17 +143,18 @@ class CNN(BaseModel):
 class RNN(BaseModel):
     def __init__(
         self,
-        input_len,
-        output_dim,
-        rnn_kwargs,
-        strand="ss",
-        task="regression",
-        aggr=None,
-        loss_fxn="mse",
-        fc_kwargs={},
+        input_len: int,
+        output_dim: int,
+        rnn_kwargs: dict,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        loss_fxn: str = "mse",
+        fc_kwargs: dict = {},
         **kwargs
     ):
-        """Initialize the RNN model.
+        """Instantiate an RNN model with a set of recurrent layers and a set of fully
+        connected layers.
 
         Parameters
         ----------
@@ -165,7 +169,9 @@ class RNN(BaseModel):
         aggr:
             The aggregation function.
         fc_kwargs:
-            The keyword arguments for the fully connected layer.
+            The keyword arguments for the fully connected layer. If not provided, the
+            default passes the recurrent output of the recurrent layers directly to the
+            output layer.
         """
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)
         if self.strand == "ss":
@@ -202,7 +208,10 @@ class RNN(BaseModel):
 
 class Hybrid(BaseModel):
     """
-    The hybrid model.
+    A hybrid model that combines a CNN and an RNN. The CNN is used to extract features
+    from the input sequence, and the RNN is used to extract features from the output of
+    the CNN. Finally, the output of the RNN is passed to a fully connected layer to
+    generate the output.
 
     Parameters
     ----------
@@ -222,15 +231,15 @@ class Hybrid(BaseModel):
 
     def __init__(
         self,
-        input_len,
-        output_dim,
-        conv_kwargs,
-        rnn_kwargs,
-        strand="ss",
-        task="regression",
-        loss_fxn="mse",
-        aggr=None,
-        fc_kwargs={},
+        input_len: int,
+        output_dim: int,
+        conv_kwargs: dict,
+        rnn_kwargs: dict,
+        strand: str = "ss",
+        task: str = "regression",
+        loss_fxn: str = "mse",
+        aggr: str = None,
+        fc_kwargs: dict = {},
         **kwargs
     ):
         super().__init__(input_len, output_dim, strand, task, aggr, loss_fxn, **kwargs)

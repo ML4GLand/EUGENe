@@ -1,11 +1,9 @@
 import os
-import logging
 import numpy as np
 import pandas as pd
 from typing import Union, List
 from torch.utils.data import DataLoader
 from pytorch_lightning import LightningModule, Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
 from ..dataload import SeqData, SeqDataset
 from ..utils._decorators import track
 from .._settings import settings
@@ -28,7 +26,7 @@ def predictions(
     sdataset: SeqDataset = None,
     sdataloader: DataLoader = None,
     seq_transforms: List = None,
-    transform_kwargs={},
+    transform_kwargs: dict = {},
     copy: bool = False,
 ):
     """
@@ -66,11 +64,12 @@ def predictions(
     transform_kwargs: dict
        The transform kwargs to use.
     copy: bool
-       Whether to copy the data or not.
+       Whether to copy the SeqData or not.
 
     Returns:
     --------
-
+    sdata
+         The SeqData object with the predictions added if copy is True.
     """
     gpus = gpus if gpus is not None else settings.gpus
     batch_size = batch_size if batch_size is not None else settings.batch_size
@@ -137,11 +136,13 @@ def train_val_predictions(
     train_dataloader: DataLoader = None,
     val_dataloader: DataLoader = None,
     seq_transforms: List = None,
-    transform_kwargs={},
+    transform_kwargs: dict = {},
     copy: bool = False,
 ):
     """
     Predict the outputs of sequences split into training and validation in a SeqData object using a model.
+    This is mostly just a helper for separating sequences based on the train_key column of seqs_annot. This operates
+    under the assumption that the train_key is True for training sequences and False for validation sequences.
 
     Params:
     -------

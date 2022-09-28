@@ -1,18 +1,18 @@
 import torch
 import numpy as np
 from tqdm.auto import tqdm
-from yuzu.naive_ism import naive_ism
 from ._utils import _k_largest_index_argsort, _naive_ism
-from ..preprocess import (
-    ohe_seqs,
-    feature_implant_seq,
-    feature_implant_across_seq,
-)
+from ..preprocess import ohe_seqs, feature_implant_across_seq
 from ..utils import track
 from .. import settings
 
 
-def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndarray:
+def best_k_muts(
+    model: torch.nn.Module, 
+    X: np.ndarray, 
+    k: int = 1, 
+    device: str = None
+) -> np.ndarray:
     """
     Find and return the k highest scoring sequence from referenece sequence X.
 
@@ -61,7 +61,10 @@ def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndar
 
 
 def best_mut_seqs(
-    model, X: np.ndarray, batch_size: int = None, device: str = None
+    model: torch.nn.Module,
+    X: np.ndarray, 
+    batch_size: int = None, 
+    device: str = None
 ) -> np.ndarray:
     """
     Find and return the highest scoring sequence for each sequence
@@ -112,7 +115,7 @@ def best_mut_seqs(
 
 
 def evolution(
-    model,
+    model: torch.nn.Module,
     X: np.ndarray,
     rounds: int = 10,
     k: int = 10,
@@ -143,7 +146,6 @@ def evolution(
         The number of mutated sequences to consider at each round. This is in case
         the same position scores highest multiple times.
     """
-
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = settings.batch_size if batch_size is None else batch_size
     model.eval().to(device)
@@ -167,16 +169,45 @@ def evolution(
 
 @track
 def evolve_seqs_sdata(
-    model, sdata, rounds, return_seqs=False, device: str = "cpu", copy=False, **kwargs
+    model: torch.nn.Module, 
+    sdata, 
+    rounds: int, 
+    return_seqs: bool = False, 
+    device: str = "cpu", 
+    copy: bool = False, 
+    **kwargs
 ):
+    """
+    In silico evolve a set of sequences that are stored in a SeqData object.
+
+    Parameters
+    ----------
+    model: torch.nn.Module  
+        The model to score the sequences with
+    sdata: SeqData  
+        The SeqData object containing the sequences to evolve
+    rounds: int
+        The number of rounds of evolution to perform
+    return_seqs: bool, optional
+        Whether to return the evolved sequences
+    device: str, optional
+        Whether to use a 'cpu' or 'cuda'.
+    copy: bool, optional
+        Whether to copy the SeqData object before mutating it
+    kwargs: dict, optional
+        Additional arguments to pass to the evolution function
+    
+    Returns
+    -------
+    sdata: SeqData
+        The SeqData object containing the evolved sequences
+    """
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     evolved_seqs = np.zeros(sdata.ohe_seqs.shape)
     deltas = np.zeros((sdata.n_obs, rounds))
-    for i, ohe_seq in tqdm(
-        enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"
-    ):
+    for i, ohe_seq in tqdm(enumerate(sdata.ohe_seqs), total=len(sdata.ohe_seqs), desc="Evolving seqs"):
         evolved_seq, delta, _ = evolution(model, ohe_seq, rounds=rounds, device=device)
         evolved_seqs[i] = evolved_seq
         deltas[i, :] = deltas[i, :] + delta
@@ -195,18 +226,46 @@ def evolve_seqs_sdata(
 
 
 def feature_implant_seq_sdata(
-    model,
+    model: torch.nn.Module,
     sdata,
-    seq_id,
-    feature,
-    feature_name="feature",
-    encoding="str",
-    onehot=False,
-    store=True,
-    device="cpu",
+    seq_id: str,
+    feature: np.ndarray,
+    feature_name: str = "feature",
+    encoding: str = "str",
+    onehot: bool = False,
+    store: bool = True,
+    device: str = "cpu",
 ):
     """
-    Score a set of sequences with a feature inserted at every position of each sequence in sdata
+    Score a set of sequences with a feature inserted at every position of each sequence in sdata.
+    For double stranded models, the feature is inserted in both strands, with the reverse complement
+    of the feature in the reverse strand
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to score the sequences with
+    sdata: SeqData
+        The SeqData object containing the sequences to score
+    seq_id: str
+        The id of the sequence to score
+    feature: np.ndarray
+        The feature to insert into the sequences
+    feature_name: str, optional
+        The name of the feature
+    encoding: str, optional
+        The encoding of the feature. One of 'str', 'ohe', 'int'
+    onehot: bool, optional
+        Whether the feature is one-hot encoded
+    store: bool, optional
+        Whether to store the scores in the SeqData object
+    device: str, optional
+        Whether to use a 'cpu' or 'cuda'.
+
+    Returns
+    -------
+    np.ndarray
+        The scores of the sequences with the feature inserted if store is False
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
@@ -219,7 +278,10 @@ def feature_implant_seq_sdata(
     elif encoding == "onehot":
         seq = sdata.ohe_seqs[seq_idx]
         implanted_seqs = feature_implant_across_seq(
-            seq, feature, encoding=encoding, onehot=onehot
+            seq, 
+            feature, 
+            encoding=encoding, 
+            onehot=onehot
         )
         X = torch.from_numpy(implanted_seqs).float()
     else:
@@ -236,9 +298,33 @@ def feature_implant_seq_sdata(
     return preds
 
 
-def feature_implant_seqs_sdata(model, sdata, feature, seqsm_key=None, **kwargs):
+def feature_implant_seqs_sdata(
+    model: torch.nn.Module,
+    sdata,
+    feature: np.ndarray,
+    seqsm_key: str = None, 
+    **kwargs
+):
     """
     Score a set of sequences with a feature inserted at every position of each sequence in sdata
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to score the sequences with
+    sdata: SeqData
+        The SeqData object containing the sequences to score
+    feature: np.ndarray
+        The feature to insert into the sequences
+    seqsm_key: str, optional
+        The key to store the scores in the SeqData object
+    kwargs: dict, optional
+        Additional arguments to pass to the feature_implant_seq_sdata function
+    
+    Returns
+    -------
+    np.ndarray
+        The scores of the sequences with the feature inserted if seqsm_key is None
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
@@ -250,7 +336,12 @@ def feature_implant_seqs_sdata(model, sdata, feature, seqsm_key=None, **kwargs):
     ):
         predictions.append(
             feature_implant_seq_sdata(
-                model, sdata, seq_id, feature, store=False, **kwargs
+                model, 
+                sdata, 
+                seq_id, 
+                feature, 
+                store=False, 
+                **kwargs
             )
         )
     if seqsm_key is not None:

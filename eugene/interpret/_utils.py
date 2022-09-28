@@ -3,7 +3,6 @@ import numpy as np
 from yuzu.utils import perturbations
 
 
-#https://stackoverflow.com/questions/43386432/how-to-get-indexes-of-k-maximum-values-from-a-numpy-multidimensional-array
 def _k_largest_index_argsort(
     a: np.ndarray, 
     k: int = 1
@@ -37,14 +36,23 @@ def _k_largest_index_argsort(
     -------
     numpy array
         The indexes of the k largest values of a.
+
+    Note
+    ----
+    This is from:
+    https://stackoverflow.com/questions/43386432/how-to-get-indexes-of-k-maximum-values-from-a-numpy-multidimensional-arra
     """
     idx = np.argsort(a.ravel())[:-k-1:-1]
     return np.column_stack(np.unravel_index(idx, a.shape))
 
 
-# modified from yuzu
 @torch.inference_mode()
-def _naive_ism(model, X_0, type="delta", batch_size=128, device="cpu"):
+def _naive_ism(
+    model: torch.nn.Module, 
+    X_0: np.ndarray, 
+    type: str = "delta", 
+    batch_size: int = 128, 
+    device: str = "cpu"):
     """
     In-silico mutagenesis saliency scores.
     This function will perform in-silico mutagenesis in a naive manner, i.e.,
@@ -65,10 +73,15 @@ def _naive_ism(model, X_0, type="delta", batch_size=128, device="cpu"):
         The size of the batches.
     device: str, optional
         Whether to use a 'cpu' or 'gpu'.
+    
     Returns
     -------
     X_ism: numpy.ndarray
         The saliency score for each perturbation.
+
+    Note
+    ----
+    This was modified from the Yuzu package
     """
     n_seqs, n_choices, seq_len = X_0.shape
     X_idxs = X_0.argmax(axis=1)

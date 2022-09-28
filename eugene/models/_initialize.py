@@ -1,18 +1,83 @@
-import importlib
 import torch
+import torch.nn as nn
+import torch.nn.init as init
 from os import PathLike
-from typing import Union, Dict, List, Tuple, Optional
+from typing import Union, Dict
 from ..dataload.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
 
+initializer_dict = {
+    "uniform": init.uniform_,
+    "normal": init.normal_,
+    "constant": init.constant_,
+    "eye": init.eye_,
+    "dirac": init.dirac_,
+    "xavier_uniform": init.xavier_uniform_,
+    "xavier_normal": init.xavier_normal_,
+    "kaiming_uniform": init.kaiming_uniform_,
+    "kaiming_normal": init.kaiming_normal_,
+    "orthogonal": init.orthogonal_,
+    "sparse": init.sparse_,
+    "ones": init.ones_,
+    "zeros": init.zeros_
+}
 
-def init_weights(m):
-    if isinstance(m, torch.nn.Linear) or isinstance(m, torch.nn.Conv1d):
-        torch.nn.init.kaiming_normal_(m.weight)
+
+def _init_weights(
+    module, 
+    initializer,
+    **kwargs
+):
+    """Initialize the weights of a module.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+        The module to initialize.
+    initializer : str, optional
+        The name of the initializer to use, by default "xavier_uniform"
+    **kwargs
+        Additional arguments to pass to the initializer.
+    """
+    if initializer in initializer_dict:
+        init_func = initializer_dict[initializer]
+    elif callable(initializer):
+        init_func = initializer
+    else:
+        raise ValueError(
+            f"Initializer {initializer} not found in initializer_dict or is not callable."
+        )
+    if isinstance(module, nn.Linear) or isinstance(module, nn.Conv1d):
+        print(f"Initializing {module} with {initializer}")
+        init_func(module.weight)
+    elif isinstance(module, nn.ParameterList):
+        for param in module:
+            if  param.dim() > 1:
+                print(f"Initializing {param} with {initializer}")
+                init_func(param)
+
+
+def init_weights(
+    model,
+    initializer="kaiming_normal",
+    **kwargs
+):
+    """Initialize the weights of a model.
+
+    Parameters
+    ----------
+    model : LightningModule
+        The model to initialize.
+    initializer : str, optional
+        The name of the initializer to use, by default "kaiming_normal"
+    **kwargs
+        Additional arguments to pass to the initializer.
+    """
+    model.apply(lambda m: _init_weights(m, initializer, **kwargs))
 
 
 def init_conv(
     model,
-    weights: torch.tensor,
+    weights,
     module_name: str = "convnet",
     module_number: int = 0,
     kernel_name: str = None,
@@ -21,11 +86,11 @@ def init_conv(
     if kernel_name is None:
         assert module_number is not None
         assert isinstance(
-            model.__getattr__(module_name).module[module_number], torch.nn.Conv1d
+            model.__getattr__(module_name).module[module_number], nn.Conv1d
         )
         model.__getattr__(module_name).module[
             module_number
-        ].weight = torch.nn.Parameter(weights)
+        ].weight = nn.Parameter(weights)
     else:
         assert kernel_number is not None
         assert isinstance(
@@ -34,7 +99,7 @@ def init_conv(
         )
         model.__getattr__(module_name).__getattr__(kernel_name)[
             kernel_number
-        ] = torch.nn.Parameter(weights)
+        ] = nn.Parameter(weights)
 
 
 def init_from_motifs(
@@ -64,7 +129,7 @@ def init_from_motifs(
     if kernel_name is None:
         assert module_number is not None
         assert isinstance(
-            model.__getattr__(module_name).module[module_number], torch.nn.Conv1d
+            model.__getattr__(module_name).module[module_number], nn.Conv1d
         )
         layer_size = model.__getattr__(module_name).module[module_number].weight.size()
     else:
