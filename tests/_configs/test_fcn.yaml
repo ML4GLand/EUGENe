@@ -1,7 +1,0 @@
-model:
-  input_len: 66
-  fc_kwargs:
-    output_dim: 1
-    hidden_dims:
-    - 128
-    - 64

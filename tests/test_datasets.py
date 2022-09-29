@@ -3,7 +3,6 @@ Tests to make sure the example datasets load and the basic I/O functions work.
 """
 
 import eugene as eu
-import numpy as np
 import pytest
 from pathlib import Path
 

@@ -88,7 +88,7 @@ def _grad_explain(
         Device to use for computing InputXGradient scores. 
         EUGENe will always use a gpu if available
     """
-    device "cuda" if settings.gpus > 0 else "cpu" if device is None else device
+    device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval()
     model.to(device)
     grad_explainer = InputXGradient(model)

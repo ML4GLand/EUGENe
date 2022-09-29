@@ -1,8 +1,6 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import pyranges as pr
-from .._compat import Literal
 from ._utils import try_download_urls
 from ..dataload._io import read, read_csv, read_fasta
 from ..dataload import SeqData
@@ -14,12 +12,12 @@ pkg_resources = None
 
 def get_dataset_info():
     """
-    Return DataFrame with info about builtin datasets.
+    Return  a pandas DataFrame with info about builtin datasets.
 
     Returns
     -------
     df : pd.DataFrame
-        Info about builtin datasets indexed by dataset name as dataframe.
+        Info about builtin datasets indexed by dataset name.
     """
     global pkg_resources
     if pkg_resources is None:
@@ -28,19 +26,16 @@ def get_dataset_info():
     return pd.read_csv(stream, index_col=0)
 
 
-def random1000(**kwargs: dict) -> pd.DataFrame:
+def random1000() -> pd.DataFrame:
     """
-    Reads in the random1000 dataset (deprecated).
+    Reads in the built-in random1000 dataset into a SeqData object.
 
-    Parameters
-    ----------
-    **kwargs : kwargs, dict
-        Keyword arguments to pass to read_csv.
+    This dataset is designed for testing and development purposes.
 
     Returns
     -------
     sdata : SeqData
-        SeqData object with the random1000 dataset.
+        SeqData object for the random1000 dataset.
     """
     filename = f"{HERE}/random1000/random1000_seqs.tsv"
     sdataframe = read(filename, return_dataframe=True)
@@ -59,21 +54,85 @@ def random1000(**kwargs: dict) -> pd.DataFrame:
     return sdata
 
 
-def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def ray13(
+    dataset="norm", 
+    return_sdata=True, 
+    **kwargs: dict
+) -> pd.DataFrame:
     """
-    Reads in the Farley15 dataset.
+    Reads in the ray13 dataset into a SeqData object.
 
     Parameters
     ----------
+    dataset : str
+        Dataset to read, can either be "norm" or "raw". The default is "norm".
+        The "norm" dataset is the normalized probe intensities from Ray et al 2103
+        and the "raw" dataset is the raw probe intensities
     return_sdata : bool, optional
-        If True, return SeqData object with the Farley15 dataset. The default is True.
+        If True, return SeqData object for the ray13 dataset. 
+        If False, return a list of paths to the downloaded files. The default is True.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
     Returns
     -------
     sdata : SeqData
-        SeqData object with the Farley15 dataset.
+        SeqData object for the ray13 dataset.
+    """
+    urls_list = [
+        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/norm_data.txt.gz",
+        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/raw_data.txt.gz",
+    ]
+
+    if dataset == "norm":
+        dataset = [0]
+    elif dataset == "raw":
+        dataset = [1]
+    else:
+        raise ValueError("dataset must be either 'norm' or 'raw'.")
+
+    paths = try_download_urls(dataset, urls_list, "ray13")
+
+    if return_sdata:
+        seq_col = "RNA_Seq"
+        sdataframe = read_csv(
+            paths,
+            sep="\t",
+            seq_col=seq_col,
+            return_dataframe=True,
+            compression="gzip",
+            na_values=" NaN",
+            **kwargs,
+        )
+        sdata = SeqData(
+            seqs=sdataframe["RNA_Seq"],
+            names=sdataframe["Probe_ID"],
+            seqs_annot=sdataframe[sdataframe.columns.drop(pd.array(data=["RNA_Seq"]))],
+        )
+        sdata.seqs_annot.set_index("Probe_ID", inplace=True)
+        return sdata
+    else:
+        return paths
+
+
+def farley15(
+    return_sdata=True, 
+    **kwargs: dict
+) -> pd.DataFrame:
+    """
+    Reads in the Farley15 dataset.
+
+    Parameters
+    ----------
+    return_sdata : bool, optional
+        If True, return SeqData object for the Farley15 dataset. The default is True.
+    **kwargs : kwargs, dict
+        Keyword arguments to pass to read_csv.
+
+    Returns
+    -------
+    sdata : SeqData
+        SeqData object for the Farley15 dataset.
     """
     urls_list = [
         "https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
@@ -114,7 +173,11 @@ def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
         return paths
 
 
-def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def deBoer20(
+    datasets: list, 
+    return_sdata=True, 
+    **kwargs: dict
+) -> pd.DataFrame:
     """
     Reads in the deBoer20 dataset.
 
@@ -123,14 +186,14 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
     datasets : list of ints
         List of datasets indices to read.
     return_sdata : bool, optional
-        If True, return SeqData object with the deBoer20 dataset. The default is True.
+        If True, return SeqData object for the deBoer20 dataset. The default is True.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
     Returns
     -------
     sdata : SeqData
-        SeqData object with the deBoer20 dataset.
+        SeqData object for the deBoer20 dataset.
     """
     urls_list = [
         "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104878/suppl/GSE104878_20160503_average_promoter_ELs_per_seq_atLeast100Counts.txt.gz",
@@ -166,81 +229,30 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
         return paths
 
 
-def ray13(dataset="norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the ray13 dataset.
-
-    Parameters
-    ----------
-    dataset : str
-        Dataset to read, can either be "norm" or "raw". The default is "norm".
-    return_sdata : bool, optional
-        If True, return SeqData object with the RNAcomplete dataset. The default is True.
-    **kwargs : kwargs, dict
-        Keyword arguments to pass to read_csv.
-
-    Returns
-    -------
-    sdata : SeqData
-        SeqData object with the RNAcomplete dataset.
-    """
-    urls_list = [
-        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/norm_data.txt.gz",
-        "http://hugheslab.ccbr.utoronto.ca/supplementary-data/RNAcompete_eukarya/raw_data.txt.gz",
-    ]
-
-    if dataset == "norm":
-        dataset = [0]
-    elif dataset == "raw":
-        dataset = [1]
-    else:
-        raise ValueError("dataset must be either 'norm' or 'raw'.")
-
-    paths = try_download_urls(dataset, urls_list, "ray13")
-
-    if return_sdata:
-        seq_col = "RNA_Seq"
-        sdataframe = read_csv(
-            paths,
-            sep="\t",
-            seq_col=seq_col,
-            return_dataframe=True,
-            compression="gzip",
-            na_values=" NaN",
-            **kwargs,
-        )
-        sdata = SeqData(
-            seqs=sdataframe["RNA_Seq"],
-            names=sdataframe["Probe_ID"],
-            seqs_annot=sdataframe[sdataframe.columns.drop(pd.array(data=["RNA_Seq"]))],
-        )
-        sdata.seqs_annot.set_index("Probe_ID", inplace=True)
-        return sdata
-    else:
-        return paths
-
-
 def jores21(
-    dataset="leaf", add_metadata=False, return_sdata=True, **kwargs: dict
+    dataset="leaf", 
+    add_metadata: bool = False, 
+    return_sdata: bool = True, 
+    **kwargs: dict
 ) -> pd.DataFrame:
     """
-    Reads in the jores21 dataset.
+    Reads in the jores21 dataset into a SeqData object.
 
     Parameters
     ----------
     dataset : str, optional
-        Dataset to read. Either leaf or proto. The default is "leaf".
+        Dataset to read. Either "leaf" or "proto". The default is "leaf".
     add_metadata : bool, optional
         If True, add metadata to the SeqData object. The default is False.
     return_sdata : bool, optional
-        If True, return SeqData object with the Jores21 dataset. The default is True.
+        If True, return SeqData object for the Jores21 dataset. The default is True.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
     Returns
     -------
     sdata : SeqData
-        SeqData object with the Jores21 dataset.
+        SeqData object for the Jores21 dataset.
     """
     urls_list = [
         "https://raw.githubusercontent.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters/main/CNN/CNN_test_leaf.tsv",
@@ -279,9 +291,7 @@ def jores21(
             seqs_annot=data[["set", "sp", "gene", "enrichment"]],
         )
         if add_metadata:
-            metadata_path = try_download_urls(
-                [4], urls_list, "jores21", compression=""
-            )[0]
+            metadata_path = try_download_urls([4], urls_list, "jores21")[0]
             smetadata = pd.read_excel(metadata_path, sheet_name=0, skiprows=3)
             sdata["sequence"] = sdata.seqs
             sdata.seqs_annot = sdata.seqs_annot.merge(
@@ -293,23 +303,27 @@ def jores21(
         return paths
 
 
-def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
+def deAlmeida22(
+    dataset="train", 
+    return_sdata=True, 
+    **kwargs: dict
+) -> pd.DataFrame:
     """
-    Reads the deAlmeida22 dataset.
+    Reads the deAlmeida22 dataset into a SeqData object.
 
     Parameters
     ----------
     dataset : str, optional
-        Dataset to read. Either train or test. The default is "train".
+        Dataset to read. Either "train" or "test". The default is "train".
     return_sdata : bool, optional
-        If True, return SeqData object with the deAlmeida22 dataset. The default is True.
+        If True, return SeqData object for the deAlmeida22 dataset. The default is True.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
     Returns
     -------
     sdata : SeqData
-        SeqData object with the deAlmeida22 dataset.
+        SeqData object for the deAlmeida22 dataset.
     """
     urls_list = [
         "https://zenodo.org/record/5502060/files/Sequences_Train.fa?download=1",

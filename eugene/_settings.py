@@ -104,6 +104,7 @@ class EugeneConfig:
         """
         self._verbosity = level
         eugene_logger.setLevel(level)
+        logging.getLogger('tensorflow').disabled = True
         if len(eugene_logger.handlers) == 0:
             console = Console(force_terminal=True)
             if console.is_jupyter is True:

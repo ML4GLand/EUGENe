@@ -35,6 +35,36 @@ def _model_performances_across_groups(
     clf_thresh: float = 0,
     **kwargs
 ):
+    """
+    Calculate model performance for a metric or set of metrics across groups.
+
+    Compares a target column to a set of prediction column in sdataframe 
+    and calculates the performance of the model for each group in groupby.
+
+    Parameters
+    ----------
+    sdataframe : pd.DataFrame
+        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
+    target_key : str
+        The name of the column in sdataframe containing the target values.
+    prediction_keys : list, optional
+        A list of the names of the columns in sdataframe containing the prediction values. 
+        If None, all columns containing "predictions" in their name will be used.
+    prediction_groups : list, optional
+        A list of the names of the groups for each prediction column.
+    groupby : str, optional
+        The name of the column in sdataframe to group by. If None, the prediction_groups will be used.
+    metrics : str, optional
+        The name of the metric to calculate. If None, all metrics will be calculated.
+    clf_thresh : float, optional
+        The threshold to use for binary classification. Default is 0.
+    **kwargs : dict, optional
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe containing the calculated metrics for each group.
+    """
     if isinstance(metrics, str):
         metrics = [metrics]
     prediction_keys = (
@@ -85,6 +115,33 @@ def _model_performances(
     metrics: str = "r2", 
     clf_thresh: float = 0
 ):
+    """ 
+    Calculate model performance for a metric or set of metrics.
+
+    Uses columns from a passed in dataframe to calcuate a set of metrics.
+
+    Parameters
+    ----------
+    sdataframe : pd.DataFrame
+        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
+    target_key : str
+        The name of the column in sdataframe containing the target values.
+    prediction_keys : list, optional
+        A list of the names of the columns in sdataframe containing the prediction values. 
+        If None, all columns containing "predictions" in their name will be used.
+    prediction_groups : list, optional
+        A list of the names of the groups for each prediction column.
+    groupby : str, optional
+        The name of the column in sdataframe to group by. If None, the prediction_groups will be used.
+    metrics : str, optional
+        The name of the metric to calculate. If None, all metrics will be calculated.
+    clf_thresh : float, optional
+        The threshold to use for binary classification. Default is 0.
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe containing the calculated metrics.
+    """
     if isinstance(metrics, str):
         metrics = [metrics]
     true = sdataframe[target_key]
@@ -99,8 +156,7 @@ def _model_performances(
     for metric in metrics:
         func = metric_dict[metric]
         if metric in ["r2", "mse"]:
-            scores = pd.concat(
-                [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
+            scores = pd.concat([scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                 axis=1,
             )
         elif metric in ["spearman", "pearson", "kendall"]:
@@ -112,8 +168,7 @@ def _model_performances(
                 axis=1,
             )
         elif metric in ["roc_auc", "average_precision"]:
-            scores = pd.concat(
-                [scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
+            scores = pd.concat([scores, predicts.apply(lambda x: func(true, x), axis=0).to_frame(name=metric)],
                 axis=1,
             )
     if prediction_groups is not None:
@@ -136,6 +191,45 @@ def performance_summary(
     save: PathLike = None,
     **kwargs
 ):
+    """
+    Plot a performance summary across model predictions for a passed in metric
+
+    Uses model predictions and targets to calculate a set of metrics and plot them.
+
+    Parameters
+    ----------
+    sdata : pd.DataFrame
+        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
+    target_key : str
+        The name of the column in sdataframe containing the target values.
+    prediction_keys : list, optional
+        A list of the names of the columns in sdataframe containing the prediction values.
+        If None, all columns containing "predictions" in their name will be used.
+    prediction_groups : list, optional
+        A list of the names of the groups for each prediction column.
+    groupby : str, optional
+        The name of the column in sdataframe to group by. If None, the prediction_groups will be used.
+    add_swarm : bool, optional
+        Whether to add a swarmplot to the violinplot. Default is False.
+    size : int, optional
+        The size of the points to plot if add_swarm is True. Default is 5.
+    metrics : str, optional
+        The name of the metrics to calculate.
+    orient : str, optional
+        The orientation of the plot. Default is "v".
+    rc_context : dict, optional
+        A dictionary of rcParams to pass to matplotlib. Default is settings.rc_context.
+    return_axes : bool, optional
+        Whether to return the axes object. Default is False.
+    save : PathLike, optional
+        The path to save the figure to. Default is None.
+    **kwargs
+        Additional keyword arguments to pass to sns.violinplot.
+    
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+    """
     sdataframe = sdata.seqs_annot
     if groupby is None:
         scores = _model_performances(

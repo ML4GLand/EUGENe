@@ -23,7 +23,10 @@ def metric_curve(
     **kwargs
 ) -> None:
     """
-    Plots the loss curves from a PyTorch Lightning (PL) training run
+    Plots the loss curves from a PyTorch Lightning (PL) training run.
+
+    Uses the tensorboard event file to extract the loss curves. The loss curves are extracted from the event file and
+    converted to a pandas dataframe. The dataframe is then plotted using seaborn.
 
     Parameters
     ----------
@@ -76,7 +79,11 @@ def loss_curve(
     **kwargs
 ) -> None:
     """
-    Plots the loss curves from a PyTorch Lightning (PL) training run. Wraps metrics_curve().
+    Plots the loss curves from a PyTorch Lightning (PL) training run. Wraps metrics_curve function.
+
+    Uses the tensorboard event file to extract the metric curves. The metric curves are extracted from the event file and
+    converted to a pandas dataframe. The dataframe is then plotted using seaborn.
+
 
     Parameters
     ----------
@@ -119,7 +126,9 @@ def training_summary(
     **kwargs
 ) -> None:
     """
-    Plots the training summary from a training run. Convenience function to plot loss and metric together.
+    Plots the training summary from a given training run
+    
+    Convenience function to plot loss and metric together.
 
     Parameters
     ----------
