@@ -11,6 +11,9 @@ class Jores21CNN(BaseModel):
     PyTorch implementation of the TensorFlow model described here:
     https://github.com/tobjores/Synthetic-Promoter-Designs-Enabled-by-a-Comprehensive-Analysis-of-Plant-Core-Promoters
 
+    This model only uses a single strand, but applies convolutions and the reverse complement of the convolutional fitler
+    to the same sequence.
+
     Parameters
     ----------
     input_len : int
@@ -18,11 +21,11 @@ class Jores21CNN(BaseModel):
     output_dim : int
         Dimension of the output.
     strand : str, optional
-        Strand of the input. Either "ss" or "ds".
+        Strand of the input. Only ss is supported for this model
     task : str, optional
         Task of the model. Either "regression" or "classification".
     aggr : str, optional
-        Aggregation method. Does not apply to this model
+        Aggregation method. Does not apply to this model and will be ignored
     filters : int, optional
         Number of filters in the convolutional layers.
     kernel_size : int, optional
@@ -42,7 +45,8 @@ class Jores21CNN(BaseModel):
         output_dim: int,
         strand: str = "ss",
         task: str = "regression",
-        aggr=None,
+        aggr: str = None,
+        loss_fxn: str = "mse",
         filters: int = 128,
         kernel_size: int = 13,
         layers: int = 2,
@@ -52,7 +56,13 @@ class Jores21CNN(BaseModel):
         **kwargs
     ):
         super().__init__(
-            input_len, output_dim, strand=strand, task=task, aggr=aggr, **kwargs
+            input_len, 
+            output_dim, 
+            strand=strand, 
+            task=task, 
+            aggr=aggr, 
+            loss_fxn=loss_fxn,
+            **kwargs
         )
         self.biconv = BiConv1D(
             filters=filters,
@@ -73,7 +83,7 @@ class Jores21CNN(BaseModel):
         self.batchnorm = nn.BatchNorm1d(num_features=hidden_dim)
         self.fc2 = nn.Linear(in_features=hidden_dim, out_features=output_dim)
 
-    def forward(self, x, x_rev=None):
+    def forward(self, x, x_rev_comp=None):
         x = self.biconv(x)
         x = self.conv(x)
         x = F.relu(x)
@@ -92,6 +102,7 @@ class Kopp21CNN(BaseModel):
     PyTorch implementation of the TensorFlow model described here:
     https://github.com/wkopp/janggu_usecases/tree/master/01_jund_prediction
 
+    This model can only be run in "ds" mode. The reverse complement must be included in the Dataloader
     Parameters
     ----------
     input_len : int
@@ -99,11 +110,11 @@ class Kopp21CNN(BaseModel):
     output_dim : int
         Dimension of the output.
     strand : str, optional
-        Strand of the input. By default "ds" for this model.
+        Strand of the input. This model is only implemented for "ds"
     task : str, optional
         Task for this model. By default "binary_classification" for this mode
     aggr : str, optional
-        Aggregation method. Either "concat", "max", or "ave". By default "max" for this model.
+        Aggregation method. Either "concat", "max", or "avg". By default "max" for this model.
     filters : list, optional
         Number of filters in the convolutional layers. 
     conv_kernel_size : list, optional
@@ -139,23 +150,21 @@ class Kopp21CNN(BaseModel):
         self.conv = nn.Conv1d(4, filters[0], conv_kernel_size[0], stride=stride)
         self.maxpool = nn.MaxPool1d(kernel_size=maxpool_kernel_size, stride=stride)
         self.batchnorm = nn.BatchNorm1d(filters[0])
-        self.conv2 = nn.Conv1d(
-            filters[0], filters[1], conv_kernel_size[1], stride=stride
-        )
+        self.conv2 = nn.Conv1d(filters[0], filters[1], conv_kernel_size[1], stride=stride)
         self.batchnorm2 = nn.BatchNorm1d(filters[1])
         self.linear = nn.Linear(filters[1], self.output_dim)
 
-    def forward(self, x, x_rev):
+    def forward(self, x, x_rev_comp):
         x_fwd = F.relu(self.conv(x))
-        x_rev = F.relu(self.conv(x_rev))
+        x_rev_comp = F.relu(self.conv(x_rev_comp))
         if self.aggr == "concat":
-            x = torch.cat((x_fwd, x_rev), dim=1)
+            x = torch.cat((x_fwd, x_rev_comp), dim=1)
         elif self.aggr == "max":
-            x = torch.max(x_fwd, x_rev)
-        elif self.aggr == "ave":
-            x = (x_fwd + x_rev) / 2
+            x = torch.max(x_fwd, x_rev_comp)
+        elif self.aggr == "avg":
+            x = (x_fwd + x_rev_comp) / 2
         elif self.aggr is None:
-            x = torch.cat((x_fwd, x_rev), dim=1)
+            x = torch.cat((x_fwd, x_rev_comp), dim=1)
         x = self.maxpool(x)
         x = self.conv2(x)
         x = F.relu(x)

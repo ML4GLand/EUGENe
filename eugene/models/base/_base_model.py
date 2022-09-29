@@ -20,7 +20,8 @@ from ..._settings import settings
 
 
 class BaseModel(LightningModule):
-    """Base model class to be inherited by all models in EUGENe
+    """
+    Base model class to be inherited by all models in EUGENe
 
     Paramters:
     ----------
