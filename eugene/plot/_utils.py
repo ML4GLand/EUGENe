@@ -171,7 +171,7 @@ def _plot_seaborn(
             xtick_rot=xtick_rot,
             ylab=ylab,
         )
-    plt.show()
+    #plt.show()
     if save is not None:
         _save_fig(save)
     return ax

@@ -2,7 +2,6 @@ import torch
 from ..preprocess import ohe_seq
 
 
-# Suite of sequence transforms that can be composed using torchvision
 class ReverseComplement(object):
     """Reverse complement an input sequence"""
 

@@ -10,31 +10,13 @@ from functools import singledispatch
 from pandas.api.types import is_string_dtype
 from copy import deepcopy
 from ._SeqDataset import SeqDataset
-
-
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
-try:
-    from typing import Literal
-except ImportError:
-    try:
-        from typing_extensions import Literal
-    except ImportError:
-
-        class LiteralMeta(type):
-            def __getitem__(cls, values):
-                if not isinstance(values, tuple):
-                    values = (values,)
-                return type("Literal_", (Literal,), dict(__args__=values))
-
-        class Literal(metaclass=LiteralMeta):
-            pass
 
 
 class SeqData:
-    """
-    SeqData object used to store data for EUGENe workflows.
-
-    Parameters
+    """SeqData object used to containerize and store data for EUGENe workflows.
+    
+    Attributes
     ----------
     seqs : np.ndarray
         Numpy array of sequences.
@@ -74,7 +56,9 @@ class SeqData:
 
         if seqs is not None:
             self.seqidx = (
-                range(seqs.shape[0]) if seqidx is None or len(seqidx) == 0 else seqidx
+                range(seqs.shape[0]) 
+                if seqidx is None or len(seqidx) == 0 
+                else seqidx
             )
         else:
             self.seqidx = (
@@ -83,24 +67,15 @@ class SeqData:
                 else seqidx
             )
 
-        # X
+        # Sequence representations
         self.seqs = np.array(seqs[self.seqidx]) if seqs is not None else None
         self.names = np.array(names[self.seqidx]) if names is not None else None
-        self.rev_seqs = (
-            np.array(rev_seqs[self.seqidx]) if rev_seqs is not None else None
-        )
-        self.ohe_seqs = (
-            np.array(ohe_seqs[self.seqidx]) if ohe_seqs is not None else None
-        )
-        self.ohe_rev_seqs = (
-            np.array(ohe_rev_seqs[self.seqidx]) if ohe_rev_seqs is not None else None
-        )
+        self.rev_seqs = np.array(rev_seqs[self.seqidx]) if rev_seqs is not None else None
+        self.ohe_seqs = np.array(ohe_seqs[self.seqidx]) if ohe_seqs is not None else None
+        self.ohe_rev_seqs = np.array(ohe_rev_seqs[self.seqidx]) if ohe_rev_seqs is not None else None
 
         # n_obs
-        if self.seqs is not None:
-            self._n_obs = len(self.seqs)
-        else:
-            self._n_obs = len(self.ohe_seqs)
+        self._n_obs = len(self.seqs) if self.seqs is not None else len(self.ohe_seqs)
 
         # seq_annot (handled by gen dataframe)
         if isinstance(self.seqidx, slice):
@@ -132,7 +107,7 @@ class SeqData:
 
     @property
     def seqs(self) -> np.ndarray:
-        """Sequences."""
+        """np.ndarray: Numpy array of string representation of sequences."""
         return self._seqs
 
     @seqs.setter
@@ -141,7 +116,7 @@ class SeqData:
 
     @property
     def names(self) -> np.ndarray:
-        """Names of sequences."""
+        """np.ndarray: Numpy array of names or identifiers of sequences."""
         return self._names
 
     @names.setter
@@ -150,12 +125,12 @@ class SeqData:
 
     @property
     def n_obs(self) -> int:
-        """Number of observations."""
+        """int: Number of sequences contained in the object."""
         return self._n_obs
 
     @property
     def rev_seqs(self) -> np.ndarray:
-        """Reverse complement of sequences."""
+        """np.ndarray: Numpy array of reverse complement sequences."""
         return self._rev_seqs
 
     @rev_seqs.setter
@@ -164,7 +139,7 @@ class SeqData:
 
     @property
     def ohe_seqs(self) -> np.ndarray:
-        """One-hot encoded sequences."""
+        """np.ndarray: Numpy array of one-hot encoded sequences."""
         return self._ohe_seqs
 
     @ohe_seqs.setter
@@ -173,7 +148,7 @@ class SeqData:
 
     @property
     def seqs_annot(self) -> pd.DataFrame:
-        """Sequences annotations."""
+        """pd.DataFrame: Pandas dataframe of per sequence annotations."""
         return self._seqs_annot
 
     @seqs_annot.setter
@@ -184,7 +159,7 @@ class SeqData:
 
     @property
     def pos_annot(self) -> pr.PyRanges:
-        """Positional annotations."""
+        """pr.PyRanges: PyRanges object of per sequence annotations.""" 
         return self._pos_annot
 
     @pos_annot.setter
@@ -193,7 +168,7 @@ class SeqData:
 
     @property
     def ohe_rev_seqs(self) -> np.ndarray:
-        """One-hot encoded reverse complement sequences."""
+        """np.ndarray: Numpy array of one-hot encoded reverse complement sequences."""
         return self._ohe_rev_seqs
 
     @ohe_rev_seqs.setter
@@ -202,7 +177,7 @@ class SeqData:
 
     @property
     def seqsm(self) -> Mapping[str, Sequence[Any]]:
-        """Sequences metadata."""
+        """Mapping[str, Sequence[Any]]: Dictionary of multidimensional sequence representations."""
         return self._seqsm
 
     @seqsm.setter
@@ -211,7 +186,7 @@ class SeqData:
 
     @property
     def uns(self) -> Mapping[str, Any]:
-        """Unstructured data."""
+        """Mapping[str, Any]: Dictionary of unstructured annotations."""
         return self._uns
 
     @uns.setter
@@ -219,7 +194,7 @@ class SeqData:
         self._uns = uns
 
     def __getitem__(self, index):
-        """Get item from data."""
+        """Get item from data. Defines slicing of object."""
         if isinstance(index, str):
             return self.seqs_annot[index]
         elif isinstance(index, slice):
@@ -236,7 +211,6 @@ class SeqData:
                 uns=self.uns,
                 seqidx=index,
             )
-        # TODO: this is where we could fix the way bools are handled
         else:
             return SeqData(
                 seqs=self.seqs,
@@ -252,7 +226,7 @@ class SeqData:
             )
 
     def __setitem__(self, index, value):
-        """Set item in data."""
+        """Add a column to seqs_annot."""
         if isinstance(index, str):
             self.seqs_annot[index] = value
         else:
@@ -261,6 +235,7 @@ class SeqData:
             )
 
     def __repr__(self):
+        """Representation of SeqData object."""
         descr = f"SeqData object with = {self._n_obs} seqs"
         for attr in [
             "seqs",
@@ -301,9 +276,12 @@ class SeqData:
     def write_h5sd(self, path: PathLike, mode: str = "w"):
         """Write SeqData object to h5sd file.
 
-        Args:
-            path: Path to h5sd file.
-            mode: Mode to open h5sd file.
+        Parameters
+        ----------
+        path: PathLike
+            Path to h5sd file. If file exists, it will be overwritten.
+        mode: str, optional
+            Mode to open h5sd file. Default is "w".
         """
         from .._io import write_h5sd
 
@@ -329,6 +307,7 @@ class SeqData:
         Returns
         -------
         SeqDataset
+            PyTorch dataset class for SeqData object.
         """
         from .._transforms import ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
@@ -384,6 +363,7 @@ class SeqData:
             )
 
     def make_names_unique(self):
+        """Make sequence names unique by appending a number to the end of each name."""
         n_digits = len(str(self.n_obs))
         new_index = np.array(
             [

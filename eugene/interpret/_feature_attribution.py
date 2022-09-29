@@ -522,7 +522,21 @@ def feature_attribution_sdata(
 
 
 @track
-def aggregate_importances_sdata(sdata, uns_key):
+def aggregate_importances_sdata(
+    sdata, 
+    uns_key
+):
+    """Aggregate feature attribution scores for a SeqData
+
+    This function aggregates the feature attribution scores for a SeqData object
+
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object
+    uns_key : str
+        Key in the uns attribute of the SeqData object to use as feature attribution scores
+    """
     vals = sdata.uns[uns_key]
     df = sdata.pos_annot.df
     agg_scores = []

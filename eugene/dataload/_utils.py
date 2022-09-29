@@ -56,12 +56,12 @@ def _seq2Fasta(seqs, IDs, name="seqs"):
 
     Parameters
     ----------
-        seqs (list-like):
-            list of sequences
-        IDs (list-like):
-            list of identifiers
-        name (str, optional):
-            name of file. Defaults to "seqs".
+    seqs (list-like):
+        list of sequences
+    IDs (list-like):
+        list of identifiers
+    name (str, optional):
+        name of file. Defaults to "seqs".
     """
     file = open("{}.fa".format(name), "w")
     for i in range(len(seqs)):
@@ -73,8 +73,7 @@ def concat(
     sdatas,
     keys: Union[str, list] = None,
 ):
-    """
-    Concatenates a list of SeqData objects together without merging.
+    """Concatenates a list of SeqData objects together without merging.
 
     Does not currently support merging of uns and seqsm.
     Only objects present in the first sdata of the list will be merged

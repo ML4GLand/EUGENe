@@ -66,9 +66,9 @@ def best_mut_seqs(
     batch_size: int = None, 
     device: str = None
 ) -> np.ndarray:
-    """
-    Find and return the highest scoring sequence for each sequence
-    from a set reference sequences X. X should contain one-hot-encoded sequences
+    """Find and return the highest scoring sequence for each sequence from a set reference sequences X. 
+    
+    X should contain one-hot-encoded sequences
     and should be of shape (n, 4, l). n is the number of sequences, 4 is the number of
     nucleotides, and l is the length of the sequence.
 
@@ -123,8 +123,7 @@ def evolution(
     batch_size: int = None,
     device: str = "cpu",
 ) -> np.ndarray:
-    """
-    Perform rounds rounds of in-silico evolution on a single sequence X.
+    """Perform rounds rounds of in-silico evolution on a single sequence X.
 
     Using ISM, this function calculates all the scores of all possible mutations
     on a starting sequence X. It then mutates the sequence and repeats the process

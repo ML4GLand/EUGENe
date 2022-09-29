@@ -29,8 +29,7 @@ def predictions(
     transform_kwargs: dict = {},
     copy: bool = False,
 ):
-    """
-    Predict the outputs of sequences in a SeqData object using a model.
+    """Predict the outputs of sequences in a SeqData object using a model.
 
     Params:
     -------

@@ -7,8 +7,7 @@ def _k_largest_index_argsort(
     a: np.ndarray, 
     k: int = 1
 ) -> np.ndarray:
-    """
-    Returns the indeces of the k largest values of a numpy array. 
+    """Returns the indeces of the k largest values of a numpy array. 
     
     If a is multi-dimensional, the indeces are returned as an array k x d array where d is 
     the dimension of a. The kth row represents the kth largest value of the overall array.
@@ -55,6 +54,7 @@ def _naive_ism(
     device: str = "cpu"):
     """
     In-silico mutagenesis saliency scores.
+    
     This function will perform in-silico mutagenesis in a naive manner, i.e.,
     where each input sequence has a single mutation in it and the entirety
     of the sequence is run through the given model. It returns the ISM score,
