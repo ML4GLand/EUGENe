@@ -364,8 +364,7 @@ def read_bed(
     return_janggu=False,
     **kwargs,
 ):
-    """
-    Read sequences from a BED file.
+    """Read sequences from a BED file using Janggu data function
 
     Parameters
     ----------
@@ -437,8 +436,7 @@ def read_bam(
     return_janggu=False,
     **kwargs,
 ):
-    """
-    Read sequences from a BAM file.
+    """Read sequences from a BAM file using Janggu data function.
 
     Parameters
     ----------
@@ -515,8 +513,7 @@ def read_bigwig(
     return_janggu=False,
     **kwargs,
 ):
-    """
-    Read sequences from a BigWig file.
+    """Read sequences from a BigWig file using Janggu data function.
 
     Parameters
     ----------
@@ -623,7 +620,7 @@ def read(seq_file, *args, **kwargs):
 
 
 def write_csv(sdata, filename, target_key=None, delim="\t"):
-    r"""Write sequences from SeqData to csv files.
+    """Write sequences from SeqData to csv files.
 
     Parameters
     ----------

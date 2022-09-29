@@ -5,10 +5,12 @@ from ...utils import track
 
 
 def get_jaspar_motifs(
-    motif_accs=None, motif_names=None, collection=None, release="JASPAR2022"
+    motif_accs=None, 
+    motif_names=None, 
+    collection=None, 
+    release="JASPAR2022"
 ):
-    """
-    Get and return motifs from JASPAR database
+    """Get and return motifs from JASPAR database
 
     Parameters
     ----------
@@ -45,8 +47,7 @@ def get_jaspar_motifs(
 
 
 def save_motifs_as_meme(jaspar_motifs, filename):
-    """
-    Save motifs as MEME file
+    """Save motifs as MEME file
 
     Parameters
     ----------
@@ -85,8 +86,7 @@ def save_motifs_as_meme(jaspar_motifs, filename):
 
 
 def load_meme(filename):
-    """
-    Load MEME file
+    """Load MEME file
 
     Parameters
     ----------
@@ -115,8 +115,7 @@ def load_meme(filename):
 
 
 def fimo_motifs(sdata, pymeme_motifs, background):
-    """
-    Run FIMO on a list of motifs
+    """Run FIMO on a list of motifs
 
     Parameters
     ----------
@@ -171,8 +170,7 @@ def score_seqs(
     release="JASPAR2020",
     filename="motifs.meme",
 ):
-    """
-    Score sequences with JASPAR motifs
+    """Score sequences with JASPAR motifs
 
     Parameters
     ----------
@@ -230,8 +228,7 @@ def jaspar_annots_sdata(
     filename="motifs.meme",
     copy=False,
 ):
-    """
-    Annotate SeqData with JASPAR motifs
+    """Annotate SeqData with JASPAR motifs
 
     Parameters
     ----------

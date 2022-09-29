@@ -188,9 +188,10 @@ def dinuc_shuffle_seq(seq, num_shufs=None, rng=None):
     -------
     list of str or np.array
         The shuffled sequences.
-    Credits
-    -------
-    This is taken from https://github.com/kundajelab/deeplift/blob/master/deeplift/dinuc_shuffle.py
+
+    Note
+    ----
+    This function comes from DeepLIFT's dinuc_shuffle.py.
     """
     if type(seq) is str or type(seq) is np.str_:
         arr = _string_to_char_array(seq)
@@ -267,9 +268,9 @@ def dinuc_shuffle_seqs(seqs, num_shufs=None, rng=None):
     np.ndarray
         Array of shuffled sequences
 
-    Credits
+    Note
     -------
-        This is taken from DeepLIFT
+    This is taken from DeepLIFT
     """
     if not rng:
         rng = np.random.RandomState()
@@ -287,9 +288,9 @@ def perturb_seq(X_0, vocab_len=4):
     """
     Produce all edit-distance-one pertuabtions for a single of sequences.
 
-    Credits
-    -------
-    This is modified from Yuzu
+    Note
+    ----
+    This function is modified from the Yuzu package
     """
     import warnings
 
@@ -338,9 +339,9 @@ def perturb_seqs(X_0, vocab_len=4):
     X: torch.Tensor, shape=(n_seqs, (n_choices-1)*seq_len, n_choices, seq_len)
         Each single-position perturbation of seq.
 
-    Credits
-    -------
-    This is modified from Yuzu
+    Note
+    ----
+    This function is modified from the Yuzu package.
     """
     import warnings
 

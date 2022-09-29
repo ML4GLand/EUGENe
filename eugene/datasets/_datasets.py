@@ -13,8 +13,7 @@ pkg_resources = None
 
 
 def get_dataset_info():
-    """
-    Return DataFrame with info about builtin datasets.
+    """Return DataFrame with info about builtin datasets.
 
     Returns
     -------
@@ -29,8 +28,7 @@ def get_dataset_info():
 
 
 def random1000(**kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the random1000 dataset (deprecated).
+    """Reads in the built-in random1000 dataset.
 
     Parameters
     ----------
@@ -60,8 +58,7 @@ def random1000(**kwargs: dict) -> pd.DataFrame:
 
 
 def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the Farley15 dataset.
+    """Reads in the Farley15 dataset.
 
     Parameters
     ----------
@@ -115,8 +112,7 @@ def farley15(return_sdata=True, **kwargs: dict) -> pd.DataFrame:
 
 
 def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the deBoer20 dataset.
+    """Reads in the deBoer20 dataset.
 
     Parameters
     ----------
@@ -167,8 +163,7 @@ def deBoer20(datasets: list, return_sdata=True, **kwargs: dict) -> pd.DataFrame:
 
 
 def ray13(dataset="norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads in the ray13 dataset.
+    """Reads in the ray13 dataset.
 
     Parameters
     ----------
@@ -223,8 +218,7 @@ def ray13(dataset="norm", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
 def jores21(
     dataset="leaf", add_metadata=False, return_sdata=True, **kwargs: dict
 ) -> pd.DataFrame:
-    """
-    Reads in the jores21 dataset.
+    """Reads in the jores21 dataset.
 
     Parameters
     ----------
@@ -294,8 +288,7 @@ def jores21(
 
 
 def deAlmeida22(dataset="train", return_sdata=True, **kwargs: dict) -> pd.DataFrame:
-    """
-    Reads the deAlmeida22 dataset.
+    """Reads the deAlmeida22 dataset.
 
     Parameters
     ----------

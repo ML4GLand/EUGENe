@@ -3,13 +3,11 @@ import numpy as np
 from yuzu.utils import perturbations
 
 
-#https://stackoverflow.com/questions/43386432/how-to-get-indexes-of-k-maximum-values-from-a-numpy-multidimensional-array
 def _k_largest_index_argsort(
     a: np.ndarray, 
     k: int = 1
 ) -> np.ndarray:
-    """
-    Returns the indeces of the k largest values of a numpy array. 
+    """Returns the indeces of the k largest values of a numpy array. 
     
     If a is multi-dimensional, the indeces are returned as an array k x d array where d is 
     the dimension of a. The kth row represents the kth largest value of the overall array.
@@ -37,16 +35,26 @@ def _k_largest_index_argsort(
     -------
     numpy array
         The indexes of the k largest values of a.
+
+    Note
+    ----
+    From https://stackoverflow.com/questions/43386432/how-to-get-indexes-of-k-maximum-values-from-a-numpy-multidimensional-array
     """
     idx = np.argsort(a.ravel())[:-k-1:-1]
     return np.column_stack(np.unravel_index(idx, a.shape))
 
 
-# modified from yuzu
 @torch.inference_mode()
-def _naive_ism(model, X_0, type="delta", batch_size=128, device="cpu"):
+def _naive_ism(
+    model, 
+    X_0, 
+    type="delta", 
+    batch_size=128, 
+    device="cpu"
+):
     """
     In-silico mutagenesis saliency scores.
+    
     This function will perform in-silico mutagenesis in a naive manner, i.e.,
     where each input sequence has a single mutation in it and the entirety
     of the sequence is run through the given model. It returns the ISM score,
@@ -69,6 +77,10 @@ def _naive_ism(model, X_0, type="delta", batch_size=128, device="cpu"):
     -------
     X_ism: numpy.ndarray
         The saliency score for each perturbation.
+
+    Note
+    ----
+    This function was modified from the Yuzu package
     """
     n_seqs, n_choices, seq_len = X_0.shape
     X_idxs = X_0.argmax(axis=1)

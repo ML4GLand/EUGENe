@@ -1,18 +1,12 @@
-"""
-Python script with functions for preprocessing data
-"""
-
-# Basic imports
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from umap import UMAP
 
-# Function definitions
+
 def pca(sdata, uns_key, n_comp=30, copy=False):
-    """
-    Function to perform scaling and PCA on an input matrix
+    """Function to perform scaling and PCA on an input matrix
 
     Parameters
     ----------
@@ -41,8 +35,7 @@ def pca(sdata, uns_key, n_comp=30, copy=False):
 
 
 def umap(sdata, seqsm_key=None, uns_key=None, copy=False, **kwargs):
-    """
-    Function to perform scaling and UMAP on an input matrix
+    """Function to perform scaling and UMAP on an input matrix
 
     Parameters
     ----------

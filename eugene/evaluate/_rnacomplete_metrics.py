@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from itertools import product
 from tqdm.auto import tqdm
-
 tqdm.pandas()
 from sklearn.metrics import auc
 from sklearn.metrics import r2_score
@@ -12,9 +11,13 @@ import seaborn as sns
 from ._metrics import median_calc, auc_calc, escore
 
 
-def rnacomplete_metrics(kmer_presence_mtx, intensities, verbose=True, swifter=False):
-    """
-    Calculate the RNAcomplete metrics for a set of kmers and intensities.
+def rnacomplete_metrics(
+    kmer_presence_mtx, 
+    intensities, 
+    verbose=True, 
+    swifter=False
+):
+    """Calculate the RNAcomplete metrics for a set of kmers and intensities.
 
     Parameters
     ----------
@@ -75,8 +78,7 @@ def rnacomplete_metrics_sdata_plot(
     preds_suffix="_predictions",
     **kwargs,
 ):
-    """
-    Calculate the RNAcomplete metrics for a set of kmers and intensities in a SeqData object.
+    """Calculate the RNAcomplete metrics for a set of kmers and intensities in a SeqData object.
 
     Parameters
     ----------
@@ -207,8 +209,7 @@ def rnacomplete_metrics_sdata_table(
     preds_suffix="_predictions",
     **kwargs,
 ):
-    """
-    Generate a table of RNAcomplete metrics for a list of target keys.
+    """Generate a table of RNAcomplete metrics for a list of target keys.
     """
     if isinstance(target_keys, str):
         target_keys = [target_keys]

@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -7,10 +6,9 @@ from ..._settings import settings
 
 
 class SeqDataset(Dataset):
-    """
-    PyTorch dataset definition for sequences.
+    """PyTorch dataset class definition for sequences.
 
-    Parameters
+    Attributes
     ----------
     seqs : iterable
         List of sequences to serve as input into models.
@@ -24,7 +22,14 @@ class SeqDataset(Dataset):
         Optional transform to be applied on a sample.
     """
 
-    def __init__(self, seqs, names=None, targets=None, rev_seqs=None, transform=None):
+    def __init__(
+        self, 
+        seqs, 
+        names=None, 
+        targets=None, 
+        rev_seqs=None, 
+        transform=None
+    ):
         self.names = names
         self.seqs = seqs
         self.rev_seqs = rev_seqs
@@ -34,10 +39,8 @@ class SeqDataset(Dataset):
 
     def _init_dataset(self):
         """Perform any initialization steps on the dataset.
+        
         Currently converts names into ascii if provided
-
-        Returns:
-            None
         """
 
         if self.names is not None:
@@ -96,7 +99,12 @@ class SeqDataset(Dataset):
         return sample
 
     def to_dataloader(
-        self, batch_size=None, pin_memory=True, shuffle=True, num_workers=0, **kwargs
+        self, 
+        batch_size=None, 
+        pin_memory=True, 
+        shuffle=True, 
+        num_workers=0, 
+        **kwargs
     ):
         """Convert the dataset to a PyTorch DataLoader
 

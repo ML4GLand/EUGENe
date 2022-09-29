@@ -1,12 +1,10 @@
-# import swifter
 import numpy as np
 import pandas as pd
 from sklearn.metrics import auc, roc_auc_score
 
 
 def median_calc(y_true, y_score):
-    """
-    Calculate the median of the scores in y_score for the positive class labels in y_true.
+    """Calculate the median of the scores in y_score for the positive class labels in y_true.
     """
     if isinstance(y_score, pd.Series):
         y_score = y_score.values
@@ -20,8 +18,7 @@ def median_calc(y_true, y_score):
 
 
 def auc_calc(y_true, y_score):
-    """
-    Calculate the area under the curve for a binary y_true against scores in y_score.
+    """Calculate the area under the curve for a binary y_true against scores in y_score.
     """
     if isinstance(y_score, pd.Series):
         y_score = y_score.values
@@ -34,8 +31,7 @@ def auc_calc(y_true, y_score):
 
 
 def escore(y_true, y_score):
-    """
-    Calculate the e-score for a binary y_true against scores in y_score.
+    """Calculate the e-score for a binary y_true against scores in y_score.
     """
     if isinstance(y_score, pd.Series):
         y_score = y_score.values

@@ -11,8 +11,7 @@ from .._settings import settings
 
 
 def _get_first_conv_layer(model, device="cpu"):
-    """
-    Get the first convolutional layer in a model.
+    """Get the first convolutional layer in a model.
 
     Parameters
     ----------
@@ -50,7 +49,30 @@ def _get_first_conv_layer(model, device="cpu"):
     return None
 
 
-def _get_activations_from_layer(layer, sdataloader, device="cpu", vocab="DNA"):
+def _get_activations_from_layer(
+    layer, 
+    sdataloader, 
+    device="cpu", 
+    vocab="DNA"
+):
+    """Get the activations from a convolutional layer on a passed in dataloader.
+
+    Parameters
+    ----------
+    layer : torch.nn.Module
+        The convolutional layer to get the activations from.
+    sdataloader : torch.utils.data.DataLoader
+        The dataloader to get the activations from.
+    device : str, optional
+        The device to move the model to, by default "cpu"
+    vocab : str, optional
+        The vocabulary to use, by default "DNA" 
+    
+    Returns
+    -------
+    np.ndarray
+        The activations from the layer.
+    """
     from ..preprocess import decode_seqs
 
     activations = []
@@ -83,6 +105,30 @@ def _get_filter_activators(
     threshold=0.5,
     num_seqlets=100,
 ):
+    """Get the sequences that activate a filter the most.
+    
+    Parameters
+    ----------
+    activations : np.ndarray
+        The activations from a convolutional layer.
+    sequences : np.ndarray
+        The sequences that the activations correspond to.
+    kernel_size : int
+        The kernel size of the convolutional layer.
+    num_filters : int, optional
+        The number of filters to get the activators for, by default None
+    method : str, optional
+        The method to use to get the activators, by default "Alipahani15"
+    threshold : float, optional
+        The threshold to use for the Alipahani15 method, by default 0.5
+    num_seqlets : int, optional
+        The number of seqlets to get for the Minnoye20 method, by default 100
+    
+    Returns
+    -------
+    dict
+        A dictionary of the sequences that activate each filter the most.
+    """
     num_filters = num_filters if num_filters is not None else activations.shape[1]
     if method == "Alipahani15":
         assert (
@@ -128,6 +174,22 @@ def _get_pfms(
     kernel_size,
     vocab="DNA",
 ):
+    """Get the position frequency matrices for a set of sequences.
+
+    Parameters
+    ----------
+    filter_activators : list
+        The sequences that activate a filter the most.
+    kernel_size : int
+        The kernel size of the convolutional layer.
+    vocab : str, optional
+        The vocabulary to use, by default "DNA"
+    
+    Returns
+    -------
+    np.ndarray
+        The position frequency matrices for the sequences.
+    """
     filter_pfms = {}
     vocab = _get_vocab(vocab)
     for i, activators in tqdm(
@@ -169,6 +231,44 @@ def generate_pfms_sdata(
     copy=False,
     **kwargs,
 ):
+    """Generate position frequency matrices for a model from a sdata object.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to generate the position frequency matrices for.
+    sdata : sdata.SData
+        The sdata object to use.
+    method : str, optional
+        The method to use to get the activators, by default "Alipahani15"
+    vocab : str, optional
+        The vocabulary to use, by default "DNA"
+    num_filters : int, optional
+        The number of filters to get the activators for, by default None
+    threshold : float, optional
+        The threshold to use for the Alipanahi15 method, by default 0.5
+    num_seqlets : int, optional
+        The number of seqlets to get for the Minnoye20 method, by default 100
+    batch_size : int, optional
+        The batch size to use, by default None
+    num_workers : int, optional
+        The number of workers to use, by default None
+    device : str, optional
+        The device to use, by default "cpu"
+    transform_kwargs : dict, optional
+        The kwargs to use for the transform, by default {}
+    key_name : str, optional
+        The key to use for the position frequency matrices, by default "pfms"
+    copy : bool, optional
+        Whether to copy the sdata object, by default False
+    **kwargs : dict
+        Additional kwargs to use for the transform.
+    
+    Returns
+    -------
+    sdata.SeqData
+        The sdata object with the position frequency matrices.
+    """
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size

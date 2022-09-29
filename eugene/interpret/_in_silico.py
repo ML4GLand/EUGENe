@@ -1,20 +1,21 @@
 import torch
 import numpy as np
 from tqdm.auto import tqdm
-from yuzu.naive_ism import naive_ism
 from ._utils import _k_largest_index_argsort, _naive_ism
 from ..preprocess import (
     ohe_seqs,
-    feature_implant_seq,
     feature_implant_across_seq,
 )
 from ..utils import track
 from .. import settings
 
 
-def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndarray:
-    """
-    Find and return the k highest scoring sequence from referenece sequence X.
+def best_k_muts(
+    model, X: np.ndarray, 
+    k: int = 1, 
+    device: str = None
+) -> np.ndarray:
+    """Find and return the k highest scoring sequence from referenece sequence X.
 
     Using ISM, this function calculates all the scores of all possible mutations
     of the reference sequence using a trained model. It then returns the k highest
@@ -61,11 +62,13 @@ def best_k_muts(model, X: np.ndarray, k: int = 1, device: str = None) -> np.ndar
 
 
 def best_mut_seqs(
-    model, X: np.ndarray, batch_size: int = None, device: str = None
+    model, X: np.ndarray, 
+    batch_size: int = None, 
+    device: str = None
 ) -> np.ndarray:
-    """
-    Find and return the highest scoring sequence for each sequence
-    from a set reference sequences X. X should contain one-hot-encoded sequences
+    """Find and return the highest scoring sequence for each sequence from a set reference sequences X. 
+    
+    X should contain one-hot-encoded sequences
     and should be of shape (n, 4, l). n is the number of sequences, 4 is the number of
     nucleotides, and l is the length of the sequence.
 
@@ -120,8 +123,7 @@ def evolution(
     batch_size: int = None,
     device: str = "cpu",
 ) -> np.ndarray:
-    """
-    Perform rounds rounds of in-silico evolution on a single sequence X.
+    """Perform rounds rounds of in-silico evolution on a single sequence X.
 
     Using ISM, this function calculates all the scores of all possible mutations
     on a starting sequence X. It then mutates the sequence and repeats the process
@@ -143,7 +145,6 @@ def evolution(
         The number of mutated sequences to consider at each round. This is in case
         the same position scores highest multiple times.
     """
-
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = settings.batch_size if batch_size is None else batch_size
     model.eval().to(device)
@@ -167,8 +168,37 @@ def evolution(
 
 @track
 def evolve_seqs_sdata(
-    model, sdata, rounds, return_seqs=False, device: str = "cpu", copy=False, **kwargs
+    model, 
+    sdata, 
+    rounds, 
+    return_seqs=False, 
+    device: str = "cpu", 
+    copy=False, 
+    **kwargs
 ):
+    """Perform rounds rounds of in-silico evolution on a single sequence X.
+
+    Using ISM, this function calculates all the scores of all possible mutations
+    on a starting sequence X. It then mutates the sequence and repeats the process
+    for rounds rounds. In the end, it returns new "evolved" sequence after rounds mutations
+    and the delta scores from the reference sequence and the indeces along the lengths of the sequences
+    with which the mutations occured
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to score the sequences with
+    sdata: SeqData
+        The SeqData to perform evolution on
+    rounds: int, optional
+        The number of rounds of evolution to perform
+    return_seqs: bool, optional
+        Whether to return the evolved sequences
+    device: str, optional
+        Whether to use a 'cpu' or 'cuda'.
+    copy: bool, optional
+        Whether to copy the SequenceDataset before performing evolution
+    """
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
@@ -205,8 +235,33 @@ def feature_implant_seq_sdata(
     store=True,
     device="cpu",
 ):
-    """
-    Score a set of sequences with a feature inserted at every position of each sequence in sdata
+    """Score a set of sequences with a feature inserted at every position of each sequence in sdata
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to score the sequences with
+    sdata: SeqData
+        The SeqData to perform evolution on
+    seq_id: str
+        The sequence id to perform feature implantation on
+    feature: str
+        The feature to implant
+    feature_name: str, optional
+        The name of the feature to implant
+    encoding: str, optional
+        The encoding of the feature to implant
+    onehot: bool, optional
+        Whether to one-hot encode the feature
+    store: bool, optional
+        Whether to store the feature implantation scores in sdata
+    device: str, optional
+        Whether to use a 'cpu' or 'cuda'.
+    
+    Returns
+    -------
+    scores: np.ndarray
+        The scores of the sequences with the feature implanted
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
@@ -236,9 +291,30 @@ def feature_implant_seq_sdata(
     return preds
 
 
-def feature_implant_seqs_sdata(model, sdata, feature, seqsm_key=None, **kwargs):
-    """
-    Score a set of sequences with a feature inserted at every position of each sequence in sdata
+def feature_implant_seqs_sdata(
+    model, 
+    sdata, 
+    feature, 
+    seqsm_key=None, 
+    **kwargs
+):
+    """Score a set of sequences with a feature inserted at every position of each sequence in sdata
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to score the sequences with
+    sdata: SeqData
+        The SeqData to perform evolution on
+    feature: str
+        The feature to implant
+    seqsm_key: str, optional
+        The key to store the feature implantation scores in sdata
+    
+    Returns
+    -------
+    scores: np.ndarray
+        The scores of the sequences with the feature implanted
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)

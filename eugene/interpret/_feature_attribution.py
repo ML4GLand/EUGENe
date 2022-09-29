@@ -11,8 +11,35 @@ from .._settings import settings
 
 
 def _ism_explain(
-    model, inputs, ism_type="naive", score_type="delta", device=None, batch_size=None
+    model, 
+    inputs, 
+    ism_type="naive", 
+    score_type="delta", 
+    device=None, 
+    batch_size=None
 ):
+    """Wrapper for in silico saturation mutagenesis (ISM) method
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    inputs : tuple of torch.Tensor
+        Tuple of forward and reverse inputs
+    ism_type : str, optional
+        Type of ISM method to use, by default "naive"
+    score_type : str, optional
+        Type of score to use, by default "delta"
+    device : str, optional
+        Device to use, by default None
+    batch_size : int, optional
+        Batch size to use, defaults to settings batch size
+    
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple of forward and reverse ISM scores
+    """
     batch_size = batch_size if batch_size is not None else settings.batch_size
     device = device = (
         "cuda" if settings.gpus > 0 else "cpu" if device is None else device
@@ -35,7 +62,30 @@ def _ism_explain(
     return attrs
 
 
-def _grad_explain(model, inputs, target=None, device="cpu"):
+def _grad_explain(
+    model, 
+    inputs, 
+    target=None, 
+    device="cpu"
+):
+    """Wrapper for InputXGradient feature attribution methods
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    inputs : tuple of torch.Tensor
+        Tuple of forward and reverse inputs
+    target : int, optional
+        Target class to explain, by default None
+    device : str, optional
+        Device to use, by default "cpu"
+    
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple of forward and reverse inputxgradient scores
+    """
     device = device = (
         "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     )
@@ -59,7 +109,33 @@ def _grad_explain(model, inputs, target=None, device="cpu"):
         )
 
 
-def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
+def _deeplift_explain(
+    model, 
+    inputs, 
+    ref_type="zero", 
+    target=None, 
+    device="cpu"
+):
+    """Wrapper for DeepLIFT feature attribution methods
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    inputs : tuple of torch.Tensor
+        Tuple of forward and reverse inputs
+    ref_type : str, optional
+        Type of reference to use, by default "zero"
+    target : int, optional
+        Target class to explain, by default None
+    device : str, optional
+        Device to use, by default "cpu"
+
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple of forward and reverse deeplift scores
+    """
     if model.strand == "ds":
         raise ValueError("DeepLift currently only works for ss and ts strand models")
     device = device = (
@@ -129,7 +205,33 @@ def _deeplift_explain(model, inputs, ref_type="zero", target=None, device="cpu")
         )
 
 
-def _gradientshap_explain(model, inputs, ref_type="zero", target=None, device="cpu"):
+def _gradientshap_explain(
+    model, 
+    inputs, 
+    ref_type="zero", 
+    target=None, 
+    device="cpu"
+):
+    """Wrapper for GradientSHAP feature attribution methods
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    inputs : tuple of torch.Tensor
+        Tuple of forward and reverse inputs
+    ref_type : str, optional
+        Type of reference to use, by default "zero"
+    target : int, optional
+        Target class to explain, by default None
+    device : str, optional
+        Device to use, by default "cpu"
+
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple of forward and reverse gradientshap scores
+    """   
     device = device = (
         "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     )
@@ -208,6 +310,32 @@ def nn_explain(
     abs_value=False,
     **kwargs,
 ):
+    """Wrapper for feature attribution methods
+
+    Parameters  
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    inputs : tuple of torch.Tensor
+        Tuple of forward and reverse inputs
+    saliency_type : str
+        Type of saliency to use
+    target : int, optional
+        Target class to explain, by default None
+    ref_type : str, optional
+        Type of reference to use, by default "zero"
+    device : str, optional
+        Device to use, by default "cpu"
+    batch_size : int, optional
+        Batch size to use, by default None
+    abs_value : bool, optional
+        Whether to take absolute value of scores, by default False
+
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple of forward and reverse saliency scores
+    """
     model.eval()
     if saliency_type == "DeepLift":
         attrs = _deeplift_explain(
@@ -250,6 +378,42 @@ def feature_attribution_sdata(
     copy=False,
     **kwargs,
 ):
+    """Feature attribution for a SeqData
+
+    This function wraps the nn_expain function to compute feature attribution
+    for all the sequences in a SeqData object. The function will add the
+    feature attribution scores to the SeqData object in the uns key by default
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        PyTorch model
+    sdata : SeqData
+        SeqData object
+    method : str, optional
+        Feature attribution method to use, by default "InputXGradient"
+    target : int, optional
+        Target class to explain, by default None
+    batch_size : int, optional
+        Batch size to use, by default None
+    num_workers : int, optional
+        Number of workers to use, by default None
+    device : str, optional
+        Device to use, by default "cpu"
+    transform_kwargs : dict, optional
+        Keyword arguments to pass to the transform function, by default {}
+    prefix : str, optional
+        Prefix to add to the keys, by default ""
+    suffix : str, optional
+        Suffix to add to the keys, by default ""
+    copy : bool, optional
+        Whether to copy the SeqData object, by default False
+    
+    Returns
+    -------
+    SeqData
+        SeqData object with feature attribution scores if copy is True else None
+    """
     torch.backends.cudnn.enabled = False
     sdata = sdata.copy() if copy else sdata
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
@@ -310,7 +474,21 @@ def feature_attribution_sdata(
 
 
 @track
-def aggregate_importances_sdata(sdata, uns_key):
+def aggregate_importances_sdata(
+    sdata, 
+    uns_key
+):
+    """Aggregate feature attribution scores for a SeqData
+
+    This function aggregates the feature attribution scores for a SeqData object
+
+    Parameters
+    ----------
+    sdata : SeqData
+        SeqData object
+    uns_key : str
+        Key in the uns attribute of the SeqData object to use as feature attribution scores
+    """
     vals = sdata.uns[uns_key]
     df = sdata.pos_annot.df
     agg_scores = []

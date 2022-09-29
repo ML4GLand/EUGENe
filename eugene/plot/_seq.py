@@ -423,7 +423,6 @@ def lm_seq_track(
         highlights = [highlights]
     if isinstance(highlight_colors, str):
         highlight_colors = [highlight_colors] * len(highlights)
-
     seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
     imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
     viz_seq = pd.DataFrame(imp_scores.T, columns=alphabet_dict[alphabet])
@@ -444,7 +443,7 @@ def lm_seq_track(
     nn_logo.ax.set_title(title)
     for i, highlight in enumerate(highlights):
         nn_logo.highlight_position_range(
-            pmin=highlight[0], pmax=highlight[1], color=highlight_colors[i]
+            pmin=int(highlight[0]), pmax=int(highlight[1]), color=highlight_colors[i]
         )
     if return_ax:
         return nn_logo.ax
@@ -551,7 +550,7 @@ def lm_multifilter_viz(
     **kwargs,
 ):
 
-    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12, 10))
+    fig, ax = plt.subplots(num_rows, num_cols, figsize=(12, 2.5))
     for i in range(num_rows):
         for j in range(num_cols):
             filter_id = filter_ids[i * num_cols + j]
