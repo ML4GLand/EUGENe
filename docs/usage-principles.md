@@ -1,6 +1,6 @@
 # Module Usage Principles
 
-This page is dedicated to giving users a deep dive into the modules that make up EUGENe and usage principles for each one. We will first briefly describe the worklow of EUGENe (practically illustrated in the {doc}`basic usage worfklow <basic_usage_tutorial>` tutorial), then go into the details of the main EUGENe objects, and finish by discussing each module individually.
+This page is dedicated to giving users a deep dive into the modules that make up EUGENe and usage principles for each one. We will first briefly describe the worklow of EUGENe (practically illustrated in the {doc}`basic usage worfklow <basic_usage_tutorial>` tutorial), then go into the details of the main EUGENe objects, and finish by discussing each module individually. When applicable we also try to add links for those interesting in contributing datasets, models and more!
 
 ## Workflow
 
@@ -87,9 +87,11 @@ Every bioinformatician knows the pain of trying to track down and format a datas
 
 3. If the user does not have the dataset downloaded in the location specified by the command, EUGENe works to download it for you
 
-4. EUGENe isntallations come with a single preloaded dataset (random1000) representing random sequences. These are designed for testing purposes
+4. EUGENe installations come with a single preloaded dataset (random1000) representing random sequences and targets. These are designed for testing purposes
 
-5. Adding datasets is a pretty straightforward process and we encourage users to do so and submit pull requests for them!
+5. Adding datasets is a pretty straightforward process! We have developed a tutorial notebook that walks you through the process of adding a dataset to EUGENe. You can find it [here](
+
+ and we encourage users to do so and submit pull requests for them!
 
 Check out the [`datasets` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.datasets) for a list of currently available datasets and their descriptions.
 

@@ -1,3 +1,4 @@
+from typing import Union
 import torch.nn as nn
 from ._utils import GetFlattenDim, BuildFullyConnected
 
@@ -73,25 +74,39 @@ class BasicConv1D(nn.Module):
         activation: str = "relu",
         pool_strides: list = None,
         dropout_rates: float = 0.0,
+        dilations: list = None,
+        padding: Union[str, list] = "valid",
         batchnorm: bool = False,
         omit_final_pool: bool =False
     ):
         super(BasicConv1D, self).__init__()
-        if pool_strides is None:
-            pool_strides = pool_kernels
+        pool_strides = pool_kernels if pool_strides is None else pool_strides
         if dropout_rates != 0.0:
             if type(dropout_rates) == float:
                 dropout_rates = [dropout_rates] * len(channels)
             else:
                 assert len(dropout_rates) == len(channels) - 1
+        dilations = [1] * len(channels) - 1 if dilations is None else dilations
+        if isinstance(padding, str):
+            padding = [padding] * len(channels) - 1
+        else:
+            assert len(padding) == len(channels) - 1
         net = []
         for i in range(1, len(channels)):
-            net.append(nn.Conv1d(channels[i - 1], channels[i], kernel_size=conv_kernels[i - 1]))
+            net.append(
+                nn.Conv1d(
+                    channels[i - 1], 
+                    channels[i], 
+                    kernel_size=conv_kernels[i - 1], 
+                    dilation=dilations[i - 1],
+                    padding=padding[i - 1]
+                )
+            )
             if activation == "relu":
                 net.append(nn.ReLU(inplace=False))
             elif activation == "sigmoid":
                 net.append(nn.Sigmoid())
-            if i == len(channels) - 1:  # Only omit max pool on final iteration
+            if i == len(channels) - 1:
                 if not omit_final_pool:
                     net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
             else:

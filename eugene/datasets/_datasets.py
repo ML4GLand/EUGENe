@@ -12,7 +12,7 @@ pkg_resources = None
 
 def get_dataset_info():
     """
-    Return  a pandas DataFrame with info about builtin datasets.
+    Return a pandas DataFrame with info about EUGENe's built in datasets.
 
     Returns
     -------
@@ -31,6 +31,7 @@ def random1000() -> pd.DataFrame:
     Reads in the built-in random1000 dataset into a SeqData object.
 
     This dataset is designed for testing and development purposes.
+    It contains 1000 random sequences of length 100.
 
     Returns
     -------
@@ -66,8 +67,8 @@ def ray13(
     ----------
     dataset : str
         Dataset to read, can either be "norm" or "raw". The default is "norm".
-        The "norm" dataset is the normalized probe intensities from Ray et al 2103
-        and the "raw" dataset is the raw probe intensities
+        The "norm" dataset is the normalized probe intensities from Ray et al 2013
+        and the "raw" dataset is the raw probe intensities.
     return_sdata : bool, optional
         If True, return SeqData object for the ray13 dataset. 
         If False, return a list of paths to the downloaded files. The default is True.
@@ -120,7 +121,7 @@ def farley15(
     **kwargs: dict
 ) -> pd.DataFrame:
     """
-    Reads in the Farley15 dataset.
+    Reads in the farley15 dataset.
 
     Parameters
     ----------
@@ -132,7 +133,7 @@ def farley15(
     Returns
     -------
     sdata : SeqData
-        SeqData object for the Farley15 dataset.
+        SeqData object for the farley15 dataset.
     """
     urls_list = [
         "https://zenodo.org/record/6863861/files/farley2015_seqs.csv?download=1",
@@ -151,22 +152,11 @@ def farley15(
             **kwargs,
         )
         n_digits = len(str(len(data) - 1))
-        ids = np.array(
-            [
-                "seq{num:0{width}}".format(num=i, width=n_digits)
-                for i in range(len(data))
-            ]
-        )
+        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(data))])
         sdata = SeqData(
             seqs=data[seq_col],
             names=ids,
-            seqs_annot=data[
-                [
-                    "Barcode",
-                    "Biological Replicate 1 (RPM)",
-                    "Biological Replicate 2 (RPM)",
-                ]
-            ],
+            seqs_annot=data[["Barcode", "Biological Replicate 1 (RPM)", "Biological Replicate 2 (RPM)"]],
         )
         return sdata
     else:
@@ -184,9 +174,11 @@ def deBoer20(
     Parameters
     ----------
     datasets : list of ints
-        List of datasets indices to read.
+        List of datasets indices to read. There are 8 in total (0-7), each from:
+        https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE104878 
     return_sdata : bool, optional
         If True, return SeqData object for the deBoer20 dataset. The default is True.
+        If False, return a list of paths to the downloaded files.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
@@ -242,10 +234,13 @@ def jores21(
     ----------
     dataset : str, optional
         Dataset to read. Either "leaf" or "proto". The default is "leaf".
+        The "leaf" dataset is from promoters tested in tobacco leaves
+        and the "proto" dataset is from promoters tested in maize protoplasts.
     add_metadata : bool, optional
         If True, add metadata to the SeqData object. The default is False.
     return_sdata : bool, optional
-        If True, return SeqData object for the Jores21 dataset. The default is True.
+        If True, return SeqData object for the jores21 dataset. The default is True.
+        If False, return a list of paths to the downloaded files.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
@@ -279,12 +274,7 @@ def jores21(
             **kwargs,
         )
         n_digits = len(str(len(data) - 1))
-        ids = np.array(
-            [
-                "seq{num:0{width}}".format(num=i, width=n_digits)
-                for i in range(len(data))
-            ]
-        )
+        ids = np.array(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(len(data))])
         sdata = SeqData(
             seqs=data[seq_col],
             names=ids,
@@ -314,9 +304,11 @@ def deAlmeida22(
     Parameters
     ----------
     dataset : str, optional
-        Dataset to read. Either "train" or "test". The default is "train".
+        Dataset to read. Either "train", "val", "test". The default is "train".
+        These are the different sets used in the deAlmeida et al 2022 paper.
     return_sdata : bool, optional
         If True, return SeqData object for the deAlmeida22 dataset. The default is True.
+        If False, return a list of paths to the downloaded files.
     **kwargs : kwargs, dict
         Keyword arguments to pass to read_csv.
 
