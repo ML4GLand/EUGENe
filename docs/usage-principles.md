@@ -89,9 +89,7 @@ Every bioinformatician knows the pain of trying to track down and format a datas
 
 4. EUGENe installations come with a single preloaded dataset (random1000) representing random sequences and targets. These are designed for testing purposes
 
-5. Adding datasets is a pretty straightforward process! We have developed a tutorial notebook that walks you through the process of adding a dataset to EUGENe. You can find it [here](
-
- and we encourage users to do so and submit pull requests for them!
+5. Adding datasets is a pretty straightforward process! We have developed a tutorial notebook that walks you through the process of adding a dataset to EUGENe. You can find it [here](https://github.com/adamklie/EUGENe/blob/main/tutorials/adding_a_dataset_tutorial.ipynb). We strongly encourage users to do so and submit pull requests for them. We will be adding more datasets to the library as we find them.
 
 Check out the [`datasets` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.datasets) for a list of currently available datasets and their descriptions.
 

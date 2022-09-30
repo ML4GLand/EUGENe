@@ -111,7 +111,11 @@ def read_csv(
 
 
 def read_fasta(
-    seq_file, target_file=None, rev_comp=False, is_target_text=False, return_numpy=False
+    seq_file, 
+    target_file=None, 
+    rev_comp=False, 
+    is_target_text=False, 
+    return_numpy=False
 ):
     """Read sequences into SeqData object from fasta files.
 
@@ -153,18 +157,19 @@ def read_fasta(
         targets = None
     if rev_comp:
         from ..preprocess import reverse_complement_seqs
-
         rev_seqs = reverse_complement_seqs(seqs)
     else:
         rev_seqs = None
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif targets is not None:
+        if len(targets.shape) == 1:
+            targets = targets.reshape(-1, 1)
         return SeqData(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["target"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])]),
         )
     else:
         return SeqData(names=ids, seqs=seqs, rev_seqs=rev_seqs)
@@ -241,6 +246,8 @@ def read_numpy(
             targets = np.loadtxt(target_file, dtype=float)
         else:
             targets = np.load(target_file)
+        if len(targets.shape) == 1:
+            targets = targets.reshape(-1, 1)
     else:
         targets = None
     if return_numpy:
@@ -250,14 +257,14 @@ def read_numpy(
             names=ids,
             ohe_seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["targets"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])]),
         )
-    else:
+    else: 
         return SeqData(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=["targets"]),
+            seqs_annot=pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])]),
         )
 
 
