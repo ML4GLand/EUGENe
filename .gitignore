@@ -5,15 +5,8 @@ tutorials/tutorial_logs
 tutorials/tutorial_output
 
 # Tests
-tests/_datasets
-tests/_data/datasets
-tests/notebooks/lightning_logs
-tests/notebooks/datasets
-tests/_data/tf_modisco/
 tests/_logs/
 tests/_output/
-tests/_out/
-tests/_data/datasets/
 tests/_figures/
 
 # Misc

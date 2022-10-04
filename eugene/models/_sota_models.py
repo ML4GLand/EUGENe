@@ -164,6 +164,7 @@ class DeepBind(BaseModel):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 16])
         conv_kwargs.setdefault("conv_kernels", [16])
+        conv_kwargs.setdefault("pool_kernels", None)
         conv_kwargs.setdefault("omit_final_pool", True)
         conv_kwargs.setdefault("dropout_rates", 0.25)
         conv_kwargs.setdefault("batchnorm", False)

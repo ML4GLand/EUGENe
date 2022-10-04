@@ -419,7 +419,7 @@ def read_bed(
     if return_janggu:
         return dna, cover
     ids = np.array(list(dna.garray.region2index.keys()))
-    ohe_seqs = dna[:][:, :, 0, :]
+    ohe_seqs = dna[:][:, :, 0, :].transpose(0,2,1)
     targets = cover[:].squeeze()
     seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
@@ -492,7 +492,7 @@ def read_bam(
     if return_janggu:
         return dna, cover
     ids = np.array(list(dna.garray.region2index.keys()))
-    ohe_seqs = dna[:][:, :, 0, :]
+    ohe_seqs = dna[:][:, :, 0, :].transpose(0,2,1)
     targets = cover[:].squeeze(axis=(2, 3))
     seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None
@@ -569,7 +569,7 @@ def read_bigwig(
     if return_janggu:
         return dna, cover
     ids = np.array(list(dna.garray.region2index.keys()))
-    ohe_seqs = dna[:][:, :, 0, :]
+    ohe_seqs = dna[:][:, :, 0, :].transpose(0,2,1)
     targets = cover[:].squeeze(axis=(2, 3))
     seqs = np.array(decode_seqs(ohe_seqs)) if add_seqs else None
     rev_seqs = np.array(reverse_complement_seqs(seqs)) if add_seqs else None

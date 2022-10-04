@@ -85,12 +85,12 @@ class BasicConv1D(nn.Module):
             if type(dropout_rates) == float:
                 dropout_rates = [dropout_rates] * len(channels)
             else:
-                assert len(dropout_rates) == len(channels) - 1
-        dilations = [1] * len(channels) - 1 if dilations is None else dilations
+                assert len(dropout_rates) == (len(channels) - 1)
+        dilations = [1] * (len(channels) - 1) if dilations is None else dilations
         if isinstance(padding, str):
-            padding = [padding] * len(channels) - 1
+            padding = [padding] * (len(channels) - 1)
         else:
-            assert len(padding) == len(channels) - 1
+            assert len(padding) == (len(channels) - 1)
         net = []
         for i in range(1, len(channels)):
             net.append(
