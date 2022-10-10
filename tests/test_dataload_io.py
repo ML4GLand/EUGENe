@@ -10,7 +10,7 @@ import pytest
 from pathlib import Path
 from eugene.dataload import SeqData, SeqDataset
 HERE = Path(__file__).parent
-eu.logging.dataset_dir = f"{HERE}/../eugene/datasets/random1000"
+eu.settings.dataset_dir = f"{HERE}/../eugene/datasets/random1000"
 
 
 def check_random1000_load(sdata, has_target=False):
