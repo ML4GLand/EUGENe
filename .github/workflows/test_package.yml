@@ -28,7 +28,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev,janggu,kipoi,memesuite]
+        pip install -e .[dev,janggu,kipoi]
+        pip install -e .[memesuite]
         sudo apt-get install bedtools
         BEDTOOLS=$(which bedtools)
         export PATH="$BEDTOOLS:$PATH"
@@ -42,3 +43,4 @@ jobs:
         curl -Os https://uploader.codecov.io/latest/linux/codecov
         chmod +x codecov
         ./codecov -t CODECOV_TOKEN=2f379178-67b9-4cde-aa1a-65de66ebe4d3
+        
