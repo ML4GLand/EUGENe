@@ -3,6 +3,7 @@ EUGENe_paper
 archive/
 tutorials/tutorial_logs
 tutorials/tutorial_output
+*/eugene_datasets/
 
 # Tests
 tests/_logs/
