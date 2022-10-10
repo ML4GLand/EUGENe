@@ -8,7 +8,7 @@ import pandas as pd
 import eugene as eu
 from pathlib import Path
 HERE = Path(__file__).parent
-eu.settings.logging_dir = f"{HERE}/_data/datasets"
+eu.settings.dataset_dir = f"{HERE}/_data/datasets"
 
 def test_get_dataset_info():
     dataset_info = eu.datasets.get_dataset_info()
