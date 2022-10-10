@@ -12,7 +12,7 @@ from .. import settings
 
 
 def metric_curve(
-    log_path,
+    log_path: str = None,
     metric: str = None,
     hue: str = "metric",
     title: str = None,
@@ -47,6 +47,7 @@ def metric_curve(
     -------
     If return_axes is True, returns the axes object.
     """
+    log_path = settings.logging_dir if log_path is None else log_path
     ylab = metric if ylab is None else ylab
     tb_event_path = glob.glob(os.path.join(log_path, "events.out.tfevents.*"))
     dataframe = many_logs2pandas(tb_event_path)
@@ -70,7 +71,7 @@ def metric_curve(
 
 
 def loss_curve(
-    log_path: PathLike,
+    log_path: PathLike = None,
     title: str = None,
     xlab: str = "minibatch_step",
     ylab: str = "loss",
@@ -104,6 +105,7 @@ def loss_curve(
     -------
     If return_axes is True, returns the axes object.
     """
+    log_path = settings.logging_dir if log_path is None else log_path
     ax = metric_curve(
         log_path, 
         metric="loss", 
@@ -118,8 +120,8 @@ def loss_curve(
 
 
 def training_summary(
-    log_path: PathLike, 
-    metric: str, 
+    log_path: PathLike = None, 
+    metric: str = "r2", 
     figsize=(12, 6),
     save: str = None, 
     return_axes: bool = False,
@@ -141,6 +143,7 @@ def training_summary(
     -------
     None
     """
+    log_path = settings.logging_dir if log_path is None else log_path
     _, ax = plt.subplots(1, 2, figsize=figsize)
     loss_curve(log_path, ax=ax[0], **kwargs)
     metric_curve(log_path, metric=metric, ax=ax[1], **kwargs)

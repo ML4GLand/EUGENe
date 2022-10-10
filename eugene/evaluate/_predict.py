@@ -17,6 +17,7 @@ def predictions(
     gpus: int = None,
     batch_size: int = None,
     num_workers: int = None,
+    store_only: bool = False,
     out_dir: os.PathLike = None,
     name: str = None,
     version: str = "",
@@ -97,9 +98,8 @@ def predictions(
         )
     else:
         assert sdataloader is not None, "No data to predict on."
-    if out_dir is not None:
+    if not store_only:
         from ..utils._custom_callbacks import PredictionWriter
-
         predictor = Trainer(
             logger=False,
             callbacks=PredictionWriter(output_dir=out_dir, file_label=file_label),

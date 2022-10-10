@@ -34,7 +34,7 @@ def sanitize_seqs(seqs):
     return np.array([seq.strip().upper() for seq in seqs])
 
 
-def ascii_encode(seq, pad=0):
+def ascii_encode_seq(seq, pad=0):
     """
     Converts a string of characters to a NumPy array of byte-long ASCII codes.
     """
@@ -46,11 +46,28 @@ def ascii_encode(seq, pad=0):
     return encode_seq
 
 
-def ascii_decode(seq):
+def ascii_encode_seqs(seqs, pad=0):
+    """
+    Converts a set of sequences to a NumPy array of byte-long ASCII codes.
+    """
+    encode_seqs = np.array(
+        [ascii_encode_seq(seq, pad=pad) for seq in seqs], dtype=int
+    )
+    return encode_seqs
+
+
+def ascii_decode_seq(seq):
     """
     Converts a NumPy array of byte-long ASCII codes to a string of characters.
     """
     return "".join([chr(int(letter)) for letter in seq]).replace("$", "")
+
+
+def ascii_decode_seqs(seqs):
+    """Convert a set of one-hot encoded arrays back to strings"""
+    return np.array(
+        [ascii_decode_seq(seq) for seq in seqs], dtype=object
+    )
 
 
 def reverse_complement_seq(seq, vocab="DNA"):

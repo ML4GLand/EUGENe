@@ -158,7 +158,7 @@ class Kopp21CNN(BaseModel):
         x_fwd = F.relu(self.conv(x))
         x_rev_comp = F.relu(self.conv(x_rev_comp))
         if self.aggr == "concat":
-            x = torch.cat((x_fwd, x_rev_comp), dim=1)
+            x = torch.cat((x_fwd, x_rev_comp), dim=2)
         elif self.aggr == "max":
             x = torch.max(x_fwd, x_rev_comp)
         elif self.aggr == "avg":

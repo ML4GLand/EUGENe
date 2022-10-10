@@ -4,8 +4,10 @@ from ._seq_preprocess import (
 ) # sanitize seqs
 
 from ._seq_preprocess import (
-    ascii_decode,
-    ascii_encode,
+    ascii_encode_seq,
+    ascii_encode_seqs,
+    ascii_decode_seq,
+    ascii_decode_seqs
 ) # ascii encode/decode
 
 from ._seq_preprocess import (

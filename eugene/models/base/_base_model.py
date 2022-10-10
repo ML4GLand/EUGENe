@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.model_summary import ModelSummary
-from ...preprocess import ascii_decode
+from ...preprocess import ascii_decode_seq
 from ..._settings import settings
 
 
@@ -122,7 +122,7 @@ class BaseModel(LightningModule):
         """
         ID, x, x_rev_comp, y = batch
         ID = np.array(
-            [ascii_decode(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]
+            [ascii_decode_seq(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]
         )
         y = y.detach().cpu().numpy()
         outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()

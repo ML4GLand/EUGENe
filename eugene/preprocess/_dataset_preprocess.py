@@ -52,7 +52,7 @@ def standardize_features(train_X, test_X, indeces=None, stats_file=None):
     stats_file: str, optional
         The file to save the stats to
     """
-    if indeces is not None:
+    if indeces is None:
         indeces = np.array(range(train_X.shape[1]))
     elif len(indeces) == 0:
         return train_X, test_X

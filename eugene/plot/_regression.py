@@ -19,7 +19,7 @@ def _plot_performance_scatter(
     groupby=None,
     figsize: tuple = (8, 8),
     save: PathLike = None,
-    ax: bool = False,
+    ax: bool = None,
     **kwargs,
 ) -> None:
     """

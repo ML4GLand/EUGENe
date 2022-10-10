@@ -61,6 +61,9 @@ def _naive_ism(
     which is a vector of the L1 difference between the reference sequence
     and the perturbed sequences with one value for each output of the model.
     
+    Note, the current implementation is not task specific. That is, the ISM score
+    for each variant is currently summed across all outputs.
+
     Parameters
     ----------
     model: torch.nn.Module
@@ -83,6 +86,8 @@ def _naive_ism(
     ----
     This was modified from the Yuzu package
     """
+    if isinstance(X_0, tuple):
+        X_0 = X_0[0]
     n_seqs, n_choices, seq_len = X_0.shape
     X_idxs = X_0.argmax(axis=1)
 

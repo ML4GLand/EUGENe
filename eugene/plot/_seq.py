@@ -299,7 +299,7 @@ def multiseq_track_features(
     sdata,
     seq_ids: list,
     uns_keys: str = None,
-    ylabels: list = None,
+    ylabs: list = None,
     width=None,
     height=None,
     return_axes: bool = False,
@@ -343,7 +343,7 @@ def multiseq_track_features(
         seq_ids = [seq_ids]
     if isinstance(uns_keys, str):
         uns_keys = [uns_keys]
-    ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
+    ylabs = ylabs if ylabs is not None else ["Importance Score"] * len(uns_keys)
     seq_idx = np.where(sdata.seqs_annot.index.isin(seq_ids))[0]
     seqs = sdata.seqs[seq_idx]
     fig_width = (
@@ -362,7 +362,7 @@ def multiseq_track_features(
                 ax.flatten()[i * len(seq_ids) + j],
                 seq,
                 imp_scores=imp_scores,
-                ylab=ylabels[i],
+                ylab=ylabs[i],
             )
             if i == 0:
                 ax.flatten()[i * len(seq_ids) + j].set_title(
@@ -530,7 +530,7 @@ def multiseq_track(
     sdata,
     seq_ids: list,
     uns_keys: str = None,
-    ylabels: list = None,
+    ylabs: list = None,
     width: int = None,
     height: int = None,
     return_axes: bool = False,
@@ -556,8 +556,8 @@ def multiseq_track(
         The sequence ids to plot
     uns_keys : list
         The keys in the sdata.uns dictionary that contain the importance scores to plot
-    ylabels : list
-        The ylabels to use for each importance score
+    ylabs : list
+        The ylabs to use for each importance score
     width : int
         The width of the figure to plot
     height : int
@@ -578,10 +578,10 @@ def multiseq_track(
         seq_ids = [seq_ids]
     if isinstance(uns_keys, str):
         uns_keys = [uns_keys]
-    if isinstance(ylabels, str):
-        ylabels = [ylabels]
+    if isinstance(ylabs, str):
+        ylabs = [ylabs]
     seq = sdata.seqs[0]
-    ylabels = ylabels if ylabels is not None else ["Importance Score"] * len(uns_keys)
+    ylabs= ylabs if ylabs is not None else ["Importance Score"] * len(uns_keys)
     fig_width = (len(seq_ids) * int(len(seq) / 20) if width is None else width)  
     fig_height = (len(uns_keys) * 4 if height is None else height)
     _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
@@ -592,7 +592,7 @@ def multiseq_track(
                 seq_id=seq_id,
                 uns_key=uns_key,
                 ax=ax.flatten()[i * len(seq_ids) + j],
-                ylabel=ylabels[i],
+                ylab=ylabs[i],
                 title=seq_id,
                 save=None,
                 **kwargs,
@@ -644,7 +644,7 @@ def filter_viz(
     if isinstance(pfm, np.ndarray):
         pfm = pd.DataFrame(pfm, columns=vocab_dict[vocab])
     vocab = vocab_dict[vocab]
-    if pfm[vocab.keys[0]].dtype == "float64":
+    if pfm[vocab[0]].dtype == "float64":
         pfm.fillna(0.25, inplace=True)
         info_mat = lm.transform_matrix(
             pfm, 

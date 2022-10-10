@@ -24,9 +24,8 @@ def track(func):
     def wrapper(*args, **kwds):
         kwargs = get_default_args(func)
         kwargs.update(kwds)
-
-        if "sdata" in kwargs:
-                sdata = kwargs["sdata"]
+        if "sdata" in kwargs and kwargs["sdata"] is not None:
+            sdata = kwargs["sdata"]
         else:
             if len(args) > 0:
                 if type(args[0]) == SeqData:
@@ -43,7 +42,6 @@ def track(func):
                     sdata = args[1]
                 else:
                     raise ValueError("No SeqData object found for tracking.")
-
         old_attr = list_attributes(sdata)
 
         if kwargs["copy"]:

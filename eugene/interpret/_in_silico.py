@@ -218,6 +218,7 @@ def evolve_seqs_sdata(
         sdata.seqs_annot[f"evolved_{i}_score"] = (
             sdata.seqs_annot[f"evolved_{i-1}_score"] + deltas[:, i - 1]
         )
+    print(return_seqs)
     if return_seqs:
         evolved_seqs = torch.Tensor(evolved_seqs).to(device)
         return evolved_seqs
@@ -302,6 +303,7 @@ def feature_implant_seqs_sdata(
     sdata,
     feature: np.ndarray,
     seqsm_key: str = None, 
+    device: str = "cpu",
     **kwargs
 ):
     """

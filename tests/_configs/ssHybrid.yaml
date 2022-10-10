@@ -1,0 +1,25 @@
+model:
+  input_len: 100
+  output_dim: 2
+  strand: "ss"
+  task: "regression"
+  loss_fxn: "mse"
+  aggr: None
+  conv_kwargs:
+    channels: [4, 256, 256, 256]
+    conv_kernels: [13, 13, 13]
+    activation: "relu"
+    pool_kernels: [2, 2, 2]
+    dropout_rates: 0.3
+    batchnorm: True
+  rnn_kwargs:
+    output_dim: 128
+    batch_first: True
+  fc_kwargs:
+    hidden_dims: [64]
+    dropout_rate: 0.2
+    batchnorm: True
+  lr: 0.001
+  optimizer: adam
+  scheduler: reduce_lr_on_plateau
+  scheduler_patience: 2

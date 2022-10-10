@@ -12,6 +12,7 @@ tests/_figures/
 # Misc
 *.DS_store
 .vscode/
+*default.profraw
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from ...preprocess import ascii_encode
+from ...preprocess import ascii_encode_seq 
 from ..._settings import settings
 
 
@@ -50,9 +50,9 @@ class SeqDataset(Dataset):
                 self.ascii_names = np.zeros((len(self.names), self.longest_name))
                 for i, name in enumerate(self.names):
                     pad_len = self.longest_name - len(name)
-                    self.ascii_names[i] = ascii_encode(name, pad_len)
+                    self.ascii_names[i] =  ascii_encode_seq(name, pad_len)
             else:
-                self.ascii_names = np.array([ascii_encode(name) for name in self.names])
+                self.ascii_names = np.array([ ascii_encode_seq(name) for name in self.names])
         else:
             self.ascii_names = None
 

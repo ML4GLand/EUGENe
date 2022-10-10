@@ -47,12 +47,12 @@ def _init_weights(
             f"Initializer {initializer} not found in initializer_dict or is not callable."
         )
     if isinstance(module, nn.Linear) or isinstance(module, nn.Conv1d):
-        print(f"Initializing {module} with {initializer}")
+        #print(f"Initializing {module} with {initializer}")
         init_func(module.weight)
     elif isinstance(module, nn.ParameterList):
         for param in module:
             if  param.dim() > 1:
-                print(f"Initializing {param} with {initializer}")
+                #print(f"Initializing {param} with {initializer}")
                 init_func(param)
 
 

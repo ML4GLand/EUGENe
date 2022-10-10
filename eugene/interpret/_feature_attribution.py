@@ -370,14 +370,23 @@ def nn_explain(
     model.eval()
     if saliency_type == "DeepLift":
         attrs = _deeplift_explain(
-            model=model, inputs=inputs, ref_type=ref_type, device=device, target=target
+            model=model, 
+            inputs=inputs, 
+            ref_type=ref_type, 
+            device=device, 
+            target=target
         )
     elif saliency_type == "InputXGradient":
-        attrs = _grad_explain(model=model, inputs=inputs, device=device, target=target)
+        attrs = _grad_explain(
+            model=model, 
+            inputs=inputs, 
+            device=device, 
+            target=target
+        )
     elif saliency_type == "NaiveISM":
         attrs = _ism_explain(
             model=model,
-            inputs=inputs,
+            inputs=inputs[0],
             ism_type="naive",
             device=device,
             batch_size=batch_size,
@@ -385,7 +394,11 @@ def nn_explain(
         )
     elif saliency_type == "GradientSHAP":
         attrs = _gradientshap_explain(
-            model=model, inputs=inputs, ref_type=ref_type, device=device, target=target
+            model=model, 
+            inputs=inputs, 
+            ref_type=ref_type, 
+            device=device, 
+            target=target
         )
     else:
         raise ValueError("Saliency type not supported")
@@ -524,7 +537,8 @@ def feature_attribution_sdata(
 @track
 def aggregate_importances_sdata(
     sdata, 
-    uns_key
+    uns_key,
+    copy=False
 ):
     """Aggregate feature attribution scores for a SeqData
 
@@ -537,6 +551,7 @@ def aggregate_importances_sdata(
     uns_key : str
         Key in the uns attribute of the SeqData object to use as feature attribution scores
     """
+    sdata = sdata.copy() if copy else sdata
     vals = sdata.uns[uns_key]
     df = sdata.pos_annot.df
     agg_scores = []
@@ -549,3 +564,4 @@ def aggregate_importances_sdata(
     df[f"{uns_key}_agg_scores"] = agg_scores
     ranges = pr.PyRanges(df)
     sdata.pos_annot = ranges
+    return sdata if copy else None

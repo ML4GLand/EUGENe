@@ -6,25 +6,15 @@ import os
 import numpy as np
 import pandas as pd
 import eugene as eu
-
+from pathlib import Path
+HERE = Path(__file__).parent
+eu.settings.logging_dir = f"{HERE}/_data/datasets"
 
 def test_get_dataset_info():
     dataset_info = eu.datasets.get_dataset_info()
     assert dataset_info.index.name == "name"
     assert "description" in dataset_info
-
-
-def test_default_dataset_load():
-    eu.datasets.random1000()
-    eu.datasets.ray13(dataset="norm")
-    eu.datasets.ray13(dataset="raw")
-    eu.datasets.deBoer20(0)
-    eu.datasets.jores21(dataset="leaf")
-    eu.datasets.jores21(dataset="proto")
-    eu.datasets.deAlmeida22("train")
-    eu.datasets.deAlmeida22("val")
-    eu.datasets.deAlmeida22("test")
-
+    
 
 def test_random1000():
     sdata = eu.datasets.random1000()
