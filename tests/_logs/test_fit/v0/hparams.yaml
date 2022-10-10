@@ -1,0 +1,29 @@
+aggr: max
+conv_kwargs:
+  batchnorm: false
+  channels:
+  - 4
+  - 16
+  conv_kernels:
+  - 16
+  dropout_rates: 0.25
+  omit_final_pool: true
+  pool_kernels: null
+fc_kwargs:
+  batchnorm: false
+  dropout_rate: 0.25
+  hidden_dims:
+  - 32
+hp_metric: null
+input_len: 100
+loss_fxn: mse
+lr: 0.001
+mode: rbp
+optimizer: adam
+optimizer_kwargs: {}
+output_dim: 10
+scheduler: lr_scheduler
+scheduler_patience: 2
+seed: null
+strand: ss
+task: regression

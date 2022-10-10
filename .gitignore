@@ -6,7 +6,6 @@ tutorials/tutorial_output
 */eugene_datasets/
 
 # Tests
-tests/_logs/
 tests/_output/
 tests/_figures/
 
