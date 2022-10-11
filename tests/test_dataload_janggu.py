@@ -1,4 +1,4 @@
-t """
+"""
 Tests to make sure the dataload module isn't busted
 """
 
