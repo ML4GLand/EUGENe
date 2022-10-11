@@ -52,6 +52,6 @@ from ._preprocessing import (
     scale_targets_sdata,
     binarize_targets_sdata,
     train_test_split_sdata,
-    add_ranges_pos_annot,
+    add_ranges_sdata,
     prepare_seqs_sdata
 )  # core sdata functions

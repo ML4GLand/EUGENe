@@ -369,7 +369,7 @@ def train_test_split_sdata(
 
 
 @track
-def add_ranges_pos_annot(
+def add_ranges_sdata(
     sdata: SeqData, chr_delim=":", rng_delim="-", copy=False
 ) -> SeqData:
     """
