@@ -4,6 +4,71 @@ import torch.nn.functional as F
 from .base import BaseModel, BiConv1D
 
 
+class TutorialCNN(BaseModel):
+    """Tutorial CNN model
+
+    This is a very simple one layer convolutional model for testing purposes. It is featured in testing and tutorial
+    notebooks.
+
+    Parameters
+    ----------
+    input_len : int
+        Length of the input sequence.
+    output_dim : int
+        Dimension of the output.
+    strand : str, optional
+        Strand of the input. Only ss is supported for this model
+    task : str, optional
+        Task of the model. Either "regression" or "classification".
+    aggr : str, optional
+        Aggregation method. This model only supports "avg"
+    loss_fxn : str, optional
+        Loss function.
+    **kwargs
+        Keyword arguments to pass to the BaseModel class.
+    """
+    def __init__(
+        self,
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = "avg",
+        loss_fxn: str = "mse",
+        **kwargs
+    ):
+        # Don't worry that we don't pass in the class name to the super call (as is standard for creating new
+        # nn.Module subclasses). This is handled by inherting BaseModel
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand=strand, 
+            task=task, 
+            aggr=aggr, 
+            loss_fxn=loss_fxn,
+            **kwargs
+        )
+        self.conv1 = nn.Conv1d(4, 30, 21)
+        self.dense = nn.Linear(30, output_dim)
+        self.sigmoid = nn.Sigmoid()
+            
+            
+    def forward(self, x, x_rev_comp=None):
+        x = F.relu(self.conv1(x))
+        
+        # emulates global_max_pooling
+        x = F.max_pool1d(x, x.size()[-1]).flatten(1, -1)
+        x = self.dense(x)
+        x = self.sigmoid(x)
+        if self.strand == "ds":
+            x_rev_comp = F.relu(self.conv1(x_rev_comp))
+            x_rev_comp = F.max_pool1d(x_rev_comp, x_rev_comp.size()[-1]).flatten(1, -1)
+            x_rev_comp = self.dense(x_rev_comp)
+            x_rev_comp = self.sigmoid(x_rev_comp)
+            x = (x + x_rev_comp / 2)
+        return x
+
+
 class Jores21CNN(BaseModel):
     """
     Custom convolutional model used in Jores et al. 2021 paper

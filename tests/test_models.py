@@ -164,6 +164,18 @@ def test_Kopp21CNN(sdata):
     check_model(model, sdata, transpose=False)
 
 
+def test_TutorialCNN(sdata):
+    model = eu.models.TutorialCNN(
+        input_len=SEQ_LEN,
+        output_dim=OUT_DIMS,
+        strand=STRAND,
+        task=TASK,
+        aggr="avg",
+        loss_fxn=LOSS_FXN,
+    )
+    check_model(model, sdata, transpose=False)
+
+
 def test_load_config(sdata):
     model_config = f"{HERE}/_configs/ssHybrid.yaml"
     model = eu.models.load_config("Hybrid", model_config)
