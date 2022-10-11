@@ -22,13 +22,13 @@ def check_random1000_load(sdata, has_target=False):
 
 
 def test_read():
-    sdata = eu.dl.read(os.path.join(eu.logging.dataset_dir, "random1000_seqs.tsv"))
+    sdata = eu.dl.read(os.path.join(eu.settings.dataset_dir, "random1000_seqs.tsv"))
     check_random1000_load(sdata)
 
 
 def test_read_csv():
     sdata = eu.dl.read_csv(
-        filename=os.path.join(eu.logging.dataset_dir, "random1000_seqs.tsv"),
+        filename=os.path.join(eu.settings.dataset_dir, "random1000_seqs.tsv"),
         seq_col="seq",
         name_col="name",
         target_col="activity_0",
@@ -46,8 +46,8 @@ def test_read_csv():
 
 def test_read_fasta():
     sdata = eu.dl.read_fasta(
-        seq_file=os.path.join(eu.logging.dataset_dir, "random1000_seqs.fa"),
-        target_file=os.path.join(eu.logging.dataset_dir, "random1000_activities.npy"),
+        seq_file=os.path.join(eu.settings.dataset_dir, "random1000_seqs.fa"),
+        target_file=os.path.join(eu.settings.dataset_dir, "random1000_activities.npy"),
         rev_comp=False,
         is_target_text=False,
         return_numpy=False
@@ -57,10 +57,10 @@ def test_read_fasta():
 
 def test_read_numpy():
     sdata = eu.dl.read_numpy(
-            seq_file=os.path.join(eu.logging.dataset_dir, "random1000_seqs.npy"),
-            names_file=os.path.join(eu.logging.dataset_dir, "random1000_ids.npy"),
-            target_file=os.path.join(eu.logging.dataset_dir, "random1000_activities.npy"),
-            rev_seq_file=os.path.join(eu.logging.dataset_dir, "random1000_rev_seqs.npy"),
+            seq_file=os.path.join(eu.settings.dataset_dir, "random1000_seqs.npy"),
+            names_file=os.path.join(eu.settings.dataset_dir, "random1000_ids.npy"),
+            target_file=os.path.join(eu.settings.dataset_dir, "random1000_activities.npy"),
+            rev_seq_file=os.path.join(eu.settings.dataset_dir, "random1000_rev_seqs.npy"),
             is_names_text=False,
             is_target_text=False,
             delim="\n",

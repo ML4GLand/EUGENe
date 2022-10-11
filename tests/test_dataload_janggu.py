@@ -1,4 +1,4 @@
-"""
+t """
 Tests to make sure the dataload module isn't busted
 """
 
@@ -7,19 +7,7 @@ import numpy as np
 import eugene as eu
 from pathlib import Path
 from eugene.dataload import SeqData
-import os as _os
-import sys as _sys
-try:
-    _bin_dir = _os.path.dirname(_sys.executable)
-    _os.environ["PATH"] += _os.pathsep + _bin_dir
-    from pybedtools import paths as _paths
-    _paths._set_bedtools_path(_bin_dir)
-except ImportError:
-    raise ImportError(
-        "Please install janggu dependencies `pip install eugene[janggu]`"
-    )
-from eugene.external.janggu.data import Bioseq, Cover 
-HERE = Path(__file__).parent
+
 
 eu.settings.dataset_dir = f"{HERE}/../eugene/datasets/janggu_resources"
 ref_file = "sample_genome.fa"
@@ -35,7 +23,6 @@ def check_janggu_load(sdata, has_target=False):
     assert "chr2" in sdata.names[-1]
     if has_target:
         assert sdata.seqs_annot.iloc[:, -1][0] is not np.nan
-
 
 """
 def test_read_bed():
@@ -65,7 +52,6 @@ def test_read_bed_janggu():
     assert isinstance(dna, Bioseq)
     assert isinstance(cov, Cover)
 """
-
 
 def test_read_bam():
     sdata = eu.dl.read_bam(
