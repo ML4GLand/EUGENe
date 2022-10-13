@@ -145,8 +145,10 @@ This module is designed to let users interact and modify SeqData objects to prep
 
    pp.sanitize_seq
    pp.sanitize_seqs
-   pp.ascii_decode
-   pp.ascii_encode
+   pp.ascii_encode_seq
+   pp.ascii_encode_seqs
+   pp.ascii_decode_seq
+   pp.ascii_decode_seqs
    pp.reverse_complement_seq
    pp.reverse_complement_seqs
    pp.ohe_seq
@@ -203,7 +205,7 @@ This module is designed to let users interact and modify SeqData objects to prep
 This module is designed to allow users to easily build and initialize several neural network architectures that are designed for biological sequences
 We specify three main classes of model: base_model, sota_model, and custom_model
 
-### `BaseModels`
+### Base Models
 
 ```{eval-rst}
 .. autosummary::
@@ -231,6 +233,7 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 .. autosummary::
    :toctree: api/classes
 
+   models.TutorialCNN
    models.Jores21CNN
    models.Kopp21CNN
 ```
@@ -241,6 +244,7 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 .. autosummary::
    :toctree: api/
 
+   models.load_from_config
    models.init_weights
    models.init_from_motifs
 ```
@@ -254,8 +258,6 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ```{eval-rst}
 .. currentmodule:: eugene
 ```
-
-Similarly to prediction, I feel like PL Trainers will take care of most of this. But I guess their are some considerations listed below
 
 ### Basic Training
 
@@ -408,13 +410,13 @@ Similarly to prediction, I feel like PL Trainers will take care of most of this.
 .. autosummary::
    :toctree: api/
 
+   pl.seq_track_features
+   pl.multiseq_track_features
    pl.seq_track
    pl.multiseq_track
-   pl.lm_seq_track
-   pl.lm_multiseq_track
+   pl.filter_viz_seqlogo
    pl.filter_viz
-   pl.lm_filter_viz
-   pl.lm_multifilter_viz
+   pl.multifilter_viz
    pl.feature_implant_plot
 ```
 

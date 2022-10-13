@@ -3,6 +3,43 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurr
 
 
 class FCN(BaseModel):
+    """
+    Instantiate a fully connected neural network with the specified layers and parameters.
+    
+    By default, this architecture flattens the one-hot encoded sequence and passes 
+    it through a set of layers that are fully connected. The task defines how the output is
+    treated (e.g. sigmoid activation for binary classification). The loss function is
+    should be matched to the task (e.g. binary cross entropy ("bce") for binary classification).
+
+    - If the model is single-stranded ("ss"), the input is passed through a single set of
+        fully connected layers.
+    - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
+        through the same set of fully connected layers. If aggr is "concat", the input
+        forward and reverse sequences are concatenated and passed through a single set
+        of fully connected layers. If aggr is "max" or "avg", the output of the forward and
+        reverse sequence are passed through a single set of fully connected layers separately 
+        and the maximum or average of the two outputs is taken.
+    - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
+        through different sets of fully connected layers. "concat" is not supported for
+        this model type. If aggr is "max" or "avg", the output of the forward and reverse
+        sequence are passed through a single set of fully connected layers and the maximum
+        or average of the two outputs is taken.
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    strand:
+        The strand of the model.
+    task:
+        The task of the model.
+    aggr:
+        The aggregation function.
+    fc_kwargs:
+        The keyword arguments for the fully connected layer.
+    """
     def __init__(
         self,
         input_len: int,
@@ -14,43 +51,6 @@ class FCN(BaseModel):
         fc_kwargs: dict = {},
         **kwargs
     ):
-        """
-        Instantiate a fully connected neural network with the specified layers and parameters.
-        
-        By default, this architecture flattens the one-hot encoded sequence and passes 
-        it through a set of layers that are fully connected. The task defines how the output is
-        treated (e.g. sigmoid activation for binary classification). The loss function is
-        should be matched to the task (e.g. binary cross entropy ("bce") for binary classification).
-
-        - If the model is single-stranded ("ss"), the input is passed through a single set of
-            fully connected layers.
-        - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
-            through the same set of fully connected layers. If aggr is "concat", the input
-            forward and reverse sequences are concatenated and passed through a single set
-            of fully connected layers. If aggr is "max" or "avg", the output of the forward and
-            reverse sequence are passed through a single set of fully connected layers separately 
-            and the maximum or average of the two outputs is taken.
-        - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
-            through different sets of fully connected layers. "concat" is not supported for
-            this model type. If aggr is "max" or "avg", the output of the forward and reverse
-            sequence are passed through a single set of fully connected layers and the maximum
-            or average of the two outputs is taken.
-
-        Parameters
-        ----------
-        input_len:
-            The length of the input sequence.
-        output_dim:
-            The dimension of the output.
-        strand:
-            The strand of the model.
-        task:
-            The task of the model.
-        aggr:
-            The aggregation function.
-        fc_kwargs:
-            The keyword arguments for the fully connected layer.
-        """
         super().__init__(
             input_len, 
             output_dim, 
@@ -122,6 +122,48 @@ class FCN(BaseModel):
 
 
 class CNN(BaseModel):
+    """
+    Instantiate a CNN model with a set of convolutional layers and a set of fully
+    connected layers.
+
+    By default, this architecture passes the one-hot encoded sequence through a set
+    1D convolutions with 4 channels. The task defines how the output is treated (e.g.
+    sigmoid activation for binary classification). The loss function is should be matched
+    to the task (e.g. binary cross entropy ("bce") for binary classification).
+
+    - If the model is single-stranded ("ss"), the input is passed through a single set of
+        convolutions to extract features. The extracted features are then flattened into a 
+        single dimensional tensor and passed through a set of fully connected layers.
+    - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
+        through the same set of convolutions to extract features. If aggr is "concat", the
+        extracted features are concatenated and passed through a single set of fully connected
+        layers. If aggr is "max" or "avg", the extracted features are passed through the same single
+        set of fully connected layers separately and the maximum or average of the two outputs
+        is taken.
+    - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
+        through different sets of convolutions to extract features. If aggr is "concat"
+        the extracted features are concatenated and passed through a single set of fully
+        connected layers. If aggr is "max" or "avg", the extracted features are passed through
+        separate sets of fully connected layers and the maximum or average of the two outputs
+        is taken.
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    strand:
+        The strand of the model.
+    task:
+        The task of the model.
+    aggr:
+        The aggregation function to use.
+    fc_kwargs:
+        The keyword arguments for the fully connected layer. If not provided, the
+        default passes the flattened output of the convolutional layers directly to 
+        the output layer.
+    """
     def __init__(
         self,
         input_len: int,
@@ -134,49 +176,6 @@ class CNN(BaseModel):
         fc_kwargs: dict = {},
         **kwargs
     ):
-        """
-        Instantiate a CNN model with a set of convolutional layers and a set of fully
-        connected layers.
-
-        By default, this architecture passes the one-hot encoded sequence through a set
-        1D convolutions with 4 channels. The task defines how the output is treated (e.g.
-        sigmoid activation for binary classification). The loss function is should be matched
-        to the task (e.g. binary cross entropy ("bce") for binary classification).
-
-        - If the model is single-stranded ("ss"), the input is passed through a single set of
-            convolutions to extract features. The extracted features are then flattened into a 
-            single dimensional tensor and passed through a set of fully connected layers.
-        - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
-            through the same set of convolutions to extract features. If aggr is "concat", the
-            extracted features are concatenated and passed through a single set of fully connected
-            layers. If aggr is "max" or "avg", the extracted features are passed through the same single
-            set of fully connected layers separately and the maximum or average of the two outputs
-            is taken.
-        - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
-            through different sets of convolutions to extract features. If aggr is "concat"
-            the extracted features are concatenated and passed through a single set of fully
-            connected layers. If aggr is "max" or "avg", the extracted features are passed through
-            separate sets of fully connected layers and the maximum or average of the two outputs
-            is taken.
-
-        Parameters
-        ----------
-        input_len:
-            The length of the input sequence.
-        output_dim:
-            The dimension of the output.
-        strand:
-            The strand of the model.
-        task:
-            The task of the model.
-        aggr:
-            The aggregation function to use.
-        fc_kwargs:
-            The keyword arguments for the fully connected layer. If not provided, the
-            default passes the flattened output of the convolutional layers directly to 
-            the output layer.
-
-        """
         super().__init__(
             input_len, 
             output_dim, 
@@ -275,6 +274,48 @@ class CNN(BaseModel):
 
 
 class RNN(BaseModel):
+    """
+    Instantiate an RNN model with a set of recurrent layers and a set of fully
+    connected layers.
+
+    By default, this model passes the one-hot encoded sequence through recurrent layers
+    and then through a set of fully connected layers. The output of the fully connected
+    layers is passed to the output layer.
+
+    - If the model is single-stranded ("ss"), the sequence is passed through a single
+        set of recurrent layers and a single set of fully connected layers.
+    - If the model is double-stranded ("ds"), the sequence forward and reverse sequence
+        are passed through the same set of recurrent layers to extract features. If aggr 
+        is "concat", the output of the recurrent layers is concatenated and passed to a
+        single set of fully connected layers. If aggr is "max" or "avg", the output of
+        the recurrent layers is passed to the same single set of fully connected layers 
+        separately and the max or average of the two outputs is passed to the output
+        layer.
+    - If the model is twin-stranded ("ts"), the sequence forward and reverse sequence
+        are passed through separate sets of recurrent layers to extract features. If aggr
+        is "concat", the output of the recurrent layers is concatenated and passed to a
+        single set of fully connected layers. If aggr is "max" or "avg", the output of
+        the recurrent layers is passed to the separate sets of fully connected layers
+        separately and the max or average of the two outputs is passed to the output
+        layer.
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    strand:
+        The strand of the model.
+    task:
+        The task of the model.
+    aggr:
+        The aggregation function.
+    fc_kwargs:
+        The keyword arguments for the fully connected layer. If not provided, the
+        default passes the recurrent output of the recurrent layers directly to the
+        output layer.
+    """
     def __init__(
         self,
         input_len: int,
@@ -286,49 +327,7 @@ class RNN(BaseModel):
         loss_fxn: str = "mse",
         fc_kwargs: dict = {},
         **kwargs
-    ):
-        """
-        Instantiate an RNN model with a set of recurrent layers and a set of fully
-        connected layers.
-
-        By default, this model passes the one-hot encoded sequence through recurrent layers
-        and then through a set of fully connected layers. The output of the fully connected
-        layers is passed to the output layer.
-
-        - If the model is single-stranded ("ss"), the sequence is passed through a single
-            set of recurrent layers and a single set of fully connected layers.
-        - If the model is double-stranded ("ds"), the sequence forward and reverse sequence
-            are passed through the same set of recurrent layers to extract features. If aggr 
-            is "concat", the output of the recurrent layers is concatenated and passed to a
-            single set of fully connected layers. If aggr is "max" or "avg", the output of
-            the recurrent layers is passed to the same single set of fully connected layers 
-            separately and the max or average of the two outputs is passed to the output
-            layer.
-        - If the model is twin-stranded ("ts"), the sequence forward and reverse sequence
-            are passed through separate sets of recurrent layers to extract features. If aggr
-            is "concat", the output of the recurrent layers is concatenated and passed to a
-            single set of fully connected layers. If aggr is "max" or "avg", the output of
-            the recurrent layers is passed to the separate sets of fully connected layers
-            separately and the max or average of the two outputs is passed to the output
-            layer.
-
-        Parameters
-        ----------
-        input_len:
-            The length of the input sequence.
-        output_dim:
-            The dimension of the output.
-        strand:
-            The strand of the model.
-        task:
-            The task of the model.
-        aggr:
-            The aggregation function.
-        fc_kwargs:
-            The keyword arguments for the fully connected layer. If not provided, the
-            default passes the recurrent output of the recurrent layers directly to the
-            output layer.
-        """
+    ): 
         super().__init__(
             input_len, 
             output_dim, 
@@ -462,7 +461,6 @@ class Hybrid(BaseModel):
     fc_kwargs:
         The keyword arguments for the fully connected layer.
     """
-
     def __init__(
         self,
         input_len: int,

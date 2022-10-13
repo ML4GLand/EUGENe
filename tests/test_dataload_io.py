@@ -10,7 +10,6 @@ import pytest
 from pathlib import Path
 from eugene.dataload import SeqData, SeqDataset
 HERE = Path(__file__).parent
-#dataset_dir = f"{HERE}/../eugene/datasets/random1000"
 
 
 def check_random1000_load(sdata, has_target=False):
@@ -22,11 +21,13 @@ def check_random1000_load(sdata, has_target=False):
 
 
 def test_read():
+    dataset_dir = f"{HERE}/../eugene/datasets/random1000"
     sdata = eu.dl.read(os.path.join(dataset_dir, "random1000_seqs.tsv"))
     check_random1000_load(sdata)
 
 
 def test_read_csv():
+    dataset_dir = f"{HERE}/../eugene/datasets/random1000"
     sdata = eu.dl.read_csv(
         filename=os.path.join(dataset_dir, "random1000_seqs.tsv"),
         seq_col="seq",
@@ -45,6 +46,7 @@ def test_read_csv():
 
 
 def test_read_fasta():
+    dataset_dir = f"{HERE}/../eugene/datasets/random1000"
     sdata = eu.dl.read_fasta(
         seq_file=os.path.join(dataset_dir, "random1000_seqs.fa"),
         target_file=os.path.join(dataset_dir, "random1000_activities.npy"),
@@ -56,6 +58,7 @@ def test_read_fasta():
 
 
 def test_read_numpy():
+    dataset_dir = f"{HERE}/../eugene/datasets/random1000"
     sdata = eu.dl.read_numpy(
             seq_file=os.path.join(dataset_dir, "random1000_seqs.npy"),
             names_file=os.path.join(dataset_dir, "random1000_ids.npy"),
