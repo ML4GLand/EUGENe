@@ -62,7 +62,7 @@ The `BaseModel` class in EUGENe is the scaffold upon which all models are built.
 <figure>
 <p align="center">
 <img src="_static/BaseModel_only.png" alt="EUGENe BaseModel" width=400>
-<figcaption align = "center"><b>`SeqData` schematic showing attributes and their alignments</b></figcaption>
+<figcaption align = "center"><b>`BaseModel` representation for a Hybrid model</b></figcaption>
 </p>
 </figure>
 
@@ -192,7 +192,7 @@ Check out the [`train` API](https://eugene-tools.readthedocs.io/en/latest/api.ht
 ### `evaluate` -- Validate and explore models on new data
 Similarly to training, this module is mainly a wrapper around [PyTorch Lightning's trainers](https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html). However, we have also have begun a metrics library to help users calculate training metrics on their `SeqData` objects (more details coming soon!).
 
-    1. Predictions on a `SeqData` are saved in `seqs_annot` attribute and to disk by default (with column names and file paths specified by the user)
+1. Predictions on a `SeqData` are saved in `seqs_annot` attribute and to disk by default (with column names and file paths specified by the user)
 
 Check out the [`evaluate` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.evaluate) for more info on the current evaluate functions, including how to save train and validation set prediction ouptuts separately.
 
