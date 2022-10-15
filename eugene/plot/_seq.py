@@ -815,8 +815,8 @@ def feature_implant_plot(
     concat_df = pd.DataFrame()
     for seqsm_key in seqsm_keys:
         df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(
-            var_name="Position", 
-            value_name="Score", 
+            var_name=xlab, 
+            value_name=ylab, 
             ignore_index=False
         )
         df["feature"] = seqsm_key
