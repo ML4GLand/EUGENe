@@ -8,7 +8,6 @@
 ```
 
 # API
-
 Import EUGENe as:
 
 ```
@@ -16,7 +15,7 @@ import eugene as eu
 ```
 
 ```{note}
-EUGENe is a package that is still active development, so there's a good chance you'll hit an error to if you use EUGENe before its first stable release.
+EUGENe is a package that is still in active development, so there's a chance you'll hit an error to if you use EUGENe before its first stable release.
 ```
 
 ## Datasets
@@ -30,13 +29,13 @@ EUGENe is a package that is still active development, so there's a good chance y
 ```
 
 ### Available datasets
-
-You can get a list of available datasets returned as a `pandas.DataFrame` using the {func}`~eugene.datasets.get_dataset_info` function.
+You can get a list of available datasets returned as a `pandas.DataFrame` using the `eugene.datasets.get_dataset_info()` function.
 
 ```{eval-rst}
 .. autosummary::
    :toctree: api/
-
+    
+   datasets.get_dataset_info
    datasets.random1000
    datasets.ray13
    datasets.deBoer20
@@ -55,7 +54,6 @@ You can get a list of available datasets returned as a `pandas.DataFrame` using 
 ```
 
 ### Input/Output (IO)
-
 The (`io`) functions handle reading and writing from and to files on disk.
 
 ```{eval-rst}
@@ -82,50 +80,63 @@ The (`io`) functions handle reading and writing from and to files on disk.
 These are the few core functions you can call on SeqData objects
 
 ```{eval-rst}
+.. module:: eugene.dataload.dataloaders
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+```{eval-rst}
 .. autosummary::
    :toctree: api/
 
-   dl.SeqData
-   dl.SeqData.write_h5sd
-   dl.SeqData.to_dataset
-   dl.concat
+   dataload.dataloaders.SeqData
+   dataload.dataloaders.SeqData.write_h5sd
+   dataload.dataloaders.SeqData.to_dataset
+   dataload.concat
 ```
 
 ### SeqDataset
-
-We need to be able to fluidly go between SeqData and PyTorch datasets and DataLoaders. To do this we have implemented the SeqDataset class and attached a to_dataset() method to SeqData.
+We often need to be able to fluidly go between SeqData and PyTorch datasets and DataLoaders. To do this we have implemented the `SeqDataset` class and attached a `to_dataset()` method to SeqData.
 
 ```{eval-rst}
 .. autosummary::
    :toctree: api/
 
-   dl.SeqDataset
+   dataload.dataloaders.SeqDataset
+   dataload.dataloaders.SeqDataset.to_dataloader
 ```
 
 ### Motif
-
 These functions are for working with MEME format. They are used to read in MEME files and convert them to SeqData objects.
 
 ```{eval-rst}
-.. module:: eugene.dl.motif
-.. currentmodule:: eugene.dl
+.. module:: eugene.dataload.motif
+```
 
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+```{eval-rst}
 .. autosummary::
    :toctree: api/
 
-   motif.Motif
-   motif.MinimalMEME
-   motif.pwm_to_meme
-   motif.filters_to_meme_sdata
-   motif.get_jaspar_motifs
-   motif.save_motifs_as_meme
-   motif.load_meme
-   motif.fimo_motifs
-   motif.score_seqs
-   motif.jaspar_annots_sdata
+   dataload.motif.Motif
+   dataload.motif.MinimalMEME
+   dataload.motif.pwm_to_meme
+   dataload.motif.filters_to_meme_sdata
+   dataload.motif.get_jaspar_motifs
+   dataload.motif.save_motifs_as_meme
+   dataload.motif.load_meme
+   dataload.motif.fimo_motifs
+   dataload.motif.score_seqs
+   dataload.motif.jaspar_annots_sdata
 ```
 
 ## Preprocess (`pp`)
+This module is designed to let users interact and modify SeqData objects to prepare for model training and other steps of the workflow. There are three main classes of preprocessing functions.
 
 ```{eval-rst}
 .. module:: eugene.pp
@@ -134,8 +145,6 @@ These functions are for working with MEME format. They are used to read in MEME 
 ```{eval-rst}
 .. currentmodule:: eugene
 ```
-
-This module is designed to let users interact and modify SeqData objects to prepare for model training and to allow for more in depth analysis. There are several classes of preprocessing functions that act on more familiar objects. These functions are agnostic of SeqData
 
 ### Sequence preprocessing
 
@@ -188,11 +197,12 @@ This module is designed to let users interact and modify SeqData objects to prep
    pp.scale_targets_sdata
    pp.binarize_targets_sdata
    pp.train_test_split_sdata
-   pp.add_ranges_pos_annot
+   pp.add_ranges_sdata
    pp.prepare_seqs_sdata
 ```
 
 ## Models
+This module is designed to allow users to easily build and initialize several neural network architectures that are designed for biological sequences. We specify three main classes of model: Base Models, SOTA Models, and Custom Models.
 
 ```{eval-rst}
 .. module:: eugene.models
@@ -201,9 +211,6 @@ This module is designed to let users interact and modify SeqData objects to prep
 ```{eval-rst}
 .. currentmodule:: eugene
 ```
-
-This module is designed to allow users to easily build and initialize several neural network architectures that are designed for biological sequences
-We specify three main classes of model: base_model, sota_model, and custom_model
 
 ### Base Models
 
@@ -244,12 +251,13 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 .. autosummary::
    :toctree: api/
 
-   models.load_from_config
+   models.load_config
    models.init_weights
    models.init_from_motifs
 ```
 
 ## Training
+Training procedures for data and models.
 
 ```{eval-rst}
 .. module:: eugene.train
@@ -269,6 +277,7 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ```
 
 ## Evaluate
+Evaluation functions for trained models. Both prediction helpers and metrics.
 
 ```{eval-rst}
 .. module:: eugene.evaluate
@@ -303,7 +312,7 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ```
 
 ## Interpret
-
+Interpretation suite of EUGENe, currently broken into filter visualization, feature attribution and *in silico* experimentation
 ```{eval-rst}
 .. module:: eugene.intepret
 ```
@@ -357,6 +366,7 @@ We specify three main classes of model: base_model, sota_model, and custom_model
 ```
 
 ## Plotting
+Plotting suite in EUGENe for multiple aspects of the workflow.
 
 ```{eval-rst}
 .. module:: eugene.pl

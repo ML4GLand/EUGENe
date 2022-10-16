@@ -12,7 +12,7 @@ eu.settings.dataset_dir = f"{HERE}/_data/datasets"
 
 def test_get_dataset_info():
     dataset_info = eu.datasets.get_dataset_info()
-    assert dataset_info.index.name == "name"
+    assert dataset_info.index.name == "dataset_name"
     assert "description" in dataset_info
     
 

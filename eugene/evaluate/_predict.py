@@ -32,8 +32,8 @@ def predictions(
 ):
     """Predict the outputs of sequences in a SeqData object using a model.
 
-    Params:
-    -------
+    Parameters
+    ----------
 
     model: LightningModule
        The model to predict on.
@@ -66,8 +66,8 @@ def predictions(
     copy: bool
        Whether to copy the SeqData or not.
 
-    Returns:
-    --------
+    Returns
+    -------
     sdata
          The SeqData object with the predictions added if copy is True.
     """
