@@ -62,31 +62,31 @@ class FCN(BaseModel):
         )
         self.flattened_input_dims = 4 * input_len
         if self.strand == "ss":
-            self.fcn = BasicFullyConnectedModule(
+            self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.flattened_input_dims, 
                 output_dim=output_dim, 
                 **fc_kwargs
             )
         elif self.strand == "ds":
             if self.aggr == "concat":
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.flattened_input_dims * 2,
                     output_dim=output_dim,
                     **fc_kwargs
                 )
             elif self.aggr in ["max", "avg"]:
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.flattened_input_dims,
                     output_dim=output_dim,
                     **fc_kwargs
                 )
         elif self.strand == "ts":
-            self.fcn = BasicFullyConnectedModule(
+            self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.flattened_input_dims, 
                 output_dim=output_dim, 
                 **fc_kwargs
             )
-            self.reverse_fcn = BasicFullyConnectedModule(
+            self.reverse_fcnet = BasicFullyConnectedModule(
                 input_dim=self.flattened_input_dims, 
                 output_dim=output_dim, 
                 **fc_kwargs
@@ -95,25 +95,25 @@ class FCN(BaseModel):
     def forward(self, x, x_rev_comp=None):
         x = x.flatten(start_dim=1)
         if self.strand == "ss":
-            x = self.fcn(x)
+            x = self.fcnet(x)
         elif self.strand == "ds":
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
             if self.aggr == "concat":
                 x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcn(x)
+                x = self.fcnet(x)
             elif self.aggr in ["max", "avg"]:
-                x = self.fcn(x)
-                x_rev_comp = self.fcn(x_rev_comp)
+                x = self.fcnet(x)
+                x_rev_comp = self.fcnet(x_rev_comp)
                 if self.aggr == "max":
                     x = torch.max(x, x_rev_comp)
                 elif self.aggr == "avg":
                     x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         elif self.strand == "ts":
-            x = self.fcn(x)
+            x = self.fcnet(x)
             x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x_rev_comp = self.reverse_fcn(x_rev_comp)
+            x_rev_comp = self.reverse_fcnet(x_rev_comp)
             if self.aggr == "concat":
-                raise ValueError("Concatenation is not supported for the tsFCN model.")
+                raise ValueError("Concatenation is not supported for the tsfcnet model.")
             elif self.aggr == "max":
                 x = torch.max(x, x_rev_comp)
             elif self.aggr == "avg":
@@ -190,7 +190,7 @@ class CNN(BaseModel):
                 input_len=input_len, 
                 **conv_kwargs
             )
-            self.fcn = BasicFullyConnectedModule(
+            self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.convnet.flatten_dim, 
                 output_dim=output_dim, 
                 **fc_kwargs
@@ -201,13 +201,13 @@ class CNN(BaseModel):
                 **conv_kwargs
             )
             if self.aggr == "concat":
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.convnet.flatten_dim * 2,
                 output_dim=output_dim,
                 **fc_kwargs
             )
             elif self.aggr in ["max", "avg"]:
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.convnet.flatten_dim,
                     output_dim=output_dim,
                     **fc_kwargs
@@ -222,18 +222,18 @@ class CNN(BaseModel):
                 **conv_kwargs
             )
             if aggr == "concat":
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.convnet.flatten_dim * 2,
                     output_dim=output_dim,
                     **fc_kwargs
                 )
             elif aggr in ["max", "avg"]:
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.convnet.flatten_dim,
                     output_dim=output_dim,
                     **fc_kwargs
                 )
-                self.reverse_fcn = BasicFullyConnectedModule(
+                self.reverse_fcnet = BasicFullyConnectedModule(
                     input_dim=self.reverse_convnet.flatten_dim,
                     output_dim=output_dim,
                     **fc_kwargs
@@ -243,16 +243,16 @@ class CNN(BaseModel):
         x = self.convnet(x)
         x = x.view(x.size(0), self.convnet.flatten_dim)
         if self.strand == "ss":
-            x = self.fcn(x)
+            x = self.fcnet(x)
         elif self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
             x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
             if self.aggr == "concat":
                 x = torch.cat([x, x_rev_comp], dim=1)
-                x = self.fcn(x)
+                x = self.fcnet(x)
             elif self.aggr in ["max", "avg"]:
-                x = self.fcn(x)
-                x_rev_comp = self.fcn(x_rev_comp)
+                x = self.fcnet(x)
+                x_rev_comp = self.fcnet(x_rev_comp)
                 if self.aggr == "max":
                     x = torch.max(x, x_rev_comp)
                 elif self.aggr == "avg":
@@ -262,10 +262,10 @@ class CNN(BaseModel):
             x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.reverse_convnet.flatten_dim)
             if self.aggr == "concat":
                 x = torch.cat([x, x_rev_comp], dim=1)
-                x = self.fcn(x)
+                x = self.fcnet(x)
             elif self.aggr in ["max", "avg"]:
-                x = self.fcn(x)
-                x_rev_comp = self.reverse_fcn(x_rev_comp)
+                x = self.fcnet(x)
+                x_rev_comp = self.reverse_fcnet(x_rev_comp)
                 if self.aggr == "max":
                     x = torch.max(x, x_rev_comp)
                 elif self.aggr == "avg":
@@ -342,7 +342,7 @@ class RNN(BaseModel):
                 input_dim=4, 
                 **rnn_kwargs
                 )
-            self.fcn = BasicFullyConnectedModule(
+            self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.rnn.out_dim, 
                 output_dim=output_dim, 
                 **fc_kwargs
@@ -353,12 +353,12 @@ class RNN(BaseModel):
                 **rnn_kwargs
                 )
             if self.aggr == "concat":
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.rnn.out_dim * 2, 
                     output_dim=output_dim, **fc_kwargs
                 )
             elif self.aggr in ["max", "avg"]:
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.rnn.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -371,18 +371,18 @@ class RNN(BaseModel):
                 input_dim=4, 
                 **rnn_kwargs)
             if self.aggr == "concat":
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.rnn.out_dim * 2, 
                     output_dim=output_dim, 
                     **fc_kwargs
                 )
             elif self.aggr in ["max", "avg"]:
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.rnn.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
                 )
-                self.reverse_fcn = BasicFullyConnectedModule(
+                self.reverse_fcnet = BasicFullyConnectedModule(
                     input_dim=self.reverse_rnn.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -392,16 +392,16 @@ class RNN(BaseModel):
         x, _ = self.rnn(x)
         x = x[:, -1, :]
         if self.strand == "ss":
-            x = self.fcn(x)
+            x = self.fcnet(x)
         elif self.strand == "ds":
             x_rev_comp, _ = self.rnn(x_rev_comp)
             x_rev_comp = x_rev_comp[:, -1, :]
             if self.aggr == "concat":
                 x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcn(x)
+                x = self.fcnet(x)
             elif self.aggr in ["max", "avg"]:
-                x = self.fcn(x)
-                x_rev_comp = self.fcn(x_rev_comp)
+                x = self.fcnet(x)
+                x_rev_comp = self.fcnet(x_rev_comp)
                 if self.aggr == "max":
                     x = torch.max(x, x_rev_comp)
                 elif self.aggr == "avg":
@@ -411,10 +411,10 @@ class RNN(BaseModel):
             x_rev_comp = x_rev_comp[:, -1, :]
             if self.aggr == "concat":
                 x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcn(x)
+                x = self.fcnet(x)
             elif self.aggr in ["max", "avg"]:
-                x = self.fcn(x)
-                x_rev_comp = self.reverse_fcn(x_rev_comp)
+                x = self.fcnet(x)
+                x_rev_comp = self.reverse_fcnet(x_rev_comp)
                 if self.aggr == "max":
                     x = torch.max(x, x_rev_comp)
                 elif self.aggr == "avg":
@@ -441,7 +441,7 @@ class Hybrid(BaseModel):
         and the max or average of the two outputs is passed to the output layer.
     - If the model is twin-stranded ("ts"), the sequence and reverse complement sequence are passed through separate models
         with identical architectures. If aggr is "concat_cnn", the outputs of the CNN are concatenated and passed to the same RNN
-        and FCN. If aggr is "concat_rnn", the outputs of the RNN are concatenated and passed to the same FCN. 
+        and FC. If aggr is "concat_rnn", the outputs of the RNN are concatenated and passed to the same FCN. 
         If aggr is "max" or "avg", the outputs of the RNN for each strand are passed to the separate sets of fully connected layers 
         separately and the max or average of the two outputs is passed to the output layer.
 
@@ -491,7 +491,7 @@ class Hybrid(BaseModel):
                 input_dim=self.convnet.out_channels, 
                 **rnn_kwargs
             )
-            self.fcn = BasicFullyConnectedModule(
+            self.fcnet = BasicFullyConnectedModule(
                 input_dim=self.recurrentnet.out_dim, 
                 output_dim=output_dim, 
                 **fc_kwargs
@@ -506,7 +506,7 @@ class Hybrid(BaseModel):
                     input_dim=self.convnet.out_channels * 2, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -516,7 +516,7 @@ class Hybrid(BaseModel):
                     input_dim=self.convnet.out_channels, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim * 2, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -526,7 +526,7 @@ class Hybrid(BaseModel):
                     input_dim=self.convnet.out_channels, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -545,7 +545,7 @@ class Hybrid(BaseModel):
                     input_dim=self.convnet.out_channels * 2, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -559,7 +559,7 @@ class Hybrid(BaseModel):
                     input_dim=self.reverse_convnet.out_channels, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim * 2, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -573,12 +573,12 @@ class Hybrid(BaseModel):
                     input_dim=self.reverse_convnet.out_channels, 
                     **rnn_kwargs
                 )
-                self.fcn = BasicFullyConnectedModule(
+                self.fcnet = BasicFullyConnectedModule(
                     input_dim=self.recurrentnet.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
                 )
-                self.reverse_fcn = BasicFullyConnectedModule(
+                self.reverse_fcnet = BasicFullyConnectedModule(
                     input_dim=self.reverse_recurrentnet.out_dim, 
                     output_dim=output_dim, 
                     **fc_kwargs
@@ -589,24 +589,24 @@ class Hybrid(BaseModel):
         x = x.transpose(1, 2)
         if self.strand == "ss":
             out, _ = self.recurrentnet(x)
-            out = self.fcn(out[:, -1, :])
+            out = self.fcnet(out[:, -1, :])
         elif self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
             x_rev_comp = x_rev_comp.transpose(1, 2)
             if self.aggr == "concat_cnn":
                 x = torch.cat([x, x_rev_comp], dim=2)
                 out, _ = self.recurrentnet(x)
-                out = self.fcn(out[:, -1, :])
+                out = self.fcnet(out[:, -1, :])
             elif self.aggr == "concat_rnn":
                 out, _ = self.recurrentnet(x)
                 out_rev_comp, _ = self.recurrentnet(x_rev_comp)
                 out = torch.cat([out[:, -1, :], out_rev_comp[:, -1, :]], dim=1)
-                out = self.fcn(out)
+                out = self.fcnet(out)
             elif self.aggr in ["max", "avg"]:
                 out, _ = self.recurrentnet(x)
-                out = self.fcn(out[:, -1, :]) 
+                out = self.fcnet(out[:, -1, :]) 
                 out_rev_comp, _ = self.recurrentnet(x_rev_comp)
-                out_rev_comp = self.fcn(out_rev_comp[:, -1, :])
+                out_rev_comp = self.fcnet(out_rev_comp[:, -1, :])
                 if self.aggr == "max":
                     out = torch.max(out, out_rev_comp)
                 elif self.aggr == "avg":
@@ -617,17 +617,17 @@ class Hybrid(BaseModel):
             if self.aggr == "concat_cnn":
                 x = torch.cat([x, x_rev_comp], dim=2)
                 out, _ = self.recurrentnet(x)
-                out = self.fcn(out[:, -1, :]) 
+                out = self.fcnet(out[:, -1, :]) 
             elif self.aggr == "concat_rnn":
                 out, _ = self.recurrentnet(x)
                 out_rev_comp, _ = self.reverse_recurrentnet(x_rev_comp)
                 out = torch.cat([out[:, -1, :], out_rev_comp[:, -1, :]], dim=1)
-                out = self.fcn(out)
+                out = self.fcnet(out)
             elif self.aggr in ["max", "avg"]:
                 out, _ = self.recurrentnet(x)
-                out = self.fcn(out[:, -1, :]) 
+                out = self.fcnet(out[:, -1, :]) 
                 out_rev_comp, _ = self.reverse_recurrentnet(x_rev_comp)
-                out_rev_comp = self.reverse_fcn(out_rev_comp[:, -1, :])
+                out_rev_comp = self.reverse_fcnet(out_rev_comp[:, -1, :])
                 if self.aggr == "max":
                     out = torch.max(out, out_rev_comp)
                 elif self.aggr == "avg":
