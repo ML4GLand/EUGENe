@@ -99,7 +99,7 @@ Training a `BaseModel` can be done using the `train` module functions or with a 
 
 #### Do I have to use `BaseModel` to work in EUGENe?
 ```{note}
-This is another important concept we want to note up front. You are not required to have model's inherit from `BaseModel`. You can execute most of the core functionality in EUGENe without a standard Pytorch Lightning module (which itself is really just a torch.nn.Module). However, many EUGENe functions assume attributes that are required by BaseModel and you are likely to run into an error or two using these functions on models that do not subclass `BaseModel`. 
+This is another important concept we want to note up front. You are not required to have models inherit from `BaseModel`. You can execute most of the core functionality in EUGENe without a standard Pytorch Lightning module (which itself is really just a torch.nn.Module). However, many EUGENe functions assume attributes that are required by BaseModel and you are likely to run into an error or two using these functions on models that do not subclass `BaseModel`. 
 ```
 
 We next will describe details and usage principles for each module in EUGENe. We find it easiest to think of these modules in the context of the three stage deep learning workflow described above.
