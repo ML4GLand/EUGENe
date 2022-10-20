@@ -299,7 +299,7 @@ def binarize_targets_sdata(
     target_keys,
     upper_threshold=0.5,
     lower_threshold=None,
-    suffix=False,
+    suffix=None,
     copy=False,
     **kwargs,
 ) -> SeqData:
@@ -330,7 +330,7 @@ def binarize_targets_sdata(
         target_keys = [target_keys]
     for target_key in target_keys:
         sdata.seqs_annot[
-            f"{target_key}_binarized" if suffix else target_key
+            f"{target_key}_binarized" if suffix is not None else target_key
         ] = binarize_values(
             sdata[target_key], upper_threshold, lower_threshold, **kwargs
         )
