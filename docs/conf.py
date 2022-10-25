@@ -50,6 +50,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_title = "EUGENe"
 html_static_path = ["_static"]
 html_show_sphinx = False
+html_logo = "_static/EugeneLogo_swap.png
 
 # Thumbnail selection for nbsphinx gallery
 nbsphinx_thumbnails = {

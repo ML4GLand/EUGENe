@@ -1,8 +1,9 @@
 [![PyPI version](https://badge.fury.io/py/eugene-tools.svg)](https://badge.fury.io/py/eugene-tools)
-[![codecov](https://codecov.io/gh/ckmah/bento-tools/branch/master/graph/badge.svg?token=XVHDKNDCDT)](https://codecov.io/gh/ckmah/bento-tools)
 [![Documentation Status](https://readthedocs.org/projects/eugene-tools/badge/?version=latest)](https://eugene-tools.readthedocs.io/en/latest/?badge=latest)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/eugene-tools)
-![GitHub stars](https://img.shields.io/github/stars/adamklie/EUGENe)
+![GitHub stars](https://img.shields.io/github/stars/cartercompbio/EUGENe)
+
+<img src="docs/_static/EugeneLogo_swap.png" alt="EUGENe Logo" width=350>
 
 # EUGENe (**E**lucidating the **U**tility of **G**enomic **E**lements with **Ne**ural Nets)
 
