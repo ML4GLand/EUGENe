@@ -14,7 +14,7 @@ suppress_warnings = [
 project = "EUGENe"
 copyright = "2022, Adam Klie, Hayden Stites"
 author = "Adam Klie, Hayden Stites"
-release = "0.0.4"
+release = "0.0.5"
 
 # default settings
 templates_path = ["_templates"]
@@ -50,7 +50,6 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_title = "EUGENe"
 html_static_path = ["_static"]
 html_show_sphinx = False
-html_logo = "_static/EugeneLogo_swap.png
 
 # Thumbnail selection for nbsphinx gallery
 nbsphinx_thumbnails = {

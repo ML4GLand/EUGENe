@@ -1,8 +1,11 @@
 [![PyPI version](https://badge.fury.io/py/eugene-tools.svg)](https://badge.fury.io/py/eugene-tools)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/eugene-tools)
 
-# EUGENe (Elucidating the Utility of Genomic Elements with Neuralnets)
-<img src="_static/workflow.png" alt="EUGENe workflow" width=800>
+<img src="_static/EugeneLogoText.png" alt="EUGENe Logo" width=600>
+
+# Elucidating the Utility of Genomic Elements with Neuralnets
+
+<img src="_static/workflow.png" alt="EUGENe workflow" width=600>
 
 EUGENe represents a computational framework for machine learning based modeling of regulatory sequences. It is designed after the [Scanpy](https://scanpy.readthedocs.io/en/stable/) package for single cell analysis in Python and is meant to make the development of deep learning worlflows in the genomics field more findable, accessible, interoperitable and reproducible (FAIR). 
 

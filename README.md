@@ -3,9 +3,9 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/eugene-tools)
 ![GitHub stars](https://img.shields.io/github/stars/cartercompbio/EUGENe)
 
-<img src="docs/_static/EugeneLogo_swap.png" alt="EUGENe Logo" width=350>
+<img src="docs/_static/EugeneLogoText.png" alt="EUGENe Logo" width=350>
 
-# EUGENe (**E**lucidating the **U**tility of **G**enomic **E**lements with **Ne**ural Nets)
+# **E**lucidating the **U**tility of **G**enomic **E**lements with **Ne**ural Nets
 
 EUGENe represents a computational framework for machine learning based modeling of regulatory sequences. It is designed after the [Scanpy](https://scanpy.readthedocs.io/en/stable/) package for single cell analysis in Python and is meant to make the development of deep learning workflows in the genomics field more findable, accessible, interoperitable and reproducible (FAIR). EUGENe consists of several modules for handling data and for building, training, evaluating and interpreting deep learners that predict annotations of biological sequences. EUGENe is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. Jupyter).
 
