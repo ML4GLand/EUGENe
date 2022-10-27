@@ -14,10 +14,6 @@ Import EUGENe as:
 import eugene as eu
 ```
 
-```{note}
-EUGENe is a package that is still in active development, so there's a chance you'll hit an error to if you use EUGENe before its first stable release.
-```
-
 ## Datasets
 
 ```{eval-rst}
