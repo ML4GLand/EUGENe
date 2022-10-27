@@ -11,7 +11,7 @@ EUGENe represents a computational framework for machine learning based modeling 
 
 EUGENe consists of several modules for handling data and for building, training, evaluating and interpreting deep learners that predict annotations of biological sequences. EUGENe is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. [Jupyter](https://jupyter.org/)).
 
-* Get started by installing EUGENe {doc}`installation <installation>`
+* Get started by {doc}`installing EUGENe <installation>`
 * Check out the {doc}`basic usage worfklow <basic_usage_tutorial>` tutorial for an example of how to run a EUGENe workflow
 * For a more in depth look at EUGENe, browse the main {doc}`API <api>` and read through the {doc}`usage principles <usage-principles>`
 
