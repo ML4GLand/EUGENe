@@ -11,7 +11,8 @@ from ._seq import (
     filter_viz_seqlogo,
     filter_viz,
     multifilter_viz,
-    feature_implant_plot
+    feature_implant_plot,
+    kipoi_ism_heatmap
 )
 from ._dim_reduce import pca, umap, skree
 from ._utils import _const_line
