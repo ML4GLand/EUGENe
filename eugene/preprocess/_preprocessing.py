@@ -2,7 +2,7 @@ from tqdm.auto import tqdm
 import numpy as np
 from ..dataload import SeqData
 from ._dataset_preprocess import split_train_test, binarize_values
-from ._seq_preprocess import sanitize_seqs, ohe_seqs, reverse_complement_seqs
+from ._seq_preprocess import sanitize_seqs, ohe_seqs, reverse_complement_seqs, gc_content_seqs
 from ..utils._decorators import track
 
 
@@ -446,3 +446,18 @@ step_name = dict(
     reverse_complement="Reverse complementing",
     train_test_split="Train/test splitting",
 )
+
+
+@track
+def gc_content_seqs_sdata(
+    sdata,
+    copy=False
+):
+    sdata = sdata.copy() if copy else sdata
+    if sdata.ohe_seqs is not None:
+        sdata["gc_content"] = gc_content_seqs(sdata.ohe_seqs, ohe=True)
+    elif sdata.seqs is not None:
+        sdata["gc_content"] = gc_content_seqs(sdata.ohe_seqs, ohe=True)
+    else:
+        raise ValueError("No sequences to calculate gc_content on")
+    return sdata if copy else None
