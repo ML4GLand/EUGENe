@@ -4,7 +4,7 @@ from ._utils import GetFlattenDim, BuildFullyConnected
 
 
 class BasicFullyConnectedModule(nn.Module):
-    """Instantiate a PyTorch module with a bseic fully connected module.
+    """Instantiate a PyTorch module with a basic fully connected module.
     (i.e. input, output, layers, activation, dropout, and batchnorm)
 
     Parameters
