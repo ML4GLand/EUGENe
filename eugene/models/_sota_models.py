@@ -241,3 +241,5 @@ class DeepSEA(BaseModel):
         conv_kwargs.setdefault("batchnorm", False)
         fc_kwargs.setdefault("hidden_dims", [925])
         return conv_kwargs, fc_kwargs
+
+
