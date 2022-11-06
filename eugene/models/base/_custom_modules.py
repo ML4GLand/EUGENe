@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ._base_modules import BasicConv1D
 from ._utils import GetFlattenDim, BuildFullyConnected
 
 
@@ -94,3 +95,46 @@ class BiConv1D(nn.Module):
             x_rev = torch.add(x_rev.transpose(1, 2), self.biases[layer]).transpose(1, 2)
             x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate)
         return torch.add(x_fwd, x_rev)
+
+
+class ResidualModule(nn.Module):
+    """Generates a PyTorch module with the residual binding architecture described in:
+
+    Parameters
+    ----------
+    input_len : int
+        Length of the input sequence
+
+    """
+    def __init__(
+        self, 
+        input_len, 
+        channels, 
+        conv_kernels, 
+        conv_strides,
+        dilations, 
+        pool_kernels=None, 
+        activation="relu", 
+        pool_strides=None, 
+        dropout_rates=0.0, 
+        padding="same", 
+        batchnorm=True
+    ):
+        super().__init__()
+        self.module = BasicConv1D(
+            input_len=input_len,
+            channels=channels,
+            conv_kernels=conv_kernels,
+            conv_strides=conv_strides,
+            pool_kernels=pool_kernels,
+            activation=activation,
+            pool_strides=pool_strides,
+            dropout_rates=dropout_rates,
+            dilations=dilations,
+            padding=padding,
+            batchnorm=batchnorm
+        )
+
+    def forward(self, x):
+        x_fwd = self.module(x)
+        return F.relu(x_fwd + x)

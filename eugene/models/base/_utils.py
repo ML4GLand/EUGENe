@@ -61,7 +61,8 @@ def GetFlattenDim(network, seq_len):
             elif module.padding == "same":
                 output_len = output_len
             else:
-                raise ValueError("Padding must be 'valid' or 'same'")
+                assert isinstance(module.padding[0], int)
+                output_len = output_len - module.kernel_size[0] + 1 + (2 * module.padding[0])
         elif name == "MaxPool1d":
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)

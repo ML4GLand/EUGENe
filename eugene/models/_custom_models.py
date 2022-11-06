@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import BaseModel, BiConv1D
+from .base import BaseModel, BiConv1D, BasicConv1D, BasicFullyConnectedModule
 
 
 class TutorialCNN(BaseModel):
@@ -237,4 +237,192 @@ class Kopp21CNN(BaseModel):
         x = self.batchnorm2(x)
         x = x.view(x.shape[0], -1)
         x = self.linear(x)
+        return x
+
+
+class FactorizedBasset(BaseModel):
+	def __init__(
+		self, 
+		input_len: int = 1000,
+		output_dim = 1, 
+		strand = "ss",
+		task = "binary_classification",
+		aggr = None,
+		loss_fxn = "bce",
+		conv1_kwargs = {},
+		conv2_kwargs = {},
+		conv3_kwargs = {},
+		maxpool_kernels = None,
+		fc_kwargs = {},
+		**kwargs
+	):
+		super().__init__(
+			input_len, 
+			output_dim, 
+			strand=strand, 
+			task=task, 
+			aggr=aggr, 
+			loss_fxn=loss_fxn, 
+			**kwargs
+		)
+		self.conv1_kwargs, self.conv2_kwargs, self.conv3_kwargs, self.maxpool_kernels, self.fc_kwargs = self.kwarg_handler(
+			conv1_kwargs, 
+			conv2_kwargs, 
+			conv3_kwargs, 
+			maxpool_kernels, 
+			fc_kwargs
+		)
+		self.convnet1 = BasicConv1D(
+			input_len=input_len, 
+			**self.conv1_kwargs
+		)
+		self.maxpool1 = nn.MaxPool1d(self.maxpool_kernels[0])
+		self.out1 = self.convnet1.flatten_dim/self.convnet1.out_channels // self.maxpool_kernels[0]
+		self.convnet2 = BasicConv1D(
+			input_len=self.out1,
+			**self.conv2_kwargs
+		)
+		self.maxpool2 = nn.MaxPool1d(self.maxpool_kernels[1])
+		self.out2 = self.convnet2.flatten_dim/self.convnet2.out_channels // self.maxpool_kernels[1]
+		self.convnet3 = BasicConv1D(
+			input_len=self.out2,
+			**self.conv3_kwargs
+		)
+		self.maxpool3 = nn.MaxPool1d(self.maxpool_kernels[2])
+		self.out3 = self.convnet3.flatten_dim/self.convnet3.out_channels // self.maxpool_kernels[2]
+		self.fcnet_in = int(self.out3*self.convnet3.out_channels)
+		self.fcnet = BasicFullyConnectedModule(
+			input_dim=self.fcnet_in,
+			output_dim=output_dim, 
+			**self.fc_kwargs
+		)
+
+	def forward(self, x, x_rev_comp=None):
+		x = self.convnet1(x)
+		x = self.maxpool1(x)
+		x = self.convnet2(x)
+		x = self.maxpool2(x)
+		x = self.convnet3(x)
+		x = self.maxpool3(x)
+		x = x.view(x.size(0), self.fcnet_in)
+		x = self.fcnet(x)
+		return x
+        
+	def kwarg_handler(self, conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, fc_kwargs):
+		"""Sets default kwargs for conv and fc modules if not specified"""
+		conv1_kwargs.setdefault("channels", [4, 48, 64, 100, 150, 300])
+		conv1_kwargs.setdefault("conv_kernels", [3, 3, 3, 7, 7])
+		conv1_kwargs.setdefault("conv_strides", [1, 1, 1, 1, 1])
+		conv1_kwargs.setdefault("padding", [1, 1, 1, 3, 3])
+		conv1_kwargs.setdefault("pool_kernels", None)
+		conv1_kwargs.setdefault("dropout_rates", 0.0)
+		conv1_kwargs.setdefault("batchnorm", True)
+		conv1_kwargs.setdefault("activation", "relu")
+		conv2_kwargs.setdefault("channels", [300, 200, 200, 200])
+		conv2_kwargs.setdefault("conv_kernels", [7, 3, 3])
+		conv2_kwargs.setdefault("conv_strides", [1, 1, 1])
+		conv2_kwargs.setdefault("padding", [3, 1, 1])
+		conv2_kwargs.setdefault("pool_kernels", None)
+		conv2_kwargs.setdefault("dropout_rates", 0.0)
+		conv2_kwargs.setdefault("batchnorm", True)
+		conv2_kwargs.setdefault("activation", "relu")
+		conv3_kwargs.setdefault("channels", [200, 200])
+		conv3_kwargs.setdefault("conv_kernels", [7])
+		conv3_kwargs.setdefault("conv_strides", [1])
+		conv3_kwargs.setdefault("padding", [3])
+		conv3_kwargs.setdefault("pool_kernels", None)
+		conv3_kwargs.setdefault("dropout_rates", 0.0)
+		conv3_kwargs.setdefault("batchnorm", True)
+		conv3_kwargs.setdefault("activation", "relu")
+		maxpool_kernels = [3, 4, 4] if maxpool_kernels is None else maxpool_kernels
+		fc_kwargs.setdefault("hidden_dims", [1000, 164])
+		fc_kwargs.setdefault("dropout_rate", 0.0)
+		fc_kwargs.setdefault("batchnorm", True)
+		fc_kwargs.setdefault("activation", "relu")
+		return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, fc_kwargs
+
+
+class ResidualBind(BaseModel):
+    def __init__(
+        self,
+        input_len,
+        output_dim,
+        strand="ss",
+        task="regression",
+        aggr=None,
+        conv_channels=[96],
+        conv_kernel_size=[11],
+        conv_stride_size=[1],
+        conv_dilation_rate=[1],
+        conv_padding="same",
+        conv_activation="relu",
+        conv_batchnorm=True,
+        conv_dropout=0.1,
+        residual_channels=[3, 3, 3],
+        residual_kernel_size=[11, 11, 11],
+        residual_stride_size=[1, 1, 1],
+        residual_dilation_rate=[1, 1, 1],
+        residual_padding="same",
+        residual_activation="relu",
+        residual_batchnorm=True,
+        residual_dropout=0.1,
+        pool_kernel_size=10,
+        pool_dropout=0.2,
+        fc_hidden_dims=[256],
+        fc_activation="relu",
+        fc_batchnorm=True,
+        fc_dropout=0.0,
+        **kwargs
+    ):
+        super().__init__(
+            input_len, output_dim, strand=strand, task=task, aggr=aggr, **kwargs
+        )
+        if isinstance(conv_channels, int):
+            conv_channels = [conv_channels]
+        self.conv = BasicConv1D(
+            input_len=input_len,
+            channels=[4] + conv_channels,
+            conv_kernels=conv_kernel_size,
+            conv_strides=conv_stride_size,
+            pool_kernels=None,
+            activation=conv_activation,
+            pool_strides=None,
+            dropout_rates=conv_dropout,
+            dilations=conv_dilation_rate,
+            padding=conv_padding,
+            batchnorm=conv_batchnorm
+        )
+        res_block_input_len = GetFlattenDim(self.conv.module, seq_len=input_len)
+        self.residual_block = ResidualModule(
+            input_len=res_block_input_len,
+            channels=[self.conv.out_channels] + residual_channels,
+            conv_kernels=residual_kernel_size,
+            conv_strides=residual_stride_size,
+            pool_kernels=None,
+            activation=residual_activation,
+            pool_strides=None,
+            dropout_rates=residual_dropout,
+            dilations=residual_dilation_rate,
+            padding=residual_padding,
+            batchnorm=residual_batchnorm
+        )
+        self.average_pool = nn.AvgPool1d(pool_kernel_size, stride=1)
+        self.dropout = nn.Dropout(pool_dropout)
+        self.flatten = nn.Flatten()
+        self.fc = BasicFullyConnectedModule(
+            input_dim=self.residual_block.module.out_channels*(res_block_input_len-pool_kernel_size+1),
+            output_dim=output_dim,
+            hidden_dims=fc_hidden_dims,
+            activation=fc_activation,
+            batchnorm=fc_batchnorm,
+            dropout_rate=fc_dropout
+        )
+
+    def forward(self, x, x_rev):
+        x = self.conv(x)
+        x = self.residual_block(x)
+        x = self.average_pool(x)
+        x = self.dropout(x)
+        x = self.flatten(x)
+        x = self.fc(x)
         return x
