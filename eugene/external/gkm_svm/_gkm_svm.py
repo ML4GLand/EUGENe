@@ -16,9 +16,10 @@ mode_dict = {
 
 def to_fasta(
     sdata, 
-    target_key,
+    target_key=None,
     train_key=None,
     task="binary_classification",
+    out_dir=None,
     file_name="seqs"
 ):
     """Utility function to generate a fasta file from an sdata object
@@ -45,45 +46,51 @@ def to_fasta(
     -------
     None
     """
+    out_dir = out_dir if out_dir is not None else settings.dataset_dir
     if target_key is None:
-            raise ValueError("target_key must be specified")
-    if train_key is not None:
-        train = sdata[sdata[train_key] == True]
-        test = sdata[sdata[train_key] == False]
-    if task == "binary_classification":
-        if train_key is not None:
-            train_pos = train[train[target_key] == 1]
-            train_neg = train[train[target_key] == 0]
-            test_pos = test[test[target_key] == 1]
-            test_neg = test[test[target_key] == 0]
-            seqs_to_save = [train_pos.seqs, train_neg.seqs, test_pos.seqs, test_neg.seqs]
-            ids_to_save = [train_pos.seqs_annot.index, train_neg.seqs_annot.index, test_pos.seqs_annot.index, test_neg.seqs_annot.index]
-            file_names = [f"{file_name}_train_pos.fasta", f"{file_name}_train_neg.fasta", f"{file_name}_test_pos.fasta", f"{file_name}_test_neg.fasta"]
-        else:
-            pos = sdata[sdata[target_key] == 1]
-            neg = sdata[sdata[target_key] == 0]
-            seqs_to_save = [pos.seqs, neg.seqs]
-            ids_to_save = [pos.seqs_annot.index, neg.seqs_annot.index]
-            file_names = [f"{file_name}_pos.fasta", f"{file_name}_neg.fasta"]
+        file_names = [f"{file_name}.fasta"]
+        seqs_to_save = [sdata.seqs]
+        ids_to_save = [sdata.seqs_annot.index]
         targets_to_save = None
-    elif task == "regression":
+    else:
         if train_key is not None:
-            seqs_to_save = [train.seqs, test.seqs]
-            ids_to_save = [train.seqs_annot.index, test.seqs_annot.index]
-            targets_to_save = [train[target_key].values, test[target_key].values]
-            file_names = [f"{file_name}_train.fasta", f"{file_name}_test.fasta"]
-        else:
-            seqs_to_save = [sdata.seqs]
-            ids_to_save = [sdata.seqs_annot.index]
-            file_names = [f"{file_name}.fasta"]
-            targets_to_save = [sdata[target_key].values]
-
+            train = sdata[sdata[train_key] == True]
+            test = sdata[sdata[train_key] == False]
+        if task == "binary_classification":
+            if train_key is not None:
+                train_pos = train[train[target_key] == 1]
+                train_neg = train[train[target_key] == 0]
+                test_pos = test[test[target_key] == 1]
+                test_neg = test[test[target_key] == 0]
+                seqs_to_save = [train_pos.seqs, train_neg.seqs, test_pos.seqs, test_neg.seqs]
+                ids_to_save = [train_pos.seqs_annot.index, train_neg.seqs_annot.index, test_pos.seqs_annot.index, test_neg.seqs_annot.index]
+                file_names = [f"{file_name}_train_pos.fasta", f"{file_name}_train_neg.fasta", f"{file_name}_val_pos.fasta", f"{file_name}_val_neg.fasta"]
+            else:
+                pos = sdata[sdata[target_key] == 1]
+                neg = sdata[sdata[target_key] == 0]
+                seqs_to_save = [pos.seqs, neg.seqs]
+                ids_to_save = [pos.seqs_annot.index, neg.seqs_annot.index]
+                file_names = [f"{file_name}_pos.fasta", f"{file_name}_neg.fasta"]
+            targets_to_save = None
+        elif task == "regression":
+            if train_key is not None:
+                seqs_to_save = [train.seqs, test.seqs]
+                ids_to_save = [train.seqs_annot.index, test.seqs_annot.index]
+                targets_to_save = [train[target_key].values, test[target_key].values]
+                file_names = [f"{file_name}_train.fasta", f"{file_name}_val.fasta"]
+            else:
+                seqs_to_save = [sdata.seqs]
+                ids_to_save = [sdata.seqs_annot.index]
+                file_names = [f"{file_name}.fasta"]
+                targets_to_save = [sdata[target_key].values]
     for seqs, ids, file_name in zip(seqs_to_save, ids_to_save, file_names):
+        file_name = os.path.join(out_dir, file_name)
         with open(file_name, "w") as f:
             for j, seq in enumerate(seqs):
                 f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
     if targets_to_save is not None:
         for targets, file_name in zip(targets_to_save, file_names):
+            file_name = os.path.join(out_dir, file_name)
             with open(file_name.replace(".fasta", ".targets"), "w") as f:
                 for target in targets:
                     f.write(str(target) + "\n")
@@ -136,7 +143,8 @@ def fit(
     if os.path.exists(file1_name) and os.path.exists(file2_name):
         print("Train files already exist, skipping generation")
     else:
-        to_gkmSVM_fasta(sdata, target_key, train_key=train_key, task=task, name=name)   
+        print(file1_name, file2_name)
+        to_fasta(sdata, target_key, train_key=train_key, task=task, file_name=name)   
     print("Fitting model")
     log_file = open(os.path.join(log_dir, f"{prefix}{name}_fit{suffix}.log"), "w")
     process = subprocess.Popen(
@@ -198,27 +206,27 @@ def predict(
     print(os.path.join(log_dir, prefix + model + suffix+".model.txt"))
     if not os.path.exists(model):
         if os.path.exists(os.path.join(log_dir, model + ".model.txt")):
-            model = os.path.join(log_dir, model + "model.txt")
+            model = os.path.join(log_dir, model + ".model.txt")
         elif os.path.exists(os.path.join(log_dir, prefix + model + suffix+".model.txt")):
             model = os.path.join(log_dir, prefix+model+suffix + ".model.txt")
         else:
             raise Exception("Model file does not exist")
-
     if sdata is not None:
-        seqs = sdata.seqs
-        ids = sdata.seqs_annot.index
-        with open(prefix+file_label+suffix+".fasta", "w") as f:
-            for j, seq in enumerate(seqs):
-                f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
-        file_names = [prefix+file_label+suffix+".fasta"]
+        file_name = os.path.join(data_dir, prefix+file_label+suffix+".fasta")
+        if not os.path.exists(file_name):
+            seqs = sdata.seqs
+            ids = sdata.seqs_annot.index
+            with open(prefix+file_label+suffix+".fasta", "w") as f:
+                for j, seq in enumerate(seqs):
+                    f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
+        file_names = [file_name]
     else:
         assert file_names is not None, "Either sdata or file_names must be provided"
         if isinstance(file_names, str):
             file_names = [file_names]
-
     for file_name in file_names:
         if os.path.exists(os.path.join(data_dir, file_name)):
-                file_name = os.path.join(data_dir, file_name)
+            file_name = os.path.join(data_dir, file_name)
         if not os.path.exists(file_name):
             raise Exception("Data file does not exist: " + file_name)
         log_file = open(os.path.join(out_dir, f"{prefix}{file_label}_predict{suffix}.log"), "w")
@@ -246,7 +254,7 @@ def predict(
         f = open(os.path.join(out_dir, prefix+file_label+suffix+"_predictions.txt"), "r")
         d = [float(x.strip().split('\t')[1]) for x in f]
         f.close()
-        sdata.seqs_annot[f"{file_label}_prediction"] = d
+        sdata.seqs_annot[f"{file_label}_gkm_svm_predictions"] = d
     return
         
 
@@ -275,31 +283,32 @@ def explain(
     print(os.path.join(log_dir, prefix + model + suffix+".model.txt"))
     if not os.path.exists(model):
         if os.path.exists(os.path.join(log_dir, model + ".model.txt")):
-            model = os.path.join(log_dir, model + "model.txt")
+            model = os.path.join(log_dir, model + ".model.txt")
         elif os.path.exists(os.path.join(log_dir, prefix + model + suffix+".model.txt")):
             model = os.path.join(log_dir, prefix+model+suffix + ".model.txt")
         else:
             raise Exception("Model file does not exist")
 
     if sdata is not None:
-        seqs = sdata.seqs
-        ids = sdata.seqs_annot.index
-        with open(prefix+file_label+suffix+".fasta", "w") as f:
-            for j, seq in enumerate(seqs):
-                f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
-        file_names = [prefix+file_label+suffix+".fasta"]
+        file_name = os.path.join(data_dir, prefix+file_label+suffix+".fasta")
+        if not os.path.exists(file_name):
+            seqs = sdata.seqs
+            ids = sdata.seqs_annot.index
+            with open(prefix+file_label+suffix+".fasta", "w") as f:
+                for j, seq in enumerate(seqs):
+                    f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
+        file_names = [file_name]
     else:
         assert file_names is not None, "Either sdata or file_names must be provided"
         if isinstance(file_names, str):
             file_names = [file_names]
-
     for file_name in file_names:
         if os.path.exists(os.path.join(data_dir, file_name)):
-                file_name = os.path.join(data_dir, file_name)
+            file_name = os.path.join(data_dir, file_name)
         if not os.path.exists(file_name):
             raise Exception("Data file does not exist: " + file_name)
         log_file = open(os.path.join(out_dir, f"{prefix}{file_label}_explain{suffix}.log"), "w")
-        print("running gkmexplain on", file_name, "with model", model, "and mode", mode_dict[explanation_mode])
+        print("Running gkmexplain on", file_name, "with model", model, "and mode", mode_dict[explanation_mode])
         print(" ".join([
                 'gkmexplain', 
                 file_name, # seqs to test
