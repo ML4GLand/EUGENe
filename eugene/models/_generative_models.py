@@ -1,9 +1,11 @@
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LambdaLR
 from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
+from ..datasets import random_ohe_seqs
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
 from pytorch_lightning import seed_everything
@@ -65,17 +67,19 @@ class GAN(LightningModule):
     def _common_step(self, batch, batch_idx, optimizer_idx, stage : str):
         ID, x, x_rev_comp, y = batch
 
-        x = x.flatten(start_dim=1)
+        rand = random_ohe_seqs(seq_len=x.size(2), batch_size=x.size(0), return_tensor=True, device=x.device, dtype=x.dtype)
 
-        rand = torch.randn(x.shape)
-        rand = rand.type_as(x)
+        rand = rand.flatten(start_dim=1)
+        x = x.flatten(start_dim=1)
 
         # Generator
         if optimizer_idx == 0 or optimizer_idx is None:
             val = torch.ones(x.size(0), 1, dtype=torch.long)
             val = val.type_as(x)
 
-            loss = F.binary_cross_entropy(self.discriminator(rand), val)    
+            loss = F.binary_cross_entropy(self.discriminator(rand), val)
+
+            self.log(f"{stage}_generator_loss", loss, on_epoch=False, rank_zero_only=True)    
 
         # Discriminator
         elif optimizer_idx == 1:
@@ -87,10 +91,9 @@ class GAN(LightningModule):
             val_loss = F.binary_cross_entropy(self.discriminator(x), val)
             inv_loss = F.binary_cross_entropy(self.discriminator(rand), inv)
             loss = (val_loss + inv_loss) / 2
-        else:
-            print(optimizer_idx)
 
-        self.log(f"{stage}_loss", loss, on_epoch=True, rank_zero_only=True)
+            self.log(f"{stage}_discriminator_loss", loss, on_epoch=False, rank_zero_only=True)
+
         return loss
 
     def configure_optimizers(self):

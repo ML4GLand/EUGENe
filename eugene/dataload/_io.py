@@ -248,23 +248,26 @@ def read_numpy(
             targets = np.load(target_file)
         if len(targets.shape) == 1:
             targets = targets.reshape(-1, 1)
+        seqs_annot = pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])])
     else:
         targets = None
+        seqs_annot = None   
     if return_numpy:
         return ids, seqs, rev_seqs, targets
     elif ohe:
+        
         return SeqData(
             names=ids,
             ohe_seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])]),
+            seqs_annot=seqs_annot,
         )
     else: 
         return SeqData(
             names=ids,
             seqs=seqs,
             rev_seqs=rev_seqs,
-            seqs_annot=pd.DataFrame(data=targets, columns=[f"target_{i}" for i in range(targets.shape[1])]),
+            seqs_annot=seqs,
         )
 
 

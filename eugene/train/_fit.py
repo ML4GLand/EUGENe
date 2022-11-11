@@ -115,14 +115,16 @@ def fit(
             val_dataset, batch_size=batch_size, num_workers=num_workers
         )
     elif sdata is not None:
-        assert target_keys is not None
-        targs = sdata.seqs_annot[target_keys].values  
-        if len(targs.shape) == 1:
-            nan_mask = np.isnan(targs)
-        else:
-            nan_mask = np.any(np.isnan(targs), axis=1)
-        print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
-        sdata = sdata[~nan_mask]
+        # assert target_keys is not None
+        if target_keys is not None:
+            targs = sdata.seqs_annot[target_keys].values
+            if len(targs.shape) == 1:
+                nan_mask = np.isnan(targs)
+            else:
+                nan_mask = np.any(np.isnan(targs), axis=1)
+            print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
+            sdata = sdata[~nan_mask]  
+        
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
             target_keys=target_keys,
