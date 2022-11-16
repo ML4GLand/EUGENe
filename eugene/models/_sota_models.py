@@ -5,7 +5,7 @@ from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D
 from .base._utils import GetFlattenDim
 
 
-mode_dict = {"dna": 1, "rbp": 2}
+mode_dict = {"dna": 4, "rbp": 8}
 
 
 class DeepBind(BaseModel):
@@ -58,8 +58,6 @@ class DeepBind(BaseModel):
         Scheduler of model, either "lr_scheduler" or "plateau"
     scheduler_patience : int
         Scheduler patience of model
-    mp_kwargs : dict
-        Keyword arguments for multiprocessing
     conv_kwargs : dict
         Keyword arguments for convolutional layers
     fc_kwargs : dict
@@ -74,6 +72,7 @@ class DeepBind(BaseModel):
         aggr: str = "max",
         loss_fxn: str ="mse",
         mode: str = "rbp",
+        pool_width: int = 8,
         conv_kwargs: dict = {},
         fc_kwargs: dict = {},
         **kwargs
@@ -89,12 +88,13 @@ class DeepBind(BaseModel):
         )
         self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
         self.mode = mode
+        self.pool_width = pool_width
         self.mode_multiplier = mode_dict[self.mode]
         self.aggr = aggr
         self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-        self.pool_dim = GetFlattenDim(self.convnet.module, seq_len=input_len)
-        self.max_pool = nn.MaxPool1d(kernel_size=self.pool_dim)
-        self.avg_pool = nn.AvgPool1d(kernel_size=self.pool_dim)
+        # self.pool_dim = GetFlattenDim(self.convnet.module, seq_len=input_len)
+        self.max_pool = nn.MaxPool1d(kernel_size=self.pool_width)
+        self.avg_pool = nn.AvgPool1d(kernel_size=self.pool_width)
         if self.strand == "ss":
             self.fcn = BasicFullyConnectedModule(
                 input_dim=self.convnet.out_channels * self.mode_multiplier,
@@ -127,19 +127,19 @@ class DeepBind(BaseModel):
         x = self.convnet(x)
         if self.mode == "rbp":
             x = torch.cat((self.max_pool(x), self.avg_pool(x)), dim=1)
-            x = x.view(x.size(0), self.convnet.out_channels * 2)
+            x = x.view(x.size(0), -1)
         elif self.mode == "dna":
             x = self.max_pool(x)
-            x = x.view(x.size(0), self.convnet.out_channels)
+            x = x.view(x.size(0), -1)
         x = self.fcn(x)
         if self.strand == "ds":
             x_rev_comp = self.convnet(x_rev_comp)
             if self.mode == "rbp":
                 x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels * 2)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), -1)
             elif self.mode == "dna":
                 x_rev_comp = self.max_pool(x_rev_comp)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), -1)
             x_rev_comp = self.fcn(x_rev_comp)
             if self.aggr == "max":
                 x = F.max_pool1d(torch.cat((x, x_rev_comp), dim=1), 2)
@@ -149,10 +149,10 @@ class DeepBind(BaseModel):
             x_rev_comp = self.reverse_convnet(x_rev_comp)
             if self.mode == "rbp":
                 x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels * 2)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), -1)
             elif self.mode == "dna":
                 x_rev_comp = self.max_pool(x_rev_comp)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), -1)
             x_rev_comp = self.reverse_fcn(x_rev_comp)
             if self.aggr == "max":
                 x = F.max_pool1d(torch.cat((x, x_rev_comp), dim=1), 2)

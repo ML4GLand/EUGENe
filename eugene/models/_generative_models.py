@@ -18,7 +18,7 @@ class GAN(LightningModule):
         generator: nn.Module,
         discriminator: nn.Module,
         model_type: str = "gan",
-        w_clip: float = 0.01,
+        grad_clip: float = None,
         strand: str = "ss",
         task: str = "regression",
         aggr: str = None,
@@ -39,7 +39,7 @@ class GAN(LightningModule):
         self.discriminator = discriminator
         self.strand = strand
         self.model_type = model_type
-        self.w_clip = w_clip
+        self.grad_clip = grad_clip
         self.task = task
         self.aggr = aggr
         self.loss_fxn = loss_fxn_dict[loss_fxn]
@@ -51,7 +51,7 @@ class GAN(LightningModule):
         self.optimizer_kwargs = optimizer_kwargs
         seed_everything(seed) if seed is not None else None
         self.kwargs = kwargs
-        self.save_hyperparameters()
+        # self.save_hyperparameters()
 
     def forward(self, x, x_rev_comp=None):
         x = x.flatten(start_dim=1)
@@ -73,48 +73,32 @@ class GAN(LightningModule):
 
         rand = random_ohe_seqs(seq_len=x.size(2), batch_size=x.size(0), return_tensor=True, device=x.device, dtype=x.dtype)
 
-        rand = rand.flatten(start_dim=1)
-        x = x.flatten(start_dim=1)
-
         # Generator
         if optimizer_idx == 0 or optimizer_idx is None:
-            if self.model_type == "gan":
-                val = torch.ones(x.size(0), 1, dtype=torch.long)
-                val = val.type_as(x)
+            val = torch.ones(x.size(0), 1, dtype=torch.long)
+            val = val.type_as(x)
 
-                gen_loss = F.binary_cross_entropy(self.discriminator(rand), val)
+            gen_loss = F.binary_cross_entropy(self.discriminator(rand), val)
 
-            elif self.model_type == "wgan":
-                gen_loss = -torch.mean(self.discriminator(rand))
-
-            else:
-                raise ValueError("GAN type not supported.")
-
-            self.log(f"{stage}_generator_loss", gen_loss, on_epoch=True, rank_zero_only=True)    
+            self.log(f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True)    
             return gen_loss
 
         # Discriminator
         elif optimizer_idx == 1:
-            if self.model_type == "gan":
-                val = torch.ones(x.size(0), 1, dtype=torch.long)
-                val = val.type_as(x)
-                inv = torch.zeros(x.size(0), 1, dtype=torch.long)
-                inv = inv.type_as(x)
+            val = torch.ones(x.size(0), 1, dtype=torch.long)
+            val = val.type_as(x)
+            inv = torch.zeros(x.size(0), 1, dtype=torch.long)
+            inv = inv.type_as(x)
 
-                val_loss = F.binary_cross_entropy(self.discriminator(x), val)
-                inv_loss = F.binary_cross_entropy(self.discriminator(rand), inv)
-                disc_loss = (val_loss + inv_loss) / 2
+            val_loss = F.binary_cross_entropy(self.discriminator(x), val)
+            inv_loss = F.binary_cross_entropy(self.discriminator(rand), inv)
+            disc_loss = (val_loss + inv_loss) / 2
 
-            elif self.model_type == "wgan":
-                disc_loss = -torch.mean(self.discriminator(x)) + torch.mean(self.discriminator(rand))
-
+            if self.grad_clip is not None:
                 for p in self.discriminator.parameters():
-                    p.data.clamp_(-self.w_clip, self.w_clip)
-            
-            else:
-                raise ValueError("GAN type not supported.")
+                    p.data.clamp_(-self.grad_clip, self.grad_clip)
 
-            self.log(f"{stage}_discriminator_loss", disc_loss, on_epoch=True, rank_zero_only=True)
+            self.log(f"{stage}_discriminator_loss", disc_loss, on_step=True, rank_zero_only=True)
             return disc_loss
 
     def configure_optimizers(self):
