@@ -11,3 +11,9 @@ def load_config(arch, model_config):
     model_yml = parser.parse_path(cfg_path=model_config)
     model = model_type(**model_yml["model"])
     return model
+
+
+def get_model(arch, model_config):
+    model_type = getattr(importlib.import_module("eugene.models"), arch)
+    model = model_type(**model_config)
+    return model

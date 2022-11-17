@@ -14,7 +14,7 @@ suppress_warnings = [
 project = "EUGENe"
 copyright = "2022, Adam Klie, Hayden Stites"
 author = "Adam Klie, Hayden Stites"
-release = "0.0.4"
+release = "0.0.5"
 
 # default settings
 templates_path = ["_templates"]

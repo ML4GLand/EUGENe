@@ -11,6 +11,7 @@ tutorials/tutorial_output
 tests/_output/
 tests/_figures/
 tests/_data/datasets/
+tests/_logs/
 
 # Misc
 *.DS_store

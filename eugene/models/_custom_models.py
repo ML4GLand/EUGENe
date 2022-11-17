@@ -50,7 +50,6 @@ class TutorialCNN(BaseModel):
         )
         self.conv1 = nn.Conv1d(4, 30, 21)
         self.dense = nn.Linear(30, output_dim)
-        self.sigmoid = nn.Sigmoid()
             
             
     def forward(self, x, x_rev_comp=None):
@@ -59,12 +58,10 @@ class TutorialCNN(BaseModel):
         # emulates global_max_pooling
         x = F.max_pool1d(x, x.size()[-1]).flatten(1, -1)
         x = self.dense(x)
-        x = self.sigmoid(x)
         if self.strand == "ds":
             x_rev_comp = F.relu(self.conv1(x_rev_comp))
             x_rev_comp = F.max_pool1d(x_rev_comp, x_rev_comp.size()[-1]).flatten(1, -1)
             x_rev_comp = self.dense(x_rev_comp)
-            x_rev_comp = self.sigmoid(x_rev_comp)
             x = (x + x_rev_comp / 2)
         return x
 
