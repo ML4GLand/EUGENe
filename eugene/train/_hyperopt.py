@@ -179,6 +179,9 @@ def hyperopt(
         local_dir=settings.logging_dir,
         keep_checkpoints_num=1,
         checkpoint_score_attr="min-val_loss",
+        resources_per_trial={
+            "gpu": gpus
+        },
         name=name
     )
 
