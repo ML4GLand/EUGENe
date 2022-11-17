@@ -70,6 +70,7 @@ class BasicConv1D(nn.Module):
         input_len: int,
         channels: list,
         conv_kernels: list,
+        conv_strides: list,
         pool_kernels: list,
         activation: str = "relu",
         pool_strides: list = None,
@@ -80,6 +81,7 @@ class BasicConv1D(nn.Module):
         omit_final_pool: bool =False
     ):
         super(BasicConv1D, self).__init__()
+        conv_strides = conv_strides if conv_strides is None else [1] * len(channels)
         pool_strides = pool_kernels if pool_strides is None else pool_strides
         if dropout_rates != 0.0:
             if type(dropout_rates) == float:
@@ -98,6 +100,7 @@ class BasicConv1D(nn.Module):
                     channels[i - 1], 
                     channels[i], 
                     kernel_size=conv_kernels[i - 1], 
+                    stride=conv_strides[i - 1],
                     dilation=dilations[i - 1],
                     padding=padding[i - 1]
                 )
@@ -106,11 +109,12 @@ class BasicConv1D(nn.Module):
                 net.append(nn.ReLU(inplace=False))
             elif activation == "sigmoid":
                 net.append(nn.Sigmoid())
-            if i == len(channels) - 1:
-                if not omit_final_pool:
+            if pool_kernels is not None:
+                if i == len(channels) - 1:
+                    if not omit_final_pool:
+                        net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
+                else:
                     net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
-            else:
-                net.append(nn.MaxPool1d(kernel_size=pool_kernels[i - 1], stride=pool_strides[i - 1]))
             if dropout_rates != 0.0:
                 net.append(nn.Dropout(dropout_rates[i - 1]))
             if batchnorm:

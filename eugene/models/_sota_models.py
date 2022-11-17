@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D
+from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
 from .base._utils import GetFlattenDim
 
 
@@ -240,4 +240,203 @@ class DeepSEA(BaseModel):
         conv_kwargs.setdefault("dropout_rates", [0.2, 0.2, 0.5])
         conv_kwargs.setdefault("batchnorm", False)
         fc_kwargs.setdefault("hidden_dims", [925])
+        return conv_kwargs, fc_kwargs
+
+
+class Basset(BaseModel):
+    """
+    """
+    def __init__(
+        self, 
+        input_len: int = 1000,
+        output_dim = 1, 
+        strand = "ss",
+        task = "binary_classification",
+        aggr = None,
+        loss_fxn = "bce",
+        conv_kwargs = {},
+        fc_kwargs = {},
+        **kwargs
+    ):
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand=strand, 
+            task=task, 
+            aggr=aggr, 
+            loss_fxn=loss_fxn, 
+            **kwargs
+        )
+        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
+        self.convnet = BasicConv1D(
+            input_len=input_len, 
+            **self.conv_kwargs)
+        self.fcn = BasicFullyConnectedModule(
+            input_dim=self.convnet.flatten_dim, 
+            output_dim=output_dim, 
+            **self.fc_kwargs
+        )
+
+    def forward(self, x, x_rev_comp=None):
+        x = self.convnet(x)
+        x = x.view(x.size(0), self.convnet.flatten_dim)
+        x = self.fcn(x)
+        return x
+        
+    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
+        conv_kwargs.setdefault("channels", [4, 300, 200, 200])
+        conv_kwargs.setdefault("conv_kernels", [19, 11, 7])
+        conv_kwargs.setdefault("conv_strides", [1, 1, 1])
+        conv_kwargs.setdefault("padding", [9, 5, 3])
+        conv_kwargs.setdefault("pool_kernels", [3, 4, 4])
+        conv_kwargs.setdefault("omit_final_pool", False)
+        conv_kwargs.setdefault("dropout_rates", 0.0)
+        conv_kwargs.setdefault("batchnorm", True)
+        conv_kwargs.setdefault("activation", "relu")
+        fc_kwargs.setdefault("hidden_dims", [1000, 164])
+        fc_kwargs.setdefault("dropout_rate", 0.0)
+        fc_kwargs.setdefault("batchnorm", True)
+        fc_kwargs.setdefault("activation", "relu")
+        return conv_kwargs, fc_kwargs
+
+
+class DanQ(BaseModel):
+    """DanQ model from Quang and Xie, 2016;
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    strand:
+        The strand of the model.
+    task:
+        The task of the model.
+    aggr:
+        The aggregation function.
+    fc_kwargs:
+        The keyword arguments for the fully connected layer.
+    """
+    def __init__(
+        self,
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
+        loss_fxn: str = "mse",
+        aggr: str = None,
+        cnn_kwargs: dict = {},
+        rnn_kwargs: dict = {},
+        fc_kwargs: dict = {},
+        **kwargs
+    ):
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand=strand, 
+            task=task, 
+            aggr=aggr, 
+            loss_fxn=loss_fxn, 
+            **kwargs
+        ) 
+        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(cnn_kwargs, rnn_kwargs, fc_kwargs)
+        self.convnet = BasicConv1D(
+            input_len=input_len, 
+            **cnn_kwargs)
+        self.recurrentnet = BasicRecurrent(
+            input_dim=self.convnet.out_channels, 
+            **rnn_kwargs
+        )
+        self.fcnet = BasicFullyConnectedModule(
+            input_dim=self.recurrentnet.out_dim, 
+            output_dim=output_dim, 
+            **fc_kwargs
+        )
+
+    def forward(self, x, x_rev_comp=None):
+        x = self.convnet(x)
+        x = x.transpose(1, 2)
+        out, _ = self.recurrentnet(x)
+        out = self.fcnet(out[:, -1, :])
+        return out
+
+    def kwarg_handler(self, cnn_kwargs, rnn_kwargs, fc_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
+        cnn_kwargs.setdefault("channels", [4, 320])
+        cnn_kwargs.setdefault("conv_kernels", [26])
+        cnn_kwargs.setdefault("conv_strides", [1])
+        cnn_kwargs.setdefault("padding", "same")
+        cnn_kwargs.setdefault("pool_kernels", [13])
+        cnn_kwargs.setdefault("omit_final_pool", False)
+        cnn_kwargs.setdefault("dropout_rates", 0.2)
+        cnn_kwargs.setdefault("activation", "relu")
+        rnn_kwargs.setdefault("unit_type", "lstm")
+        rnn_kwargs.setdefault("output_dim", 320)
+        rnn_kwargs.setdefault("bidirectional", True)
+        rnn_kwargs.setdefault("batch_first", True)
+        fc_kwargs.setdefault("hidden_dims", [925])
+        fc_kwargs.setdefault("dropout_rate", 0.5)
+        fc_kwargs.setdefault("batchnorm", False)
+        return cnn_kwargs, fc_kwargs
+
+
+class DeepSTARR(BaseModel):
+    """DeepSTARR model from de Almeida et al., 2022; 
+        see <https://www.nature.com/articles/s41588-022-01048-5>
+
+
+    Parameters
+    """
+    def __init__(
+        self, 
+        input_len: int = 249,
+        output_dim = 2, 
+        strand = "ss",
+        task = "regression",
+        aggr = None,
+        loss_fxn = "mse",
+        conv_kwargs = {},
+        fc_kwargs = {},
+        **kwargs
+    ):
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand=strand, 
+            task=task, 
+            aggr=aggr, 
+            loss_fxn=loss_fxn, 
+            **kwargs
+        )
+        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
+        self.convnet = BasicConv1D(
+            input_len=input_len, 
+            **self.conv_kwargs)
+        self.fcn = BasicFullyConnectedModule(
+            input_dim=self.convnet.flatten_dim, 
+            output_dim=output_dim, 
+            **self.fc_kwargs
+        )
+
+    def forward(self, x, x_rev_comp=None):
+        x = self.convnet(x)
+        x = x.view(x.size(0), self.convnet.flatten_dim)
+        x = self.fcn(x)
+        return x
+        
+    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
+        conv_kwargs.setdefault("channels", [4, 246, 60, 60, 120])
+        conv_kwargs.setdefault("conv_kernels", [7, 3, 5, 3])
+        conv_kwargs.setdefault("conv_strides", [1, 1, 1, 1])
+        conv_kwargs.setdefault("padding", "same")
+        conv_kwargs.setdefault("pool_kernels", [2, 2, 2, 2])
+        conv_kwargs.setdefault("omit_final_pool", False)
+        conv_kwargs.setdefault("dropout_rates", 0.0)
+        conv_kwargs.setdefault("batchnorm", True)
+        fc_kwargs.setdefault("hidden_dims", [256, 256])
+        fc_kwargs.setdefault("dropout_rate", 0.4)
+        fc_kwargs.setdefault("batchnorm", True)
         return conv_kwargs, fc_kwargs
