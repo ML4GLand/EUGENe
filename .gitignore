@@ -12,6 +12,7 @@ tests/_output/
 tests/_figures/
 tests/_data/datasets/
 tests/_logs/
+tests/notebooks/implement/gkm*
 
 # Misc
 *.DS_store
