@@ -28,10 +28,10 @@ In it's current state, EUGENe is a pretty dependency heavy package. Some of this
 ```
 
 ## Development Version
-To work with the latest version [on GitHub](https://github.com/adamklie/EUGENe), clone the repository and `cd` into its root directory.
+To work with the latest version [on GitHub](https://github.com/cartercompbio/EUGENe), clone the repository and `cd` into its root directory.
 
 ```bash
-git clone https://github.com/adamklie/EUGENe.git
+git clone https://github.com/cartercompbio/EUGENe.git 
 cd EUGENe
 ```
 
@@ -46,4 +46,4 @@ If you want to edit the docs, you will need top run `pip install -e .[docs]
 ```
 
 ## Troubleshooting
-If you have any issues installing, please [open an issue](https://github.com/adamklie/EUGENe/issues) on GitHub! We will do our best to help you ASAP!
+If you have any issues installing, please [open an issue](https://github.com/cartercompbio/EUGENe/issues) on GitHub! We will do our best to help you ASAP!

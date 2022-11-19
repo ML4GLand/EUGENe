@@ -62,7 +62,7 @@ The `BaseModel` class in EUGENe is the scaffold upon which all models are built.
 </p>
 </figure>
 
-EUGENe offers several built-in architectures, including customizable fully connected, convolutional, recurrent and hybrid architectures, as well as customizable DeepBind and DeepSEA architectures. We also provide implementations of models introduced in Jores *et al* 2021 and Kopp *et al* 2021 utilized in the [EUGENe manuscript](TODO). However, this set of provided models may not be sufficient for a user's training task and many users may want to add custom architectures to the library. We have added [a tutorial](https://github.com/adamklie/EUGENe/blob/main/tutorials/adding_a_model_tutorial.ipynb) to the EUGENe repository that walks through the process of adding a custom model to the library. We provide a few of the details from that tutorial in the discussion below.
+EUGENe offers several built-in architectures, including customizable fully connected, convolutional, recurrent and hybrid architectures, as well as customizable DeepBind and DeepSEA architectures. We also provide implementations of models introduced in Jores *et al* 2021 and Kopp *et al* 2021 utilized in the [EUGENe manuscript](TODO). However, this set of provided models may not be sufficient for a user's training task and many users may want to add custom architectures to the library. We have added [a tutorial](https://github.com/cartercompbio/EUGENe/blob/main/tutorials/adding_a_model_tutorial.ipynb) to the EUGENe repository that walks through the process of adding a custom model to the library. We provide a few of the details from that tutorial in the discussion below.
 
 #### Initialization of a `BaseModel`
 The `__init__()` function will set-up the way the model architecture is initialized. The `BaseModel` class expects the user to include the following:
@@ -99,7 +99,7 @@ Training a `BaseModel` can be done using the `train` module functions or with a 
 
 #### Do I have to use `BaseModel` to work in EUGENe?
 ```{note}
-This is another important concept we want to note up front. You are not required to have model's inherit from `BaseModel`. You can execute most of the core functionality in EUGENe without a standard Pytorch Lightning module (which itself is really just a torch.nn.Module). However, many EUGENe functions assume attributes that are required by BaseModel and you are likely to run into an error or two using these functions on models that do not subclass `BaseModel`. 
+This is another important concept we want to note up front. You are not required to have models inherit from `BaseModel`. You can execute most of the core functionality in EUGENe without a standard Pytorch Lightning module (which itself is really just a torch.nn.Module). However, many EUGENe functions assume attributes that are required by BaseModel and you are likely to run into an error or two using these functions on models that do not subclass `BaseModel`. 
 ```
 
 We next will describe details and usage principles for each module in EUGENe. We find it easiest to think of these modules in the context of the three stage deep learning workflow described above.
@@ -117,7 +117,7 @@ Every bioinformatician knows the pain of trying to track down and format a datas
 
 4. EUGENe installations come with a single preloaded dataset (random1000) representing random sequences and targets. These are designed for testing purposes.
 
-5. Adding datasets is a pretty straightforward process! We have developed a tutorial notebook that walks you through the process of adding a dataset to EUGENe. You can find it [here](https://github.com/adamklie/EUGENe/blob/main/tutorials/adding_a_dataset_tutorial.ipynb). We strongly encourage users to do so and submit pull requests for them.
+5. Adding datasets is a pretty straightforward process! We have developed a tutorial notebook that walks you through the process of adding a dataset to EUGENe. You can find it [here](https://github.com/cartercompbio/EUGENe/blob/main/tutorials/adding_a_dataset_tutorial.ipynb). We strongly encourage users to do so and submit pull requests for them.
 
 Check out the [`datasets` API](https://eugene-tools.readthedocs.io/en/latest/api.html#module-eugene.datasets) for a list of currently available datasets and their descriptions.
 
