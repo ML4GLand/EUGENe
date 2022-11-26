@@ -58,19 +58,36 @@ class BaseModel(LightningModule):
         hp_metric: str = None,
         optimizer_kwargs: dict = {},
         seed: int = None,
+        save_hp=True,
         **kwargs,
     ):
+        self.loss_fxn_dict = {
+            "mse": F.mse_loss,
+            "poisson": F.poisson_nll_loss,
+            "bce": F.binary_cross_entropy_with_logits,
+            "cross_entropy": F.cross_entropy,
+        }
+        self.default_hp_metric_dict = {
+            "regression": "r2",
+            "multitask_regression": "r2",
+            "binary_classification": "auroc",
+            "multiclass_classification": "auroc",
+        }
+        self.optimizer_dict = {"adam": Adam, "sgd": SGD}
+        self.lr_scheduler_dict = {"reduce_lr_on_plateau": ReduceLROnPlateau}
+
         super().__init__()
         self.input_len = input_len
         self.output_dim = output_dim
         self.strand = strand
         self.task = task
         self.aggr = aggr
-        self.loss_fxn = loss_fxn_dict[loss_fxn]
+        self.loss_fxn = self.loss_fxn_dict[loss_fxn]
         self.hp_metric_name = (
-            hp_metric if hp_metric is not None else default_hp_metric_dict[self.task]
+            hp_metric if hp_metric is not None else self.default_hp_metric_dict[self.task]
         )
-        self.hp_metric = _metric_handler(self.hp_metric_name, output_dim)
+        if output_dim is not None:
+            self.hp_metric = _metric_handler(self.hp_metric_name, output_dim)
         self.optimizer = optimizer
         self.lr = lr
         self.scheduler = scheduler
@@ -78,7 +95,8 @@ class BaseModel(LightningModule):
         self.optimizer_kwargs = optimizer_kwargs
         seed_everything(seed) if seed is not None else None
         self.kwargs = kwargs
-        self.save_hyperparameters()
+        if save_hp:
+            self.save_hyperparameters()
 
     def forward(self, x, x_rev_comp=None) -> torch.Tensor:
         """
@@ -176,7 +194,7 @@ class BaseModel(LightningModule):
         torch.optim.lr_scheduler._LRScheduler:
             learning rate scheduler
         """
-        optimizer = optimizer_dict[self.optimizer](
+        optimizer = self.optimizer_dict[self.optimizer](
             self.parameters(), lr=self.lr, **self.optimizer_kwargs
         )
         scheduler = (
@@ -219,8 +237,10 @@ class BaseModel(LightningModule):
     def summary(self):
         """Print a summary of the model"""
         print(f"Model: {self.__class__.__name__}")
-        print(f"Input length: {self.input_len}")
-        print(f"Output dimension: {self.output_dim}")
+        if self.input_len is not None:
+            print(f"Input length: {self.input_len}")
+        if self.output_dim is not None:
+            print(f"Output dimension: {self.output_dim}")
         print(f"Strand: {self.strand}")
         print(f"Task: {self.task}")
         print(f"Aggregation: {self.aggr}")
@@ -265,24 +285,3 @@ def _metric_handler(metric_name, num_outputs):
     else:
         raise ValueError(f"Unknown metric: {metric_name}")
 
-
-loss_fxn_dict = {
-    "mse": F.mse_loss,
-    "poisson": F.poisson_nll_loss,
-    "bce": F.binary_cross_entropy_with_logits,
-    "cross_entropy": F.cross_entropy,
-}
-
-
-default_hp_metric_dict = {
-    "regression": "r2",
-    "multitask_regression": "r2",
-    "binary_classification": "auroc",
-    "multiclass_classification": "auroc",
-}
-
-
-optimizer_dict = {"adam": Adam, "sgd": SGD}
-
-
-lr_scheduler_dict = {"reduce_lr_on_plateau": ReduceLROnPlateau}

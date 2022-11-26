@@ -33,6 +33,9 @@ def fit(
     early_stopping_metric="val_loss",
     early_stopping_patience=5,
     early_stopping_verbose=False,
+    model_checkpoint_callback: bool = True,
+    model_checkpoint_k = 1,
+    model_checkpoint_monitor="val_loss",
     seed: int = None,
     verbosity = None,
     return_trainer: bool = False,
@@ -149,11 +152,13 @@ def fit(
         raise ValueError("No data provided to train on.")
     logger = TensorBoardLogger(log_dir, name=name, version=version)
     callbacks = []
-    callbacks.append(
-        ModelCheckpoint(
-            dirpath=logger.log_dir + "/checkpoints", save_top_k=1, monitor="val_loss"
+    if model_checkpoint_callback:
+        model_checkpoint_callback = ModelCheckpoint(
+            dirpath=logger.log_dir + "/checkpoints", 
+            save_top_k=model_checkpoint_k, 
+            monitor=model_checkpoint_monitor
         )
-    )
+        callbacks.append(model_checkpoint_callback)
     if early_stopping_callback:
         early_stopping_callback = EarlyStopping(
             monitor=early_stopping_metric,
@@ -165,10 +170,16 @@ def fit(
     if model.scheduler is not None:
         callbacks.append(LearningRateMonitor())
     trainer = Trainer(
-        max_epochs=epochs, logger=logger, gpus=gpus, callbacks=callbacks, **kwargs
+        max_epochs=epochs, 
+        logger=logger, 
+        gpus=gpus, 
+        callbacks=callbacks, 
+        **kwargs
     )
     trainer.fit(
-        model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader
+        model, 
+        train_dataloaders=train_dataloader, 
+        val_dataloaders=val_dataloader
     )
     if return_trainer:
         return trainer
