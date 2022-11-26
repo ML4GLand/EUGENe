@@ -436,8 +436,6 @@ def feature_attribution_sdata(
     method: str
         Type of saliency to use for computing feature attribution scores.
         Can be one of the following:
-        - "saliency" (vanilla saliency)
-        - "grad" (vanilla gradients)
         - "gradxinput" (gradients x inputs)
         - "intgrad" (integrated gradients)
         - "intgradxinput" (integrated gradients x inputs)
@@ -475,18 +473,29 @@ def feature_attribution_sdata(
     SeqData
         SeqData object containing the feature attribution scores
     """
+    # 
     torch.backends.cudnn.enabled = False
+    
+    # Copy the SeqData object if necessary
     sdata = sdata.copy() if copy else sdata
+
+    # Configure the device, batch size, and number of workers
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
+
+    # Make a dataloader from the sdata
     sdataset = sdata.to_dataset(target_keys=None, transform_kwargs=transform_kwargs)
     sdataloader = sdataset.to_dataloader(batch_size=batch_size, shuffle=False)
+    
+    # Create an empty array to hold attributions
     dataset_len = len(sdataloader.dataset)
     example_shape = sdataloader.dataset[0][1].numpy().shape
     all_forward_explanations = np.zeros((dataset_len, *example_shape))
     if model.strand != "ss":
         all_reverse_explanations = np.zeros((dataset_len, *example_shape))
+
+    # Loop through batches and compute attributions
     for i_batch, batch in tqdm(
         enumerate(sdataloader),
         total=int(dataset_len / batch_size),
@@ -502,30 +511,20 @@ def feature_attribution_sdata(
             batch_size=batch_size,
             **kwargs,
         )
-        if (i_batch + 1) * batch_size < dataset_len:
+        if (i_batch+1)*batch_size < dataset_len:
             if model.strand == "ss":
-                all_forward_explanations[
-                    i_batch * batch_size : (i_batch + 1) * batch_size
-                ] = curr_explanations
+                all_forward_explanations[i_batch*batch_size:(i_batch+1)*batch_size] = curr_explanations
             else:
-                all_forward_explanations[
-                    i_batch * batch_size : (i_batch + 1) * batch_size
-                ] = curr_explanations[0]
-                all_reverse_explanations[
-                    i_batch * batch_size : (i_batch + 1) * batch_size
-                ] = curr_explanations[1]
+                all_forward_explanations[i_batch*batch_size:(i_batch+1)*batch_size] = curr_explanations[0]
+                all_reverse_explanations[i_batch * batch_size:(i_batch+1)*batch_size] = curr_explanations[1]
         else:
             if model.strand == "ss":
-                all_forward_explanations[
-                    i_batch * batch_size : dataset_len
-                ] = curr_explanations
+                all_forward_explanations[i_batch * batch_size:dataset_len] = curr_explanations
             else:
-                all_forward_explanations[
-                    i_batch * batch_size : dataset_len
-                ] = curr_explanations[0]
-                all_reverse_explanations[
-                    i_batch * batch_size : dataset_len
-                ] = curr_explanations[1]
+                all_forward_explanations[i_batch*batch_size:dataset_len] = curr_explanations[0]
+                all_reverse_explanations[i_batch*batch_size:dataset_len] = curr_explanations[1]
+    
+    # Add the attributions to sdata 
     if model.strand == "ss":
         sdata.uns[f"{prefix}{method}_imps{suffix}"] = all_forward_explanations
     else:
@@ -565,3 +564,7 @@ def aggregate_importances_sdata(
     ranges = pr.PyRanges(df)
     sdata.pos_annot = ranges
     return sdata if copy else None
+
+
+def tfmodisco():
+    pass
