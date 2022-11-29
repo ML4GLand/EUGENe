@@ -9,31 +9,28 @@ from ..datasets import random_ohe_seqs
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
 from pytorch_lightning import seed_everything
+from collections import OrderedDict
 
 
 class GAN(BaseModel):
     def __init__(
         self,
+        seq_len: int,
         latent_dim: int,
         generator: nn.Module,
         discriminator: nn.Module,
         mode: str = "wgan",
         grad_clip: float = None,
-        strand: str = "ss",
-        task: str = "regression",
-        aggr: str = None,
-        loss_fxn: str ="mse",
         gen_lr: float = 1e-3,
         disc_lr: float = 1e-3,
+        b1: float = 0.5,
+        b2: float = 0.999,
+        n_critic: int = 5,
         **kwargs
     ):
         super().__init__(
             input_len=None,
             output_dim=None,
-            strand=strand, 
-            task=task, 
-            aggr=aggr, 
-            loss_fxn=loss_fxn,
             lr=gen_lr,
             save_hp=False,
             **kwargs
@@ -43,17 +40,15 @@ class GAN(BaseModel):
         self.discriminator = discriminator
         self.mode = mode
         self.grad_clip = grad_clip
-        self.strand = strand
-        self.task = task
-        self.aggr = aggr
-        self.loss_fxn = self.loss_fxn_dict[loss_fxn]
         self.gen_lr = gen_lr
         self.disc_lr = disc_lr
+        self.b1 = b1
+        self.b2 = b2
+        self.n_critic = n_critic
         self.kwargs = kwargs
 
     def forward(self, x, x_rev_comp=None):
-        if self.strand == "ss":
-            x = self.generator(x)
+        x = self.generator(x)
         return x
 
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -66,82 +61,88 @@ class GAN(BaseModel):
         return self._common_step(batch, batch_idx, None, "test")
 
     def _common_step(self, batch, batch_idx, optimizer_idx, stage : str):
-        ID, x, x_rev_comp, y = batch
+        
+        # Get a batch
+        _, x, _, _ = batch
 
-        rand = torch.randn(x.size(0), 4, self.latent_dim)
-        rand = rand.type_as(x)
+        # Sample noise as generator input
+        z = torch.normal(0, 1, (x.size(0), self.latent_dim))
+        z.requires_grad_(True)
+        z = z.type_as(x)
 
-        # Generator
-        if optimizer_idx == 0 or optimizer_idx is None:
+        # Generator step
+        if optimizer_idx == 0:
+
+            # Fake seqs and labels (all 1s)
+            valid = torch.ones(x.size(0), 1, dtype=torch.long)
+            valid = valid.type_as(x)
+
+            # Loss measures generator's ability to fool the discriminator
             if self.mode == "gan":
-                val = torch.ones(x.size(0), 1, dtype=torch.long)
-                val = val.type_as(x)
-
-                gen_seqs = self(rand).view(x.size(0), 4, -1)
-                gen_loss = F.binary_cross_entropy(self.discriminator(gen_seqs), val)
-
+                gen_loss = F.binary_cross_entropy(self.discriminator(self(z)), valid)
             elif self.mode == "wgan":
-                gen_loss = -torch.mean(self.discriminator(self(rand)))
-
+                gen_loss = -torch.mean(self.discriminator(self(z)))
             self.log(f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True)    
-            return gen_loss
+            
+            # To return
+            tqdm_dict = {'g_loss': gen_loss.detach()}
+            output = OrderedDict({
+                'loss': gen_loss,
+                'progress_bar': tqdm_dict,
+                'log': tqdm_dict
+            })
 
-        # Discriminator
+            return output
+
+        # Discriminator step
         elif optimizer_idx == 1:
             if self.mode == "gan":
-                val = torch.ones(x.size(0), 1, dtype=torch.long)
-                val = val.type_as(x)
-                inv = torch.zeros(x.size(0), 1, dtype=torch.long)
-                inv = inv.type_as(x)
 
-                val_loss = F.binary_cross_entropy(self.discriminator(x), val)
-                gen_seqs = self(rand).detach().view(x.size(0), 4, -1)
-                inv_loss = F.binary_cross_entropy(self.discriminator(gen_seqs), inv)
-                disc_loss = (val_loss + inv_loss) / 2
+                # Real seqs and labels (all 1s)
+                valid = torch.ones(x.size(0), 1, dtype=torch.long)
+                valid = valid.type_as(x)
+                real_loss = F.binary_cross_entropy(self.discriminator(x), valid)
+
+                # Fake seqs and labels (all 0s)
+                fake = torch.zeros(x.size(0), 1, dtype=torch.long)
+                fake = fake.type_as(x)
+                fake_loss = F.binary_cross_entropy(self.discriminator(self(z)), fake)
+                
+                # Total discriminator loss is average
+                disc_loss = (real_loss + fake_loss) / 2
 
             elif self.mode == "wgan":
-                disc_loss = -torch.mean(self.discriminator(x)) + torch.mean(self.discriminator(self(rand)))
+                disc_loss = -torch.mean(self.discriminator(x)) + torch.mean(self.discriminator(self(z)))
 
-                if self.grad_clip is not None:
-                    for p in self.discriminator.parameters():
-                        p.data.clamp_(-self.grad_clip, self.grad_clip)
+            if self.grad_clip is not None:
+                for p in self.discriminator.parameters():
+                    p.data.clamp_(-self.grad_clip, self.grad_clip)
 
             self.log(f"{stage}_discriminator_loss", disc_loss, on_step=True, rank_zero_only=True)
-            return disc_loss
+
+            tqdm_dict = {'d_loss': disc_loss}
+            output = OrderedDict({
+                'loss': disc_loss,
+                'progress_bar': tqdm_dict,
+                'log': tqdm_dict
+            })
+            return output
 
     def configure_optimizers(self):
         gen_optimizer = self.optimizer_dict[self.optimizer](
-            self.parameters(), lr=self.gen_lr, **self.optimizer_kwargs
+            self.generator.parameters(), 
+            lr=self.gen_lr, 
+            betas=(self.b1, self.b2),
+            **self.optimizer_kwargs
         )
         disc_optimizer = self.optimizer_dict[self.optimizer](
-            self.parameters(), lr=self.disc_lr, **self.optimizer_kwargs
-        )
-
-        gen_scheduler = (
-            ReduceLROnPlateau(gen_optimizer, patience=self.scheduler_patience)
-            if self.scheduler_patience is not None
-            else None
-        )
-        disc_scheduler = (
-            ReduceLROnPlateau(disc_optimizer, patience=self.scheduler_patience)
-            # LambdaLR(disc_optimizer)
-            if self.scheduler_patience is not None
-            else None
+            self.discriminator.parameters(), 
+            lr=self.disc_lr, 
+            betas=(self.b1, self.b2),
+            **self.optimizer_kwargs
         )
 
         return (
-            {
-                "optimizer": gen_optimizer,
-                "lr_scheduler": {
-                    "scheduler": gen_scheduler,
-                    "monitor": "val_loss",
-                },
-            },
-            {
-                "optimizer": disc_optimizer,
-                "lr_scheduler": {
-                    "scheduler": disc_scheduler,
-                    "monitor": "val_loss",
-                },
-            },
+            {'optimizer': gen_optimizer, 'frequency': 1},
+            {'optimizer': disc_optimizer, 'frequency': self.n_critic}
         )
