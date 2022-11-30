@@ -91,7 +91,6 @@ class GAN(BaseModel):
                 'progress_bar': tqdm_dict,
                 'log': tqdm_dict
             })
-
             return output
 
         # Discriminator step
