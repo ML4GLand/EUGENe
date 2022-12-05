@@ -29,13 +29,11 @@ def fit(
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {},
-    early_stopping_callback: bool = True,
-    early_stopping_metric="val_loss",
+    early_stopping_metric: str = "val_loss",
     early_stopping_patience=5,
     early_stopping_verbose=False,
-    model_checkpoint_callback: bool = True,
     model_checkpoint_k = 1,
-    model_checkpoint_monitor="val_loss",
+    model_checkpoint_monitor: str ="val_loss",
     seed: int = None,
     verbosity = None,
     return_trainer: bool = False,
@@ -80,8 +78,6 @@ def fit(
         The sequence transforms to apply to the data.
     transform_kwargs : dict
         The keyword arguments to pass to the sequence transforms.
-    early_stopping_callback : bool
-        Whether to use early stopping.
     early_stopping_metric : str
         The metric to use for early stopping.
     early_stopping_patience : int
@@ -152,14 +148,14 @@ def fit(
         raise ValueError("No data provided to train on.")
     logger = TensorBoardLogger(log_dir, name=name, version=version)
     callbacks = []
-    if model_checkpoint_callback:
+    if model_checkpoint_monitor is not None:
         model_checkpoint_callback = ModelCheckpoint(
             dirpath=logger.log_dir + "/checkpoints", 
             save_top_k=model_checkpoint_k, 
             monitor=model_checkpoint_monitor
         )
         callbacks.append(model_checkpoint_callback)
-    if early_stopping_callback:
+    if early_stopping_metric is not None:
         early_stopping_callback = EarlyStopping(
             monitor=early_stopping_metric,
             patience=early_stopping_patience,

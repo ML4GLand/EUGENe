@@ -17,9 +17,10 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.model_summary import ModelSummary
 from ...preprocess import ascii_decode_seq
 from ..._settings import settings
+from ._lut import *
+from abc import ABC, abstractmethod
 
-
-class BaseModel(LightningModule):
+class BaseModel(LightningModule, ABC):
     """
     Base model class to be inherited by all models in EUGENe
 
@@ -43,6 +44,7 @@ class BaseModel(LightningModule):
     kwargs (dict):
         additional arguments to pass to the model
     """
+    @abstractmethod
     def __init__(
         self,
         input_len: int,
@@ -61,20 +63,10 @@ class BaseModel(LightningModule):
         save_hp=True,
         **kwargs,
     ):
-        self.loss_fxn_dict = {
-            "mse": F.mse_loss,
-            "poisson": F.poisson_nll_loss,
-            "bce": F.binary_cross_entropy_with_logits,
-            "cross_entropy": F.cross_entropy,
-        }
-        self.default_hp_metric_dict = {
-            "regression": "r2",
-            "multitask_regression": "r2",
-            "binary_classification": "auroc",
-            "multiclass_classification": "auroc",
-        }
-        self.optimizer_dict = {"adam": Adam, "sgd": SGD}
-        self.lr_scheduler_dict = {"reduce_lr_on_plateau": ReduceLROnPlateau}
+        self.loss_fxn_dict = loss_fxn_dict
+        self.default_hp_metric_dict = default_hp_metric_dict
+        self.optimizer_dict = optimizer_dict
+        self.lr_scheduler_dict = lr_scheduler_dict
 
         super().__init__()
         self.input_len = input_len
@@ -98,6 +90,7 @@ class BaseModel(LightningModule):
         if save_hp:
             self.save_hyperparameters()
 
+    @abstractmethod
     def forward(self, x, x_rev_comp=None) -> torch.Tensor:
         """
         Forward pass of the model. This method must be implemented by the child class.
@@ -109,19 +102,18 @@ class BaseModel(LightningModule):
         x_rev_comp (torch.Tensor):
             reverse complement of the input sequence
         """
-        raise NotImplementedError()
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, optimizer_idx):
         """Training step"""
-        return self._common_step(batch, batch_idx, "train")
+        return self._common_step(batch, batch_idx, optimizer_idx, "train")
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
-        self._common_step(batch, batch_idx, "val")
+        return self._common_step(batch, batch_idx, None, "val")
 
     def test_step(self, batch, batch_idx):
         """Test step"""
-        self._common_step(batch, batch_idx, "test")
+        return self._common_step(batch, batch_idx, None, "test")
 
     def predict_step(self, batch, batch_idx):
         """Predict step
@@ -146,7 +138,7 @@ class BaseModel(LightningModule):
         outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()
         return np.column_stack([ID, outs, y])
 
-    def _common_step(self, batch, batch_idx, stage: str):
+    def _common_step(self, batch, batch_idx, optimizer_idx, stage: str):
         """Common step for training, validation and test
 
         Parameters:
