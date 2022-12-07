@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+from sklearn.preprocessing import OneHotEncoder
 
 def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
     """
@@ -95,3 +95,11 @@ def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     else:
         bin_values = np.where(values <= upper_threshold, 0, bin_values)
     return bin_values
+
+
+def ohe_features(dataframe, feature_cols):
+    ohe = OneHotEncoder(sparse=False)
+    X = dataframe[feature_cols]
+    ohe.fit(X)
+    X_ohe = ohe.fit_transform(X)
+    return X_ohe

@@ -103,7 +103,12 @@ class SeqData:
         self.uns = uns or OrderedDict()
 
         # seqsm TODO: Think about consequences of making obsm a group in hdf
+        if seqsm is not None:
+            seqsm = seqsm.copy()
+            for key in seqsm:
+                seqsm[key] = seqsm[key][self.seqidx]
         self.seqsm = convert_to_dict(seqsm)
+            
 
     @property
     def seqs(self) -> np.ndarray:
