@@ -68,6 +68,23 @@ def _seq2Fasta(seqs, IDs, name="seqs"):
         file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
     file.close()
 
+def _concat_seqsm(seqsms, keys):
+    res = {}
+    for i, seqsm in enumerate(seqsms):
+        for key in seqsm:
+            if key in res:
+                #print(res[key].shape[1], seqsm[key].shape[1])
+                if res[key].shape[1] == seqsm[key].shape[1]:
+                    res[key] = np.concatenate([res[key], seqsm[key]])
+                else:
+                    print(f"{keys[i]}'s {key} is not the same shape as previous, skipping")
+                    continue
+            elif i == 0:
+                res[key] = seqsm[key]
+            else:
+                print(f"{keys[i]} does not contain {key}, skipping {key}")
+                continue
+    return res
 
 def concat(
     sdatas,
@@ -110,6 +127,7 @@ def concat(
         if sdatas[0].ohe_rev_seqs is not None
         else None
     )
+    concat_seqsm = _concat_seqsm([s.seqsm for s in sdatas], keys=keys)
     for i, s in enumerate(sdatas):
         s["batch"] = keys[i]
     concat_seqs_annot = pd.concat([s.seqs_annot for s in sdatas])
@@ -120,4 +138,5 @@ def concat(
         rev_seqs=concat_rev_seqs,
         ohe_rev_seqs=concat_rev_ohe_seqs,
         seqs_annot=concat_seqs_annot,
+        seqsm=concat_seqsm
     )

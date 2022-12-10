@@ -12,7 +12,7 @@ from ray.tune.search.bayesopt import BayesOptSearch
 from ray.tune.search.hyperopt import HyperOptSearch
 from ..dataload import SeqData, SeqDataset
 from .._settings import settings
-from ..models import get_model
+from ..models import get_model, init_weights
 
 
 def hyperopt_with_tune(
@@ -36,6 +36,7 @@ def hyperopt_with_tune(
     verbosity = None,
 ):
     model = get_model(config["arch"], config)
+    init_weights(model)
     gpus = gpus if gpus is not None else settings.gpus
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     log_dir = log_dir if log_dir is not None else settings.logging_dir
@@ -68,7 +69,9 @@ def hyperopt_with_tune(
             transform_kwargs=transform_kwargs,
         )
         train_dataloader = train_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers, shuffle=True
+            batch_size=batch_size, 
+            num_workers=num_workers, 
+            shuffle=True
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(
@@ -120,13 +123,15 @@ default_algo_args = {
 
 def hyperopt(
     config,
-    scheduler="ASHAScheduler",
-    algorithm="BasicVariantGenerator",
     sdata = None,
     target_keys: Union[str, List[str]] = None,
     train_key: str = "train_val",
+    scheduler="ASHAScheduler",
+    algorithm="BasicVariantGenerator",
+    num_samples: int = 10,
     epochs: int = 10,
     gpus: int = None,
+    cpus: int = 1,
     num_workers: int = None,
     log_dir: PathLike = None,
     name: str = None,
@@ -175,11 +180,12 @@ def hyperopt(
         config=config,
         metric="loss",
         mode="min",
-        num_samples=10,
+        num_samples=num_samples,
         local_dir=settings.logging_dir,
         keep_checkpoints_num=1,
         checkpoint_score_attr="min-val_loss",
         resources_per_trial={
+            "cpu": cpus,
             "gpu": gpus
         },
         name=name

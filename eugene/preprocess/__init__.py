@@ -46,6 +46,7 @@ from ._dataset_preprocess import (
     split_train_test,
     standardize_features,
     binarize_values,
+    ohe_features
 )  # dataset stuff
 
 from ._preprocessing import (

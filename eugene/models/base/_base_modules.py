@@ -1,6 +1,7 @@
-from typing import Union
 import torch.nn as nn
+from typing import Union, Callable
 from ._utils import GetFlattenDim, BuildFullyConnected
+from ._activations import ACTIVATION_REGISTRY
 
 
 class BasicFullyConnectedModule(nn.Module):
@@ -72,7 +73,7 @@ class BasicConv1D(nn.Module):
         conv_kernels: list,
         conv_strides: list,
         pool_kernels: list,
-        activation: str = "relu",
+        activation: Union[str, Callable] = "relu",
         pool_strides: list = None,
         dropout_rates: float = 0.0,
         dilations: list = None,
@@ -105,10 +106,7 @@ class BasicConv1D(nn.Module):
                     padding=padding[i - 1]
                 )
             )
-            if activation == "relu":
-                net.append(nn.ReLU(inplace=False))
-            elif activation == "sigmoid":
-                net.append(nn.Sigmoid())
+            net.append(ACTIVATION_REGISTRY[activation](inplace=False))
             if pool_kernels is not None:
                 if i == len(channels) - 1:
                     if not omit_final_pool:

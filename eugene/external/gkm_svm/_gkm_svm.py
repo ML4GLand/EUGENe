@@ -213,10 +213,12 @@ def predict(
             raise Exception("Model file does not exist")
     if sdata is not None:
         file_name = os.path.join(data_dir, prefix+file_label+suffix+".fasta")
+        print("here")
         if not os.path.exists(file_name):
+            print("not_here")
             seqs = sdata.seqs
             ids = sdata.seqs_annot.index
-            with open(prefix+file_label+suffix+".fasta", "w") as f:
+            with open(file_name, "w") as f:
                 for j, seq in enumerate(seqs):
                     f.write(">" + ids[j] + "\n" + seqs[j] + "\n")
         file_names = [file_name]
