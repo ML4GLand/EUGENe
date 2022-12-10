@@ -74,5 +74,3 @@ def train_val_predictions(
     model_name = model.__class__.__name__
     name = name if name is not None else model_name
     out_dir = os.path.join(out_dir, name, version)
-    
-    if features_cols is not None

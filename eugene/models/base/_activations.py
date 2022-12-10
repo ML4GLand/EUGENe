@@ -1,35 +1,30 @@
-def exp_relu(x, beta=0.001):
-    return K.relu(K.exp(.1*x)-1)
+import torch
+import torch.nn as nn
 
-def log(x):
-    return K.log(K.abs(x) + 1e-10)
 
-def log_relu(x):
-    return K.relu(K.log(K.abs(x) + 1e-10))
+class Exponential(nn.Module):
+    __constants__ = ['inplace']
+    inplace: bool
 
-def shift_scale_tanh(x):
-    return K.tanh(x-6.0)*500 + 500
+    def __init__(self, inplace: bool = False):
+        super(Exponential, self).__init__()
+        self.inplace = inplace
 
-def shift_scale_sigmoid(x):
-    return K.sigmoid(x-8.0)*4000
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return torch.exp(input)
 
-def shift_scale_relu(x):
-    return K.relu(K.pow(x-0.2, 3))
+    def extra_repr(self) -> str:
+        inplace_str = 'inplace=True' if self.inplace else ''
+        return inplace_str
 
-def shift_tanh(x):
-    return K.tanh(x-6.0)
-
-def shift_sigmoid(x):
-    return K.sigmoid(x-8.0)
-
-def shift_relu(x):
-    return K.relu(x-0.2)
-
-def scale_tanh(x):
-    return K.tanh(x)*500 + 500
-
-def scale_sigmoid(x):
-    return K.sigmoid(x)*4000
-
-def scale_relu(x):
-    return K.relu((x)**3)
+    
+ACTIVATION_REGISTRY = {
+    "relu": nn.ReLU,
+    "leaky_relu": nn.LeakyReLU,
+    "gelu": nn.GELU,
+    "elu": nn.ELU,
+    "sigmoid": nn.Sigmoid,
+    "tanh": nn.Tanh,
+    "softplus": nn.Softplus,
+    "exponential": Exponential
+}
