@@ -1,6 +1,12 @@
 import torch
 import torch.nn as nn
 
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return input
 
 class Exponential(nn.Module):
     __constants__ = ['inplace']
@@ -26,5 +32,6 @@ ACTIVATION_REGISTRY = {
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
     "softplus": nn.Softplus,
+    "identity": Identity,
     "exponential": Exponential
 }
