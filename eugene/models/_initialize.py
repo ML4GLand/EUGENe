@@ -4,6 +4,7 @@ import torch.nn.init as init
 from os import PathLike
 from typing import Union, Dict
 from ..dataload.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
+from ._utils import load_config
 
 initializer_dict = {
     "uniform": init.uniform_,
@@ -154,3 +155,20 @@ def init_from_motifs(
         kernel_name=kernel_name,
         kernel_number=kernel_number,
     )
+
+    
+def prep_new_model(
+    arch,
+    config
+):
+    # Instantiate the model
+    model = load_config(
+        arch=arch,
+        model_config=config
+    )
+
+    # Initialize the model prior to conv filter initialization
+    init_weights(model)
+ 
+    # Return the model
+    return model 

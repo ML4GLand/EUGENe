@@ -37,10 +37,16 @@ from ._seq_preprocess import (
     feature_implant_across_seq
 ) # feature implant
 
+from ._seq_preprocess import (
+    gc_content_seq, 
+    gc_content_seqs
+) # gc
+
 from ._dataset_preprocess import (
     split_train_test,
     standardize_features,
     binarize_values,
+    ohe_features
 )  # dataset stuff
 
 from ._preprocessing import (
@@ -53,5 +59,6 @@ from ._preprocessing import (
     binarize_targets_sdata,
     train_test_split_sdata,
     add_ranges_sdata,
-    prepare_seqs_sdata
+    prepare_seqs_sdata,
+    gc_content_seqs_sdata
 )  # core sdata functions

@@ -1,6 +1,7 @@
 # User-defined
 EUGENe_paper
 archive/
+*/eugene_logs/
 
 # Tutorials
 tutorials/tutorial_logs
@@ -11,6 +12,7 @@ tests/_output/
 tests/_figures/
 tests/_data/datasets/
 tests/_logs/
+tests/notebooks/implement/gkm*
 
 # Misc
 *.DS_store

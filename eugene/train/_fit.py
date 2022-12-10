@@ -30,6 +30,8 @@ def fit(
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {},
     early_stopping_metric: str = "val_loss",
+    drop_last=True,
+    early_stopping_callback: bool = True,
     early_stopping_patience=5,
     early_stopping_verbose=False,
     model_checkpoint_k = 1,
@@ -131,7 +133,10 @@ def fit(
             transform_kwargs=transform_kwargs,
         )
         train_dataloader = train_dataset.to_dataloader(
-            batch_size=batch_size, num_workers=num_workers, shuffle=True
+            batch_size=batch_size, 
+            num_workers=num_workers, 
+            shuffle=True,
+            drop_last=drop_last
         )
         val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
         val_dataset = sdata[val_idx].to_dataset(
@@ -143,6 +148,7 @@ def fit(
             batch_size=batch_size,
             num_workers=num_workers,
             shuffle=False,
+            drop_last=drop_last
         )
     else:
         raise ValueError("No data provided to train on.")
