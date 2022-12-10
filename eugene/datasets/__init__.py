@@ -7,3 +7,4 @@ from ._datasets import (
     deAlmeida22,
     ray13,
 )
+from ._utils import random_ohe_seqs
