@@ -1,5 +1,6 @@
 import importlib
 from os import PathLike
+from ._initialize import init_weights
 
 
 def load_config(arch, model_config):
@@ -17,3 +18,20 @@ def get_model(arch, model_config):
     model_type = getattr(importlib.import_module("eugene.models"), arch)
     model = model_type(**model_config)
     return model
+
+
+def prep_new_model(
+    arch,
+    config
+):
+    # Instantiate the model
+    model = load_config(
+        arch=arch,
+        model_config=config
+    )
+
+    # Initialize the model prior to conv filter initialization
+    init_weights(model)
+ 
+    # Return the model
+    return model 

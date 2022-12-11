@@ -1,26 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.init as init
 from os import PathLike
 from typing import Union, Dict
+from .base._initializers import INITIALIZERS_REGISTRY
 from ..dataload.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
-from ._utils import load_config
-
-initializer_dict = {
-    "uniform": init.uniform_,
-    "normal": init.normal_,
-    "constant": init.constant_,
-    "eye": init.eye_,
-    "dirac": init.dirac_,
-    "xavier_uniform": init.xavier_uniform_,
-    "xavier_normal": init.xavier_normal_,
-    "kaiming_uniform": init.kaiming_uniform_,
-    "kaiming_normal": init.kaiming_normal_,
-    "orthogonal": init.orthogonal_,
-    "sparse": init.sparse_,
-    "ones": init.ones_,
-    "zeros": init.zeros_
-}
 
 
 def _init_weights(
@@ -39,21 +22,19 @@ def _init_weights(
     **kwargs
         Additional arguments to pass to the initializer.
     """
-    if initializer in initializer_dict:
-        init_func = initializer_dict[initializer]
+    if initializer in INITIALIZERS_REGISTRY:
+        init_func = INITIALIZERS_REGISTRY[initializer]
     elif callable(initializer):
         init_func = initializer
     else:
         raise ValueError(
-            f"Initializer {initializer} not found in initializer_dict or is not callable."
+            f"Initializer {initializer} not found in INITIALIZER_REGISTRY or is not callable."
         )
     if isinstance(module, nn.Linear) or isinstance(module, nn.Conv1d):
-        #print(f"Initializing {module} with {initializer}")
         init_func(module.weight)
     elif isinstance(module, nn.ParameterList):
         for param in module:
             if  param.dim() > 1:
-                #print(f"Initializing {param} with {initializer}")
                 init_func(param)
 
 
@@ -155,20 +136,3 @@ def init_from_motifs(
         kernel_name=kernel_name,
         kernel_number=kernel_number,
     )
-
-    
-def prep_new_model(
-    arch,
-    config
-):
-    # Instantiate the model
-    model = load_config(
-        arch=arch,
-        model_config=config
-    )
-
-    # Initialize the model prior to conv filter initialization
-    init_weights(model)
- 
-    # Return the model
-    return model 

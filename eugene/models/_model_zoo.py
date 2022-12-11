@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import BaseModel, BiConv1D, BasicConv1D, BasicFullyConnectedModule
+from .base import SequenceModel 
+from .base._blocks import DenseBlock, Conv1DBlock, RecurrentBlock, BiConv1DBlock
+from .base._utils import GetFlattenDim
 
 
-class TutorialCNN(BaseModel):
+class TutorialCNN( SequenceModel):
     """Tutorial CNN model
 
     This is a very simple one layer convolutional model for testing purposes. It is featured in testing and tutorial
@@ -25,7 +27,7 @@ class TutorialCNN(BaseModel):
     loss_fxn : str, optional
         Loss function.
     **kwargs
-        Keyword arguments to pass to the BaseModel class.
+        Keyword arguments to pass to the  SequenceModel class.
     """
     def __init__(
         self,
@@ -37,8 +39,6 @@ class TutorialCNN(BaseModel):
         loss_fxn: str = "mse",
         **kwargs
     ):
-        # Don't worry that we don't pass in the class name to the super call (as is standard for creating new
-        # nn.Module subclasses). This is handled by inherting BaseModel
         super().__init__(
             input_len, 
             output_dim, 
@@ -54,8 +54,6 @@ class TutorialCNN(BaseModel):
             
     def forward(self, x, x_rev_comp=None):
         x = F.relu(self.conv1(x))
-        
-        # emulates global_max_pooling
         x = F.max_pool1d(x, x.size()[-1]).flatten(1, -1)
         x = self.dense(x)
         if self.strand == "ds":
@@ -66,7 +64,7 @@ class TutorialCNN(BaseModel):
         return x
 
 
-class Jores21CNN(BaseModel):
+class Jores21CNN(SequenceModel):
     """
     Custom convolutional model used in Jores et al. 2021 paper
 
@@ -126,7 +124,7 @@ class Jores21CNN(BaseModel):
             loss_fxn=loss_fxn,
             **kwargs
         )
-        self.biconv = BiConv1D(
+        self.biconv = BiConv1DBlock(
             filters=filters,
             kernel_size=kernel_size,
             layers=layers,
@@ -157,7 +155,7 @@ class Jores21CNN(BaseModel):
         return x
 
 
-class Kopp21CNN(BaseModel):
+class Kopp21CNN(SequenceModel):
     """
     Custom convolutional model used in Kopp et al. 2021 paper
 
@@ -237,7 +235,7 @@ class Kopp21CNN(BaseModel):
         return x
 
 
-class FactorizedBasset(BaseModel):
+class FactorizedBasset( SequenceModel):
 	def __init__(
 		self, 
 		input_len: int = 1000,
@@ -250,7 +248,7 @@ class FactorizedBasset(BaseModel):
 		conv2_kwargs = {},
 		conv3_kwargs = {},
 		maxpool_kernels = None,
-		fc_kwargs = {},
+		dense_kwargs = {},
 		**kwargs
 	):
 		super().__init__(
@@ -262,84 +260,83 @@ class FactorizedBasset(BaseModel):
 			loss_fxn=loss_fxn, 
 			**kwargs
 		)
-		self.conv1_kwargs, self.conv2_kwargs, self.conv3_kwargs, self.maxpool_kernels, self.fc_kwargs = self.kwarg_handler(
+		self.conv1_kwargs, self.conv2_kwargs, self.conv3_kwargs, self.maxpool_kernels, self.dense_kwargs = self.kwarg_handler(
 			conv1_kwargs, 
 			conv2_kwargs, 
 			conv3_kwargs, 
 			maxpool_kernels, 
-			fc_kwargs
+		    dense_kwargs	
 		)
-		self.convnet1 = BasicConv1D(
+		self.conv1d_block1 = Conv1DBlock(
 			input_len=input_len, 
+            input_channels=4,
 			**self.conv1_kwargs
 		)
-		self.maxpool1 = nn.MaxPool1d(self.maxpool_kernels[0])
-		self.out1 = self.convnet1.flatten_dim/self.convnet1.out_channels // self.maxpool_kernels[0]
-		self.convnet2 = BasicConv1D(
-			input_len=self.out1,
+		self.conv1d_block2 = Conv1DBlock(
+			input_len=self.conv1d_block1.output_len,
+            input_channels=self.conv1d_block1.out_channels,
 			**self.conv2_kwargs
 		)
-		self.maxpool2 = nn.MaxPool1d(self.maxpool_kernels[1])
-		self.out2 = self.convnet2.flatten_dim/self.convnet2.out_channels // self.maxpool_kernels[1]
-		self.convnet3 = BasicConv1D(
-			input_len=self.out2,
+		self.conv1d_block3 = Conv1DBlock(
+			input_len=self.conv1d_block2.output_len,
+            input_channels=self.conv1d_block2.out_channels,
 			**self.conv3_kwargs
 		)
-		self.maxpool3 = nn.MaxPool1d(self.maxpool_kernels[2])
-		self.out3 = self.convnet3.flatten_dim/self.convnet3.out_channels // self.maxpool_kernels[2]
-		self.fcnet_in = int(self.out3*self.convnet3.out_channels)
-		self.fcnet = BasicFullyConnectedModule(
-			input_dim=self.fcnet_in,
+		self.dense_block = DenseBlock(
+			input_dim=self.conv1d_block3.flatten_dim,
 			output_dim=output_dim, 
-			**self.fc_kwargs
+			**self.dense_kwargs
 		)
 
 	def forward(self, x, x_rev_comp=None):
-		x = self.convnet1(x)
-		x = self.maxpool1(x)
-		x = self.convnet2(x)
-		x = self.maxpool2(x)
-		x = self.convnet3(x)
-		x = self.maxpool3(x)
-		x = x.view(x.size(0), self.fcnet_in)
-		x = self.fcnet(x)
+		x = self.conv1d_block1(x)
+		x = self.conv1d_block2(x)
+		x = self.conv1d_block3(x)
+		x = x.view(x.size(0), self.conv1d_block3.flatten_dim)
+		x = self.dense_block(x)
 		return x
         
-	def kwarg_handler(self, conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, fc_kwargs):
-		"""Sets default kwargs for conv and fc modules if not specified"""
-		conv1_kwargs.setdefault("channels", [4, 48, 64, 100, 150, 300])
+	def kwarg_handler(self, conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, dense_kwargs):
+		"""Sets default kwargs FactorizedBasset"""
+		conv1_kwargs.setdefault("conv_channels", [48, 64, 100, 150, 300])
 		conv1_kwargs.setdefault("conv_kernels", [3, 3, 3, 7, 7])
 		conv1_kwargs.setdefault("conv_strides", [1, 1, 1, 1, 1])
-		conv1_kwargs.setdefault("padding", [1, 1, 1, 3, 3])
-		conv1_kwargs.setdefault("pool_kernels", None)
+		conv1_kwargs.setdefault("conv_padding", [1, 1, 1, 3, 3])
+		conv1_kwargs.setdefault("pool_types", [None, None, None, None, "max"])
+		conv1_kwargs.setdefault("pool_kernels", [None, None, None, None, 3])
 		conv1_kwargs.setdefault("dropout_rates", 0.0)
 		conv1_kwargs.setdefault("batchnorm", True)
-		conv1_kwargs.setdefault("activation", "relu")
-		conv2_kwargs.setdefault("channels", [300, 200, 200, 200])
+		conv1_kwargs.setdefault("batchnorm_first", True)
+		conv1_kwargs.setdefault("activations", "relu")
+		conv2_kwargs.setdefault("conv_channels", [200, 200, 200])
 		conv2_kwargs.setdefault("conv_kernels", [7, 3, 3])
 		conv2_kwargs.setdefault("conv_strides", [1, 1, 1])
-		conv2_kwargs.setdefault("padding", [3, 1, 1])
-		conv2_kwargs.setdefault("pool_kernels", None)
+		conv2_kwargs.setdefault("conv_padding", [3, 1, 1])
+		conv2_kwargs.setdefault("pool_types", [None, None, "max"])
+		conv2_kwargs.setdefault("pool_kernels", [None, None, 4])
 		conv2_kwargs.setdefault("dropout_rates", 0.0)
 		conv2_kwargs.setdefault("batchnorm", True)
-		conv2_kwargs.setdefault("activation", "relu")
-		conv3_kwargs.setdefault("channels", [200, 200])
+		conv2_kwargs.setdefault("batchnorm_first", True)
+		conv2_kwargs.setdefault("activations", "relu")
+		conv3_kwargs.setdefault("conv_channels", [200])
 		conv3_kwargs.setdefault("conv_kernels", [7])
 		conv3_kwargs.setdefault("conv_strides", [1])
-		conv3_kwargs.setdefault("padding", [3])
-		conv3_kwargs.setdefault("pool_kernels", None)
+		conv3_kwargs.setdefault("conv_padding", [3])
+		conv3_kwargs.setdefault("pool_types", ["max"])
+		conv3_kwargs.setdefault("pool_kernels", [4])
 		conv3_kwargs.setdefault("dropout_rates", 0.0)
 		conv3_kwargs.setdefault("batchnorm", True)
-		conv3_kwargs.setdefault("activation", "relu")
-		maxpool_kernels = [3, 4, 4] if maxpool_kernels is None else maxpool_kernels
-		fc_kwargs.setdefault("hidden_dims", [1000, 164])
-		fc_kwargs.setdefault("dropout_rate", 0.0)
-		fc_kwargs.setdefault("batchnorm", True)
-		fc_kwargs.setdefault("activation", "relu")
-		return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, fc_kwargs
+		conv3_kwargs.setdefault("batchnorm_first", True)
+		conv3_kwargs.setdefault("activations", "relu")
+		dense_kwargs.setdefault("hidden_dims", [1000, 164])
+		dense_kwargs.setdefault("dropout_rates", 0.0)
+		dense_kwargs.setdefault("batchnorm", True)
+		dense_kwargs.setdefault("batchnorm_first", True)
+		dense_kwargs.setdefault("activations", "relu")
+		return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels,dense_kwargs 
 
 
-class ResidualBind(BaseModel):
+class ResidualBind( SequenceModel):
     def __init__(
         self,
         input_len,
@@ -376,7 +373,7 @@ class ResidualBind(BaseModel):
         )
         if isinstance(conv_channels, int):
             conv_channels = [conv_channels]
-        self.conv = BasicConv1D(
+        self.conv = Conv1DBlock(
             input_len=input_len,
             channels=[4] + conv_channels,
             conv_kernels=conv_kernel_size,
@@ -406,7 +403,7 @@ class ResidualBind(BaseModel):
         self.average_pool = nn.AvgPool1d(pool_kernel_size, stride=1)
         self.dropout = nn.Dropout(pool_dropout)
         self.flatten = nn.Flatten()
-        self.fc = BasicFullyConnectedModule(
+        self.fc = DenseBlock(
             input_dim=self.residual_block.module.out_channels*(res_block_input_len-pool_kernel_size+1),
             output_dim=output_dim,
             hidden_dims=fc_hidden_dims,
@@ -425,17 +422,7 @@ class ResidualBind(BaseModel):
         return x
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
-from .base._utils import GetFlattenDim
-
-
-mode_dict = {"dna": 1, "rbp": 2}
-
-
-class DeepBind(BaseModel):
+class DeepBind( SequenceModel):
     """
     DeepBind model implemented from Alipanahi et al 2015 in PyTorch
 
@@ -489,7 +476,7 @@ class DeepBind(BaseModel):
         Keyword arguments for multiprocessing
     conv_kwargs : dict
         Keyword arguments for convolutional layers
-    fc_kwargs : dict
+    dense_kwargs : dict
         Keyword arguments for fully connected layers
     """
     def __init__(
@@ -502,7 +489,7 @@ class DeepBind(BaseModel):
         loss_fxn: str ="mse",
         mode: str = "rbp",
         conv_kwargs: dict = {},
-        fc_kwargs: dict = {},
+        dense_kwargs: dict = {},
         **kwargs
     ):
         super().__init__(
@@ -514,94 +501,98 @@ class DeepBind(BaseModel):
             loss_fxn=loss_fxn, 
             **kwargs
         )
-        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
         self.mode = mode
+		self.mode_dict = {"dna": 1, "rbp": 2}
         self.mode_multiplier = mode_dict[self.mode]
         self.aggr = aggr
-        self.convnet = BasicConv1D(input_len=input_len, **self.conv_kwargs)
-        self.pool_dim = GetFlattenDim(self.convnet.module, seq_len=input_len)
+        self.conv1d_block = Conv1DBlock(input_len=input_len, **self.conv_kwargs)
+        self.pool_dim = GetFlattenDim(self.conv1d_block.module, seq_len=input_len)
         self.max_pool = nn.MaxPool1d(kernel_size=self.pool_dim)
         self.avg_pool = nn.AvgPool1d(kernel_size=self.pool_dim)
         if self.strand == "ss":
-            self.fcn = BasicFullyConnectedModule(
-                input_dim=self.convnet.out_channels * self.mode_multiplier,
+            self.dense_block = DenseBlock(
+                input_dim=self.conv1d_block.out_channels * self.mode_multiplier,
                 output_dim=output_dim,
-                **self.fc_kwargs
+                **self.dense_kwargs
             )
         elif self.strand == "ds":
-            self.fcn = BasicFullyConnectedModule(
-                input_dim=self.convnet.out_channels * self.mode_multiplier,
+            self.dense_block = DenseBlock(
+                input_dim=self.conv1d_block.out_channels * self.mode_multiplier,
                 output_dim=output_dim,
-                **self.fc_kwargs
+                **self.dense_kwargs
             )
         elif self.strand == "ts":
-            self.fcn = BasicFullyConnectedModule(
-                self.convnet.out_channels * self.mode_multiplier,
+            self.dense_block = DenseBlock(
+                self.conv1d_block.out_channels * self.mode_multiplier,
                 output_dim=output_dim,
-                **self.fc_kwargs
+                **self.dense_kwargs
             )
-            self.reverse_convnet = BasicConv1D(
+            self.reverse_conv1d_block = Conv1DBlock(
                 input_len=input_len, 
                 **self.conv_kwargs
                 )
-            self.reverse_fcn = BasicFullyConnectedModule(
-                self.convnet.out_channels * self.mode_multiplier,
+            self.reverse_dense_block = DenseBlock(
+                self.conv1d_block.out_channels * self.mode_multiplier,
                 output_dim=output_dim,
-                **self.fc_kwargs
+                **self.dense_kwargs
             )
 
-    def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
+
+
+def forward(self, x, x_rev_comp=None):
+
+        x = self.conv1d_block(x)
         if self.mode == "rbp":
             x = torch.cat((self.max_pool(x), self.avg_pool(x)), dim=1)
-            x = x.view(x.size(0), self.convnet.out_channels * 2)
+            x = x.view(x.size(0), self.conv1d_block.out_channels * 2)
         elif self.mode == "dna":
             x = self.max_pool(x)
-            x = x.view(x.size(0), self.convnet.out_channels)
-        x = self.fcn(x)
+            x = x.view(x.size(0), self.conv1d_block.out_channels)
+        x = self.dense_block(x)
         if self.strand == "ds":
-            x_rev_comp = self.convnet(x_rev_comp)
+            x_rev_comp = self.conv1d_block(x_rev_comp)
             if self.mode == "rbp":
                 x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels * 2)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.conv1d_block.out_channels * 2)
             elif self.mode == "dna":
                 x_rev_comp = self.max_pool(x_rev_comp)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels)
-            x_rev_comp = self.fcn(x_rev_comp)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.conv1d_block.out_channels)
+            x_rev_comp = self.dense_block(x_rev_comp)
             if self.aggr == "max":
                 x = F.max_pool1d(torch.cat((x, x_rev_comp), dim=1), 2)
             elif self.aggr == "avg":
                 x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         elif self.strand == "ts":
-            x_rev_comp = self.reverse_convnet(x_rev_comp)
+            x_rev_comp = self.reverse_conv1d_block(x_rev_comp)
             if self.mode == "rbp":
                 x_rev_comp = torch.cat((self.max_pool(x_rev_comp), self.avg_pool(x_rev_comp)), dim=1)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels * 2)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.conv1d_block.out_channels * 2)
             elif self.mode == "dna":
                 x_rev_comp = self.max_pool(x_rev_comp)
-                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.out_channels)
-            x_rev_comp = self.reverse_fcn(x_rev_comp)
+                x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.conv1d_block.out_channels)
+            x_rev_comp = self.reverse_dense_block(x_rev_comp)
             if self.aggr == "max":
                 x = F.max_pool1d(torch.cat((x, x_rev_comp), dim=1), 2)
             elif self.aggr == "avg":
                 x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         return x
 
-    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+    def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 16])
         conv_kwargs.setdefault("conv_kernels", [16])
-        conv_kwargs.setdefault("pool_kernels", None)
+        conv_kwargs.setdefault("pool_types", None)
         conv_kwargs.setdefault("omit_final_pool", True)
         conv_kwargs.setdefault("dropout_rates", 0.25)
         conv_kwargs.setdefault("batchnorm", False)
-        fc_kwargs.setdefault("hidden_dims", [32])
-        fc_kwargs.setdefault("dropout_rate", 0.25)
-        fc_kwargs.setdefault("batchnorm", False)
-        return conv_kwargs, fc_kwargs
+        dense_kwargs.setdefault("hidden_dims", [32])
+        dense_kwargs.setdefault("dropout_rate", 0.25)
+        dense_kwargs.setdefault("batchnorm", False)
+        return conv_kwargs,dense_kwargs 
 
 
-class DeepSEA(BaseModel):
+class DeepSEA( SequenceModel):
     """DeepSEA model implementation for EUGENe
     
     Default parameters are those specified in the DeepSEA paper. We currently do not implement a "ds" or "ts" model
@@ -629,7 +620,7 @@ class DeepSEA(BaseModel):
         aggr: str = None,
         loss_fxn: str = "mse",
         conv_kwargs: dict = {},
-        fc_kwargs: dict = {},
+        dense_kwargs: dict = {},
         **kwargs
     ):
         super().__init__(
@@ -641,36 +632,36 @@ class DeepSEA(BaseModel):
             loss_fxn=loss_fxn, 
             **kwargs
         )
-        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
-        self.convnet = BasicConv1D(
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv1d_block = Conv1DBlock(
             input_len=input_len, 
             **self.conv_kwargs)
-        self.fcn = BasicFullyConnectedModule(
-            input_dim=self.convnet.flatten_dim, 
+        self.dense_block = DenseBlock(
+            input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
-            **self.fc_kwargs
+            **self.dense_kwargs
         )
 
     def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
-        x = x.view(x.size(0), self.convnet.flatten_dim)
-        x = self.fcn(x)
+        x = self.conv1d_block(x)
+        x = x.view(x.size(0), self.conv1d_block.flatten_dim)
+        x = self.dense_block(x)
         return x
 
-    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+    def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 320, 480, 960])
         conv_kwargs.setdefault("conv_kernels", [8, 8, 8])
-        conv_kwargs.setdefault("pool_kernels", [4, 4, 4])
+        conv_kwargs.setdefault("pool_types", [4, 4, 4])
         conv_kwargs.setdefault("omit_final_pool", True)
         conv_kwargs.setdefault("activation", "relu")
         conv_kwargs.setdefault("dropout_rates", [0.2, 0.2, 0.5])
         conv_kwargs.setdefault("batchnorm", False)
-        fc_kwargs.setdefault("hidden_dims", [925])
-        return conv_kwargs, fc_kwargs
+        dense_kwargs.setdefault("hidden_dims", [925])
+        return conv_kwargs,dense_kwargs 
 
 
-class Basset(BaseModel):
+class Basset( SequenceModel):
     """
     """
     def __init__(
@@ -682,7 +673,7 @@ class Basset(BaseModel):
         aggr = None,
         loss_fxn = "bce",
         conv_kwargs = {},
-        fc_kwargs = {},
+        dense_kwargs = {},
         **kwargs
     ):
         super().__init__(
@@ -694,41 +685,41 @@ class Basset(BaseModel):
             loss_fxn=loss_fxn, 
             **kwargs
         )
-        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
-        self.convnet = BasicConv1D(
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv1d_block = Conv1DBlock(
             input_len=input_len, 
             **self.conv_kwargs)
-        self.fcn = BasicFullyConnectedModule(
-            input_dim=self.convnet.flatten_dim, 
+        self.dense_block = DenseBlock(
+            input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
-            **self.fc_kwargs
+            **self.dense_kwargs
         )
 
     def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
-        x = x.view(x.size(0), self.convnet.flatten_dim)
-        x = self.fcn(x)
+        x = self.conv1d_block(x)
+        x = x.view(x.size(0), self.conv1d_block.flatten_dim)
+        x = self.dense_block(x)
         return x
         
-    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+    def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 300, 200, 200])
         conv_kwargs.setdefault("conv_kernels", [19, 11, 7])
         conv_kwargs.setdefault("conv_strides", [1, 1, 1])
         conv_kwargs.setdefault("padding", [9, 5, 3])
-        conv_kwargs.setdefault("pool_kernels", [3, 4, 4])
+        conv_kwargs.setdefault("pool_types", [3, 4, 4])
         conv_kwargs.setdefault("omit_final_pool", False)
         conv_kwargs.setdefault("dropout_rates", 0.0)
         conv_kwargs.setdefault("batchnorm", True)
         conv_kwargs.setdefault("activation", "relu")
-        fc_kwargs.setdefault("hidden_dims", [1000, 164])
-        fc_kwargs.setdefault("dropout_rate", 0.0)
-        fc_kwargs.setdefault("batchnorm", True)
-        fc_kwargs.setdefault("activation", "relu")
-        return conv_kwargs, fc_kwargs
+        dense_kwargs.setdefault("hidden_dims", [1000, 164])
+        dense_kwargs.setdefault("dropout_rate", 0.0)
+        dense_kwargs.setdefault("batchnorm", True)
+        dense_kwargs.setdefault("activation", "relu")
+        return conv_kwargs,dense_kwargs 
 
 
-class DanQ(BaseModel):
+class DanQ( SequenceModel):
     """DanQ model from Quang and Xie, 2016;
 
     Parameters
@@ -743,7 +734,7 @@ class DanQ(BaseModel):
         The task of the model.
     aggr:
         The aggregation function.
-    fc_kwargs:
+    dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
     def __init__(
@@ -756,7 +747,7 @@ class DanQ(BaseModel):
         aggr: str = None,
         cnn_kwargs: dict = {},
         rnn_kwargs: dict = {},
-        fc_kwargs: dict = {},
+        dense_kwargs: dict = {},
         **kwargs
     ):
         super().__init__(
@@ -768,34 +759,34 @@ class DanQ(BaseModel):
             loss_fxn=loss_fxn, 
             **kwargs
         ) 
-        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(cnn_kwargs, rnn_kwargs, fc_kwargs)
-        self.convnet = BasicConv1D(
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(cnn_kwargs, rnn_kwargs, dense_kwargs)
+        self.conv1d_block = Conv1DBlock(
             input_len=input_len, 
             **cnn_kwargs)
         self.recurrentnet = BasicRecurrent(
-            input_dim=self.convnet.out_channels, 
+            input_dim=self.conv1d_block.out_channels, 
             **rnn_kwargs
         )
-        self.fcnet = BasicFullyConnectedModule(
+        self.dense_block = DenseBlock(
             input_dim=self.recurrentnet.out_dim, 
             output_dim=output_dim, 
-            **fc_kwargs
+            **self.dense_kwargs
         )
 
     def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
+        x = self.conv1d_block(x)
         x = x.transpose(1, 2)
         out, _ = self.recurrentnet(x)
-        out = self.fcnet(out[:, -1, :])
+        out = self.dense_block(out[:, -1, :])
         return out
 
-    def kwarg_handler(self, cnn_kwargs, rnn_kwargs, fc_kwargs):
+    def kwarg_handler(self, cnn_kwargs, rnn_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         cnn_kwargs.setdefault("channels", [4, 320])
         cnn_kwargs.setdefault("conv_kernels", [26])
         cnn_kwargs.setdefault("conv_strides", [1])
         cnn_kwargs.setdefault("padding", "same")
-        cnn_kwargs.setdefault("pool_kernels", [13])
+        cnn_kwargs.setdefault("pool_types", [13])
         cnn_kwargs.setdefault("omit_final_pool", False)
         cnn_kwargs.setdefault("dropout_rates", 0.2)
         cnn_kwargs.setdefault("activation", "relu")
@@ -803,13 +794,13 @@ class DanQ(BaseModel):
         rnn_kwargs.setdefault("output_dim", 320)
         rnn_kwargs.setdefault("bidirectional", True)
         rnn_kwargs.setdefault("batch_first", True)
-        fc_kwargs.setdefault("hidden_dims", [925])
-        fc_kwargs.setdefault("dropout_rate", 0.5)
-        fc_kwargs.setdefault("batchnorm", False)
-        return cnn_kwargs, fc_kwargs
+        dense_kwargs.setdefault("hidden_dims", [925])
+        dense_kwargs.setdefault("dropout_rate", 0.5)
+        dense_kwargs.setdefault("batchnorm", False)
+        return cnn_kwargs,dense_kwargs 
 
 
-class DeepSTARR(BaseModel):
+class DeepSTARR( SequenceModel):
     """DeepSTARR model from de Almeida et al., 2022; 
         see <https://www.nature.com/articles/s41588-022-01048-5>
 
@@ -825,7 +816,7 @@ class DeepSTARR(BaseModel):
         aggr = None,
         loss_fxn = "mse",
         conv_kwargs = {},
-        fc_kwargs = {},
+        dense_kwargs = {},
         **kwargs
     ):
         super().__init__(
@@ -837,33 +828,33 @@ class DeepSTARR(BaseModel):
             loss_fxn=loss_fxn, 
             **kwargs
         )
-        self.conv_kwargs, self.fc_kwargs = self.kwarg_handler(conv_kwargs, fc_kwargs)
-        self.convnet = BasicConv1D(
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv1d_block = Conv1DBlock(
             input_len=input_len, 
             **self.conv_kwargs)
-        self.fcn = BasicFullyConnectedModule(
-            input_dim=self.convnet.flatten_dim, 
+        self.dense_block = DenseBlock(
+            input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
-            **self.fc_kwargs
+            **self.dense_kwargs
         )
 
     def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
-        x = x.view(x.size(0), self.convnet.flatten_dim)
-        x = self.fcn(x)
+        x = self.conv1d_block(x)
+        x = x.view(x.size(0), self.conv1d_block.flatten_dim)
+        x = self.dense_block(x)
         return x
         
-    def kwarg_handler(self, conv_kwargs, fc_kwargs):
+    def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("channels", [4, 246, 60, 60, 120])
         conv_kwargs.setdefault("conv_kernels", [7, 3, 5, 3])
         conv_kwargs.setdefault("conv_strides", [1, 1, 1, 1])
         conv_kwargs.setdefault("padding", "same")
-        conv_kwargs.setdefault("pool_kernels", [2, 2, 2, 2])
+        conv_kwargs.setdefault("pool_types", [2, 2, 2, 2])
         conv_kwargs.setdefault("omit_final_pool", False)
         conv_kwargs.setdefault("dropout_rates", 0.0)
         conv_kwargs.setdefault("batchnorm", True)
-        fc_kwargs.setdefault("hidden_dims", [256, 256])
-        fc_kwargs.setdefault("dropout_rate", 0.4)
-        fc_kwargs.setdefault("batchnorm", True)
-        return conv_kwargs, fc_kwargs
+        dense_kwargs.setdefault("hidden_dims", [256, 256])
+        dense_kwargs.setdefault("dropout_rate", 0.4)
+        dense_kwargs.setdefault("batchnorm", True)
+        return conv_kwargs,dense_kwargs 

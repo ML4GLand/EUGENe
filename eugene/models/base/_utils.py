@@ -1,5 +1,5 @@
-import torch.nn as nn
 import numpy as np
+import torch.nn as nn
 
 
 def GetFlattenDim(network, seq_len):

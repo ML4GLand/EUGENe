@@ -55,24 +55,4 @@ class Tower(nn.Module):
 
     def forward(self, x):
         return self.tower(x)
-
-# example
-class MyBlock(nn.Module):
-    def __init__(self, arg1: float, arg2: str, arg3: int = 42, arg4: str = 'default'):
-        super().__init__()
-        self.arg1 = arg1
-        self.arg2 = arg2
-        self.arg3 = arg3
-        self.arg4 = arg4
-    
-    def __repr__(self):
-        sig_vals = ", ".join([f'{arg}={getattr(self, arg)}' for arg in signature(self.__init__).parameters.keys()])
-        return f'MyBlock({sig_vals})'
-
-tower = Tower(
-    block=MyBlock,
-    repeats=3,
-    dynamic_block_args={'arg1': 2, 'arg2': ['a', 'b', 'c']},
-    mults={'arg1': 1.1, 'arg3': 1.1}
-)
-print(tower)
+        

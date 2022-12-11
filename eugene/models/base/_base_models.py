@@ -1,635 +1,351 @@
 import torch
-from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
+import numpy as np
+from abc import ABC, abstractmethod
+from typing import Union, List, Dict, Callable
+from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.utilities.model_summary import ModelSummary
+from pytorch_lightning import seed_everything
+from ._losses import LOSS_REGISTRY
+from ._optimizers import OPTIMIZER_REGISTRY
+from ._schedulers import SCHEDULER_REGISTRY
+from ._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
+from ...preprocess import ascii_decode_seq
 
 
-class FCN(BaseModel):
+class SequenceModel(LightningModule, ABC):
     """
-    Instantiate a fully connected neural network with the specified layers and parameters.
+    Base sequence model class to be inherited by all models in EUGENe
+
+    Parameters:
+    ----------
+    input_len (int):
+        length of input sequence
+    output_dim (int):
+        number of output dimensions
+    strand (str):
+        strand of the input sequence
+    task (str):
+        task of the model
+    aggr (str):
+        aggregation method for the input sequence
+    loss_fxn (str):
+        loss function to use
+    hp_metric (str):
+        metric to use for hyperparameter tuning
+    kwargs (dict):
+        additional arguments to pass to the model
+    """
+    @abstractmethod
+    def __init__(
+        self,
+        input_len: int,
+        output_dim: int,
+        strand: str = "ss",
+        task: str = "regression",
+        aggr: str = None,
+        loss_fxn: Union[str, Callable] = "mse",
+        optimizer: str = "adam",
+        optimizer_lr: float = 1e-3,
+        optimizer_kwargs: dict = {},
+        scheduler: str = None,
+        scheduler_monitor: str = "val_loss",
+        scheduler_kwargs: dict = {},
+        metric: str = None,
+        metric_kwargs: dict = {},
+        seed: int = None,
+        save_hyperparams: bool = True
+    ):
+        super().__init__()
+
+        # Set the base attributes of a Sequence model
+        self.input_len = input_len
+        self.output_dim = output_dim
+        self.strand = strand
+        self.task = task
+        self.aggr = aggr
+        
+        # Set the loss function
+        self.loss_fxn = LOSS_REGISTRY[loss_fxn] if isinstance(loss_fxn, str) else loss_fxn
     
-    By default, this architecture flattens the one-hot encoded sequence and passes 
-    it through a set of layers that are fully connected. The task defines how the output is
-    treated (e.g. sigmoid activation for binary classification). The loss function is
-    should be matched to the task (e.g. binary cross entropy ("bce") for binary classification).
+        # Set the optimizer
+        self.optimizer = OPTIMIZER_REGISTRY[optimizer]
+        self.optimizer_lr = optimizer_lr if optimizer_lr is not None else 1e-3
+        self.optimizer_kwargs = optimizer_kwargs
 
-    - If the model is single-stranded ("ss"), the input is passed through a single set of
-        fully connected layers.
-    - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
-        through the same set of fully connected layers. If aggr is "concat", the input
-        forward and reverse sequences are concatenated and passed through a single set
-        of fully connected layers. If aggr is "max" or "avg", the output of the forward and
-        reverse sequence are passed through a single set of fully connected layers separately 
-        and the maximum or average of the two outputs is taken.
-    - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
-        through different sets of fully connected layers. "concat" is not supported for
-        this model type. If aggr is "max" or "avg", the output of the forward and reverse
-        sequence are passed through a single set of fully connected layers and the maximum
-        or average of the two outputs is taken.
+        # Set the scheduler
+        self.scheduler = SCHEDULER_REGISTRY[scheduler] if scheduler is not None else None
+        self.scheduler_monitor = scheduler_monitor
+        self.scheduler_kwargs = scheduler_kwargs
 
-    Parameters
-    ----------
-    input_len:
-        The length of the input sequence.
-    output_dim:
-        The dimension of the output.
-    strand:
-        The strand of the model.
-    task:
-        The task of the model.
-    aggr:
-        The aggregation function.
-    fc_kwargs:
-        The keyword arguments for the fully connected layer.
-    """
-    def __init__(
-        self,
-        input_len: int,
-        output_dim: int,
-        strand: str = "ss",
-        task: str = "regression",
-        aggr: str = None,
-        loss_fxn: str = "mse",
-        fc_kwargs: dict = {},
-        **kwargs
-    ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            strand=strand, 
-            task=task, 
-            aggr=aggr, 
-            loss_fxn=loss_fxn, 
-            **kwargs
+        # Set the metric
+        self.metric, self.metric_kwargs, self.metric_name = self._configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
+        
+        # Set the seed
+        if seed is not None:
+            self.seed = seed
+            seed_everything(self.seed)
+        else:
+            self.seed = None
+        
+        # Set the hyperparameters if passed in 
+        if save_hyperparams:
+            self.save_hyperparameters()
+
+    @abstractmethod
+    def forward(self, x, x_rev_comp=None) -> torch.Tensor:
+        """
+        Forward pass of the model. This method must be implemented by the child class.
+
+        Parameters:
+        ----------
+        x (torch.Tensor):
+            input sequence
+        x_rev_comp (torch.Tensor):
+            reverse complement of the input sequence
+        """
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        """Training step"""
+        return self._common_step(batch, batch_idx, optimizer_idx, "train")
+
+    def validation_step(self, batch, batch_idx):
+        """Validation step"""
+        return self._common_step(batch, batch_idx, None, "val")
+
+    def test_step(self, batch, batch_idx):
+        """Test step"""
+        return self._common_step(batch, batch_idx, None, "test")
+
+    def predict_step(self, batch, batch_idx):
+        """Predict step
+
+        Parameters:
+        ----------
+        batch (tuple):
+            batch of data
+        batch_idx (int):
+            index of the batch
+
+        Returns:
+        ----------
+        np.ndarray:
+            predictions with the format ID, prediction, true value
+        """
+        ID, x, x_rev_comp, y = batch
+        ID = np.array(
+            [ascii_decode_seq(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]
         )
-        self.flattened_input_dims = 4 * input_len
-        if self.strand == "ss":
-            self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.flattened_input_dims, 
-                output_dim=output_dim, 
-                **fc_kwargs
-            )
-        elif self.strand == "ds":
-            if self.aggr == "concat":
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.flattened_input_dims * 2,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-            elif self.aggr in ["max", "avg"]:
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.flattened_input_dims,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-        elif self.strand == "ts":
-            self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.flattened_input_dims, 
-                output_dim=output_dim, 
-                **fc_kwargs
-            )
-            self.reverse_fcnet = BasicFullyConnectedModule(
-                input_dim=self.flattened_input_dims, 
-                output_dim=output_dim, 
-                **fc_kwargs
-            )
+        y = y.detach().cpu().numpy()
+        outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()
+        return np.column_stack([ID, outs, y])
 
-    def forward(self, x, x_rev_comp=None):
-        x = x.flatten(start_dim=1)
-        if self.strand == "ss":
-            x = self.fcnet(x)
-        elif self.strand == "ds":
-            x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            if self.aggr == "concat":
-                x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcnet(x)
-            elif self.aggr in ["max", "avg"]:
-                x = self.fcnet(x)
-                x_rev_comp = self.fcnet(x_rev_comp)
-                if self.aggr == "max":
-                    x = torch.max(x, x_rev_comp)
-                elif self.aggr == "avg":
-                    x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        elif self.strand == "ts":
-            x = self.fcnet(x)
-            x_rev_comp = x_rev_comp.flatten(start_dim=1)
-            x_rev_comp = self.reverse_fcnet(x_rev_comp)
-            if self.aggr == "concat":
-                raise ValueError("Concatenation is not supported for the tsfcnet model.")
-            elif self.aggr == "max":
-                x = torch.max(x, x_rev_comp)
-            elif self.aggr == "avg":
-                x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        return x
+    def _common_step(self, batch, batch_idx, optimizer_idx, stage: str):
+        """Common step for training, validation and test
 
+        Parameters:
+        ----------
+        batch (tuple):
+            batch of data
+        batch_idx (int):
+            index of the batch
+        stage (str):
+            stage of the training
 
-class CNN(BaseModel):
-    """
-    Instantiate a CNN model with a set of convolutional layers and a set of fully
-    connected layers.
-
-    By default, this architecture passes the one-hot encoded sequence through a set
-    1D convolutions with 4 channels. The task defines how the output is treated (e.g.
-    sigmoid activation for binary classification). The loss function is should be matched
-    to the task (e.g. binary cross entropy ("bce") for binary classification).
-
-    - If the model is single-stranded ("ss"), the input is passed through a single set of
-        convolutions to extract features. The extracted features are then flattened into a 
-        single dimensional tensor and passed through a set of fully connected layers.
-    - If the model is double-stranded ("ds"), the forward and reverse sequence are passed
-        through the same set of convolutions to extract features. If aggr is "concat", the
-        extracted features are concatenated and passed through a single set of fully connected
-        layers. If aggr is "max" or "avg", the extracted features are passed through the same single
-        set of fully connected layers separately and the maximum or average of the two outputs
-        is taken.
-    - If the model is twin-stranded ("ts"), the forward and reverse sequence are passed
-        through different sets of convolutions to extract features. If aggr is "concat"
-        the extracted features are concatenated and passed through a single set of fully
-        connected layers. If aggr is "max" or "avg", the extracted features are passed through
-        separate sets of fully connected layers and the maximum or average of the two outputs
-        is taken.
-
-    Parameters
-    ----------
-    input_len:
-        The length of the input sequence.
-    output_dim:
-        The dimension of the output.
-    strand:
-        The strand of the model.
-    task:
-        The task of the model.
-    aggr:
-        The aggregation function to use.
-    fc_kwargs:
-        The keyword arguments for the fully connected layer. If not provided, the
-        default passes the flattened output of the convolutional layers directly to 
-        the output layer.
-    """
-    def __init__(
-        self,
-        input_len: int,
-        output_dim: int,
-        conv_kwargs: dict,
-        strand: str = "ss",
-        task: str = "regression",
-        aggr: str = None,
-        loss_fxn: str = "mse",
-        fc_kwargs: dict = {},
-        **kwargs
-    ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            strand=strand, 
-            task=task, 
-            aggr=aggr, 
-            loss_fxn=loss_fxn, 
-            **kwargs
+        Returns:
+        ----------
+        dict:
+            dictionary of metrics
+        """
+        # Get and log loss
+        ID, x, x_rev_comp, y = batch
+        outs = self(x, x_rev_comp).squeeze(dim=1)
+        loss = self.loss_fxn(outs, y)
+        print(loss)
+        self.log(
+            f"{stage}_loss", 
+            loss, 
+            on_epoch=True, 
+            rank_zero_only=True
         )
-        if self.strand == "ss":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.convnet.flatten_dim, 
-                output_dim=output_dim, 
-                **fc_kwargs
-            )
-        elif self.strand == "ds":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            if self.aggr == "concat":
-                self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.convnet.flatten_dim * 2,
-                output_dim=output_dim,
-                **fc_kwargs
-            )
-            elif self.aggr in ["max", "avg"]:
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.convnet.flatten_dim,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-        elif self.strand == "ts":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            self.reverse_convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            if aggr == "concat":
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.convnet.flatten_dim * 2,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-            elif aggr in ["max", "avg"]:
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.convnet.flatten_dim,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-                self.reverse_fcnet = BasicFullyConnectedModule(
-                    input_dim=self.reverse_convnet.flatten_dim,
-                    output_dim=output_dim,
-                    **fc_kwargs
-                )
-
-    def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
-        x = x.view(x.size(0), self.convnet.flatten_dim)
-        if self.strand == "ss":
-            x = self.fcnet(x)
-        elif self.strand == "ds":
-            x_rev_comp = self.convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.convnet.flatten_dim)
-            if self.aggr == "concat":
-                x = torch.cat([x, x_rev_comp], dim=1)
-                x = self.fcnet(x)
-            elif self.aggr in ["max", "avg"]:
-                x = self.fcnet(x)
-                x_rev_comp = self.fcnet(x_rev_comp)
-                if self.aggr == "max":
-                    x = torch.max(x, x_rev_comp)
-                elif self.aggr == "avg":
-                    x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        elif self.strand == "ts":
-            x_rev_comp = self.reverse_convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.view(x_rev_comp.size(0), self.reverse_convnet.flatten_dim)
-            if self.aggr == "concat":
-                x = torch.cat([x, x_rev_comp], dim=1)
-                x = self.fcnet(x)
-            elif self.aggr in ["max", "avg"]:
-                x = self.fcnet(x)
-                x_rev_comp = self.reverse_fcnet(x_rev_comp)
-                if self.aggr == "max":
-                    x = torch.max(x, x_rev_comp)
-                elif self.aggr == "avg":
-                    x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        return x
-
-
-class RNN(BaseModel):
-    """
-    Instantiate an RNN model with a set of recurrent layers and a set of fully
-    connected layers.
-
-    By default, this model passes the one-hot encoded sequence through recurrent layers
-    and then through a set of fully connected layers. The output of the fully connected
-    layers is passed to the output layer.
-
-    - If the model is single-stranded ("ss"), the sequence is passed through a single
-        set of recurrent layers and a single set of fully connected layers.
-    - If the model is double-stranded ("ds"), the sequence forward and reverse sequence
-        are passed through the same set of recurrent layers to extract features. If aggr 
-        is "concat", the output of the recurrent layers is concatenated and passed to a
-        single set of fully connected layers. If aggr is "max" or "avg", the output of
-        the recurrent layers is passed to the same single set of fully connected layers 
-        separately and the max or average of the two outputs is passed to the output
-        layer.
-    - If the model is twin-stranded ("ts"), the sequence forward and reverse sequence
-        are passed through separate sets of recurrent layers to extract features. If aggr
-        is "concat", the output of the recurrent layers is concatenated and passed to a
-        single set of fully connected layers. If aggr is "max" or "avg", the output of
-        the recurrent layers is passed to the separate sets of fully connected layers
-        separately and the max or average of the two outputs is passed to the output
-        layer.
-
-    Parameters
-    ----------
-    input_len:
-        The length of the input sequence.
-    output_dim:
-        The dimension of the output.
-    strand:
-        The strand of the model.
-    task:
-        The task of the model.
-    aggr:
-        The aggregation function.
-    fc_kwargs:
-        The keyword arguments for the fully connected layer. If not provided, the
-        default passes the recurrent output of the recurrent layers directly to the
-        output layer.
-    """
-    def __init__(
-        self,
-        input_len: int,
-        output_dim: int,
-        rnn_kwargs: dict,
-        strand: str = "ss",
-        task: str = "regression",
-        aggr: str = None,
-        loss_fxn: str = "mse",
-        fc_kwargs: dict = {},
-        **kwargs
-    ): 
-        super().__init__(
-            input_len, 
-            output_dim, 
-            strand=strand, 
-            task=task, 
-            aggr=aggr, 
-            loss_fxn=loss_fxn, 
-            **kwargs
+        # Get and log metrics
+        self.metric(outs, y)
+        self.log(
+            f"{stage}_{self.metric_name}",
+            self.metric,
+            on_epoch=True,
+            rank_zero_only=True,
         )
-        if self.strand == "ss":
-            self.rnn = BasicRecurrent(
-                input_dim=4, 
-                **rnn_kwargs
-                )
-            self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.rnn.out_dim, 
-                output_dim=output_dim, 
-                **fc_kwargs
+        return loss
+
+    def _configure_metrics(self, metric, metric_kwargs):
+        """Configure metrics
+        Keeping this a function allows for the metric to be reconfigured
+        in inherited classes
+        TODO: add support for multiple metrics
+        Returns:
+        ----------
+        torchmetrics.Metric:
+            metric
+        """
+        metric_name = DEFAULT_TASK_METRICS[self.task] if metric is None else metric
+        metric_kwargs = metric_kwargs if metric_kwargs is not None else DEFAULT_METRIC_KWARGS[self.task]
+        metric = METRIC_REGISTRY[metric_name](num_outputs=self.output_dim, **metric_kwargs)
+        return metric, metric_kwargs, metric_name
+
+    def configure_optimizers(self):
+        """Configure optimizers
+
+        Returns:
+        ----------
+        torch.optim.Optimizer:
+            optimizer
+        torch.optim.lr_scheduler._LRScheduler:
+            learning rate scheduler
+        """
+        optimizer = self.optimizer(
+            self.parameters(), 
+            lr=self.optimizer_lr, 
+            **self.optimizer_kwargs
+        )
+        if self.scheduler is None:
+            return optimizer
+        else:
+            scheduler = self.scheduler(
+                optimizer,
+                **self.scheduler_kwargs
             )
-        elif self.strand == "ds":
-            self.rnn = BasicRecurrent(
-                input_dim=4, 
-                **rnn_kwargs
-                )
-            if self.aggr == "concat":
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.rnn.out_dim * 2, 
-                    output_dim=output_dim, **fc_kwargs
-                )
-            elif self.aggr in ["max", "avg"]:
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.rnn.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-        elif self.strand == "ts":
-            self.rnn = BasicRecurrent(
-                input_dim=4, 
-                **rnn_kwargs)
-            self.reverse_rnn = BasicRecurrent(
-                input_dim=4, 
-                **rnn_kwargs)
-            if self.aggr == "concat":
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.rnn.out_dim * 2, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-            elif self.aggr in ["max", "avg"]:
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.rnn.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-                self.reverse_fcnet = BasicFullyConnectedModule(
-                    input_dim=self.reverse_rnn.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": scheduler,
+                "monitor": self.scheduler_monitor,
+            }
 
-    def forward(self, x, x_rev_comp=None):
-        x, _ = self.rnn(x)
-        x = x[:, -1, :]
-        if self.strand == "ss":
-            x = self.fcnet(x)
-        elif self.strand == "ds":
-            x_rev_comp, _ = self.rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
-            if self.aggr == "concat":
-                x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcnet(x)
-            elif self.aggr in ["max", "avg"]:
-                x = self.fcnet(x)
-                x_rev_comp = self.fcnet(x_rev_comp)
-                if self.aggr == "max":
-                    x = torch.max(x, x_rev_comp)
-                elif self.aggr == "avg":
-                    x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        elif self.strand == "ts":
-            x_rev_comp, _ = self.reverse_rnn(x_rev_comp)
-            x_rev_comp = x_rev_comp[:, -1, :]
-            if self.aggr == "concat":
-                x = torch.cat((x, x_rev_comp), dim=1)
-                x = self.fcnet(x)
-            elif self.aggr in ["max", "avg"]:
-                x = self.fcnet(x)
-                x_rev_comp = self.reverse_fcnet(x_rev_comp)
-                if self.aggr == "max":
-                    x = torch.max(x, x_rev_comp)
-                elif self.aggr == "avg":
-                    x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
-        return x
+    def summary(self):
+        """Print a summary of the model"""
+        print(f"Model: {self.__class__.__name__}")
+        print(f"Sequence length: {self.input_len}")
+        print(f"Output dimension: {self.output_dim}")
+        print(f"Strand: {self.strand}")
+        print(f"Task: {self.task}")
+        print(f"Aggregation of strands: {self.aggr}")
+        print(f"Loss function: {self.loss_fxn.__name__}")
+        print(f"Optimizer: {self.optimizer.__name__}")
+        print(f"\tOptimizer parameters: {self.optimizer_kwargs}")
+        print(f"\tOptimizer starting learning rate: {self.optimizer_lr}")
+        print(f"Scheduler: {self.scheduler.__name__}")
+        print(f"\tScheduler parameters: {self.scheduler_kwargs}")
+        print(f"Metric: {self.metric_name}")
+        print(f"\tMetric parameters: {self.metric_kwargs}")
+        print(f"Seed: {self.seed}")
+        print(f"Parameters summary:")
+        return ModelSummary(self)
 
-
-class Hybrid(BaseModel):
-    """
-    A hybrid model that uses both a CNN and an RNN to extract features then passes the
-    features through a set of fully connected layers.
+    @property
+    def input_len(self) -> int:
+        """Input length"""
+        return self._input_len
     
-    By default, the CNN is used to extract features from the input sequence, and the RNN is used to 
-    to combine those features. The output of the RNN is passed to a set of fully connected
-    layers to make the final prediction.
+    @input_len.setter
+    def input_len(self, value: int):
+        """Set input length"""
+        self._input_len = value
 
-    - If the model is single-stranded ("ss"), the sequence is passed through the CNN then the RNN
-        to extract features. The output of the RNN is passed to a set of fully connected layers.
-    - If the model is double-stranded ("ds"), the sequence and reverse complement sequence are
-        passed through the same CNN separately to extract features. If aggr is "concat_cnn", the output of
-        the CNN is concatenated and passed to the same RNN. If aggr is "concat_rnn", the output of the
-        same RNN is concatenated and passed to a set of fully connected layers. If aggr is "max" or "avg",
-        the output of the RNN for each strand is passed to the separate sets of fully connected layers separately 
-        and the max or average of the two outputs is passed to the output layer.
-    - If the model is twin-stranded ("ts"), the sequence and reverse complement sequence are passed through separate models
-        with identical architectures. If aggr is "concat_cnn", the outputs of the CNN are concatenated and passed to the same RNN
-        and FC. If aggr is "concat_rnn", the outputs of the RNN are concatenated and passed to the same FCN. 
-        If aggr is "max" or "avg", the outputs of the RNN for each strand are passed to the separate sets of fully connected layers 
-        separately and the max or average of the two outputs is passed to the output layer.
+    @property
+    def output_dim(self) -> int:
+        """Output dimension"""
+        return self._output_dim
+    
+    @output_dim.setter
+    def output_dim(self, value: int):
+        """Set output dimension"""
+        self._output_dim = value
+    
+    @property
+    def strand(self) -> str:
+        """Strand"""
+        return self._strand
 
+    @strand.setter
+    def strand(self, value: str):
+        """Set strand"""
+        self._strand = value
 
-    Parameters
-    ----------
-    input_len:
-        The length of the input sequence.
-    output_dim:
-        The dimension of the output.
-    strand:
-        The strand of the model.
-    task:
-        The task of the model.
-    aggr:
-        The aggregation function.
-    fc_kwargs:
-        The keyword arguments for the fully connected layer.
-    """
-    def __init__(
-        self,
-        input_len: int,
-        output_dim: int,
-        conv_kwargs: dict,
-        rnn_kwargs: dict,
-        strand: str = "ss",
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        aggr: str = None,
-        fc_kwargs: dict = {},
-        **kwargs
-    ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            strand=strand, 
-            task=task, 
-            aggr=aggr, 
-            loss_fxn=loss_fxn, 
-            **kwargs
-        )
-        if self.strand == "ss":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs)
-            self.recurrentnet = BasicRecurrent(
-                input_dim=self.convnet.out_channels, 
-                **rnn_kwargs
-            )
-            self.fcnet = BasicFullyConnectedModule(
-                input_dim=self.recurrentnet.out_dim, 
-                output_dim=output_dim, 
-                **fc_kwargs
-            )
-        elif self.strand == "ds":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            if aggr == "concat_cnn":
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels * 2, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-            elif aggr == "concat_rnn":
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim * 2, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-            elif aggr in ["max", "avg"]:
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-        elif self.strand == "ts":
-            self.convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            self.reverse_convnet = BasicConv1D(
-                input_len=input_len, 
-                **conv_kwargs
-            )
-            if aggr == "concat_cnn":
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels * 2, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-            elif aggr == "concat_rnn":
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.reverse_recurrentnet = BasicRecurrent(
-                    input_dim=self.reverse_convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim * 2, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-            elif aggr in ["max", "avg"]:
-                self.recurrentnet = BasicRecurrent(
-                    input_dim=self.convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.reverse_recurrentnet = BasicRecurrent(
-                    input_dim=self.reverse_convnet.out_channels, 
-                    **rnn_kwargs
-                )
-                self.fcnet = BasicFullyConnectedModule(
-                    input_dim=self.recurrentnet.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
-                self.reverse_fcnet = BasicFullyConnectedModule(
-                    input_dim=self.reverse_recurrentnet.out_dim, 
-                    output_dim=output_dim, 
-                    **fc_kwargs
-                )
+    @property
+    def task(self) -> str:
+        """Task"""
+        return self._task
+    
+    @task.setter
+    def task(self, value: str):
+        """Set task"""
+        self._task = value
+    
+    @property
+    def aggr(self) -> str:
+        """Aggregation of strands"""
+        return self._aggr
+    
+    @aggr.setter
+    def aggr(self, value: str):
+        """Set aggregation of strands"""
+        self._aggr = value
 
-    def forward(self, x, x_rev_comp=None):
-        x = self.convnet(x)
-        x = x.transpose(1, 2)
-        if self.strand == "ss":
-            out, _ = self.recurrentnet(x)
-            out = self.fcnet(out[:, -1, :])
-        elif self.strand == "ds":
-            x_rev_comp = self.convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.transpose(1, 2)
-            if self.aggr == "concat_cnn":
-                x = torch.cat([x, x_rev_comp], dim=2)
-                out, _ = self.recurrentnet(x)
-                out = self.fcnet(out[:, -1, :])
-            elif self.aggr == "concat_rnn":
-                out, _ = self.recurrentnet(x)
-                out_rev_comp, _ = self.recurrentnet(x_rev_comp)
-                out = torch.cat([out[:, -1, :], out_rev_comp[:, -1, :]], dim=1)
-                out = self.fcnet(out)
-            elif self.aggr in ["max", "avg"]:
-                out, _ = self.recurrentnet(x)
-                out = self.fcnet(out[:, -1, :]) 
-                out_rev_comp, _ = self.recurrentnet(x_rev_comp)
-                out_rev_comp = self.fcnet(out_rev_comp[:, -1, :])
-                if self.aggr == "max":
-                    out = torch.max(out, out_rev_comp)
-                elif self.aggr == "avg":
-                    out = (out + out_rev_comp) / 2
-        elif self.strand == "ts":
-            x_rev_comp = self.reverse_convnet(x_rev_comp)
-            x_rev_comp = x_rev_comp.transpose(1, 2)
-            if self.aggr == "concat_cnn":
-                x = torch.cat([x, x_rev_comp], dim=2)
-                out, _ = self.recurrentnet(x)
-                out = self.fcnet(out[:, -1, :]) 
-            elif self.aggr == "concat_rnn":
-                out, _ = self.recurrentnet(x)
-                out_rev_comp, _ = self.reverse_recurrentnet(x_rev_comp)
-                out = torch.cat([out[:, -1, :], out_rev_comp[:, -1, :]], dim=1)
-                out = self.fcnet(out)
-            elif self.aggr in ["max", "avg"]:
-                out, _ = self.recurrentnet(x)
-                out = self.fcnet(out[:, -1, :]) 
-                out_rev_comp, _ = self.reverse_recurrentnet(x_rev_comp)
-                out_rev_comp = self.reverse_fcnet(out_rev_comp[:, -1, :])
-                if self.aggr == "max":
-                    out = torch.max(out, out_rev_comp)
-                elif self.aggr == "avg":
-                    out = (out + out_rev_comp) / 2
-        return out
+    @property
+    def loss_fxn(self) -> Callable:
+        """Loss function"""
+        return self._loss_fxn
+
+    @loss_fxn.setter
+    def loss_fxn(self, value: Callable):
+        """Set loss function"""
+        self._loss_fxn = value
+
+    @property
+    def optimizer(self) -> Callable:
+        """Optimizer"""
+        return self._optimizer
+
+    @optimizer.setter
+    def optimizer(self, value: Callable):
+        """Set optimizer"""
+        self._optimizer = value
+
+    @property
+    def optimizer_lr(self) -> float:
+        """Optimizer starting learning rate"""
+        return self._optimizer_lr
+
+    @optimizer_lr.setter
+    def optimizer_lr(self, value: float):
+        """Set optimizer starting learning rate"""
+        self._optimizer_lr = value
+
+    @property
+    def scheduler(self) -> Callable:
+        """Scheduler"""
+        return self._scheduler
+
+    @scheduler.setter
+    def scheduler(self, value: Callable):
+        """Set scheduler"""
+        self._scheduler = value
+    
+    @property
+    def metric(self) -> Callable:
+        """Metric"""
+        return self._metric
+
+    @metric.setter
+    def metric(self, value: Callable):
+        """Set metric"""
+        self._metric = value
+
+    @property
+    def seed(self) -> int:
+        """Seed"""
+        return self._seed
+
+    @seed.setter
+    def seed(self, value: int):
+        """Set seed"""
+        self._seed = value
