@@ -88,7 +88,10 @@ class BaseModel(LightningModule, ABC):
         seed_everything(seed) if seed is not None else None
         self.kwargs = kwargs
         if save_hp:
-            self.save_hyperparameters()
+            try:
+                self.save_hyperparameters()
+            except:
+                print("Hyperparameter logging failed. Are you nesting BaseModels?")
 
     @abstractmethod
     def forward(self, x, x_rev_comp=None) -> torch.Tensor:

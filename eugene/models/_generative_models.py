@@ -5,10 +5,7 @@ import torch.nn.functional as F
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LambdaLR
 from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
-from ..datasets import random_ohe_seqs
-from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.utilities.model_summary import ModelSummary
-from pytorch_lightning import seed_everything
+from ..interpret import seqs_from_tensor
 from collections import OrderedDict
 from torchmetrics import Accuracy
 
@@ -28,15 +25,24 @@ class GAN(BaseModel):
         b1: float = 0.5,
         b2: float = 0.9,
         n_critic: int = 5,
+        log_seqs_epoch: int = None,
         **kwargs
     ):
-        super().__init__(
-            input_len=None,
-            output_dim=None,
-            lr=gen_lr,
-            save_hp=False,
-            **kwargs
-        )
+        # Temp fix for loading super kwargs twice on load_from_checkpoint
+        try:
+            super().__init__(
+                input_len=None,
+                output_dim=None,
+                lr=gen_lr,
+                **kwargs
+            )
+        except TypeError:
+            super().__init__(
+                input_len=None,
+                output_dim=None,
+                lr=gen_lr,
+                # **kwargs
+            )
         self.latent_dim = latent_dim
         self.generator = generator
         self.discriminator = discriminator
@@ -48,24 +54,18 @@ class GAN(BaseModel):
         self.b1 = b1
         self.b2 = b2
         self.n_critic = n_critic
+        self.log_seqs_epoch = log_seqs_epoch
         self.kwargs = kwargs
 
     def forward(self, x, x_rev_comp=None):
         x = self.generator(x)
         return x
 
-    # def training_step(self, batch, batch_idx, optimizer_idx):
-    #     return self._common_step(batch, batch_idx, optimizer_idx, "train")
-
-    # def validation_step(self, batch, batch_idx):
-    #     return self._common_step(batch, batch_idx, None, "val")
-
-    # def test_step(self, batch, batch_idx):
-    #     return self._common_step(batch, batch_idx, None, "test")
-
     def _common_step(self, batch, batch_idx, optimizer_idx, stage : str):
         # Get a batch
         _, x, _, _ = batch
+
+        log_on_step = True if stage == "train" else False
 
         # Sample noise as generator input
         z = torch.normal(0, 1, (x.size(0), self.latent_dim))
@@ -73,7 +73,7 @@ class GAN(BaseModel):
         z = z.type_as(x)
 
         # Generator step
-        if optimizer_idx == 0:
+        if optimizer_idx == 0 or optimizer_idx == None:
             # real = self.discriminator(x)
             fake = self.discriminator(self(z))
 
@@ -86,30 +86,12 @@ class GAN(BaseModel):
                 gen_loss = F.binary_cross_entropy(fake, valid)
             elif self.mode == "wgan" or self.mode == "wgangp":
                 gen_loss = -torch.mean(fake)
-            self.log(f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True)    
+            self.log(f"{stage}_generator_loss", gen_loss, on_step=log_on_step, on_epoch=(not log_on_step), rank_zero_only=True)    
             
-            # To return
-<<<<<<< HEAD
-            # tqdm_dict = {'g_loss': gen_loss.detach()}
-            # output = OrderedDict({
-            #     'loss': gen_loss,
-            #     'progress_bar': tqdm_dict,
-            #     'log': tqdm_dict
-            # })
-
             return gen_loss
-=======
-            tqdm_dict = {'g_loss': gen_loss.detach()}
-            output = OrderedDict({
-                'loss': gen_loss,
-                'progress_bar': tqdm_dict,
-                'log': tqdm_dict
-            })
-            return output
->>>>>>> 7c57273f313637565d4be32700d188995edfea66
 
         # Discriminator step
-        elif optimizer_idx == 1 or None:
+        elif optimizer_idx == 1:
             gen_seqs = self(z)
             real = self.discriminator(x)
             fake = self.discriminator(gen_seqs)
@@ -140,13 +122,7 @@ class GAN(BaseModel):
 
                 disc_loss = -torch.mean(real) + torch.mean(fake) + self.lambda_gp * gradient_penalty
 
-            self.log(f"{stage}_discriminator_loss", disc_loss, on_step=True, rank_zero_only=True)
-
-            # preds = torch.round(torch.sigmoid(torch.cat((real, fake))))
-            # labels = torch.cat((real_labels, fake_labels))
-            # accuracy = Accuracy(task="binary")
-            # metric = accuracy(preds, labels)
-            # self.log(f"{stage}_metric", metric, on_step=True, rank_zero_only=True)
+            self.log(f"{stage}_discriminator_loss", disc_loss, on_step=log_on_step, on_epoch=(not log_on_step), rank_zero_only=True)
 
             tqdm_dict = {'d_loss': disc_loss}
             output = OrderedDict({
@@ -155,6 +131,14 @@ class GAN(BaseModel):
                 'log': tqdm_dict
             })
             return output
+
+    def validation_epoch_end(self, outputs):
+        if self.log_seqs_epoch is not None:
+            z = torch.Tensor(np.random.normal(0, 1, (self.log_seqs_epoch, self.latent_dim))).to(self.device)
+            gen = self(z)
+            gen_seqs = seqs_from_tensor(gen.cpu(), self.log_seqs_epoch)
+            np.savetxt(f"val_seqs_{self.current_epoch}.txt", gen_seqs, fmt="%s")
+
 
     def configure_optimizers(self):
         gen_optimizer = self.optimizer_dict[self.optimizer](
