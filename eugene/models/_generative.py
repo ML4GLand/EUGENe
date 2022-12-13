@@ -89,7 +89,6 @@ class GAN(BaseModel):
             self.log(f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True)    
             
             # To return
-<<<<<<< HEAD
             # tqdm_dict = {'g_loss': gen_loss.detach()}
             # output = OrderedDict({
             #     'loss': gen_loss,
@@ -98,15 +97,6 @@ class GAN(BaseModel):
             # })
 
             return gen_loss
-=======
-            tqdm_dict = {'g_loss': gen_loss.detach()}
-            output = OrderedDict({
-                'loss': gen_loss,
-                'progress_bar': tqdm_dict,
-                'log': tqdm_dict
-            })
-            return output
->>>>>>> 7c57273f313637565d4be32700d188995edfea66
 
         # Discriminator step
         elif optimizer_idx == 1 or None:

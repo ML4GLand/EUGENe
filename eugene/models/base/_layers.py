@@ -2,6 +2,42 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# ACTIVATIONS -- Layers that apply a non-linear activation function
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return input
+
+class Exponential(nn.Module):
+    __constants__ = ['inplace']
+    inplace: bool
+
+    def __init__(self, inplace: bool = False):
+        super(Exponential, self).__init__()
+        self.inplace = inplace
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return torch.exp(input)
+
+    def extra_repr(self) -> str:
+        inplace_str = 'inplace=True' if self.inplace else ''
+        return inplace_str
+
+    
+ACTIVATION_REGISTRY = {
+    "relu": nn.ReLU,
+    "leaky_relu": nn.LeakyReLU,
+    "gelu": nn.GELU,
+    "elu": nn.ELU,
+    "sigmoid": nn.Sigmoid,
+    "tanh": nn.Tanh,
+    "softplus": nn.Softplus,
+    "identity": Identity,
+    "exponential": Exponential
+}
+
 # CONVOLUTIONS -- Layers that convolve the input
 class BiConv1D(nn.Module):
 	def __init__(
@@ -63,7 +99,6 @@ CONVOLUTION_REGISTRY = {
 POOLING_REGISTRY = {
 	"max": nn.MaxPool1d,
 	"avg": nn.AvgPool1d,
-	"sum": nn.AdaptiveAvgPool1d,
 }
 
 # RECURRENCES -- Layers that can be used in a recurrent context
@@ -132,14 +167,6 @@ GLUER_REGISTRY = {
 	"view": View
 }
 
-# MISC -- Layers that modify the input in some way
-class Identity(nn.Module):
-    def __init__(self):
-        super(Identity, self).__init__()
-
-    def forward(self, input):
-        return input
-
 class Clip(nn.Module):
 	def __init__(self, min, max):
 		super().__init__()
@@ -150,6 +177,5 @@ class Clip(nn.Module):
 		return torch.clamp(x, self.min, self.max)
 
 MISC_REGISTRY = {
-	"identity": Identity,
 	"clip": Clip
 }

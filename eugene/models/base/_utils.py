@@ -2,7 +2,7 @@ import numpy as np
 import torch.nn as nn
 
 
-def GetFlattenDim(network, seq_len):
+def get_flatten_dim(network, seq_len):
     """
     Get the dimension of the flattened output of a convolutional network with only Conv1d and Maxpool1d layers.
 
@@ -29,6 +29,10 @@ def GetFlattenDim(network, seq_len):
             else:
                 assert isinstance(module.padding[0], int)
                 output_len = output_len - module.kernel_size[0] + 1 + (2 * module.padding[0])
-        elif name == "MaxPool1d":
+        elif name == "MaxPool1d" or name == "AvgPool1d":
+            if isinstance(module.kernel_size, tuple):
+                module.kernel_size = module.kernel_size[0]
+            if isinstance(module.stride, tuple):
+                module.stride = module.stride[0]
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)

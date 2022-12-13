@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .base import SequenceModel 
-from .base._blocks import DenseBlock, Conv1DBlock, RecurrentBlock, BiConv1DBlock
-from .base._utils import GetFlattenDim
+from .base import _blocks as blocks
+from .base import _layers as layers
+from .base._utils import get_flatten_dim 
 
 
 class TutorialCNN( SequenceModel):
@@ -124,7 +125,7 @@ class Jores21CNN(SequenceModel):
             loss_fxn=loss_fxn,
             **kwargs
         )
-        self.biconv = BiConv1DBlock(
+        self.biconv = blocks.BiConv1DBlock(
             filters=filters,
             kernel_size=kernel_size,
             layers=layers,
@@ -235,7 +236,7 @@ class Kopp21CNN(SequenceModel):
         return x
 
 
-class FactorizedBasset( SequenceModel):
+class FactorizedBasset(SequenceModel):
 	def __init__(
 		self, 
 		input_len: int = 1000,
@@ -267,22 +268,22 @@ class FactorizedBasset( SequenceModel):
 			maxpool_kernels, 
 		    dense_kwargs	
 		)
-		self.conv1d_block1 = Conv1DBlock(
+		self.conv1d_block1 = blocks.Conv1DBlock(
 			input_len=input_len, 
             input_channels=4,
 			**self.conv1_kwargs
 		)
-		self.conv1d_block2 = Conv1DBlock(
+		self.conv1d_block2 = blocks.Conv1DBlock(
 			input_len=self.conv1d_block1.output_len,
             input_channels=self.conv1d_block1.out_channels,
 			**self.conv2_kwargs
 		)
-		self.conv1d_block3 = Conv1DBlock(
+		self.conv1d_block3 = blocks.Conv1DBlock(
 			input_len=self.conv1d_block2.output_len,
             input_channels=self.conv1d_block2.out_channels,
 			**self.conv3_kwargs
 		)
-		self.dense_block = DenseBlock(
+		self.dense_block = blocks.DenseBlock(
 			input_dim=self.conv1d_block3.flatten_dim,
 			output_dim=output_dim, 
 			**self.dense_kwargs
@@ -344,28 +345,35 @@ class ResidualBind( SequenceModel):
         strand="ss",
         task="regression",
         aggr=None,
+        input_chanels=4,
         conv_channels=[96],
         conv_kernel_size=[11],
         conv_stride_size=[1],
         conv_dilation_rate=[1],
-        conv_padding="same",
+        conv_padding="valid",
         conv_activation="relu",
         conv_batchnorm=True,
-        conv_dropout=0.1,
-        residual_channels=[3, 3, 3],
-        residual_kernel_size=[11, 11, 11],
+        conv_batchnorm_first=True,
+        conv_dropout_rates=0.1,
+        conv_biases=False,
+        residual_channels=[96, 96, 96],
+        residual_kernel_size=[3, 3, 3],
         residual_stride_size=[1, 1, 1],
-        residual_dilation_rate=[1, 1, 1],
+        residual_dilation_rate=[1, 2, 4],
         residual_padding="same",
         residual_activation="relu",
         residual_batchnorm=True,
-        residual_dropout=0.1,
+        residual_batchnorm_first=True,
+        residual_dropout_rates=0.1,
+        residual_biases=False,
         pool_kernel_size=10,
-        pool_dropout=0.2,
-        fc_hidden_dims=[256],
-        fc_activation="relu",
-        fc_batchnorm=True,
-        fc_dropout=0.0,
+        pool_dropout_rate=0.2,
+        dense_hidden_dims=[256],
+        dense_activation="relu",
+        dense_batchnorm=True,
+        dense_batchnorm_first=True,
+        dense_dropout_rates=0.5,
+        dense_biases=False,
         **kwargs
     ):
         super().__init__(
@@ -373,52 +381,64 @@ class ResidualBind( SequenceModel):
         )
         if isinstance(conv_channels, int):
             conv_channels = [conv_channels]
-        self.conv = Conv1DBlock(
+        
+        # Pass through normal conv
+        self.conv1d_block = blocks.Conv1DBlock(
             input_len=input_len,
-            channels=[4] + conv_channels,
+            input_channels=input_chanels,
+            conv_channels=conv_channels,
             conv_kernels=conv_kernel_size,
             conv_strides=conv_stride_size,
-            pool_kernels=None,
-            activation=conv_activation,
-            pool_strides=None,
-            dropout_rates=conv_dropout,
-            dilations=conv_dilation_rate,
-            padding=conv_padding,
-            batchnorm=conv_batchnorm
+            conv_dilations=conv_dilation_rate,
+            conv_padding=conv_padding,
+            conv_biases=conv_biases,
+            activations=conv_activation,
+            pool_types=[None],
+            dropout_rates=conv_dropout_rates,
+            batchnorm=conv_batchnorm,
+            batchnorm_first=conv_batchnorm_first
         )
-        res_block_input_len = GetFlattenDim(self.conv.module, seq_len=input_len)
-        self.residual_block = ResidualModule(
-            input_len=res_block_input_len,
-            channels=[self.conv.out_channels] + residual_channels,
-            conv_kernels=residual_kernel_size,
-            conv_strides=residual_stride_size,
-            pool_kernels=None,
-            activation=residual_activation,
-            pool_strides=None,
-            dropout_rates=residual_dropout,
-            dilations=residual_dilation_rate,
-            padding=residual_padding,
-            batchnorm=residual_batchnorm
+        
+        # Pass through residual block
+        res_block_input_len = self.conv1d_block.output_len
+        self.residual_block = layers.Residual(
+            blocks.Conv1DBlock(
+                input_len=res_block_input_len,
+                input_channels=self.conv1d_block.out_channels,
+                conv_channels=residual_channels,
+                conv_kernels=residual_kernel_size,
+                conv_strides=residual_stride_size,
+                conv_dilations=residual_dilation_rate,
+                conv_padding=residual_padding,
+                conv_biases=residual_biases,
+                activations=residual_activation,
+                pool_types=None,
+                dropout_rates=residual_dropout_rates,
+                batchnorm=residual_batchnorm,
+                batchnorm_first=residual_batchnorm_first
+                )
         )
         self.average_pool = nn.AvgPool1d(pool_kernel_size, stride=1)
-        self.dropout = nn.Dropout(pool_dropout)
+        self.dropout = nn.Dropout(pool_dropout_rate)
         self.flatten = nn.Flatten()
-        self.fc = DenseBlock(
+        self.dense_block = blocks.DenseBlock(
             input_dim=self.residual_block.module.out_channels*(res_block_input_len-pool_kernel_size+1),
             output_dim=output_dim,
-            hidden_dims=fc_hidden_dims,
-            activation=fc_activation,
-            batchnorm=fc_batchnorm,
-            dropout_rate=fc_dropout
+            hidden_dims=dense_hidden_dims,
+            activations=dense_activation,
+            batchnorm=dense_batchnorm,
+            batchnorm_first=dense_batchnorm_first,
+            dropout_rates=dense_dropout_rates,
+            biases=dense_biases
         )
 
-    def forward(self, x, x_rev):
-        x = self.conv(x)
+    def forward(self, x, x_rev=None):
+        x = self.conv1d_block(x)
         x = self.residual_block(x)
         x = self.average_pool(x)
         x = self.dropout(x)
         x = self.flatten(x)
-        x = self.fc(x)
+        x = self.dense_block(x)
         return x
 
 
@@ -501,17 +521,17 @@ class DeepBind( SequenceModel):
             loss_fxn=loss_fxn, 
             **kwargs
         )
-        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
         self.mode = mode
-		self.mode_dict = {"dna": 1, "rbp": 2}
-        self.mode_multiplier = mode_dict[self.mode]
+        self.mode_dict = {"dna": 1, "rbp": 2}
+        self.mode_multiplier = self.mode_dict[self.mode]
         self.aggr = aggr
-        self.conv1d_block = Conv1DBlock(input_len=input_len, **self.conv_kwargs)
-        self.pool_dim = GetFlattenDim(self.conv1d_block.module, seq_len=input_len)
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv1d_block = blocks.Conv1DBlock(**self.conv_kwargs)
+        self.pool_dim = self.conv1d_block.output_len
         self.max_pool = nn.MaxPool1d(kernel_size=self.pool_dim)
         self.avg_pool = nn.AvgPool1d(kernel_size=self.pool_dim)
         if self.strand == "ss":
-            self.dense_block = DenseBlock(
+            self.dense_block = blocks.DenseBlock(
                 input_dim=self.conv1d_block.out_channels * self.mode_multiplier,
                 output_dim=output_dim,
                 **self.dense_kwargs
@@ -528,7 +548,7 @@ class DeepBind( SequenceModel):
                 output_dim=output_dim,
                 **self.dense_kwargs
             )
-            self.reverse_conv1d_block = Conv1DBlock(
+            self.reverse_conv1d_block = blocks.Conv1DBlock(
                 input_len=input_len, 
                 **self.conv_kwargs
                 )
@@ -538,9 +558,7 @@ class DeepBind( SequenceModel):
                 **self.dense_kwargs
             )
 
-
-
-def forward(self, x, x_rev_comp=None):
+    def forward(self, x, x_rev_comp=None):
 
         x = self.conv1d_block(x)
         if self.mode == "rbp":
@@ -580,16 +598,17 @@ def forward(self, x, x_rev_comp=None):
 
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
-        conv_kwargs.setdefault("channels", [4, 16])
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [16])
         conv_kwargs.setdefault("conv_kernels", [16])
         conv_kwargs.setdefault("pool_types", None)
-        conv_kwargs.setdefault("omit_final_pool", True)
         conv_kwargs.setdefault("dropout_rates", 0.25)
         conv_kwargs.setdefault("batchnorm", False)
         dense_kwargs.setdefault("hidden_dims", [32])
-        dense_kwargs.setdefault("dropout_rate", 0.25)
+        dense_kwargs.setdefault("dropout_rates", 0.25)
         dense_kwargs.setdefault("batchnorm", False)
-        return conv_kwargs,dense_kwargs 
+        return conv_kwargs, dense_kwargs 
 
 
 class DeepSEA( SequenceModel):
@@ -613,8 +632,8 @@ class DeepSEA( SequenceModel):
     """
     def __init__(
         self,
-        input_len: int = 1000,
-        output_dim: int = 1,
+        input_len: int,
+        output_dim: int,
         strand: str = "ss",
         task: str = "regression",
         aggr: str = None,
@@ -633,10 +652,8 @@ class DeepSEA( SequenceModel):
             **kwargs
         )
         self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
-        self.conv1d_block = Conv1DBlock(
-            input_len=input_len, 
-            **self.conv_kwargs)
-        self.dense_block = DenseBlock(
+        self.conv1d_block = blocks.Conv1DBlock(**self.conv_kwargs)
+        self.dense_block = blocks.DenseBlock(
             input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
             **self.dense_kwargs
@@ -650,24 +667,26 @@ class DeepSEA( SequenceModel):
 
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
-        conv_kwargs.setdefault("channels", [4, 320, 480, 960])
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [320, 480, 960])
         conv_kwargs.setdefault("conv_kernels", [8, 8, 8])
-        conv_kwargs.setdefault("pool_types", [4, 4, 4])
-        conv_kwargs.setdefault("omit_final_pool", True)
-        conv_kwargs.setdefault("activation", "relu")
+        conv_kwargs.setdefault("pool_types", ["max", "max", None])
+        conv_kwargs.setdefault("pool_kernels", [4, 4, None])
+        conv_kwargs.setdefault("activations", "relu")
         conv_kwargs.setdefault("dropout_rates", [0.2, 0.2, 0.5])
         conv_kwargs.setdefault("batchnorm", False)
         dense_kwargs.setdefault("hidden_dims", [925])
         return conv_kwargs,dense_kwargs 
 
 
-class Basset( SequenceModel):
+class Basset(SequenceModel):
     """
     """
     def __init__(
         self, 
-        input_len: int = 1000,
-        output_dim = 1, 
+        input_len: int,
+        output_dim: int, 
         strand = "ss",
         task = "binary_classification",
         aggr = None,
@@ -686,10 +705,8 @@ class Basset( SequenceModel):
             **kwargs
         )
         self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
-        self.conv1d_block = Conv1DBlock(
-            input_len=input_len, 
-            **self.conv_kwargs)
-        self.dense_block = DenseBlock(
+        self.conv1d_block = blocks.Conv1DBlock(**self.conv_kwargs)
+        self.dense_block = blocks.DenseBlock(
             input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
             **self.dense_kwargs
@@ -703,19 +720,22 @@ class Basset( SequenceModel):
         
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
-        conv_kwargs.setdefault("channels", [4, 300, 200, 200])
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [300, 200, 200])
         conv_kwargs.setdefault("conv_kernels", [19, 11, 7])
         conv_kwargs.setdefault("conv_strides", [1, 1, 1])
-        conv_kwargs.setdefault("padding", [9, 5, 3])
-        conv_kwargs.setdefault("pool_types", [3, 4, 4])
-        conv_kwargs.setdefault("omit_final_pool", False)
+        conv_kwargs.setdefault("conv_padding", [9, 5, 3])
+        conv_kwargs.setdefault("pool_kernels", [3, 4, 4])
         conv_kwargs.setdefault("dropout_rates", 0.0)
+        conv_kwargs.setdefault("activations", "relu")
         conv_kwargs.setdefault("batchnorm", True)
-        conv_kwargs.setdefault("activation", "relu")
+        conv_kwargs.setdefault("batchnorm_first", True)
         dense_kwargs.setdefault("hidden_dims", [1000, 164])
-        dense_kwargs.setdefault("dropout_rate", 0.0)
+        dense_kwargs.setdefault("dropout_rates", 0.0)
         dense_kwargs.setdefault("batchnorm", True)
-        dense_kwargs.setdefault("activation", "relu")
+        dense_kwargs.setdefault("batchnorm_first", True)
+        dense_kwargs.setdefault("activations", "relu")
         return conv_kwargs,dense_kwargs 
 
 
@@ -745,8 +765,8 @@ class DanQ( SequenceModel):
         task: str = "regression",
         loss_fxn: str = "mse",
         aggr: str = None,
-        cnn_kwargs: dict = {},
-        rnn_kwargs: dict = {},
+        conv_kwargs: dict = {},
+        recurrent_kwargs: dict = {},
         dense_kwargs: dict = {},
         **kwargs
     ):
@@ -759,16 +779,16 @@ class DanQ( SequenceModel):
             loss_fxn=loss_fxn, 
             **kwargs
         ) 
-        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(cnn_kwargs, rnn_kwargs, dense_kwargs)
-        self.conv1d_block = Conv1DBlock(
-            input_len=input_len, 
-            **cnn_kwargs)
-        self.recurrentnet = BasicRecurrent(
-            input_dim=self.conv1d_block.out_channels, 
-            **rnn_kwargs
+        self.conv_kwargs, self.recurrent_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, recurrent_kwargs, dense_kwargs
         )
-        self.dense_block = DenseBlock(
-            input_dim=self.recurrentnet.out_dim, 
+        self.conv1d_block = blocks.Conv1DBlock(**conv_kwargs)
+        self.recurrent_block = blocks.RecurrentBlock(
+            input_dim=self.conv1d_block.out_channels, 
+            **self.recurrent_kwargs
+        )
+        self.dense_block = blocks.DenseBlock(
+            input_dim=self.recurrent_block.out_channels,
             output_dim=output_dim, 
             **self.dense_kwargs
         )
@@ -776,28 +796,29 @@ class DanQ( SequenceModel):
     def forward(self, x, x_rev_comp=None):
         x = self.conv1d_block(x)
         x = x.transpose(1, 2)
-        out, _ = self.recurrentnet(x)
+        out, _ = self.recurrent_block(x)
         out = self.dense_block(out[:, -1, :])
         return out
 
-    def kwarg_handler(self, cnn_kwargs, rnn_kwargs, dense_kwargs):
+    def kwarg_handler(self, conv_kwargs, recurrent_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
-        cnn_kwargs.setdefault("channels", [4, 320])
-        cnn_kwargs.setdefault("conv_kernels", [26])
-        cnn_kwargs.setdefault("conv_strides", [1])
-        cnn_kwargs.setdefault("padding", "same")
-        cnn_kwargs.setdefault("pool_types", [13])
-        cnn_kwargs.setdefault("omit_final_pool", False)
-        cnn_kwargs.setdefault("dropout_rates", 0.2)
-        cnn_kwargs.setdefault("activation", "relu")
-        rnn_kwargs.setdefault("unit_type", "lstm")
-        rnn_kwargs.setdefault("output_dim", 320)
-        rnn_kwargs.setdefault("bidirectional", True)
-        rnn_kwargs.setdefault("batch_first", True)
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [320])
+        conv_kwargs.setdefault("conv_kernels", [26])
+        conv_kwargs.setdefault("conv_strides", [1])
+        conv_kwargs.setdefault("conv_padding", "same")
+        conv_kwargs.setdefault("pool_kernels", [13])
+        conv_kwargs.setdefault("dropout_rates", 0.2)
+        conv_kwargs.setdefault("activations", "relu")
+        recurrent_kwargs.setdefault("unit_type", "lstm")
+        recurrent_kwargs.setdefault("hidden_dim", 320)
+        recurrent_kwargs.setdefault("bidirectional", True)
+        recurrent_kwargs.setdefault("batch_first", True)
         dense_kwargs.setdefault("hidden_dims", [925])
-        dense_kwargs.setdefault("dropout_rate", 0.5)
+        dense_kwargs.setdefault("dropout_rates", 0.5)
         dense_kwargs.setdefault("batchnorm", False)
-        return cnn_kwargs,dense_kwargs 
+        return conv_kwargs, recurrent_kwargs, dense_kwargs
 
 
 class DeepSTARR( SequenceModel):
@@ -809,8 +830,8 @@ class DeepSTARR( SequenceModel):
     """
     def __init__(
         self, 
-        input_len: int = 249,
-        output_dim = 2, 
+        input_len: int,
+        output_dim: int, 
         strand = "ss",
         task = "regression",
         aggr = None,
@@ -829,10 +850,8 @@ class DeepSTARR( SequenceModel):
             **kwargs
         )
         self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
-        self.conv1d_block = Conv1DBlock(
-            input_len=input_len, 
-            **self.conv_kwargs)
-        self.dense_block = DenseBlock(
+        self.conv1d_block = blocks.Conv1DBlock(**self.conv_kwargs)
+        self.dense_block = blocks.DenseBlock(
             input_dim=self.conv1d_block.flatten_dim, 
             output_dim=output_dim, 
             **self.dense_kwargs
@@ -840,21 +859,23 @@ class DeepSTARR( SequenceModel):
 
     def forward(self, x, x_rev_comp=None):
         x = self.conv1d_block(x)
+        print(x.shape)
         x = x.view(x.size(0), self.conv1d_block.flatten_dim)
         x = self.dense_block(x)
         return x
         
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
-        conv_kwargs.setdefault("channels", [4, 246, 60, 60, 120])
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [246, 60, 60, 120])
         conv_kwargs.setdefault("conv_kernels", [7, 3, 5, 3])
         conv_kwargs.setdefault("conv_strides", [1, 1, 1, 1])
-        conv_kwargs.setdefault("padding", "same")
-        conv_kwargs.setdefault("pool_types", [2, 2, 2, 2])
-        conv_kwargs.setdefault("omit_final_pool", False)
+        conv_kwargs.setdefault("conv_padding", "same")
+        conv_kwargs.setdefault("pool_kernels", [2, 2, 2, 2])
         conv_kwargs.setdefault("dropout_rates", 0.0)
         conv_kwargs.setdefault("batchnorm", True)
         dense_kwargs.setdefault("hidden_dims", [256, 256])
-        dense_kwargs.setdefault("dropout_rate", 0.4)
+        dense_kwargs.setdefault("dropout_rates", 0.4)
         dense_kwargs.setdefault("batchnorm", True)
-        return conv_kwargs,dense_kwargs 
+        return conv_kwargs, dense_kwargs 

@@ -3,9 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import repeat, rearrange
 from typing import Union, Callable, List
-from ._utils import GetFlattenDim
-from ._activations import ACTIVATION_REGISTRY
-from ._layers import POOLING_REGISTRY, RECURRENT_REGISTRY
+from ._utils import get_flatten_dim 
+from . import _layers as layers
 
 
 class DenseBlock(nn.Module):
@@ -31,7 +30,7 @@ class DenseBlock(nn.Module):
 
         # Define the activations
         activations = activations if type(activations) == list else [activations] * len(hidden_dims)
-        self.activations = [ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations] 
+        self.activations = [layers.ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations] 
 
         # Define the dropout rates
         if dropout_rates != 0.0 and dropout_rates is not None:
@@ -149,12 +148,11 @@ class Conv1DBlock(nn.Module):
 
         # Define activation layers
         activations = activations if type(activations) == list else [activations] * len(conv_channels)
-        self.activations = [ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations]
+        self.activations = [layers.ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations]
         
         # Define pooling layers
         pool_types = pool_types if type(pool_types) == list else [pool_types] * len(conv_channels)
-        self.pool_types = [POOLING_REGISTRY[pool_type] if isinstance(pool_type, str) else pool_type for pool_type in pool_types]
-        print(pool_types, self.pool_types)
+        self.pool_types = [layers.POOLING_REGISTRY[pool_type] if isinstance(pool_type, str) else pool_type for pool_type in pool_types]
         self.pool_kernels = pool_kernels if pool_kernels is not None else [1] * len(self.pool_types)
         self.pool_strides = pool_kernels if pool_strides is not None else [1] * len(self.pool_types)
         self.pool_padding = pool_padding if pool_padding is not None else [0] * len(self.pool_types)
@@ -169,7 +167,6 @@ class Conv1DBlock(nn.Module):
                 self.dropout_rates = dropout_rates
         else:
             self.dropout_rates = []
-        
         # Define batchnorm layers
         self.batchnorm = batchnorm
         self.batchnorm_first = batchnorm_first
@@ -213,7 +210,7 @@ class Conv1DBlock(nn.Module):
             
             # Add a dropout layer if specified
             if i < len(self.dropout_rates):
-                if dropout_rates[i] is not None:
+                if self.dropout_rates[i] is not None:
                     self.layers.append(nn.Dropout(self.dropout_rates[i]))
 
             
@@ -234,7 +231,7 @@ class Conv1DBlock(nn.Module):
             
             # Define output parameters
             self.out_channels = self.conv_channels[-1]
-            self.output_len = GetFlattenDim(self.layers, seq_len=self.input_len)
+            self.output_len =  get_flatten_dim(self.layers, seq_len=self.input_len)
             self.flatten_dim = self.output_len * self.out_channels
 
     def forward(self, x):
@@ -260,7 +257,7 @@ class RecurrentBlock(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
-        self.unit_type = RECURRENT_REGISTRY[unit_type]
+        self.unit_type = layers.RECURRENT_REGISTRY[unit_type]
         self.bidirectional = bidirectional
         self.dropout_rates = dropout_rates
         self.bias = bias

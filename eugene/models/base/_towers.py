@@ -49,6 +49,7 @@ class Tower(nn.Module):
         for i in range(repeats):
             args = {arg: vals[i] for arg, vals in dynamic_block_args.items()}
             args.update(static_block_args)
+            print(args)
             blocks.append(block(**args))
                 
         self.tower = nn.Sequential(*blocks)
