@@ -859,7 +859,6 @@ class DeepSTARR( SequenceModel):
 
     def forward(self, x, x_rev_comp=None):
         x = self.conv1d_block(x)
-        print(x.shape)
         x = x.view(x.size(0), self.conv1d_block.flatten_dim)
         x = self.dense_block(x)
         return x

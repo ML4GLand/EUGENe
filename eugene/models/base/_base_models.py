@@ -104,17 +104,17 @@ class SequenceModel(LightningModule, ABC):
             reverse complement of the input sequence
         """
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
         """Training step"""
-        return self._common_step(batch, batch_idx, optimizer_idx, "train")
+        return self._common_step(batch, batch_idx, "train")
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
-        return self._common_step(batch, batch_idx, None, "val")
+        return self._common_step(batch, batch_idx, "val")
 
     def test_step(self, batch, batch_idx):
         """Test step"""
-        return self._common_step(batch, batch_idx, None, "test")
+        return self._common_step(batch, batch_idx, "test")
 
     def predict_step(self, batch, batch_idx):
         """Predict step
@@ -139,7 +139,7 @@ class SequenceModel(LightningModule, ABC):
         outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()
         return np.column_stack([ID, outs, y])
 
-    def _common_step(self, batch, batch_idx, optimizer_idx, stage: str):
+    def _common_step(self, batch, batch_idx, stage: str):
         """Common step for training, validation and test
 
         Parameters:
@@ -160,7 +160,6 @@ class SequenceModel(LightningModule, ABC):
         ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
         loss = self.loss_fxn(outs, y)
-        print(loss)
         self.log(
             f"{stage}_loss", 
             loss, 

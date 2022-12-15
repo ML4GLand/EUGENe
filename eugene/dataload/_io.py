@@ -367,9 +367,11 @@ def read_bed(
     bed_file: str,
     roi_file: str,
     ref_file: str,
-    dnaflank=0,
+    binsize: int = None,
+    flank=0,
     resolution=None,
     collapser="max",
+    order=1,
     add_seqs=False,
     return_janggu=False,
     **kwargs,
@@ -384,7 +386,7 @@ def read_bed(
         Path to the file containing the regions of interest under consideration.
     ref_file : str
         Path to the genome reference file.
-    dnaflank : int, optional
+    flank : int, optional
         Number of nucleotides to flank the sequence. Defaults to None.
     resolution : int, optional
         Resolution of the sequence. Defaults to None.
@@ -409,12 +411,19 @@ def read_bed(
             "Please install janggu dependencies `pip install eugene[janggu]`"
         )
     dna = Bioseq.create_from_refgenome(
-        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+        name="dna", 
+        refgenome=ref_file, 
+        roi=roi_file, 
+        binsize=binsize,
+        flank=flank, 
+        order=order,
+        **kwargs
     )
     cover = Cover.create_from_bed(
         "cover",
         bedfiles=bed_file,
         roi=roi_file,
+        binsize=binsize,
         resolution=resolution,
         collapser=collapser,
         **kwargs,
@@ -439,7 +448,8 @@ def read_bam(
     bam_file: str,
     roi_file: str,
     ref_file: str,
-    dnaflank=0,
+    flank=0,
+    order=1,
     resolution=None,
     normalizer=None,
     add_seqs=False,
@@ -456,7 +466,7 @@ def read_bam(
         Path to the file containing the regions of interest under consideration.
     ref_file : str
         Path to the genome reference file.
-    dnaflank : int, optional
+    flank : int, optional
         Number of nucleotides to flank the sequence. Defaults to None.
     resolution : int, optional
         Resolution of the sequence. Defaults to None.
@@ -481,7 +491,12 @@ def read_bam(
             "Please install janggu dependencies `pip install eugene[janggu]`"
         )
     dna = Bioseq.create_from_refgenome(
-        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+        name="dna", 
+        refgenome=ref_file, 
+        roi=roi_file, 
+        flank=flank, 
+        order=order,
+        **kwargs
     )
     cover = Cover.create_from_bam(
         "cover",
@@ -516,7 +531,8 @@ def read_bigwig(
     bigwig_file: str,
     roi_file: str,
     ref_file: str,
-    dnaflank=0,
+    order=1,
+    flank=0,
     resolution=None,
     collapser="max",
     add_seqs=False,
@@ -533,7 +549,7 @@ def read_bigwig(
         Path to the file containing the regions of interest under consideration.
     ref_file : str
         Path to the genome reference file.
-    dnaflank : int, optional
+    flank : int, optional
         Number of nucleotides to flank the sequence. Defaults to None.
     resolution : int, optional
         Resolution of the sequence. Defaults to None.
@@ -559,7 +575,12 @@ def read_bigwig(
         )
 
     dna = Bioseq.create_from_refgenome(
-        name="dna", refgenome=ref_file, roi=roi_file, flank=dnaflank, **kwargs
+        name="dna", 
+        refgenome=ref_file, 
+        roi=roi_file, 
+        flank=flank, 
+        order=order,
+        **kwargs
     )
     cover = Cover.create_from_bigwig(
         "cover",

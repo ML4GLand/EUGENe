@@ -253,3 +253,10 @@ def train_val_predictions(
         [f"{prefix}{label}_predictions{suffix}" for label in target_keys]
     ] = preds.loc[sdata.seqs_annot.index].astype(float)
     return sdata if copy else None
+
+
+def get_predictions(model, x, batch_size=100, accelerator='gpu', devices=1):
+    trainer = pl.Trainer(accelerator=accelerator, devices=devices, logger=None)
+    dataloader = torch.utils.data.DataLoader(x, batch_size=batch_size, shuffle=False) 
+    pred = trainer.predict(model, dataloaders=dataloader)
+    return np.concatenate(pred)
