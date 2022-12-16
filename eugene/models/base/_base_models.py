@@ -78,7 +78,9 @@ class SequenceModel(LightningModule, ABC):
         self.scheduler_kwargs = scheduler_kwargs
 
         # Set the metric
-        self.metric, self.metric_kwargs, self.metric_name = self._configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
+        self.train_metric, self.metric_kwargs, self.metric_name = self._configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
+        self.val_metric = self.train_metric.clone()
+        self.test_metric = self.train_metric.clone()
         
         # Set the seed
         if seed is not None:
@@ -106,15 +108,25 @@ class SequenceModel(LightningModule, ABC):
 
     def training_step(self, batch, batch_idx):
         """Training step"""
-        return self._common_step(batch, batch_idx, "train")
+        step_dict = self._common_step(batch, batch_idx, "train")
+        self.log("train_loss", step_dict["loss"])
+        self.train_metric(step_dict["outs"], step_dict["y"].long())
+        self.log(f"train_{self.metric_name}", self.train_metric, on_step=True, on_epoch=True)
+        return step_dict
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
-        return self._common_step(batch, batch_idx, "val")
+        step_dict = self._common_step(batch, batch_idx, "val")
+        self.log("val_loss", step_dict["loss"], on_step=False, on_epoch=True)
+        self.val_metric(step_dict["outs"], step_dict["y"].long())
+        self.log(f"val_{self.metric_name}", self.val_metric, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
         """Test step"""
-        return self._common_step(batch, batch_idx, "test")
+        step_dict = self._common_step(batch, batch_idx, "test")
+        self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
+        self.test_metric(step_dict["outs"], step_dict["y"].long())
+        self.log(f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True)
 
     def predict_step(self, batch, batch_idx):
         """Predict step
@@ -131,12 +143,10 @@ class SequenceModel(LightningModule, ABC):
         np.ndarray:
             predictions with the format ID, prediction, true value
         """
-        ID, x, x_rev_comp, y = batch
-        ID = np.array(
-            [ascii_decode_seq(item) for item in ID.squeeze(dim=1).detach().cpu().numpy()]
-        )
-        y = y.detach().cpu().numpy()
-        outs = self(x, x_rev_comp).squeeze(dim=1).detach().cpu().numpy()
+        step_dict = self._common_step(batch, batch_idx, "predict")
+        ID = np.array([ascii_decode_seq(item) for item in step_dict["ID"].squeeze(dim=1).cpu().numpy()])
+        y = step_dict["y"].long().cpu().numpy()
+        outs = step_dict["outs"].cpu().numpy()
         return np.column_stack([ID, outs, y])
 
     def _common_step(self, batch, batch_idx, stage: str):
@@ -160,21 +170,12 @@ class SequenceModel(LightningModule, ABC):
         ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
         loss = self.loss_fxn(outs, y)
-        self.log(
-            f"{stage}_loss", 
-            loss, 
-            on_epoch=True, 
-            rank_zero_only=True
-        )
-        # Get and log metrics
-        self.metric(outs, y)
-        self.log(
-            f"{stage}_{self.metric_name}",
-            self.metric,
-            on_epoch=True,
-            rank_zero_only=True,
-        )
-        return loss
+
+        return {
+            "loss": loss, 
+            "ID": ID.detach(), 
+            "outs": outs.detach(), 
+            "y": y.detach()}
 
     def _configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
@@ -330,14 +331,14 @@ class SequenceModel(LightningModule, ABC):
         self._scheduler = value
     
     @property
-    def metric(self) -> Callable:
-        """Metric"""
-        return self._metric
+    def train_metric(self) -> str:
+        """Train metric"""
+        return self._train_metric
 
-    @metric.setter
-    def metric(self, value: Callable):
-        """Set metric"""
-        self._metric = value
+    @train_metric.setter
+    def train_metric(self, value: str):
+        """Set train metric"""
+        self._train_metric = value
 
     @property
     def seed(self) -> int:

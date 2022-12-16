@@ -1,25 +1,27 @@
 import numpy as np
 import torch.nn as nn
+import torchinfo
 
 
-def get_flatten_dim(network, seq_len):
+def get_conv1dblock_output_len(modules, input_len):
     """
-    Get the dimension of the flattened output of a convolutional network with only Conv1d and Maxpool1d layers.
-
+    Get the dimension of the flattened output of a convolutional modules with only Conv1d and Maxpool1d layers.
+    This will be deprecated in the future.
+    
     Parameters
     ----------
-    network : nn.Module
-        network to get flattened dimension of
-    seq_len : int
+    modules : nn.Module
+        modules to get flattened dimension of
+    input_len : int
         length of the sequence to flatten
 
     Returns
     -------
     int
-        flattened dimension of the network
+        flattened dimension of themodules 
     """
-    output_len = seq_len
-    for module in network:
+    output_len =input_len 
+    for module in modules:
         name = module.__class__.__name__
         if name == "Conv1d":
             if module.padding == "valid":
@@ -34,5 +36,14 @@ def get_flatten_dim(network, seq_len):
                 module.kernel_size = module.kernel_size[0]
             if isinstance(module.stride, tuple):
                 module.stride = module.stride[0]
+            #print(module, output_len, module.kernel_size, module.stride)
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)
+
+
+def get_output_size(modules, input_size):
+    if isinstance(input_size, int):
+        input_size = (input_size, )
+    summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
+    out_size = summary.summary_list[-1].output_size[1:]
+    return out_size

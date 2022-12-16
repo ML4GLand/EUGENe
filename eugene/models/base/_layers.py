@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import repeat, rearrange
 
 # ACTIVATIONS -- Layers that apply a non-linear activation function
 class Identity(nn.Module):
@@ -108,19 +109,74 @@ RECURRENT_REGISTRY = {
 	"gru": nn.GRU
 }
 
+class MultiHeadAttention(nn.Module):
+
+    def __init__(
+        self, 
+        input_dim: int, 
+        head_dim: int, 
+        num_heads: int = 1,
+        dropout_rate: float = 0.0, 
+    ):
+        super().__init__()
+        
+        self.input_dim = input_dim
+        self.head_dim = head_dim
+        self.num_heads = num_heads
+        self.projection_dim = self.num_heads * self.head_dim
+        self.need_projection = not ((self.projection_dim == self.input_dim) and (self.num_heads == 1)) 
+        self.dropout_rate = dropout_rate
+        self.scale_factor = head_dim ** -0.5
+        self.qkv = nn.Linear(
+            self.input_dim, 
+            self.projection_dim * 3, 
+            bias = False
+        )
+        self.softmax = nn.Softmax(dim = -1)
+        self.dropout_layer = nn.Dropout(self.dropout_rate)
+        self.projection_layer = nn.Sequential(
+            nn.Linear(self.projection_dim, self.input_dim), 
+            nn.Dropout(self.dropout_rate)
+        ) if self.need_projection else nn.Identity()
+        
+    def forward(self, x, mask):
+        qkv = self.qkv(x).chunk(3, dim = -1)  #qkv is a tuple of tensors - need to map to extract individual q,k,v
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.num_heads), qkv)  
+        
+        scaled_score = torch.matmul(q, k.transpose(-1, -2)) * self.scale_factor
+        
+        if mask is not None: 
+            mask = mask.unsqueeze(1).expand(x.size(0), q.size(2), k.size(2)) # [b,n] --> [b,1,n] --> [b,n,n]
+            mask = mask.unsqueeze(1).repeat(1, self.heads, 1, 1) #Tell Zhu-Li we did the thing: [b,n,n] --> [b,h,n,n]    
+            scaled_score = scaled_score.masked_fill(mask, torch.finfo(torch.float32).min)
+            
+        attention = self.softmax(scaled_score)
+        attention = self.dropout_layer(attention)
+        
+        output = torch.matmul(attention, v)
+        output = rearrange(output, 'b h n d -> b n (h d)')
+        output = self.projection_layer(output)
+        return output
+
+# ATTENTIONS -- Layers that apply an attention mechanism
+TRANSFORMER_REGISTRY = {
+	"MHA": MultiHeadAttention,
+}
+
 # NORMALIZERS -- Layers that normalize the input
 NORMALIZER_REGISTRY = {
-	"batch_norm": nn.BatchNorm1d,
+	"batchnorm": nn.BatchNorm1d,
+	"layernorm": nn.LayerNorm,
 }
 
 # WRAPPERS -- Layers that wrap other layers
 class Residual(nn.Module):
 	def __init__(self, module):
 		super(Residual, self).__init__()
-		self.module = module
+		self.wrapped = module
 
 	def forward(self, x):
-		return x + self.module(x)
+		return x + self.wrapped(x)
 
 WRAPPER_REGISTRY = {
 	"residual": Residual
@@ -179,3 +235,56 @@ class Clip(nn.Module):
 MISC_REGISTRY = {
 	"clip": Clip
 }
+
+
+class MultiHeadAttentionLayer(nn.Module):
+
+    def __init__(
+        self, 
+        input_dim: int, 
+        head_dim: int, 
+        num_heads: int = 1,
+        dropout_rates: float = 0.0, 
+    ):
+        super().__init__()
+        
+        self.input_dim = input_dim
+        self.head_dim = head_dim
+        self.num_heads = num_heads
+        self.projection_dim = self.num_heads * self.head_dim
+        need_projection = not ((self.projection_dim == self.input_dim) and (self.num_heads == 1)) 
+        self.dropout_rates = dropout_rates
+
+        self.scale_factor = head_dim ** -0.5
+        self.qkv = nn.Linear(
+            self.input_dim, 
+            self.projection_dim * 3, 
+            bias = False
+        )
+        
+        self.softmax = nn.Softmax(dim = -1)
+        self.dropout_layer = nn.Dropout(self.dropout_rates)
+        
+        self.projection_layer = nn.Sequential(
+            nn.Linear(self.projection_dim, self.input_dim), 
+            nn.Dropout(self.dropout_rates)
+        ) if need_projection else nn.Identity()
+        
+    def forward(self, x, mask):
+        qkv = self.qkv(x).chunk(3, dim = -1)  #qkv is a tuple of tensors - need to map to extract individual q,k,v
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.num_heads), qkv)  
+        
+        scaled_score = torch.matmul(q, k.transpose(-1, -2)) * self.scale_factor
+        
+        if mask is not None: 
+            mask = mask.unsqueeze(1).expand(x.size(0), q.size(2), k.size(2)) # [b,n] --> [b,1,n] --> [b,n,n]
+            mask = mask.unsqueeze(1).repeat(1, self.heads, 1, 1) #Tell Zhu-Li we did the thing: [b,n,n] --> [b,h,n,n]    
+            scaled_score = scaled_score.masked_fill(mask, torch.finfo(torch.float32).min)
+            
+        attention = self.softmax(scaled_score)
+        attention = self.dropout_layer(attention)
+        
+        output = torch.matmul(attention, v)
+        output = rearrange(output, 'b h n d -> b n (h d)')
+        output = self.projection_layer(output)
+        return output
