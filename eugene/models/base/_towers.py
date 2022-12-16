@@ -126,6 +126,7 @@ class Conv1DTower(nn.Module):
                 self.dropout_rates = dropout_rates
         else:
             self.dropout_rates = []
+            
         # Define batchnorm layers
         self.batchnorm = batchnorm
         self.batchnorm_first = batchnorm_first

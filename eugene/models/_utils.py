@@ -1,11 +1,10 @@
 import importlib
 from os import PathLike
-from ._initialize import init_weights
+from .base._initializers import init_weights
 
 
 def load_config(arch, model_config):
     from pytorch_lightning.utilities.cli import LightningArgumentParser
-
     parser = LightningArgumentParser()
     model_type = getattr(importlib.import_module("eugene.models"), arch)
     parser.add_lightning_class_args(model_type, nested_key="model")

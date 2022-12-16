@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from typing import Union, Callable, List
 from ._utils import get_output_size
 from . import _layers as layers

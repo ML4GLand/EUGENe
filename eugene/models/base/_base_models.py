@@ -232,7 +232,7 @@ class SequenceModel(LightningModule, ABC):
         print(f"Optimizer: {self.optimizer.__name__}")
         print(f"\tOptimizer parameters: {self.optimizer_kwargs}")
         print(f"\tOptimizer starting learning rate: {self.optimizer_lr}")
-        print(f"Scheduler: {self.scheduler.__name__}")
+        print(f"Scheduler: {self.scheduler.__name__}") if self.scheduler is not None else print("Scheduler: None")
         print(f"\tScheduler parameters: {self.scheduler_kwargs}")
         print(f"Metric: {self.metric_name}")
         print(f"\tMetric parameters: {self.metric_kwargs}")
