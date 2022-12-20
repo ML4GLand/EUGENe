@@ -1330,7 +1330,7 @@ class Basset(SequenceModel):
         input_len: int,
         output_dim: int, 
         strand = "ss",
-        task = "binary_classification",
+        task = "multilabel_classification",
         aggr = None,
         loss_fxn = "bce",
         conv_kwargs = {},
@@ -1516,7 +1516,9 @@ class DeepSTARR( SequenceModel):
         conv_kwargs.setdefault("pool_kernels", [2, 2, 2, 2])
         conv_kwargs.setdefault("dropout_rates", 0.0)
         conv_kwargs.setdefault("batchnorm", True)
+        conv_kwargs.setdefault("batchnorm_first", True)
         dense_kwargs.setdefault("hidden_dims", [256, 256])
         dense_kwargs.setdefault("dropout_rates", 0.4)
         dense_kwargs.setdefault("batchnorm", True)
+        dense_kwargs.setdefault("batchnorm_first", True)
         return conv_kwargs, dense_kwargs 

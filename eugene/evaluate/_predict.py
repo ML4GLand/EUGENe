@@ -110,10 +110,13 @@ def predictions(
     ps = np.concatenate(predictor.predict(model, sdataloader), axis=0)
     num_outs = model.output_dim
     preds = pd.DataFrame(index=ps[:, 0], data=ps[:, 1 : num_outs + 1])
-    sannot_cols = [f"{prefix}{lab}_predictions{suffix}" for lab in target_keys]
-    ordered_preds = preds.loc[sdata.seqs_annot.index].astype(float)
-    sdata.seqs_annot[sannot_cols] = ordered_preds
-    return sdata if copy else None
+    if sdata is not None:
+        sannot_cols = [f"{prefix}{lab}_predictions{suffix}" for lab in target_keys]
+        ordered_preds = preds.loc[sdata.seqs_annot.index].astype(float)
+        sdata.seqs_annot[sannot_cols] = ordered_preds
+        return sdata if copy else None
+    else:
+        return preds
 
 
 @track

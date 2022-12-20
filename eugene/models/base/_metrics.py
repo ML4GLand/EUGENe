@@ -15,6 +15,7 @@ DEFAULT_TASK_METRICS = {
     "multitask_regression": "r2score",
     "binary_classification": "auroc",
     "multiclass_classification": "auroc",
+    "multilabel_classification": "auroc"
 }
 
 DEFAULT_METRIC_KWARGS = {
