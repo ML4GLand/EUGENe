@@ -51,7 +51,7 @@ class SequenceModel(LightningModule, ABC):
         scheduler_monitor: str = "val_loss",
         scheduler_kwargs: dict = {},
         metric: str = None,
-        metric_kwargs: dict = {},
+        metric_kwargs: dict = None,
         seed: int = None,
         save_hyperparams: bool = True
     ):
@@ -78,7 +78,7 @@ class SequenceModel(LightningModule, ABC):
         self.scheduler_kwargs = scheduler_kwargs
 
         # Set the metric
-        self.train_metric, self.metric_kwargs, self.metric_name = self._configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
+        self.train_metric, self.metric_kwargs, self.metric_name = self.configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
         self.val_metric = self.train_metric.clone()
         self.test_metric = self.train_metric.clone()
         
@@ -177,7 +177,7 @@ class SequenceModel(LightningModule, ABC):
             "outs": outs.detach(), 
             "y": y.detach()}
 
-    def _configure_metrics(self, metric, metric_kwargs):
+    def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
         Keeping this a function allows for the metric to be reconfigured
         in inherited classes
@@ -187,9 +187,14 @@ class SequenceModel(LightningModule, ABC):
         torchmetrics.Metric:
             metric
         """
+        print(metric, metric_kwargs, self.task)
         metric_name = DEFAULT_TASK_METRICS[self.task] if metric is None else metric
+        print(metric_name)
         metric_kwargs = metric_kwargs if metric_kwargs is not None else DEFAULT_METRIC_KWARGS[self.task]
+        print(metric_kwargs)
         metric = METRIC_REGISTRY[metric_name](num_outputs=self.output_dim, **metric_kwargs)
+        print(metric)
+        print(DEFAULT_METRIC_KWARGS)
         return metric, metric_kwargs, metric_name
 
     def configure_optimizers(self):
