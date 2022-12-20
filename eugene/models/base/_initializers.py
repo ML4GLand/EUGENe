@@ -3,7 +3,9 @@ import torch.nn as nn
 import torch.nn.init as init
 from os import PathLike
 from typing import Union, Dict
-from ...dataload.motif._motif import Motif, MinimalMEME, _create_kernel_matrix
+from ...dataload.motif._Motif import Motif, MotifSet
+from ...dataload.motif._pwm import _create_kernel_matrix
+
 
 INITIALIZERS_REGISTRY = {
     "uniform": init.uniform_,
