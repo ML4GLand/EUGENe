@@ -65,7 +65,6 @@ class MotifSet:
         self.background = background
         self.background_source = background_source
 
-
     def add_motif(self, motif: Motif) -> None:
         self.motifs[motif.identifier] = motif
 

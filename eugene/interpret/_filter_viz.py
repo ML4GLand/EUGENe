@@ -431,3 +431,46 @@ def match_hits_to_ground_truth(file_path, motifs, motif_names=None, num_filters=
       motif_counts[i] = len(index)
 
   return match_fraction, match_any, filter_match, filter_qvalue, motif_qvalue, motif_counts
+
+
+  def filters_to_meme_sdata(
+    sdata,
+    output_dir: str = None,
+    file_name="filter.meme",
+    uns_key="pfms",
+    filter_ids: int = None,
+    vocab="DNA",
+    convert_to_pfm: bool = False,
+    change_length_axis=True,
+    return_pfms=False,
+):
+    """
+    Function to convert a single filter to a meme file
+
+    sdata:
+        SingleData, single cell data
+    filter_ids:
+        int, index of the filter to convert
+    outfile:
+        string, the name of the output meme file
+    convert_to_pwm:
+        bool, whether to convert the filter to a pwm
+    """
+    try:
+        pfms = sdata.uns.get(uns_key)
+    except KeyError:
+        print("No filters found in sdata.uns['{}']".format(uns_key))
+    if filter_ids is None:
+        filter_ids = list(sdata.uns[uns_key].keys())
+    if output_dir is None:
+        outfile = os.filename.join(settings.output_dir, file_name)
+    else:
+        outfile = os.filename.join(output_dir, file_name)
+    pwms = np.array([pfms[key].values for key in filter_ids])
+    if convert_to_pfm:
+        pwms / pwms.sum(axis=2, keepdims=True)
+    if change_length_axis:
+        pwms = pwms.transpose(0, 2, 1)
+    pwm_to_meme(pwms, outfile, vocab=vocab)
+    if return_pfms:
+        return pwms

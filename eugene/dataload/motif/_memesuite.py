@@ -1,1 +1,4 @@
-# Python file for command line tomtom
+def tomtom():
+    pass
+def fimo():
+    pass

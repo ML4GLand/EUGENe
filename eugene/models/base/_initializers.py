@@ -4,7 +4,7 @@ import torch.nn.init as init
 from os import PathLike
 from typing import Union, Dict
 from ...dataload.motif._Motif import Motif, MotifSet
-from ...dataload.motif._pwm import _create_kernel_matrix
+from ...dataload.motif._convert import _to_array 
 
 
 INITIALIZERS_REGISTRY = {
@@ -143,7 +143,7 @@ def init_from_motifs(
             .__getattr__(kernel_name)[kernel_number]
             .size()
         )
-    kernel_mtx = _create_kernel_matrix(
+    kernel_mtx =  _to_array(
         layer_size, motifs, convert_to_pwm=convert_to_pwm
     )
     init_conv(
