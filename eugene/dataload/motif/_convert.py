@@ -102,16 +102,21 @@ def _from_array():
     pass
 
 def _to_array(
-    size: tuple, 
     motifs: MotifSet, 
+    tensor: torch.Tensor = None,
+    size: tuple = None,
     convert_to_pwm=True
 ) -> np.ndarray:
     """Convert MotifSet object to array of motif weights"""
-    
+    if tensor is None:
+        assert size is not None
+        kernel = torch.zeros(size)
+        torch.nn.init.xavier_uniform_(kernel)
+    else:
+        kernel = tensor
+        size = kernel.shape
     if len(size) != 3:
         raise RuntimeError("Kernel matrix size must be a tuple of length 3")
-    kernel = torch.zeros(size)
-    torch.nn.init.xavier_uniform_(kernel)
     motifs = motifs.motifs
     for i, motif_id in enumerate(motifs):
         motif = motifs[motif_id]

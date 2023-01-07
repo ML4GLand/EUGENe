@@ -1,3 +1,4 @@
+from os import PathLike
 import numpy as np
 from ._Motif import Motif, MotifSet
 from ._convert import (
@@ -13,10 +14,10 @@ from ._utils import (
 from ...preprocess import decode_seq
 from ...preprocess._utils import _token2one_hot
 
-def _read_meme(
-    filename
+def _read_meme_pymemesuite(
+    filename: PathLike
 ):
-    """Read motifs from a MEME file into a list of pymemesuite.common.Motif objects.
+    """Read motifs from a MEME file into pymemesuite.common.Motif objects.
 
     Parameters
     ----------
@@ -41,11 +42,11 @@ def _read_meme(
         bg = motif_file.background
     return memesuite_motifs, bg
 
-def read_meme(
-    filename
+def _read_meme_MotifSet(
+    filename: PathLike
 ):
     """Read motifs from a MEME file into a MotifSet object.
-    
+
     Parameters
     ----------
     filename : str
@@ -92,7 +93,6 @@ def read_meme(
                 line = meme_file.readline()
             else:
                 line = meme_file.readline()
-
     return MotifSet(
         motifs=motifs,
         version=version,
@@ -101,6 +101,31 @@ def read_meme(
         background=background,
         background_source=background_source,
     )
+
+READER_REGISTRY = {
+    "pymemesuite": _read_meme_pymemesuite,
+    "MotifSet": _read_meme_MotifSet,
+}
+
+def read_meme(
+    filename,
+    return_type="MotifSet"
+):
+    """Read motifs from a MEME file into a MotifSet object.
+    
+    Parameters
+    ----------
+    filename : str
+        MEME filename
+    
+    Returns
+    -------
+    MotifSet
+        MotifSet object
+    """
+    return READER_REGISTRY[return_type](filename)
+
+    
 
 def read_motifs(
     filename,
@@ -246,9 +271,9 @@ def read_array(
     filename,
     transpose=True,
 ):
-"""Read from a NumPy array file into a MotifSet object.
-TODO: test this with a real case
-"""
+    """Read from a NumPy array file into a MotifSet object.
+    TODO: test this with a real case
+    """
     pass
 
 def write_meme( 
