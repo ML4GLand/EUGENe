@@ -168,11 +168,6 @@ class Conv1DTower(nn.Module):
                 if self.activations[i] is not None:
                     self.layers.append(self.activations[i])
             
-            # Add a dropout layer if specified
-            if i < len(self.dropout_rates):
-                if self.dropout_rates[i] is not None:
-                    self.layers.append(nn.Dropout(self.dropout_rates[i]))
-
             # Add a pooling layer if specified
             if i < len(self.pool_types):
                 if self.pool_types[i] is not None:
@@ -184,6 +179,11 @@ class Conv1DTower(nn.Module):
                         )
                     )
             
+            # Add a dropout layer if specified
+            if i < len(self.dropout_rates):
+                if self.dropout_rates[i] is not None:
+                    self.layers.append(nn.Dropout(self.dropout_rates[i]))
+
             # Add a batchnorm layer if specified
             if self.batchnorm and not self.batchnorm_first:
                 self.layers.append(nn.BatchNorm1d(conv_channels[i]))

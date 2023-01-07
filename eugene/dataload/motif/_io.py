@@ -246,9 +246,9 @@ def read_array(
     filename,
     transpose=True,
 ):
-"""Read from a NumPy array file into a MotifSet object.
-TODO: test this with a real case
-"""
+    """Read from a NumPy array file into a MotifSet object.
+    TODO: test this with a real case
+    """
     pass
 
 def write_meme( 
