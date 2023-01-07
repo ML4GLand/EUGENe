@@ -69,7 +69,7 @@ class MotifSet:
         self.motifs[motif.identifier] = motif
 
     def __str__(self) -> str:
-        return "Motif with %d motifs" % len(self.motifs)
+        return "MotifSet with %d motifs" % len(self.motifs)
     
     def __repr__(self) -> str:
         return self.__str__()

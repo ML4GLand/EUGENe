@@ -145,7 +145,7 @@ class SequenceModel(LightningModule, ABC):
         """
         step_dict = self._common_step(batch, batch_idx, "predict")
         ID = np.array([ascii_decode_seq(item) for item in step_dict["ID"].squeeze(dim=1).cpu().numpy()])
-        y = step_dict["y"].long().cpu().numpy()
+        y = step_dict["y"].cpu().numpy()
         outs = step_dict["outs"].cpu().numpy()
         return np.column_stack([ID, outs, y])
 
@@ -170,12 +170,12 @@ class SequenceModel(LightningModule, ABC):
         ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
         loss = self.loss_fxn(outs, y)
-
         return {
             "loss": loss, 
             "ID": ID.detach(), 
             "outs": outs.detach(), 
-            "y": y.detach()}
+            "y": y.detach()
+        }
 
     def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
@@ -187,14 +187,9 @@ class SequenceModel(LightningModule, ABC):
         torchmetrics.Metric:
             metric
         """
-        print(metric, metric_kwargs, self.task)
         metric_name = DEFAULT_TASK_METRICS[self.task] if metric is None else metric
-        print(metric_name)
         metric_kwargs = metric_kwargs if metric_kwargs is not None else DEFAULT_METRIC_KWARGS[self.task]
-        print(metric_kwargs)
         metric = METRIC_REGISTRY[metric_name](num_outputs=self.output_dim, **metric_kwargs)
-        print(metric)
-        print(DEFAULT_METRIC_KWARGS)
         return metric, metric_kwargs, metric_name
 
     def configure_optimizers(self):

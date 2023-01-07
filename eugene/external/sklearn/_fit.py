@@ -45,7 +45,7 @@ def fit(
     train_Y = targs[train_idx].squeeze()
     val_Y = targs[val_idx].squeeze()
     
-    # Get train adn val features
+    # Get train and val features
     if features_cols is not None:
         sdata.seqsm[f"{model_name}_features" if seqsm_key is None else seqsm_key] = sdata.seqs_annot[feature_cols].values
     else:
