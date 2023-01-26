@@ -400,6 +400,34 @@ def add_ranges_sdata(
     sdata["end"] = [int(i[1]) for i in rng]
     return sdata if copy else None
 
+def seq_len_sdata(sdata, copy=False):
+    sdata = sdata.copy() if copy else sdata
+    sdata.seqs_annot["seq_len"] = [len(seq) for seq in sdata.seqs]
+    return sdata
+    
+def downsample_sdata(
+    sdata, 
+    n=None, 
+    frac=None, 
+):
+    sdata = sdata.copy()
+    if n is None and frac is None:
+        raise ValueError("Must specify either n or frac")
+    if n is not None and frac is not None:
+        raise ValueError("Must specify either n or frac, not both")
+    num_seqs = sdata.n_obs
+    if n is not None:
+        if n > num_seqs:
+            raise ValueError("n must be less than or equal to the number of sequences")
+        rand_idx = np.random.choice(num_seqs, n, replace=False)
+        sdata = sdata[rand_idx]
+    elif frac is not None:
+        if frac > 1:
+            raise ValueError("frac must be less than or equal to 1")
+        rand_idx = np.random.choice(num_seqs, int(num_seqs * frac), replace=False)
+        sdata = sdata[rand_idx]
+    return sdata
+
 
 @track
 def prepare_seqs_sdata(

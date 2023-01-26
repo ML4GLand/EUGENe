@@ -10,3 +10,9 @@ def suppress_stdout():
             yield
         finally:
             sys.stdout = old_stdout
+
+def make_directory(directory):
+    """make directory"""
+    if not os.path.isdir(directory):
+        pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
+        print("Making directory: " + directory)
