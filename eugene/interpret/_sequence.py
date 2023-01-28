@@ -197,7 +197,7 @@ def seqs_from_tensor(tensor : torch.tensor, num_seqs : int = 1) -> np.ndarray:
     seqs = np.array([pp.decode_seq(pp._utils._token2one_hot(token)) for token in tokens])
     return seqs
 
-def generate_seqs_from_model(model : BaseModel, num_seqs : int = 1, normal : bool = False):
+def generate_seqs_from_model(model : BaseModel, num_seqs : int = 1, normal : bool = False, device : str = "cpu"):
     """
     Generates random sequences from a generative model.
 
@@ -221,5 +221,6 @@ def generate_seqs_from_model(model : BaseModel, num_seqs : int = 1, normal : boo
         z = torch.Tensor(np.random.normal(0, 1, (num_seqs, model.latent_dim)))
     else: 
         z = torch.rand(num_seqs, model.latent_dim)
+    z = z.to(device)
     fake = model(z)
-    return seqs_from_tensor(fake, num_seqs)
+    return seqs_from_tensor(fake.cpu(), num_seqs)
