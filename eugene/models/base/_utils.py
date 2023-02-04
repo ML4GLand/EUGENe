@@ -47,3 +47,7 @@ def get_output_size(modules, input_size):
     summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
     out_size = summary.summary_list[-1].output_size[1:]
     return out_size
+
+
+def get_layer(model, layer_name):
+    return dict([*model.named_modules()])[layer_name]
