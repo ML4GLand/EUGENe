@@ -11,10 +11,7 @@ except ImportError:
         "Please install janggu dependencies `pip install eugene[janggu]`"
     )
 
-print("Janggu datasets for deep learning in genomics.")
-
 from copy import copy
-
 from .coverage import Cover  # noqa
 from .data import Dataset  # noqa
 from .data import JangguSequence  # noqa

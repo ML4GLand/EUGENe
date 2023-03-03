@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Union, Sequence
 from sklearn.metrics import r2_score, mean_squared_error
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 from ._utils import (
     _create_matplotlib_axes,
     _save_fig
@@ -15,7 +15,7 @@ def _plot_performance_scatter(
     sdata,
     target_key: str,
     prediction_key: str,
-    metrics: Union[str, Sequence[str]] = ["r2", "mse", "spearmanr"],
+    metrics: Union[str, Sequence[str]] = ["r2", "mse", "pearsonr", "spearmanr"],
     groupby=None,
     figsize: tuple = (8, 8),
     save: PathLike = None,
@@ -57,6 +57,7 @@ def _plot_performance_scatter(
 
     r2 = r2_score(target, prediction) if "r2" in metrics else None
     mse = mean_squared_error(target, prediction) if "mse" in metrics else None
+    pearsr = (pearsonr(target, prediction)[0] if "pearsonr" in metrics else None)
     spearr = (spearmanr(target, prediction).correlation if "spearmanr" in metrics else None)
     if "c" in kwargs:
         if kwargs["c"] in sdata.seqs_annot.columns:
@@ -64,12 +65,13 @@ def _plot_performance_scatter(
     ax = _create_matplotlib_axes(1, subplot_size=figsize) if ax is None else ax
     if groupby is not None:
         i = 0
-        print("Group", "R2", "MSE", "Spearmanr")
+        print("Group", "R2", "MSE", "Pearsonr", "Spearmanr")
         for group, data in sdata.seqs_annot.groupby(groupby):
             target = data[target_key]
             prediction = data[prediction_key]
             group_r2 = r2_score(target, prediction) if "r2" in metrics else None
             group_mse = mean_squared_error(target, prediction if "mse" in metrics else None)
+            group_pearsr = pearsonr(target, prediction)[0] if "pearsonr" in metrics else None
             group_spearr = spearmanr(target, prediction).correlation if "spearmanr" in metrics else None
             im = ax.scatter(
                 target, 
@@ -103,6 +105,9 @@ def _plot_performance_scatter(
     ax.text(
         1.02, 0.85, rf"Spearman $\rho$: {spearr:.2f}", transform=plt.gca().transAxes, fontsize=16,
     ) if spearr is not None else None
+    ax.text(
+        1.02, 0.80, rf"Pearson $r$: {pearsr:.2f}", transform=plt.gca().transAxes, fontsize=16,
+    ) if pearsr is not None else None
     lims = [
         np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
         np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes

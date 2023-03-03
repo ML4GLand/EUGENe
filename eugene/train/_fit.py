@@ -29,11 +29,13 @@ def fit(
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {},
+    early_stopping_metric: str = "val_loss",
     drop_last=True,
     early_stopping_callback: bool = True,
-    early_stopping_metric="val_loss",
     early_stopping_patience=5,
     early_stopping_verbose=False,
+    model_checkpoint_k = 1,
+    model_checkpoint_monitor: str ="val_loss",
     seed: int = None,
     verbosity = None,
     return_trainer: bool = False,
@@ -78,8 +80,6 @@ def fit(
         The sequence transforms to apply to the data.
     transform_kwargs : dict
         The keyword arguments to pass to the sequence transforms.
-    early_stopping_callback : bool
-        Whether to use early stopping.
     early_stopping_metric : str
         The metric to use for early stopping.
     early_stopping_patience : int
@@ -116,14 +116,16 @@ def fit(
             val_dataset, batch_size=batch_size, num_workers=num_workers
         )
     elif sdata is not None:
-        assert target_keys is not None
-        targs = sdata.seqs_annot[target_keys].values  
-        if len(targs.shape) == 1:
-            nan_mask = np.isnan(targs)
-        else:
-            nan_mask = np.any(np.isnan(targs), axis=1)
-        print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
-        sdata = sdata[~nan_mask]
+        # assert target_keys is not None
+        if target_keys is not None:
+            targs = sdata.seqs_annot[target_keys].values
+            if len(targs.shape) == 1:
+                nan_mask = np.isnan(targs)
+            else:
+                nan_mask = np.any(np.isnan(targs), axis=1)
+            print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
+            sdata = sdata[~nan_mask]  
+        
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
             target_keys=target_keys,
@@ -152,12 +154,14 @@ def fit(
         raise ValueError("No data provided to train on.")
     logger = TensorBoardLogger(log_dir, name=name, version=version)
     callbacks = []
-    callbacks.append(
-        ModelCheckpoint(
-            dirpath=logger.log_dir + "/checkpoints", save_top_k=1, monitor="val_loss"
+    if model_checkpoint_monitor is not None:
+        model_checkpoint_callback = ModelCheckpoint(
+            dirpath=logger.log_dir + "/checkpoints", 
+            save_top_k=model_checkpoint_k, 
+            monitor=model_checkpoint_monitor
         )
-    )
-    if early_stopping_callback:
+        callbacks.append(model_checkpoint_callback)
+    if early_stopping_metric is not None:
         early_stopping_callback = EarlyStopping(
             monitor=early_stopping_metric,
             patience=early_stopping_patience,
@@ -168,10 +172,16 @@ def fit(
     if model.scheduler is not None:
         callbacks.append(LearningRateMonitor())
     trainer = Trainer(
-        max_epochs=epochs, logger=logger, gpus=gpus, callbacks=callbacks, **kwargs
+        max_epochs=epochs, 
+        logger=logger, 
+        gpus=gpus, 
+        callbacks=callbacks, 
+        **kwargs
     )
     trainer.fit(
-        model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader
+        model, 
+        train_dataloaders=train_dataloader, 
+        val_dataloaders=val_dataloader
     )
     if return_trainer:
         return trainer

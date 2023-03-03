@@ -2,6 +2,9 @@ from pathlib import Path
 from functools import wraps
 import os, gzip, wget, io
 import pandas as pd
+import numpy as np
+import torch
+from typing import Union
 from .._settings import settings
 HERE = Path(__file__).parent
 
@@ -41,6 +44,21 @@ def deBoerCleanup(
         return file
     else:
         return file
+
+def random_ohe_seqs (
+    seq_len: int,
+    batch_size: int = 1,
+    return_tensor: bool = False,
+    device: str = None,
+    dtype: torch.dtype = None,
+) -> Union[np.ndarray, torch.tensor]:
+
+    rand = np.rot90(np.rot90(np.eye(4)[np.random.choice(4, (seq_len, batch_size))]), axes=[1,2])
+
+    if return_tensor:
+        rand = torch.from_numpy(rand.copy()).to(device).type(dtype)
+
+    return rand
 
 
 def try_download_urls(
