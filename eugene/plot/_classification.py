@@ -191,6 +191,7 @@ def auroc(
         ps = sdata.seqs_annot[prediction_key].values.reshape(-1, 1)
         fpr, tpr, _ = roc_curve(ts, ps)
         roc_auc = auc(fpr, tpr)
+        print(roc_auc, label)
         ax.plot(fpr, tpr, label=f"{label} (AUC = {roc_auc:.3f})", **kwargs)
         ax.plot([0, 1], [0, 1], "k--")
         ax.set_xlabel(xlab, fontsize=20)
