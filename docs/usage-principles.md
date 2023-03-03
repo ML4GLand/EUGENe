@@ -18,7 +18,7 @@ Our current release relies on two main custom Python objects: `SeqData` and `Bas
 
 <figure>
 <p align="center">
-<img src="_static/sdata_only.png" alt="EUGENe SeqData" width=400>
+<img src="_static/SeqData_only_v2.png" alt="EUGENe SeqData" width=400>
 <figcaption align = "center"><b>SeqData schematic showing attributes and their alignments</b></figcaption>
 </p>
 </figure>
