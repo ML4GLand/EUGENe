@@ -3,7 +3,7 @@ import os, pathlib, h5py
 import numpy as np
 import pytorch_lightning as pl
 from torch.utils.data import TensorDataset, DataLoader
-from ..dataloaders._SeqDataset import SeqDataset
+from ..datasets._SeqDataset import SeqDataset
 from torchvision import transforms
 from .._transforms import ToTensor
 

@@ -169,8 +169,8 @@ class SequenceModel(LightningModule, ABC):
         # Get and log loss
         ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
-        #loss = self.loss_fxn(outs, y)
-        loss = self.loss_fxn(outs, y.squeeze(dim=1))
+        loss = self.loss_fxn(outs, y) # train
+        #loss = self.loss_fxn(outs, y.squeeze(dim=1)) # predict
         return {
             "loss": loss, 
             "ID": ID.detach(), 
