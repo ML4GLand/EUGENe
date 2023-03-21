@@ -48,3 +48,7 @@ def get_output_size(modules, input_size):
     summary = ""
     out_size = summary.summary_list[-1].output_size[1:]
     return out_size
+
+
+def get_layer(model, layer_name):
+    return dict([*model.named_modules()])[layer_name]

@@ -1,8 +1,9 @@
+import h5py
 from os import PathLike
 import numpy as np
 from ._Motif import Motif, MotifSet
 from ._convert import (
-    _from_biopython
+    from_biopython
 )
 from ._utils import (
     _parse_version, 
@@ -82,7 +83,7 @@ def _read_meme_MotifSet(
                     raise RuntimeError("Multiple strand definitions encountered in MEME file")
             elif line.startswith("Background letter frequencies"):
                 if background is None:
-                    line = _parse_background(line, meme_file)
+                    line, background = _parse_background(line, meme_file)
                 else:
                     raise RuntimeError("Multiple background frequency definitions encountered in MEME file")
             elif line.startswith("MOTIF"):
@@ -102,14 +103,14 @@ def _read_meme_MotifSet(
         background_source=background_source,
     )
 
-READER_REGISTRY = {
+MEME_READER_REGISTRY = {
     "pymemesuite": _read_meme_pymemesuite,
     "MotifSet": _read_meme_MotifSet,
 }
 
 def read_meme(
-    filename,
-    return_type="MotifSet"
+    filename: PathLike,
+    return_type: str = "MotifSet"
 ):
     """Read motifs from a MEME file into a MotifSet object.
     
@@ -123,14 +124,14 @@ def read_meme(
     MotifSet
         MotifSet object
     """
-    return READER_REGISTRY[return_type](filename)
+    return MEME_READER_REGISTRY[return_type](filename)
 
-    
-
-def read_motifs(
-    filename,
-    transpose=True,
-    counts=True
+def read_homer(
+    filename: PathLike,
+    transpose: bool = False,
+    counts: bool = False,
+    alphabet: str = "ACGT",
+    background: dict = None,
 ):
     """Read motifs from a .motif file into a MotifSet object.
 
@@ -142,18 +143,19 @@ def read_motifs(
         whether to transpose the matrices, by default True
     counts : bool, optional
         whether the input matrices are counts and should be converted to pfm, by default True
-    """
 
+    Returns
+    -------
+    MotifSet
+        MotifSet object
+    """
     with open(filename) as motif_file:
         data = motif_file.readlines()
-    pfm_rows = []
-    pfms = []
-    ids = []
-    names = []
+    pfm_rows, pfms, ids, names = [], [], [], []
     for line in data:
         line = line.rstrip()
         if line.startswith(">"):
-            ids.append(line.split()[0])
+            ids.append(line.split()[0].replace(">", ""))
             names.append(line.split()[1])
             if len(pfm_rows) > 0:
                 pfms.append(np.vstack(pfm_rows))
@@ -177,7 +179,14 @@ def read_motifs(
             length=len(consensus)
         )
         motifs[ids[i]] = motif
-    return MotifSet(motifs=motifs)
+    if background is None:
+        uniform = 1/len(alphabet) if background is None else background
+        background = {a: uniform for a in alphabet}
+    return MotifSet(
+        motifs=motifs,
+        alphabet=alphabet,
+        background=background,
+    )
 
 def _load_jaspar(
     motif_accs=None, 
@@ -260,109 +269,114 @@ def load_jaspar(
         release=release,
         **kwargs,
     )
-    motif_set = _from_biopython(
+    motif_set = from_biopython(
         motifs, 
         identifier_number=identifier_number, 
         verbose=verbose
     )
     return motif_set
 
-def read_array(
-    filename,
-    transpose=True,
-):
-    """Read from a NumPy array file into a MotifSet object.
-    TODO: test this with a real case
-    """
-    pass
-
-def write_meme( 
-    motif_set,
-    filename,
-    background=[0.25, 0.25, 0.25, 0.25],
-    **kwargs,
-):
-    """Write a MotifSet object to a MEME file.
-
-    Parameters
-    ----------
-    motif_set : MotifSet
-        MotifSet object
-    filename : str
-        Output filename
-    background : list of float, optional
-        Background frequencies, by default [0.25, 0.25, 0.25, 0.25]
-    """
-    pass
-
-def write_motifs(
-    motif_set,
-    filename,
-    format="homer",
-    **kwargs,
-):
-    """Write a MotifSet object to a file.
-
-    Parameters
-    ----------
-    motif_set : MotifSet
-        MotifSet object
-    filename : str
-        Output filename
-    format : str, optional
-        Output format, by default "homer"
-    """
-    pass
-
-def write_meme_from_array(
-    array,
-    outfile,
-    vocab="DNA",
-    background=[0.25, 0.25, 0.25, 0.25],
-):
-    """
-    Function to convert pwm as ndarray to meme file
-    Adapted from:: nnexplain GitHub:
-    TODO: Depracate in favor of first converting to MotifSet and then writing to file
-
-    Parameters
-    ----------
-    array:
-        numpy.array, often pwm matrices, shape (U, 4, filter_size), where U - number of units
-    outfile:
-        string, the name of the output meme file
-    """
-    from ...preprocess._utils import _get_vocab
-
-    vocab = "".join(_get_vocab(vocab))
-    n_filters = array.shape[0]
-    filter_size = array.shape[2]
-    meme_file = open(outfile, "w")
-    meme_file.write("MEME version 4\n\n")
-    meme_file.write(f"ALPHABET= {vocab}\n\n")
-    meme_file.write("strands: + -\n\n")
-    meme_file.write("Background letter frequencies\n")
-    meme_file.write(f"{vocab[0]} {background[0]} {vocab[1]} {background[1]} {vocab[2]} {background[2]} {vocab[3]} {background[3]}\n")
-
-    for i in range(0, n_filters):
-        if np.sum(array[i, :, :]) > 0:
-            meme_file.write("\n")
-            meme_file.write("MOTIF filter%s\n" % i)
-            meme_file.write(
-                "letter-probability matrix: alength= 4 w= %d \n"
-                % np.count_nonzero(np.sum(array[i, :, :], axis=0))
-            )
-        for j in range(0, filter_size):
-            if np.sum(array[i, :, j]) > 0:
-                meme_file.write(
-                    str(array[i, 0, j])
-                    + "\t"
-                    + str(array[i, 1, j])
-                    + "\t"
-                    + str(array[i, 2, j])
-                    + "\t"
-                    + str(array[i, 3, j])
-                    + "\n"
+def read_h5(filename):
+    motif_set = MotifSet()
+    with h5py.File(filename, "r") as f:
+        for key in f.keys():
+            pfm = f[key][:]
+            consensus = decode_seq(_token2one_hot(pfm.argmax(axis=1)))
+            motif_set.add_motif(
+                Motif(
+                    identifier=key,
+                    name=key,
+                    pfm=pfm,
+                    consensus=consensus,
+                    length=len(consensus)
                 )
+            )
+    return motif_set
+
+def write_meme(
+    motif_set: MotifSet,
+    filename: str
+):
+    """Write MotifSet object to MEME file
+
+    Parameters
+    ----------
+    motif_set : MotifSet
+        MotifSet object
+    filename : str
+        filename to write to
+    """
+    alphabet = motif_set.alphabet
+    version = motif_set.version
+    background = motif_set.background
+    strands = motif_set.strands
+    meme_file = open(filename, "w")
+    meme_file.write(f"MEME version {version}\n\n")
+    meme_file.write(f"ALPHABET= {alphabet}\n\n")
+    meme_file.write(f"strands: {strands}\n\n")
+    meme_file.write("Background letter frequencies\n")
+    meme_file.write(
+        f"{alphabet[0]} {background[alphabet[0]]} " \
+        f"{alphabet[1]} {background[alphabet[1]]} " \
+        f"{alphabet[2]} {background[alphabet[2]]} " \
+        f"{alphabet[3]} {background[alphabet[3]]}" \
+        f"\n"
+    )
+    for motif in motif_set:
+        ident = motif.identifier
+        name = motif.name
+        pfm = motif.pfm
+        if np.sum(pfm) > 0:
+            meme_file.write("\n")
+            meme_file.write(f"MOTIF {ident} {name} \n")
+            meme_file.write(f"letter-probability matrix: alength= 4 w= {len(pfm)} \n")
+        for j in range(0, len(pfm)):
+            if np.sum(pfm[j]) > 0:
+                meme_file.write("\t".join(pfm[j].astype(str)) + "\n")
     meme_file.close()
-    print("Saved array in as : {}".format(outfile))
+    print("Saved pfm in MEME format as: {}".format(filename))
+
+def write_homer(
+    motif_set: MotifSet,
+    filename: PathLike,
+    log_odds_threshold: np.ndarray = None
+):
+    """Write MotifSet object to HOMER file format
+
+    Parameters
+    ----------
+    motif_set : MotifSet
+        MotifSet object
+    filename : str
+        filename to write to
+    """
+    motif_file = open(filename, "w")
+    log_odds_threshold = np.zeros(len(motif_set)) if log_odds_threshold is None else log_odds_threshold 
+    for i, motif in enumerate(motif_set):
+        ident = motif.identifier
+        name = motif.name
+        pfm = motif.pfm
+        motif_file.write(f">{ident}\t{name}\t{log_odds_threshold[i]}\n")
+        for j in range(0, len(pfm)):
+            if np.sum(pfm) > 0:
+                motif_file.write("\t".join(pfm[j].astype(str)) + "\n")
+    motif_file.close()
+    print("Saved pfms in .motifs format as: {}".format(filename))
+
+def write_h5(
+    motif_set: MotifSet,
+    filename: PathLike
+):
+    """Write MotifSet object to h5 file format
+
+    Parameters
+    ----------
+    motif_set : MotifSet
+        MotifSet object
+    filename : str
+        filename to write to
+    """
+    with h5py.File(filename, "w") as f:
+        for motif in motif_set.motifs.values():
+            f.create_dataset(motif.identifier, data=motif.pfm)
+    print("Saved pfm in h5 format as: {}".format(filename))
