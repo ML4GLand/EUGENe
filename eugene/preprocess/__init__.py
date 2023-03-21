@@ -60,5 +60,6 @@ from ._preprocessing import (
     train_test_split_sdata,
     add_ranges_sdata,
     prepare_seqs_sdata,
-    gc_content_seqs_sdata
+    gc_content_seqs_sdata,
+    downsample_sdata
 )  # core sdata functions
