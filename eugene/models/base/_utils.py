@@ -1,6 +1,6 @@
 import numpy as np
 import torch.nn as nn
-import torchinfo
+#import torchinfo
 
 
 def get_conv1dblock_output_len(modules, input_len):
@@ -44,7 +44,8 @@ def get_conv1dblock_output_len(modules, input_len):
 def get_output_size(modules, input_size):
     if isinstance(input_size, int):
         input_size = (input_size, )
-    summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
+    #summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
+    summary = ""
     out_size = summary.summary_list[-1].output_size[1:]
     return out_size
 

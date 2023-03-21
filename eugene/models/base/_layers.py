@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from einops import repeat, rearrange
+#from einops import repeat, rearrange
 
 # ACTIVATIONS -- Layers that apply a non-linear activation function
 class Identity(nn.Module):
@@ -108,7 +108,7 @@ RECURRENT_REGISTRY = {
 	"lstm": nn.LSTM,
 	"gru": nn.GRU
 }
-
+"""
 class MultiHeadAttention(nn.Module):
 
     def __init__(
@@ -162,7 +162,7 @@ class MultiHeadAttention(nn.Module):
 TRANSFORMER_REGISTRY = {
 	"MHA": MultiHeadAttention,
 }
-
+"""
 # NORMALIZERS -- Layers that normalize the input
 NORMALIZER_REGISTRY = {
 	"batchnorm": nn.BatchNorm1d,
