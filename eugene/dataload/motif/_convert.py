@@ -119,7 +119,7 @@ def from_pymemesuite(
     return MotifSet(motifs=motifs) 
     return motif_set
 
-def from_kernel(
+def from_array(
     kernel: np.ndarray,
     identifiers: List[str] = None,
     names: List[str] = None,
@@ -173,7 +173,7 @@ def from_kernel(
         strands=strands
     )
 
-def to_kernel(
+def to_array(
     motif_set: MotifSet, 
     tensor: torch.Tensor = None,
     size: tuple = None,

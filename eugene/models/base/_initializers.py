@@ -4,7 +4,7 @@ import torch.nn.init as init
 from os import PathLike
 from typing import Union, Dict
 from ...dataload.motif._Motif import Motif, MotifSet
-from ...dataload.motif._convert import _to_array 
+from ...dataload.motif._convert import to_array 
 
 
 INITIALIZERS_REGISTRY = {

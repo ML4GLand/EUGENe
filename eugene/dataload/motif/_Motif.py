@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional, Dict, Iterator
 
 
-class MotifData:
+class Motif:
     """
     Motif class for storing motif information.
 
@@ -41,7 +41,7 @@ class MotifData:
         return self.__str__()
 
 
-class MotifDataset:
+class MotifSet:
     """
     Stores a set of Motifs.
 
