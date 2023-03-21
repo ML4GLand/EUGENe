@@ -9,7 +9,7 @@ from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
 from copy import deepcopy
-from ._SeqDataset import SeqDataset
+from ..datasets._SeqDataset import SeqDataset
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
 
 

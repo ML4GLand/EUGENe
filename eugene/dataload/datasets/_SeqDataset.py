@@ -1,5 +1,5 @@
-import numpy as np
 import torch
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from ...preprocess import ascii_encode_seq 
 from ..._settings import settings

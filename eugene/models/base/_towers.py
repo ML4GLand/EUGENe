@@ -67,7 +67,6 @@ class Tower(nn.Module):
     def forward(self, x):
         return self.blocks(x)
         
-
 class Conv1DTower(nn.Module):
 
     def __init__(
@@ -195,7 +194,6 @@ class Conv1DTower(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
-
 
 class BiConv1DTower(nn.Module):
     """Generates a PyTorch module with the convolutional architecture described in:

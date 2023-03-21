@@ -125,7 +125,6 @@ class FCN(SequenceModel):
                 x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         return x
 
-
 class CNN(SequenceModel):
     """
     Instantiate a CNN model with a set of convolutional layers and a set of fully
@@ -430,7 +429,6 @@ class RNN(SequenceModel):
                     x = torch.mean(torch.cat((x, x_rev_comp), dim=1), dim=1).unsqueeze(dim=1)
         return x
 
-
 class Hybrid(SequenceModel):
     """
     A hybrid model that uses both a CNN and an RNN to extract features then passes the
@@ -648,7 +646,6 @@ class Hybrid(SequenceModel):
                     out = (out + out_rev_comp) / 2
         return out
 
-
 class TutorialCNN( SequenceModel):
     """Tutorial CNN model
 
@@ -705,7 +702,6 @@ class TutorialCNN( SequenceModel):
             x_rev_comp = self.dense(x_rev_comp)
             x = (x + x_rev_comp / 2)
         return x
-
 
 class Jores21CNN(SequenceModel):
     """
@@ -797,7 +793,6 @@ class Jores21CNN(SequenceModel):
         x = self.fc2(x)
         return x
 
-
 class Kopp21CNN(SequenceModel):
     """
     Custom convolutional model used in Kopp et al. 2021 paper
@@ -876,7 +871,6 @@ class Kopp21CNN(SequenceModel):
         x = x.view(x.shape[0], -1)
         x = self.linear(x)
         return x
-
 
 class FactorizedBasset(SequenceModel):
 	def __init__(
@@ -977,7 +971,6 @@ class FactorizedBasset(SequenceModel):
 		dense_kwargs.setdefault("batchnorm_first", True)
 		dense_kwargs.setdefault("activations", "relu")
 		return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels,dense_kwargs 
-
 
 class ResidualBind( SequenceModel):
     def __init__(
@@ -1082,7 +1075,6 @@ class ResidualBind( SequenceModel):
         x = self.flatten(x)
         x = self.dense_block(x)
         return x
-
 
 class DeepBind( SequenceModel):
     """
@@ -1252,7 +1244,6 @@ class DeepBind( SequenceModel):
         dense_kwargs.setdefault("batchnorm", False)
         return conv_kwargs, dense_kwargs 
 
-
 class DeepSEA( SequenceModel):
     """DeepSEA model implementation for EUGENe
     
@@ -1321,7 +1312,6 @@ class DeepSEA( SequenceModel):
         dense_kwargs.setdefault("hidden_dims", [925])
         return conv_kwargs,dense_kwargs 
 
-
 class Basset(SequenceModel):
     """
     """
@@ -1379,7 +1369,6 @@ class Basset(SequenceModel):
         dense_kwargs.setdefault("batchnorm_first", True)
         dense_kwargs.setdefault("activations", "relu")
         return conv_kwargs,dense_kwargs 
-
 
 class DanQ( SequenceModel):
     """DanQ model from Quang and Xie, 2016;
@@ -1461,7 +1450,6 @@ class DanQ( SequenceModel):
         dense_kwargs.setdefault("dropout_rates", 0.5)
         dense_kwargs.setdefault("batchnorm", False)
         return conv_kwargs, recurrent_kwargs, dense_kwargs
-
 
 class DeepSTARR( SequenceModel):
     """DeepSTARR model from de Almeida et al., 2022; 

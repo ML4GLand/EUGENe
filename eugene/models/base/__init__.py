@@ -1,1 +1,2 @@
-from ._base_models import SequenceModel
+from ._SequenceModel import SequenceModel
+from ._ProfileModel import ProfileModel

@@ -1,12 +1,16 @@
 import h5py
+import pyfaidx
+import pyBigWig
+import torch
+import pyranges as pr
 import numpy as np
 import pandas as pd
-from typing import List, Union, Optional, Iterable
 from os import PathLike
-import pyranges as pr
-from .dataloaders import SeqData
+from tqdm.auto import tqdm
+from typing import List, Union, Optional, Iterable
+from .datastructures import SeqData
 from ._utils import _read_and_concat_dataframes
-from ..preprocess import reverse_complement_seqs, decode_seqs
+from ..preprocess import reverse_complement_seqs, decode_seqs, ohe_seq
 
 
 def read_csv(
@@ -808,3 +812,197 @@ def write(sdata, filename, *args, **kwargs):
     else:
         print("Sequence file type not currently supported.")
         return
+
+
+def read_profile(
+	loci, 
+    sequences, 
+    signals=None, 
+    controls=None, 
+    chroms=None, 
+	in_window=2114,
+    out_window=1000, 
+    max_jitter=128, 
+    min_counts=None,
+	max_counts=None, 
+    verbose=False
+):
+	"""Extract sequences and signals at coordinates from a locus file.
+	This function will take in genome-wide sequences, signals, and optionally
+	controls, and extract the values of each at the coordinates specified in
+	the locus file/s and return them as tensors.
+	Signals and controls are both lists with the length of the list, n_s
+	and n_c respectively, being the middle dimension of the returned
+	tensors. Specifically, the returned tensors of size 
+	(len(loci), n_s/n_c, (out_window/in_wndow)+max_jitter*2).
+	The values for sequences, signals, and controls, can either be filepaths
+	or dictionaries of np arrays or a mix of the two. When a filepath is 
+	passed in it is loaded using pyfaidx or pyBigWig respectively.   
+	Parameters
+	----------
+	loci: str or pd.DataFrame or list/tuple of such
+		Either the path to a bed file or a pd DataFrame object containing
+		three columns: the chromosome, the start, and the end, of each locus
+		to train on. Alternatively, a list or tuple of strings/DataFrames where
+		the intention is to train on the interleaved concatenation, i.e., when
+		you want to train on peaks and negatives.
+	sequences: str or dictionary
+		Either the path to a fasta file to read from or a dictionary where the
+		keys are the unique set of chromosoms and the values are one-hot
+		encoded sequences as np arrays or memory maps.
+	signals: list of strs or list of dictionaries or None, optional
+		A list of filepaths to bigwig files, where each filepath will be read
+		using pyBigWig, or a list of dictionaries where the keys are the same
+		set of unique chromosomes and the values are np arrays or memory
+		maps. If None, no signal tensor is returned. Default is None.
+	controls: list of strs or list of dictionaries or None, optional
+		A list of filepaths to bigwig files, where each filepath will be read
+		using pyBigWig, or a list of dictionaries where the keys are the same
+		set of unique chromosomes and the values are np arrays or memory
+		maps. If None, no control tensor is returned. Default is None. 
+	chroms: list or None, optional
+		A set of chromosomes to extact loci from. Loci in other chromosomes
+		in the locus file are ignored. If None, all loci are used. Default is
+		None.
+	in_window: int, optional
+		The input window size. Default is 2114.
+	out_window: int, optional
+		The output window size. Default is 1000.
+	max_jitter: int, optional
+		The maximum amount of jitter to add, in either direction, to the
+		midpoints that are passed in. Default is 128.
+	min_counts: float or None, optional
+		The minimum number of counts, summed across the length of each example
+		and across all tasks, needed to be kept. If None, no minimum. Default 
+		is None.
+	max_counts: float or None, optional
+		The maximum number of counts, summed across the length of each example
+		and across all tasks, needed to be kept. If None, no maximum. Default 
+		is None.  
+	verbose: bool, optional
+		Whether to display a progress bar while loading. Default is False.
+	Returns
+	-------
+	seqs: torch.tensor, shape=(n, 4, in_window+2*max_jitter)
+		The extracted sequences in the same order as the loci in the locus
+		file after optional filtering by chromosome.
+	signals: torch.tensor, shape=(n, len(signals), out_window+2*max_jitter)
+		The extracted signals where the first dimension is in the same order
+		as loci in the locus file after optional filtering by chromosome and
+		the second dimension is in the same order as the list of signal files.
+		If no signal files are given, this is not returned.
+	controls: torch.tensor, shape=(n, len(controls), out_window+2*max_jitter)
+		The extracted controls where the first dimension is in the same order
+		as loci in the locus file after optional filtering by chromosome and
+		the second dimension is in the same order as the list of control files.
+		If no control files are given, this is not returned.
+	"""
+
+	seqs, signals_, controls_ = [], [], []
+	in_width, out_width = in_window // 2, out_window // 2
+
+	# Load the sequences
+	if isinstance(sequences, str):
+		sequences = pyfaidx.Fasta(sequences)
+
+	names = ['chrom', 'start', 'end']
+	if not isinstance(loci, (tuple, list)):
+		loci = [loci]
+
+	loci_dfs = []
+	for i, df in enumerate(loci):
+		if isinstance(df, str):
+			df = pd.read_csv(df, sep='\t', usecols=[0, 1, 2], header=None, index_col=False, names=names)
+			df['idx'] = np.arange(len(df)) * len(loci) + i
+		loci_dfs.append(df)
+
+	loci = pd.concat(loci_dfs).set_index("idx").sort_index().reset_index(drop=True)
+	if chroms is not None:
+		loci = loci[np.isin(loci['chrom'], chroms)]
+
+	# Load the signal and optional control tracks if filenames are given
+	if signals is not None:
+		for i, signal in enumerate(signals):
+			if isinstance(signal, str):
+				signals[i] = pyBigWig.open(signal, "r")
+
+	if controls is not None:
+		for i, control in enumerate(controls):
+			if isinstance(control, str):
+				controls[i] = pyBigWig.open(control, "r")
+
+	desc = "Loading Loci"
+	d = not verbose
+
+	max_width = max(in_width, out_width)
+
+	for chrom, start, end in tqdm(loci.values, disable=d, desc=desc):
+		mid = start + (end - start) // 2
+
+		if start - max_width - max_jitter < 0:
+			continue
+
+		if end + max_width + max_jitter >= len(sequences[chrom]):
+			continue
+		
+		start = mid - out_width - max_jitter
+		end = mid + out_width + max_jitter
+		
+		# Extract the signal from each of the signal files
+		if signals is not None:
+			signals_.append([])
+			for signal in signals:
+				if isinstance(signal, dict):
+					signal_ = signal[chrom][start:end]
+				else:
+					signal_ = signal.values(chrom, start, end, numpy=True)
+					signal_ = np.nan_to_num(signal_)
+
+				signals_[-1].append(signal_)
+
+		# For the sequences and controls extract a window the size of the input
+		start = mid - in_width - max_jitter
+		end = mid + in_width + max_jitter
+
+		# Extract the controls from each of the control files
+		if controls is not None:
+			controls_.append([])
+			for control in controls:
+				if isinstance(control, dict):
+					control_ = control[chrom][start:end]
+				else:
+					control_ = control.values(chrom, start, end, numpy=True)
+					control_ = np.nan_to_num(control_)
+
+				controls_[-1].append(control_)
+
+		# Extract the sequence
+		if isinstance(sequences, dict):
+			seq = sequences[chrom][start:end].T
+		else:
+			seq = ohe_seq(sequences[chrom][start:end].seq.upper())
+		
+		seqs.append(seq)
+
+	seqs = torch.tensor(np.array(seqs), dtype=torch.float32)
+
+	if signals is not None:
+		signals_ = torch.tensor(np.array(signals_), dtype=torch.float32)
+
+		idxs = torch.ones(signals_.shape[0], dtype=torch.bool)
+		if max_counts is not None:
+			idxs = (idxs) & (signals_.sum(dim=(1, 2)) < max_counts)
+		if min_counts is not None:
+			idxs = (idxs) & (signals_.sum(dim=(1, 2)) > min_counts)
+
+		if controls is not None:
+			controls_ = torch.tensor(np.array(controls_), dtype=torch.float32)
+			return seqs[idxs], signals_[idxs], controls_[idxs]
+
+		return seqs[idxs], signals_[idxs]
+	else:
+		if controls is not None:
+			controls_ = torch.tensor(np.array(controls_), dtype=torch.float32)
+			return seqs, controls_
+
+		return seqs
