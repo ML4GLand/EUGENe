@@ -44,11 +44,8 @@ def _parse_background(line: str, handle: TextIOBase) -> str:
     line = handle.readline()
     while line:
         if (not line.rstrip()) or line.startswith("MOTIF"):
-            if (
-                abs(1 - sum(background.values()))
-                <= __background_sum_error
-            ):
-                return line
+            if (abs(1 - sum(background.values())) <= __background_sum_error):
+                return line, background
             else:
                 raise RuntimeError("Background frequencies do not sum to 1")
         else:
@@ -98,7 +95,7 @@ def _parse_motif(line: str, handle: TextIOBase) -> str:
         pfm_rows.append(pfm_row)
         line = handle.readline()
 
-        if (line.strip() == "") or line.startswith("MOTIF"):
+        if (line.strip() == "") or line.startswith("MOTIF") or line.startswith("URL"):
             pfm = np.stack(pfm_rows)
             if motif_length is None:
                 motif_length = pfm.shape[0]
