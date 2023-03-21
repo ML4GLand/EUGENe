@@ -153,3 +153,4 @@ class BPNet(ProfileModel):
 
 		y_counts = self.linear(X).reshape(X.shape[0], 1)
 		return y_profile, y_counts
+		

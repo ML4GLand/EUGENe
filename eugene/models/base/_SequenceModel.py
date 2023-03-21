@@ -53,7 +53,9 @@ class SequenceModel(LightningModule, ABC):
         metric: str = None,
         metric_kwargs: dict = None,
         seed: int = None,
-        save_hyperparams: bool = True
+        save_hyperparams: bool = True,
+        arch: str = None,
+        name: str = None
     ):
         super().__init__()
 
@@ -93,6 +95,12 @@ class SequenceModel(LightningModule, ABC):
         if save_hyperparams:
             self.save_hyperparameters()
 
+        # Set the architecture
+        self.arch = arch if arch is not None else self.__class__.__name__
+
+        # Set the model name
+        self.name = name if name is not None else "model"
+        
     @abstractmethod
     def forward(self, x, x_rev_comp=None) -> torch.Tensor:
         """
@@ -106,6 +114,53 @@ class SequenceModel(LightningModule, ABC):
             reverse complement of the input sequence
         """
 
+    def predict(self, x, x_rev_comp=None, batch_size=32):
+        """
+        Predict the output of the model in batches
+        """
+        with torch.no_grad():
+            device = self.device
+            self.eval()
+            if isinstance(x, np.ndarray):
+                x = torch.from_numpy(x.astype(np.float32))
+            if x_rev_comp is not None and isinstance(x_rev_comp, np.ndarray):
+                x_rev_comp = torch.from_numpy(x_rev_comp.astype(np.float32))
+            outs = []
+            for i in range(0, len(x), batch_size):
+                batch = x[i:i+batch_size].to(device)
+                batch_rev_comp = x_rev_comp[i:i+batch_size].to(device) if x_rev_comp is not None else None
+                outs.append(self(batch, x_rev_comp=batch_rev_comp))
+            return torch.cat(outs)
+    
+    def _common_step(self, batch, batch_idx, stage: str):
+        """Common step for training, validation and test
+
+        Parameters:
+        ----------
+        batch (tuple):
+            batch of data
+        batch_idx (int):
+            index of the batch
+        stage (str):
+            stage of the training
+
+        Returns:
+        ----------
+        dict:
+            dictionary of metrics
+        """
+        # Get and log loss
+        ID, x, x_rev_comp, y = batch
+        outs = self(x, x_rev_comp).squeeze(dim=1)
+        loss = self.loss_fxn(outs, y) # train
+        #loss = self.loss_fxn(outs, y.squeeze(dim=1)) # predict
+        return {
+            "loss": loss, 
+            "ID": ID.detach(), 
+            "outs": outs.detach(), 
+            "y": y.detach()
+        }
+    
     def training_step(self, batch, batch_idx):
         """Training step"""
         step_dict = self._common_step(batch, batch_idx, "train")
@@ -148,35 +203,6 @@ class SequenceModel(LightningModule, ABC):
         y = step_dict["y"].cpu().numpy()
         outs = step_dict["outs"].cpu().numpy()
         return np.column_stack([ID, outs, y])
-
-    def _common_step(self, batch, batch_idx, stage: str):
-        """Common step for training, validation and test
-
-        Parameters:
-        ----------
-        batch (tuple):
-            batch of data
-        batch_idx (int):
-            index of the batch
-        stage (str):
-            stage of the training
-
-        Returns:
-        ----------
-        dict:
-            dictionary of metrics
-        """
-        # Get and log loss
-        ID, x, x_rev_comp, y = batch
-        outs = self(x, x_rev_comp).squeeze(dim=1)
-        loss = self.loss_fxn(outs, y) # train
-        #loss = self.loss_fxn(outs, y.squeeze(dim=1)) # predict
-        return {
-            "loss": loss, 
-            "ID": ID.detach(), 
-            "outs": outs.detach(), 
-            "y": y.detach()
-        }
 
     def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
