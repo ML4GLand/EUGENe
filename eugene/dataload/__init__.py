@@ -1,4 +1,3 @@
-from .datastructures import SeqData
 from .datasets import SeqDataset, ProfileDataset
 from ._io import (
     read,
@@ -13,17 +12,3 @@ from ._io import (
 )
 from ._io import write, write_csv, write_fasta, write_numpy, write_h5sd
 from ._transforms import ReverseComplement, OneHotEncode, ToTensor
-from ._utils import concat
-
-# Motif data loading and processing
-from . import motif
-from .motif import Motif, MotifSet
-from .motif import (
-    read_meme,
-    read_homer,
-    load_jaspar,
-    read_h5,
-    write_meme,
-    write_homer,
-    write_h5
-)

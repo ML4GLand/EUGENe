@@ -2,20 +2,7 @@
 
 # Set default logging handler to avoid logging with logging.lastResort logger.
 import logging
-
-from ._constants import REGISTRY_KEYS
 from ._settings import settings
-
-from . import preprocess as pp
-from . import dataload as dl
-from . import datasets
-from . import models
-from . import train
-from . import evaluate
-from . import interpret
-from . import plot as pl
-from . import external
-from . import utils
 
 try:
     import importlib.metadata as importlib_metadata
@@ -32,15 +19,11 @@ eugene_logger.propagate = False
 
 __all__ = [
     "settings",
-    "REGISTRY_KEYS",
-    "datasets",
     "dataload",
     "preprocess",
     "models",
     "train",
     "evaluate",
-    "interpret",
     "plot",
-    "external",
     "utils",
 ]
