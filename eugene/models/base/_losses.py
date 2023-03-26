@@ -5,7 +5,7 @@ def adversarial_loss(y_hat, y):
     return F.binary_cross_entropy(y_hat, y)
 
 def rmsle_loss(y_hat, y):
-    torch.sqrt(F.mse_loss(torch.log(pred + 1), torch.log(actual + 1)))
+    torch.sqrt(F.mse_loss(torch.log(y_hat + 1), torch.log(y + 1)))
         
 def tweedie_loss(y_hat, y):
     '''

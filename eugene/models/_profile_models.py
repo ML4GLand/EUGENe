@@ -6,8 +6,6 @@ from .base import _layers as layers
 from .base import _blocks as blocks
 from .base import _towers as towers
 
-torch.backends.cudnn.benchmark = True
-
 class BPNet(ProfileModel):
 	"""A basic BPNet model with stranded profile and total count prediction.
 	This is a reference implementation for BPNet. The model takes in
@@ -153,3 +151,4 @@ class BPNet(ProfileModel):
 
 		y_counts = self.linear(X).reshape(X.shape[0], 1)
 		return y_profile, y_counts
+	

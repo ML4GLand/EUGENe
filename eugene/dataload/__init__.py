@@ -1,4 +1,4 @@
-from .datasets import SeqDataset, ProfileDataset
+from .datasets import SequenceDataset, ProfileDataset
 from ._io import (
     read,
     read_csv,
@@ -10,5 +10,11 @@ from ._io import (
     read_bigwig,
     read_profile
 )
-from ._io import write, write_csv, write_fasta, write_numpy, write_h5sd
-from ._transforms import ReverseComplement, OneHotEncode, ToTensor
+from ._io import (
+    write, 
+    write_csv, 
+    write_fasta, 
+    write_numpy, 
+    write_h5sd
+)
+from ._transforms import OneHotEncode, ReverseComplement, Transpose

@@ -1,6 +1,7 @@
-from os import PathLike
 import numpy as np
 import seaborn as sns
+from .. import settings
+from os import PathLike
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
@@ -12,7 +13,6 @@ from sklearn.metrics import (
 from typing import Union, Sequence 
 from sklearn.preprocessing import binarize
 from ._utils import _check_input, _label_plot, _save_fig
-from .. import settings
 
 
 def _plot_binary_confusion_mtx(

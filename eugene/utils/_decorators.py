@@ -1,7 +1,7 @@
 import numpy as np
 import inspect
 from functools import wraps
-from ..dataload import SeqData
+from seqdata import SeqData
 
 
 def get_default_args(func):

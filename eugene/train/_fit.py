@@ -1,14 +1,14 @@
 import numpy as np
 from os import PathLike
+from seqdata import SeqData
 from typing import Union, List
-from torch.utils.data import DataLoader
-from pytorch_lightning import LightningModule, Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
+from .._settings import settings
+from torch.utils.data import Dataset, DataLoader
+from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from ..dataload import SeqData, SeqDataset
-from .._settings import settings
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 
 
 def fit(
@@ -23,8 +23,8 @@ def fit(
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
-    train_dataset: SeqDataset = None,
-    val_dataset: SeqDataset = None,
+    train_dataset: Dataset = None,
+    val_dataset: Dataset = None,
     train_dataloader: DataLoader = None,
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
@@ -37,7 +37,6 @@ def fit(
     model_checkpoint_k = 1,
     model_checkpoint_monitor: str ="val_loss",
     seed: int = None,
-    verbosity = None,
     return_trainer: bool = False,
     **kwargs
 ):
@@ -68,9 +67,9 @@ def fit(
         The name of the experiment.
     version : str
         The version of the experiment.
-    train_dataset : SeqDataset
+    train_dataset :Dataset 
         The training dataset to use. If None, will be created from sdata.
-    val_dataset : SeqDataset
+    val_dataset :Dataset 
         The validation dataset to use. If None, will be created from sdata.
     train_dataloader : DataLoader
         The training dataloader to use. If None, will be created from train_dataset.
@@ -98,25 +97,23 @@ def fit(
     trainer : Trainer
         The PyTorch Lightning Trainer object.
     """
+    # Set training parameters
     gpus = gpus if gpus is not None else settings.gpus
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     log_dir = log_dir if log_dir is not None else settings.logging_dir
-    model_name = model.strand + model.__class__.__name__ + "_" + model.task
+    model_name = model.__class__.__name__
     name = name if name is not None else model_name
     seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
+
+    # Set-up dataloaders
     if train_dataloader is not None:
         assert val_dataloader is not None
     elif train_dataset is not None:
         assert val_dataset is not None
-        train_dataloader = DataLoader(
-            train_dataset, batch_size=batch_size, num_workers=num_workers
-        )
-        val_dataloader = DataLoader(
-            val_dataset, batch_size=batch_size, num_workers=num_workers
-        )
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
+        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
     elif sdata is not None:
-        # assert target_keys is not None
         if target_keys is not None:
             targs = sdata.seqs_annot[target_keys].values
             if len(targs.shape) == 1:
@@ -125,7 +122,6 @@ def fit(
                 nan_mask = np.any(np.isnan(targs), axis=1)
             print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
             sdata = sdata[~nan_mask]  
-        
         train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
         train_dataset = sdata[train_idx].to_dataset(
             target_keys=target_keys,
@@ -152,7 +148,9 @@ def fit(
         )
     else:
         raise ValueError("No data provided to train on.")
-    logger = TensorBoardLogger(log_dir, name=name, version=version)
+    
+    # Set-up callbacks
+    logger = CSVLogger(log_dir, name=name, version=version)
     callbacks = []
     if model_checkpoint_monitor is not None:
         model_checkpoint_callback = ModelCheckpoint(
@@ -174,7 +172,8 @@ def fit(
     trainer = Trainer(
         max_epochs=epochs, 
         logger=logger, 
-        gpus=gpus, 
+        devices=gpus, 
+        accelerator="auto",
         callbacks=callbacks, 
         **kwargs
     )

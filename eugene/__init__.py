@@ -8,10 +8,9 @@ try:
     import importlib.metadata as importlib_metadata
 except ModuleNotFoundError:
     import importlib_metadata
-package_name = "eugene-tools"
+    
+package_name = "eugene"
 __version__ = importlib_metadata.version(package_name)
-
-settings.verbosity = logging.INFO
 
 # This prevents double output.
 eugene_logger = logging.getLogger("eugene")

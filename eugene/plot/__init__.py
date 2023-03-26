@@ -8,11 +8,8 @@ from ._seq import (
     multiseq_track_features,
     seq_track,
     multiseq_track,
-    filter_viz_seqlogo,
     filter_viz,
     multifilter_viz,
-    feature_implant_plot,
-    kipoi_ism_heatmap
 )
 from ._dim_reduce import pca, umap, skree
 from ._utils import _const_line

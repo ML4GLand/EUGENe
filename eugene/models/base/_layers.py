@@ -25,8 +25,7 @@ class Exponential(nn.Module):
     def extra_repr(self) -> str:
         inplace_str = 'inplace=True' if self.inplace else ''
         return inplace_str
-
-    
+   
 ACTIVATION_REGISTRY = {
     "relu": nn.ReLU,
     "leaky_relu": nn.LeakyReLU,
@@ -90,7 +89,6 @@ class BiConv1D(nn.Module):
 			self.in_channels, self.out_channels, self.kernel_size, self.stride, self.padding, self.dilation, self.groups, self.bias is not None
 		)
 
-
 CONVOLUTION_REGISTRY = {
 	"conv1d": nn.Conv1d,
 	"biconv1d": BiConv1D,
@@ -108,6 +106,8 @@ RECURRENT_REGISTRY = {
 	"lstm": nn.LSTM,
 	"gru": nn.GRU
 }
+
+# ATTENTION -- Layers that can be used in an attention context
 """
 class MultiHeadAttention(nn.Module):
 
@@ -163,6 +163,7 @@ TRANSFORMER_REGISTRY = {
 	"MHA": MultiHeadAttention,
 }
 """
+
 # NORMALIZERS -- Layers that normalize the input
 NORMALIZER_REGISTRY = {
 	"batchnorm": nn.BatchNorm1d,
@@ -232,59 +233,15 @@ class Clip(nn.Module):
 	def forward(self, x):
 		return torch.clamp(x, self.min, self.max)
 
-MISC_REGISTRY = {
-	"clip": Clip
-}
-
-
-class MultiHeadAttentionLayer(nn.Module):
-
-    def __init__(
-        self, 
-        input_dim: int, 
-        head_dim: int, 
-        num_heads: int = 1,
-        dropout_rates: float = 0.0, 
-    ):
+class RevComp(nn.Module):
+    def __init__(self, dim=[1,2]):
         super().__init__()
-        
-        self.input_dim = input_dim
-        self.head_dim = head_dim
-        self.num_heads = num_heads
-        self.projection_dim = self.num_heads * self.head_dim
-        need_projection = not ((self.projection_dim == self.input_dim) and (self.num_heads == 1)) 
-        self.dropout_rates = dropout_rates
+        self.dim = dim
 
-        self.scale_factor = head_dim ** -0.5
-        self.qkv = nn.Linear(
-            self.input_dim, 
-            self.projection_dim * 3, 
-            bias = False
-        )
-        
-        self.softmax = nn.Softmax(dim = -1)
-        self.dropout_layer = nn.Dropout(self.dropout_rates)
-        
-        self.projection_layer = nn.Sequential(
-            nn.Linear(self.projection_dim, self.input_dim), 
-            nn.Dropout(self.dropout_rates)
-        ) if need_projection else nn.Identity()
-        
-    def forward(self, x, mask):
-        qkv = self.qkv(x).chunk(3, dim = -1)  #qkv is a tuple of tensors - need to map to extract individual q,k,v
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.num_heads), qkv)  
-        
-        scaled_score = torch.matmul(q, k.transpose(-1, -2)) * self.scale_factor
-        
-        if mask is not None: 
-            mask = mask.unsqueeze(1).expand(x.size(0), q.size(2), k.size(2)) # [b,n] --> [b,1,n] --> [b,n,n]
-            mask = mask.unsqueeze(1).repeat(1, self.heads, 1, 1) #Tell Zhu-Li we did the thing: [b,n,n] --> [b,h,n,n]    
-            scaled_score = scaled_score.masked_fill(mask, torch.finfo(torch.float32).min)
-            
-        attention = self.softmax(scaled_score)
-        attention = self.dropout_layer(attention)
-        
-        output = torch.matmul(attention, v)
-        output = rearrange(output, 'b h n d -> b n (h d)')
-        output = self.projection_layer(output)
-        return output
+    def forward(self, x):
+        return x.flip(self.dim)
+	
+MISC_REGISTRY = {
+	"clip": Clip,
+	"revcomp": RevComp
+}

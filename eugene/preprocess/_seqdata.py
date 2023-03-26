@@ -1,9 +1,9 @@
-from tqdm.auto import tqdm
 import numpy as np
-from ..dataload import SeqData
-from ._dataset_preprocess import split_train_test, binarize_values
-from ._seq_preprocess import sanitize_seqs, ohe_seqs, reverse_complement_seqs, gc_content_seqs
+from tqdm.auto import tqdm
+from seqdata import SeqData
 from ..utils._decorators import track
+from ._dataset import split_train_test, binarize_values
+from gaston import sanitize_seqs, ohe_seqs, reverse_complement_seqs
 
 
 @track
@@ -30,7 +30,6 @@ def sanitize_seqs_sdata(sdata: SeqData, copy=False) -> SeqData:
         sanitize_seqs(sdata.rev_seqs) if sdata.rev_seqs is not None else None
     )
     return sdata if copy else None
-
 
 @track
 def ohe_seqs_sdata(
@@ -87,10 +86,12 @@ def ohe_seqs_sdata(
         )
     return sdata if copy else None
 
-
 @track
 def reverse_complement_seqs_sdata(
-    sdata: SeqData, vocab="DNA", rc_seqs=False, copy=False
+    sdata: SeqData, 
+    vocab="DNA", 
+    rc_seqs=False, 
+    copy=False
 ) -> SeqData:
     """
     Reverse complement sequences in SeqData object.
@@ -118,7 +119,6 @@ def reverse_complement_seqs_sdata(
     if sdata.ohe_seqs is None or rc_seqs:
         sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, vocab)
     return sdata if copy else None
-
 
 @track
 def clean_nan_targets_sdata(
@@ -165,7 +165,6 @@ def clean_nan_targets_sdata(
             sdata[target_key].fillna(value=fill_value, inplace=True)
     print(f"Dropped targets: {dropped_keys}")
     return sdata if copy else None
-
 
 @track
 def clamp_targets_sdata(
@@ -227,7 +226,6 @@ def clamp_targets_sdata(
     if store_clamp_nums:
         sdata.uns["clamp_nums"] = clamp_nums
     return sdata if copy else None
-
 
 @track
 def scale_targets_sdata(
@@ -292,7 +290,6 @@ def scale_targets_sdata(
         sdata.uns["scaler"] = scaler
     return sdata if copy else None
 
-
 @track
 def binarize_targets_sdata(
     sdata: SeqData,
@@ -336,10 +333,13 @@ def binarize_targets_sdata(
         )
     return sdata if copy else None
 
-
 @track
 def train_test_split_sdata(
-    sdata: SeqData, train_key="train_val", chr=None, copy=False, **kwargs
+    sdata: SeqData, 
+    train_key="train_val", 
+    chr=None, 
+    copy=False, 
+    **kwargs
 ) -> SeqData:
     """
     Train test split a SeqData object.
@@ -367,10 +367,12 @@ def train_test_split_sdata(
         sdata[train_key] = sdata.seqs_annot.index.isin(train_indeces)
         return sdata if copy else None
 
-
 @track
 def add_ranges_sdata(
-    sdata: SeqData, chr_delim=":", rng_delim="-", copy=False
+    sdata: SeqData, 
+    chr_delim=":", 
+    rng_delim="-", 
+    copy=False
 ) -> SeqData:
     """
     Add position annotations to a SeqData object.
@@ -400,11 +402,13 @@ def add_ranges_sdata(
     sdata["end"] = [int(i[1]) for i in rng]
     return sdata if copy else None
 
-def seq_len_sdata(sdata, copy=False):
+@track
+def seq_len_sdata(sdata, dummy=False, copy=False):
     sdata = sdata.copy() if copy else sdata
     sdata.seqs_annot["seq_len"] = [len(seq) for seq in sdata.seqs]
     return sdata
     
+@track
 def downsample_sdata(
     sdata, 
     n=None, 
@@ -427,65 +431,3 @@ def downsample_sdata(
         rand_idx = np.random.choice(num_seqs, int(num_seqs * frac), replace=False)
         sdata = sdata[rand_idx]
     return sdata
-
-
-@track
-def prepare_seqs_sdata(
-    sdata: SeqData,
-    steps=["one_hot_encode", "reverse_complement", "train_test_split"],
-    # Add in an RNA flag to this
-    copy=False,
-) -> SeqData:
-    """
-    Wrapper functions to run multiple preprocessing steps at once
-    that prepare most SeqData objects for modeling.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    steps : list, optional
-        List of steps to perform, by default ["one_hot_encode", "reverse_complement", "train_test_split"]
-
-    Returns
-    -------
-    SeqData
-        SeqData object with prepared data.
-    """
-    sdata = sdata.copy() if copy else sdata
-    if not isinstance(steps, list):
-        steps = [steps]
-    steps = list(steps)
-    pbar = tqdm(steps)
-    for step in pbar:
-        pbar.set_description(f"{step_name[step]} on SeqData")
-        preprocessing_steps[step].__wrapped__(sdata)
-    return sdata if copy else None
-
-
-preprocessing_steps = dict(
-    reverse_complement=reverse_complement_seqs_sdata,
-    one_hot_encode=ohe_seqs_sdata,
-    train_test_split=train_test_split_sdata,
-)
-
-step_name = dict(
-    one_hot_encode="One hot encoding",
-    reverse_complement="Reverse complementing",
-    train_test_split="Train/test splitting",
-)
-
-
-@track
-def gc_content_seqs_sdata(
-    sdata,
-    copy=False
-):
-    sdata = sdata.copy() if copy else sdata
-    if sdata.ohe_seqs is not None:
-        sdata["gc_content"] = gc_content_seqs(sdata.ohe_seqs, ohe=True)
-    elif sdata.seqs is not None:
-        sdata["gc_content"] = gc_content_seqs(sdata.ohe_seqs, ohe=True)
-    else:
-        raise ValueError("No sequences to calculate gc_content on")
-    return sdata if copy else None

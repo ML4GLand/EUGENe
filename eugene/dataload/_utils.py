@@ -1,8 +1,6 @@
-from os import PathLike
-from pathlib import Path
-from typing import Union, List
-import numpy as np
 import pandas as pd
+from os import PathLike
+from typing import Union, List
 
 
 def _read_and_concat_dataframes(
@@ -49,7 +47,6 @@ def _read_and_concat_dataframes(
         dataframe = pd.concat([dataframe, x], ignore_index=True)
     dataframe.reset_index(inplace=True, drop=True)
     return dataframe
-
 
 def _seq2Fasta(seqs, IDs, name="seqs"):
     """Utility function to generate a fasta file from a list of sequences and identifiers

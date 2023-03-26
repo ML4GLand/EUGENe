@@ -1,7 +1,8 @@
 import torch
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
 from ..._settings import settings
+from torch.utils.data import Dataset, DataLoader
+
 
 class ProfileDataset(Dataset):
 	"""A data generator for BPNet inputs.

@@ -1,9 +1,9 @@
-from pathlib import Path
-import pandas as pd
 import numpy as np
+import pandas as pd
+from pathlib import Path
+from seqdata import SeqData
 from ._utils import try_download_urls
 from ..dataload._io import read, read_csv, read_fasta
-from ..dataload import SeqData
 
 
 HERE = Path(__file__).parent

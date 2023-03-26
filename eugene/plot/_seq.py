@@ -1,25 +1,21 @@
-from typing import Union
-from os import PathLike
-import pandas as pd
 import numpy as np
+import pandas as pd
 import seaborn as sns
+import logomaker as lm
+from os import PathLike
 import matplotlib as mpl
+from typing import Union
+from tqdm.auto import tqdm
+from ._utils import _save_fig
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import seqlogo
-import logomaker as lm
-from vizsequence import viz_sequence
-from tqdm.auto import tqdm
-from ..preprocess._utils import _collapse_pos
-from ._utils import _save_fig
-from .. import settings
+from gaston import _collapse_pos
 
 
 vocab_dict = {
     "DNA": ["A", "C", "G", "T"], 
     "RNA": ["A", "C", "G", "U"]
 }
-
 
 def _plot_seq_features(
     ax: Axes,
@@ -103,7 +99,6 @@ def _plot_seq_features(
                     va="bottom",
                 )
 
-
 def _plot_seq_logo(
     ax: Axes,
     seq: str,
@@ -179,7 +174,6 @@ def _plot_seq_logo(
     ax.set_ylabel(ylab)
     if threshold is not None:
         ax.hlines(1, len(seq), threshold / 10, color="red")
-
 
 def seq_track_features(
     sdata,
@@ -292,8 +286,7 @@ def seq_track_features(
     if return_axes:
         return ax
     if save is not None:
-        _save_fig(save)
-
+        _save_fig(save)\
 
 def multiseq_track_features(
     sdata,
@@ -373,72 +366,6 @@ def multiseq_track_features(
         return ax
     if save is not None:
         _save_fig(save)
-
-
-def _plot_logo_seqlogo(
-    matrix, 
-    **kwargs
-):
-    """
-    Plot a sequence logo of a position frequency matrix (PFM) using the SeqLogo package. 
-    
-    This function is deprecated because there is no easy way to save these as
-    figures because they are not matplotlib axes.
-
-    Parameters
-    ----------
-    matrix : numpy.ndarray
-        The position frequency matrix to plot
-    **kwargs : dict
-        Additional keyword arguments to pass to the SeqLogo object
-    """
-    cpm = seqlogo.CompletePm(pfm=matrix)
-    logo = seqlogo.seqlogo(
-        cpm, 
-        ic_scale=True, 
-        format="png", 
-        **kwargs
-    )
-    display(logo)
-    return logo
-
-
-def filter_viz_seqlogo(
-    sdata, 
-    filter_id: Union[str, list], 
-    uns_key: str = "pfms", 
-    return_logo: bool = False,
-    **kwargs
-):
-    """Plot the logo of the pfm generated for a passed in filter.  
-    
-    This function is deprecated because there is no easy way to save these as
-    figures because they are not matplotlib axes.
-    
-    If a filter_id is given, the logo will be filtered to only show the features that match the filter_id.
-    The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
-    The kwargs are passed to the SeqLogo object. See the SeqLogo documentation for more details.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        The SeqData object to plot the logo for
-    filter_id : str
-        The filter_id to use to filter the logo
-    uns_key : str
-        The key in the sdata.uns dictionary that contains the importance scores
-    **kwargs : dict
-        The keyword arguments to pass to the SeqLogo object
-
-    Returns
-    -------
-    ax : matplotlib.axes._subplots.AxesSubplot
-        The matplotlib axes object
-    """
-    logo = _plot_logo_seqlogo(sdata.uns[uns_key][filter_id], **kwargs)
-    if return_logo:
-        return logo
-
 
 def seq_track(
     sdata,
@@ -525,7 +452,6 @@ def seq_track(
     if return_ax:
         return nn_logo.ax
 
-
 def multiseq_track(
     sdata,
     seq_ids: list,
@@ -603,7 +529,6 @@ def multiseq_track(
     if return_axes:
         return ax
 
-
 def filter_viz(
     sdata,
     filter_id: Union[str, int],
@@ -675,7 +600,6 @@ def filter_viz(
     if return_ax:
         return logo.ax
 
-
 def multifilter_viz(
     sdata,
     filter_ids: list,
@@ -736,94 +660,3 @@ def multifilter_viz(
     plt.tight_layout()
     if save is not None:
         _save_fig(save)
-
-
-def kipoi_ism_heatmap(
-    sdata, 
-    seq_id: Union[str, int], 
-    uns_key: str = "NaiveISM_imps", 
-    figsize: tuple = (15, 2.5),
-    save: PathLike = None,
-    return_axes: bool = False
-):
-    """ 
-    Wrapper function around Kipoi's seqlogo_heatmap function that generates a really 
-    nice heatmap of the importance scores for a single sequence in a SeqData object's
-    uns dictionary.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        The SeqData object with sequences and importance scores to plot a heatmap for
-    seq_id : str or int
-        The sequence id to plot
-    uns_key : str
-        The key in the sdata.uns dictionary that contains the importance scores to plot
-    figsize : tuple
-        The figure size to use for the plot
-    save : PathLike
-        The path to save the figure to
-    return_axes : bool
-        Whether to return the matplotlib axes object
-    
-    Returns
-    -------
-    ax : matplotlib.axes.Axes
-    """
-    from ..external.kipoi.kipoi_veff.plot import seqlogo_heatmap
-    seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
-    val = sdata.uns[uns_key][seq_idx]
-    ax = plt.figure(figsize=figsize)
-    seqlogo_heatmap(val.T, val, ax=plt.subplot())
-    if save:
-        _save_fig(save)
-    if return_axes:
-        return ax
-
-
-def feature_implant_plot(
-    sdata, 
-    seqsm_keys: list, 
-    xlab: str = "Position",
-    ylab: str = "Predicted Score",
-    save: PathLike = None, 
-    return_axes: bool = False
-):
-    """ 
-    Plot a lineplot for each position of the sequence after implanting a feature.
-
-    Assumes that the value corresponding to each seqsm_key in the sdata.uns dictionary
-    has the same shape, namely (L, ) where L are the positions where a feature was implanted
-    and scores were calculated using a model. Plots the scores as a line plot with a 95% CI
-    corresponding to the number of sequences used to make the plot.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        The SeqData object with sequences and scores to plot
-    seqsm_keys : list
-        The keys in the sdata.uns dictionary that contain the scores to plot
-    xlab : str
-        The x-axis label
-    ylab : str
-        The y-axis label
-    save : PathLike
-        The path to save the figure to
-    return_axes : bool
-        Whether to return the matplotlib axes object
-    """
-    concat_df = pd.DataFrame()
-    for seqsm_key in seqsm_keys:
-        df = pd.DataFrame(index=sdata.names, data=sdata.seqsm[seqsm_key]).melt(
-            var_name=xlab, 
-            value_name=ylab, 
-            ignore_index=False
-        )
-        df["feature"] = seqsm_key
-        concat_df = pd.concat([concat_df, df])
-    concat_df.reset_index(drop=True, inplace=True)
-    g = sns.lineplot(data=concat_df, x=xlab, y=ylab, hue="feature")
-    if save:
-        _save_fig(save)
-    if return_axes:
-        return g

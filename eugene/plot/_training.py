@@ -1,8 +1,8 @@
 import os
-from os import PathLike
 import glob
-import matplotlib.pyplot as plt
 import seaborn as sns
+from os import PathLike
+import matplotlib.pyplot as plt
 from ._utils import (
     _plot_seaborn,
     many_logs2pandas,
@@ -69,7 +69,6 @@ def metric_curve(
     if return_axes:
         return ax
 
-
 def loss_curve(
     log_path: PathLike = None,
     title: str = None,
@@ -117,7 +116,6 @@ def loss_curve(
     )
     if return_axes:
         return ax
-
 
 def training_summary(
     log_path: PathLike = None, 

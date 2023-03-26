@@ -1,2 +1,2 @@
-from ._SeqDataset import SeqDataset
+from ._SequenceDataset import SequenceDataset
 from ._ProfileDataset import ProfileDataset

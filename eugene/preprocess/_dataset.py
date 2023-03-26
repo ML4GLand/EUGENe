@@ -1,7 +1,8 @@
 import pickle
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
+
 
 def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf=True):
     """
@@ -35,7 +36,6 @@ def split_train_test(X_data, y_data, split=0.8, subset=None, rand_state=13, shuf
             test_y[:num_test],
         )
     return train_X, test_X, train_y, test_y
-
 
 def standardize_features(train_X, test_X, indeces=None, stats_file=None):
     """
@@ -75,7 +75,6 @@ def standardize_features(train_X, test_X, indeces=None, stats_file=None):
 
     return train_X_scaled, test_X_scaled
 
-
 def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     """
     Function to binarize values based on thresholds
@@ -95,7 +94,6 @@ def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     else:
         bin_values = np.where(values <= upper_threshold, 0, bin_values)
     return bin_values
-
 
 def ohe_features(dataframe, feature_cols):
     ohe = OneHotEncoder(sparse=False)

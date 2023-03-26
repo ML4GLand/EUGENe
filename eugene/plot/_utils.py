@@ -1,14 +1,15 @@
 import os
-from os import PathLike
 import traceback
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+from .. import settings
+from os import PathLike
+import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from typing import List, Union, Sequence
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-from .. import settings
+
 
 def _create_matplotlib_axes(
     num_axes, 
@@ -41,7 +42,6 @@ def _create_matplotlib_axes(
     )
     ax = ax.flatten() if num_axes > 1 else ax
     return ax
-
 
 def _label_plot(
     ax: Axes, 
@@ -77,7 +77,6 @@ def _label_plot(
     ax.set_title(title)
     plt.tight_layout()
 
-
 def _save_fig(
     file_path: PathLike,
     dpi=settings.dpi
@@ -94,7 +93,6 @@ def _save_fig(
     if not os.path.exists(dir):
         os.makedirs(dir)
     plt.savefig(file_path, dpi=dpi)
-
 
 def _plot_seaborn(
     dataframe: pd.DataFrame,
@@ -176,7 +174,6 @@ def _plot_seaborn(
         _save_fig(save)
     return ax
 
-
 def _violin_long(
     sdata,
     groups: Union[str, Sequence[str]],
@@ -234,7 +231,6 @@ def _violin_long(
         _save_fig(save)
     return ax
 
-
 def _check_input(
     sdata,
     targets: Union[Sequence[str], str],
@@ -257,7 +253,6 @@ def _check_input(
     if len(targets) != len(labels):
         labels = [f"label_{i}" for i in range(len(targets))]
     return targets, predictions, labels
-
 
 def tflog2pandas(path: str) -> pd.DataFrame:
     """
@@ -305,7 +300,6 @@ def tflog2pandas(path: str) -> pd.DataFrame:
         traceback.print_exc()
     return runlog_data.reset_index(drop=True)
 
-
 def many_logs2pandas(event_paths):
     """
     Convert many tensorflow log files to pandas DataFrame.
@@ -332,7 +326,6 @@ def many_logs2pandas(event_paths):
                 all_logs = all_logs.append(log, ignore_index=True)
     return all_logs
 
-
 def _const_line(
     *args, 
     **kwargs
@@ -342,3 +335,4 @@ def _const_line(
     """ 
     x = np.arange(-1, 1.01, 0.01)
     plt.plot(x, x, c='k', ls='--')
+    

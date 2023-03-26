@@ -106,7 +106,6 @@ def _model_performances_across_groups(
         conc = pd.concat([conc, scores])
     return conc
 
-
 def _model_performances(
     sdataframe: pd.DataFrame, 
     target_key: str,
@@ -174,7 +173,6 @@ def _model_performances(
     if prediction_groups is not None:
         scores["prediction_groups"] = prediction_groups
     return scores
-
 
 def performance_summary(
     sdata,

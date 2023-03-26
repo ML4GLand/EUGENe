@@ -1,5 +1,5 @@
-from os import PathLike
 import numpy as np
+from os import PathLike
 import matplotlib.pyplot as plt
 from typing import Union, Sequence
 from sklearn.metrics import r2_score, mean_squared_error
@@ -9,7 +9,6 @@ from ._utils import (
     _save_fig
 )
 from .. import settings
-
 
 def _plot_performance_scatter(
     sdata,
@@ -119,7 +118,6 @@ def _plot_performance_scatter(
     if save is not None:
         _save_fig(save)
     return ax
-
 
 def performance_scatter(
     sdata,

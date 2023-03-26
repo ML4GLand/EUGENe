@@ -10,7 +10,7 @@ from ray.tune.schedulers import ASHAScheduler, MedianStoppingRule, PopulationBas
 from ray.tune.search import BasicVariantGenerator
 from ray.tune.search.bayesopt import BayesOptSearch 
 from ray.tune.search.hyperopt import HyperOptSearch
-from ..dataload import SeqData, SeqDataset
+from seqdata import SeqData, SeqDataset
 from .._settings import settings
 from ..models import get_model, init_weights
 

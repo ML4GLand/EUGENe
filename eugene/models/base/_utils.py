@@ -1,7 +1,6 @@
+import torchinfo
 import numpy as np
 import torch.nn as nn
-#import torchinfo
-
 
 def get_conv1dblock_output_len(modules, input_len):
     """
@@ -36,19 +35,15 @@ def get_conv1dblock_output_len(modules, input_len):
                 module.kernel_size = module.kernel_size[0]
             if isinstance(module.stride, tuple):
                 module.stride = module.stride[0]
-            #print(module, output_len, module.kernel_size, module.stride)
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)
-
 
 def get_output_size(modules, input_size):
     if isinstance(input_size, int):
         input_size = (input_size, )
-    #summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
-    summary = ""
+    summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0)
     out_size = summary.summary_list[-1].output_size[1:]
     return out_size
-
 
 def get_layer(model, layer_name):
     return dict([*model.named_modules()])[layer_name]

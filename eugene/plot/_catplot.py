@@ -1,9 +1,9 @@
 import seaborn as sns
+from .. import settings
 import matplotlib.pyplot as plt
 from typing import Union, Mapping 
 from typing import Sequence, Iterable
 from ._utils import _plot_seaborn, _violin_long
-from .. import settings
 
 
 def countplot(
@@ -55,7 +55,6 @@ def countplot(
     if return_axes:
         return ax
 
-
 def histplot(
     sdata,
     keys: Union[str, Sequence[str]],
@@ -103,7 +102,6 @@ def histplot(
         )
     if return_axes:
         return ax
-
 
 def boxplot(
     sdata,
@@ -165,7 +163,6 @@ def boxplot(
     if return_axes:
         return ax
 
-
 def violinplot(
     sdata,
     keys: Union[str, Sequence[str]] = None,
@@ -217,7 +214,6 @@ def violinplot(
             )
     if return_axes:
         return ax
-
 
 def scatterplot(
     sdata, 
