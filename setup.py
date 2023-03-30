@@ -9,13 +9,13 @@ requirements = []
 
 setup(
     name="eugene",
-    version="0.0.6",
+    version="0.0.8",
     author="Adam Klie",
     author_email="aklie@eng.ucsd.edu",
     description="Elucidating the Utility of Genomic Elements with Neural Nets",
     long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/EUGENe",
+    url="https://github.com/ML4GLand/EUGENe",
     packages=find_packages(),
     install_requires=requirements,
     classifiers=[
