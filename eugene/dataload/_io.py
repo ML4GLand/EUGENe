@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 from seqdata import SeqData
 from ._utils import _read_and_concat_dataframes
 from typing import List, Union, Optional, Iterable
-from ..preprocess import reverse_complement_seqs, decode_seqs, ohe_seq
+from seqpro import reverse_complement_seqs, decode_seqs, ohe_seq
 
 
 def read_csv(
@@ -94,7 +94,7 @@ def read_csv(
         else:
             ids = None
     if rev_comp:
-        from ..preprocess import reverse_complement_seqs
+        from seqpro import reverse_complement_seqs
 
         rev_seqs = reverse_complement_seqs(seqs)
     else:
@@ -157,7 +157,7 @@ def read_fasta(
     else:
         targets = None
     if rev_comp:
-        from ..preprocess import reverse_complement_seqs
+        from seqpro import reverse_complement_seqs
         rev_seqs = reverse_complement_seqs(seqs)
     else:
         rev_seqs = None

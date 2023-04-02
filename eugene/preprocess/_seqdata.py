@@ -3,7 +3,7 @@ from tqdm.auto import tqdm
 from seqdata import SeqData
 from ..utils._decorators import track
 from ._dataset import split_train_test, binarize_values
-from gaston import sanitize_seqs, ohe_seqs, reverse_complement_seqs
+from seqpro import sanitize_seqs, ohe_seqs, reverse_complement_seqs
 
 
 @track

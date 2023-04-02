@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from tqdm.auto import tqdm
 from abc import ABC, abstractmethod
 from typing import Union, Callable, Optional
 from pytorch_lightning import seed_everything
@@ -9,7 +10,6 @@ from ._losses import LOSS_REGISTRY, MNLLLoss, log1pMSELoss
 from ._optimizers import OPTIMIZER_REGISTRY
 from ._schedulers import SCHEDULER_REGISTRY
 from ._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
-
 
 class SequenceModel(LightningModule, ABC):
     """
@@ -41,7 +41,7 @@ class SequenceModel(LightningModule, ABC):
         optimizer_lr: float = 1e-3,
         optimizer_kwargs: dict = {},
         scheduler: str = None,
-        scheduler_monitor: str = "val_loss",
+        scheduler_monitor: str = "val_loss_epoch",
         scheduler_kwargs: dict = {},
         metric: str = None,
         metric_kwargs: dict = None,
@@ -103,7 +103,7 @@ class SequenceModel(LightningModule, ABC):
             input sequence
         """
 
-    def predict(self, x, batch_size=32):
+    def predict(self, x, batch_size=128):
         """
         Predict the output of the model in batches
         """
@@ -113,7 +113,7 @@ class SequenceModel(LightningModule, ABC):
             if isinstance(x, np.ndarray):
                 x = torch.from_numpy(x.astype(np.float32))
             outs = []
-            for i in range(0, len(x), batch_size):
+            for _, i in tqdm(enumerate(range(0, len(x), batch_size)), desc="Predicting on batches", total=len(x)//batch_size):
                 batch = x[i:i+batch_size].to(device)
                 outs.append(self(batch))
             return torch.cat(outs)
@@ -148,23 +148,24 @@ class SequenceModel(LightningModule, ABC):
     def training_step(self, batch, batch_idx):
         """Training step"""
         step_dict = self._common_step(batch, batch_idx, "train")
-        self.log("train_loss", step_dict["loss"])
-        self.train_metric(step_dict["outs"], step_dict["y"].long())
-        self.log(f"train_{self.metric_name}", self.train_metric, on_step=True, on_epoch=True)
+        self.log("train_loss", step_dict["loss"], on_step=True, on_epoch=False)
+        self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
+        self.train_metric(step_dict["outs"], step_dict["y"])
+        self.log(f"train_{self.metric_name}_epoch", self.train_metric, on_step=False, on_epoch=True)
         return step_dict
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
         step_dict = self._common_step(batch, batch_idx, "val")
-        self.log("val_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        self.val_metric(step_dict["outs"], step_dict["y"].long())
-        self.log(f"val_{self.metric_name}", self.val_metric, on_step=False, on_epoch=True)
+        self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
+        self.val_metric(step_dict["outs"], step_dict["y"])
+        self.log(f"val_{self.metric_name}_epoch", self.val_metric, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
         """Test step"""
         step_dict = self._common_step(batch, batch_idx, "test")
         self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        self.test_metric(step_dict["outs"], step_dict["y"].long())
+        self.test_metric(step_dict["outs"], step_dict["y"])
         self.log(f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True)
 
     def configure_metrics(self, metric, metric_kwargs):
@@ -202,6 +203,7 @@ class SequenceModel(LightningModule, ABC):
         else:
             scheduler = self.scheduler(
                 optimizer,
+
                 **self.scheduler_kwargs
             )
             return {

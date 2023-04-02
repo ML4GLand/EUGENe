@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 from ._utils import _save_fig
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from gaston import _collapse_pos
+from seqpro._helpers import _collapse_pos
 
 
 vocab_dict = {
@@ -138,7 +138,7 @@ def _plot_seq_logo(
     https://github.com/kundajelab/vizsequence
     """
     if imp_scores is None:
-        from ..preprocess import ohe_seq
+        from seqpro import ohe_seq
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)

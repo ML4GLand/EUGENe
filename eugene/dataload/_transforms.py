@@ -1,5 +1,5 @@
 import torch
-from ..preprocess import ohe_seq
+from seqpro import ohe_seq
 
 class OneHotEncode(object):
     """One-hot encode the input sequence if its not already one-hot encoded"""

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # EUGENE
-from ..preprocessing import random_seqs, reverse_complement, encodeDNA
+from seqproing import random_seqs, reverse_complement, encodeDNA
 
 # Simple script tp generate commonly used file types for testing EUGENE models
 if __name__ == "__main__":

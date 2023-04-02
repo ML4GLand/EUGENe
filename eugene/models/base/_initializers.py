@@ -74,7 +74,7 @@ def init_weights(
 def init_motif_weights(
     model,
     layer_name,
-    motifs: MotifSet
+    motifs: MotifSet,
     **kwargs
 ):
     """Initialize the weights of a model.

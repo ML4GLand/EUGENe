@@ -4,12 +4,16 @@ from seqdata import SeqData
 from typing import Union, List
 from .._settings import settings
 from torch.utils.data import Dataset, DataLoader
-from pytorch_lightning.loggers import CSVLogger
+from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 
+LOGGER_REGISTRY = {
+    "csv": CSVLogger,
+    "tensorboard": TensorBoardLogger,
+}
 
 def fit(
     model: LightningModule,
@@ -20,6 +24,7 @@ def fit(
     gpus: int = None,
     batch_size: int = None,
     num_workers: int = None,
+    logger: str = "csv",
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
@@ -29,13 +34,13 @@ def fit(
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {},
-    early_stopping_metric: str = "val_loss",
+    early_stopping_metric: str = "val_loss_epoch",
     drop_last=True,
     early_stopping_callback: bool = True,
     early_stopping_patience=5,
     early_stopping_verbose=False,
     model_checkpoint_k = 1,
-    model_checkpoint_monitor: str ="val_loss",
+    model_checkpoint_monitor: str ="val_loss_epoch",
     seed: int = None,
     return_trainer: bool = False,
     **kwargs
@@ -104,7 +109,7 @@ def fit(
     log_dir = log_dir if log_dir is not None else settings.logging_dir
     model_name = model.__class__.__name__
     name = name if name is not None else model_name
-    seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
+    seed_everything(seed, workers=True) if seed is not None else print("No seed set")
 
     # Set-up dataloaders
     if train_dataloader is not None:
@@ -150,7 +155,7 @@ def fit(
         raise ValueError("No data provided to train on.")
     
     # Set-up callbacks
-    logger = CSVLogger(log_dir, name=name, version=version)
+    logger = LOGGER_REGISTRY[logger](log_dir, name=name, version=version)
     callbacks = []
     if model_checkpoint_monitor is not None:
         model_checkpoint_callback = ModelCheckpoint(
