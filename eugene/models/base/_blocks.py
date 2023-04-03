@@ -50,7 +50,7 @@ class Conv1DBlock(nn.Module):
         self.order = order
 
         # Define the conv layer
-        self.conv_type = layers.CONVOLUTION_REGISTRY[conv_type] if isinstance(self.activation, str) else self.activation
+        self.conv_type = layers.CONVOLUTION_REGISTRY[conv_type] if isinstance(conv_type, str) else conv_type
         conv = self.conv_type(
             in_channels=self.input_channels,
             out_channels=self.output_channels,
@@ -134,7 +134,7 @@ class DenseBlock(nn.Module):
         self.output_dim = output_dim
         self.num_layers = len(hidden_dims) + 1
         self.hidden_dims = hidden_dims if len(hidden_dims) > 0 else [input_dim]
-
+        
         # Define the activations
         activations = activations if type(activations) == list else [activations] * len(hidden_dims)
         self.activations = [layers.ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations] 
