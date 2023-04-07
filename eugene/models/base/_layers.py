@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from einops import repeat, rearrange
+from einops import repeat, rearrange
 
 # ACTIVATIONS -- Layers that apply a non-linear activation function
 class Identity(nn.Module):
@@ -90,6 +90,70 @@ class BiConv1D(nn.Module):
 			self.in_channels, self.out_channels, self.kernel_size, self.stride, self.padding, self.dilation, self.groups, self.bias is not None
 		)
 
+class InceptionConv1D(nn.Module):
+    def __init__(
+        self, 
+        in_channels, 
+        out_channels=None,
+        conv1_out_channels=None,
+        conv2_out_channels=None,
+        kernel_size2=3,
+        conv3_out_channels=None,
+        kernel_size3=5,
+	    conv_maxpool_kernel_size=3,
+        conv_maxpool_out_channels=None,
+	):
+        super(InceptionConv1D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.conv1_out_channels = conv1_out_channels
+        self.conv2_out_channels = conv2_out_channels
+        self.kernel_size2 = kernel_size2
+        self.conv3_out_channels = conv3_out_channels
+        self.kernel_size3 = kernel_size3
+        self.conv_maxpool_kernel_size = conv_maxpool_kernel_size
+        self.conv_maxpool_out_channels = conv_maxpool_out_channels
+
+        # If out_channels is not specified, split it evenly between the paths
+        if out_channels is not None:
+            conv1_out_channels = out_channels // 4
+            conv2_out_channels = out_channels // 4
+            conv3_out_channels = out_channels // 4  
+            conv_maxpool_out_channels = out_channels // 4
+	    
+        # Path 1 - only 1 conv, no need to specify kernel size
+        self.conv1 = nn.Conv1d(in_channels, conv1_out_channels, kernel_size=1)
+
+        # Path 2 - 1 conv into passed kernel size
+        self.conv2_1 = nn.Conv1d(in_channels, conv2_out_channels, kernel_size=1)
+        self.conv2_2 = nn.Conv1d(conv2_out_channels, conv2_out_channels, kernel_size=kernel_size2, padding="same")
+
+        # Path 3 - 1 conv into passed kernel size
+        self.conv3_1 = nn.Conv1d(in_channels, conv3_out_channels, kernel_size=1)
+        self.conv3_2 = nn.Conv1d(conv3_out_channels, conv3_out_channels, kernel_size=kernel_size3, padding="same")
+
+        # Path 4 - passed in kernel size maxpool into 1 conv
+        self.maxpool = nn.MaxPool1d(kernel_size=conv_maxpool_kernel_size, stride=1, padding=(conv_maxpool_kernel_size // 2))
+        self.conv_maxpool = nn.Conv1d(in_channels, conv_maxpool_out_channels, kernel_size=1)
+        
+    def forward(self, x):
+        conv1_out = self.conv1(x)
+        conv2_out = self.conv2_2(self.conv2_1(x))
+        conv3_out = self.conv3_2(self.conv3_1(x))
+        conv_maxpool_out = self.conv_maxpool(self.maxpool(x))
+        out = torch.cat([conv1_out, conv2_out, conv3_out, conv_maxpool_out], dim=1)
+        return out
+
+    def __repr__(self):
+        return "InceptionConv1D({}, {}, {}, {}, {}, {}, {})".format(
+            self.in_channels, self.out_channels, self.conv1_out_channels, self.conv2_out_channels, self.kernel_size2, self.conv3_out_channels, self.kernel_size3
+        )
+
+CONVOLUTION_REGISTRY = {
+	"conv1d": nn.Conv1d,
+	"biconv1d": BiConv1D,
+	"inceptionconv1d": InceptionConv1D,
+}
 
 CONVOLUTION_REGISTRY = {
 	"conv1d": nn.Conv1d,
@@ -108,7 +172,6 @@ RECURRENT_REGISTRY = {
 	"lstm": nn.LSTM,
 	"gru": nn.GRU
 }
-"""
 class MultiHeadAttention(nn.Module):
 
     def __init__(
@@ -139,7 +202,7 @@ class MultiHeadAttention(nn.Module):
             nn.Dropout(self.dropout_rate)
         ) if self.need_projection else nn.Identity()
         
-    def forward(self, x, mask):
+    def forward(self, x, mask=None):
         qkv = self.qkv(x).chunk(3, dim = -1)  #qkv is a tuple of tensors - need to map to extract individual q,k,v
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.num_heads), qkv)  
         
@@ -162,7 +225,7 @@ class MultiHeadAttention(nn.Module):
 TRANSFORMER_REGISTRY = {
 	"MHA": MultiHeadAttention,
 }
-"""
+
 # NORMALIZERS -- Layers that normalize the input
 NORMALIZER_REGISTRY = {
 	"batchnorm": nn.BatchNorm1d,
