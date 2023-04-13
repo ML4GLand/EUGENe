@@ -1,39 +1,11 @@
-import logging
-from pathlib import Path
-from typing import Any, Union
-from typing import Tuple
-import pytorch_lightning as pl
 import torch
-from rich.console import Console
-from rich.logging import RichHandler
-from ._compat import Literal
-
-if torch.cuda.is_available():
-    print(f"GPU is available: {torch.cuda.is_available()}")
-    print(f"Number of GPUs: {torch.cuda.device_count()}")
-    print(f"Current GPU: {torch.cuda.current_device()}")
-    print(f"GPUs: {torch.cuda.get_device_name(torch.cuda.current_device())}")
-
-
-eugene_logger = logging.getLogger("eugene")
-
-
-def _type_check(var: Any, varname: str, types: Union[type, Tuple[type, ...]]):
-    if isinstance(var, types):
-        return
-    if isinstance(types, type):
-        possible_types_str = types.__name__
-    else:
-        type_names = [t.__name__ for t in types]
-        possible_types_str = "{} or {}".format(
-            ", ".join(type_names[:-1]), type_names[-1]
-        )
-    raise TypeError(f"{varname} must be of type {possible_types_str}")
-
+from pathlib import Path
+from typing import Union
 
 class EugeneConfig:
     """
     Config manager for eugene.
+
     Examples
     --------
     To set the seed
@@ -51,26 +23,23 @@ class EugeneConfig:
 
     def __init__(
         self,
-        verbosity: int = logging.INFO,
         seed: int = 13,
-        progress_bar_style: Literal["rich", "tqdm"] = "tqdm",
+        progress_bar_style: str = "tqdm", 
         rc_context: dict = None,
         dpi: int = 300,
         batch_size: int = 128,
         gpus: int = None,
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
-        dataset_dir="./eugene_data/",
+        dataset_dir: str ="./eugene_data/",
         logging_dir: str = "./eugene_logs/",
         output_dir: str = "./eugene_output/",
         config_dir: str = "./eugene_configs/",
         figure_dir: str = "./eugene_figures/",
     ):
-
-        self.verbosity = verbosity
         self.seed = seed
-        if progress_bar_style not in ["rich", "tqdm"]:
-            raise ValueError("Progress bar style must be in ['rich', 'tqdm']")
+        if progress_bar_style not in ["tqdm"]:
+            raise ValueError("Progress bar style must be in ['tqdm']")
         self.progress_bar_style = progress_bar_style
         self.rc_context = rc_context
         self.dpi = dpi
@@ -85,51 +54,6 @@ class EugeneConfig:
         self.figure_dir = figure_dir
 
     @property
-    def verbosity(self) -> int:
-        """Verbosity level (default `logging.INFO`)."""
-        return self._verbosity
-
-    @verbosity.setter
-    def verbosity(self, level: Union[str, int]):
-        """
-        Sets logging configuration for eugene based on chosen level of verbosity.
-        If "eugene" logger has no StreamHandler, add one.
-        Else, set its level to `level`.
-        Parameters
-        ----------
-        level
-            Sets "eugene" logging level to `level`
-        force_terminal
-            Rich logging option, set to False if piping to file output.
-        """
-        self._verbosity = level
-        eugene_logger.setLevel(level)
-        logging.getLogger('tensorflow').disabled = True
-        if len(eugene_logger.handlers) == 0:
-            console = Console(force_terminal=True)
-            if console.is_jupyter is True:
-                console.is_jupyter = False
-            ch = RichHandler(
-                level=level, show_path=False, console=console, show_time=False
-            )
-            formatter = logging.Formatter("%(message)s")
-            ch.setFormatter(formatter)
-            eugene_logger.addHandler(ch)
-        else:
-            eugene_logger.setLevel(level)
-
-    def reset_logging_handler(self):
-        """
-        Resets "eugene" log handler to a basic RichHandler().
-        This is useful if piping outputs to a file.
-        """
-        eugene_logger.removeHandler(eugene_logger.handlers[0])
-        ch = RichHandler(level=self._verbosity, show_path=False, show_time=False)
-        formatter = logging.Formatter("%(message)s")
-        ch.setFormatter(formatter)
-        eugene_logger.addHandler(ch)
-
-    @property
     def seed(self) -> int:
         """Random seed for torch and numpy."""
         return self._seed
@@ -137,9 +61,6 @@ class EugeneConfig:
     @seed.setter
     def seed(self, seed: int):
         """Random seed for torch and numpy."""
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        pl.utilities.seed.seed_everything(seed)
         self._seed = seed
 
     @property
@@ -148,7 +69,7 @@ class EugeneConfig:
         return self._pbar_style
 
     @progress_bar_style.setter
-    def progress_bar_style(self, pbar_style: Literal["tqdm", "rich"]):
+    def progress_bar_style(self, pbar_style: str = "tqdm"):
         """Library to use for progress bar."""
         self._pbar_style = pbar_style
 
@@ -252,7 +173,6 @@ class EugeneConfig:
 
     @dataset_dir.setter
     def dataset_dir(self, dataset_dir: Union[str, Path]):
-        _type_check(dataset_dir, "dataset_dir", (str, Path))
         self._dataset_dir = Path(dataset_dir).resolve()
 
     @property
@@ -281,6 +201,5 @@ class EugeneConfig:
     @figure_dir.setter
     def figure_dir(self, figure_dir: Union[str, Path]):
         self._figure_dir = Path(figure_dir).resolve()
-
 
 settings = EugeneConfig()

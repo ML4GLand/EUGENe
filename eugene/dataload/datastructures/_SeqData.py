@@ -9,7 +9,6 @@ from collections import OrderedDict
 from functools import singledispatch
 from pandas.api.types import is_string_dtype
 from copy import deepcopy
-from ..datasets._SeqDataset import SeqDataset
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
 
 
@@ -297,7 +296,7 @@ class SeqData:
         target_keys: Union[str, List[str]] = None,
         seq_transforms: List[str] = None,
         transform_kwargs: dict = {},
-    ) -> SeqDataset:
+    ):
         """Convert SeqData object to SeqDataset PyTorch dataset.
 
         Parameters
@@ -314,6 +313,7 @@ class SeqData:
         SeqDataset
             PyTorch dataset class for SeqData object.
         """
+        from ..datasets._SeqDataset import SeqDataset
         from .._transforms import ReverseComplement, OneHotEncode, ToTensor
         from torchvision import transforms as torch_transforms
 
