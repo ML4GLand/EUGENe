@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from tqdm.auto import tqdm
 from abc import ABC, abstractmethod
-from typing import Union, Callable, Optional
+from typing import Union, Callable, Optional, Tuple
 from pytorch_lightning import seed_everything
 from pytorch_lightning.core import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
@@ -353,6 +353,27 @@ class ProfileModel(LightningModule, ABC):
         self.log("train_loss", step_dict["loss"])
         return step_dict
 
+    def predict(self, X: torch.Tensor, X_ctl: Optional[torch.Tensor] = None, batch_size: int = 128) -> Tuple[torch.Tensor, torch.Tensor]:
+        with torch.no_grad():
+            starts = np.arange(0, X.shape[0], batch_size)
+            ends = starts + batch_size
+
+            y_profiles, y_counts = [], []
+            for start, end in zip(starts, ends):
+                X_batch = X[start:end].cuda()
+                X_ctl_batch = None if X_ctl is None else X_ctl[start:end].cuda()
+
+                y_profiles_, y_counts_ = self(X_batch, X_ctl_batch)
+                y_profiles_ = y_profiles_.cpu()
+                y_counts_ = y_counts_.cpu()
+                
+                y_profiles.append(y_profiles_)
+                y_counts.append(y_counts_)
+
+            y_profiles = torch.cat(y_profiles)
+            y_counts = torch.cat(y_counts)
+            return y_profiles, y_counts
+    
     def validation_step(self, batch, batch_idx):
         """Validation step"""
         step_dict = self._common_step(batch, batch_idx, "val")
