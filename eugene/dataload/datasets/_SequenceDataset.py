@@ -51,7 +51,7 @@ class SequenceDataset(Dataset):
             sample["seq"] = torch.tensor(self.seqs[idx], dtype=torch.float32)
 
         if self.targets is not None:
-            sample["target"] = torch.tensor(self.targets[idx], dtype=torch.float32)
+            sample["target"] = torch.tensor(self.targets[idx])
         else:
             sample["target"] = torch.tensor(-1.0, dtype=torch.float32)
         
