@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import SequenceModel 
-from .base import _layers as layers
-from .base import _blocks as blocks
-from .base import _towers as towers
+from ..base import _layers as layers
+from ..base import _blocks as blocks
+from ..base import _towers as towers
 
-
-class FCN(SequenceModel):
+class FCN(nn.Module):
     """
     Instantiate a fully connected neural network with the specified layers and parameters.
     
@@ -31,19 +29,19 @@ class FCN(SequenceModel):
         self,
         input_len: int,
         output_dim: int,
-        dense_kwargs: dict = {},
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        **kwargs
+        input_dims: int = 4,
+        dense_kwargs: dict = {}
     ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            task=task, 
-            loss_fxn=loss_fxn, 
-            **kwargs
-        )
-        self.flattened_input_dims = 4 * input_len
+        super(FCN, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.input_dims = input_dims
+        self.output_dim = output_dim
+        self.dense_kwargs = dense_kwargs
+        self.flattened_input_dims = input_len * input_dims
+
+        # Create the blocks
         self.dense_block = blocks.DenseBlock(
             input_dim=self.flattened_input_dims, 
             output_dim=output_dim, 
@@ -55,7 +53,7 @@ class FCN(SequenceModel):
         x = self.dense_block(x)
         return x
 
-class CNN(SequenceModel):
+class CNN(nn.Module):
     """
     Instantiate a CNN model with a set of convolutional layers and a set of fully
     connected layers.
@@ -84,20 +82,17 @@ class CNN(SequenceModel):
         output_dim: int,
         conv_kwargs: dict,
         dense_kwargs: dict = {},
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        **kwargs
     ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            task=task, 
-            loss_fxn=loss_fxn, 
-            **kwargs
-        )
+        super(CNN, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.output_dim = output_dim
+        self.conv_kwargs = conv_kwargs
+
+        # Create the blocks
         self.conv1d_tower = towers.Conv1DTower(
-            input_len=input_len, 
-            input_channels=4,
+            input_len=input_len,
             **conv_kwargs
         )
         self.dense_block = blocks.DenseBlock(
@@ -112,7 +107,7 @@ class CNN(SequenceModel):
         x = self.dense_block(x)
         return x
 
-class RNN(SequenceModel):
+class RNN(nn.Module):
     """
     Instantiate an RNN model with a set of recurrent layers and a set of fully
     connected layers.
@@ -139,20 +134,21 @@ class RNN(SequenceModel):
         input_len: int,
         output_dim: int,
         recurrent_kwargs: dict,
+        input_dims: int = 4,
         dense_kwargs: dict = {},
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        **kwargs
     ): 
-        super().__init__(
-            input_len, 
-            output_dim, 
-            task=task, 
-            loss_fxn=loss_fxn, 
-            **kwargs
-        )
+        super(RNN, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.input_dims = input_dims
+        self.output_dim = output_dim
+        self.recurrent_kwargs = recurrent_kwargs
+        self.dense_kwargs = dense_kwargs
+
+        # Create the blocks
         self.recurrent_block = blocks.RecurrentBlock(
-            input_dim=4, 
+            input_dim=input_dims,
             **recurrent_kwargs
         )
         self.dense_block = blocks.DenseBlock(
@@ -161,13 +157,13 @@ class RNN(SequenceModel):
             **dense_kwargs
         )
         
-    def forward(self, x, x_rev_comp=None):
+    def forward(self, x):
         x, _ = self.recurrent_block(x)
         x = x[:, -1, :]
         x = self.dense_block(x)
         return x
 
-class Hybrid(SequenceModel):
+class Hybrid(nn.Module):
     """
     A hybrid model that uses both a CNN and an RNN to extract features then passes the
     features through a set of fully connected layers.
@@ -194,20 +190,19 @@ class Hybrid(SequenceModel):
         conv_kwargs: dict,
         recurrent_kwargs: dict,
         dense_kwargs: dict = {},
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        **kwargs
     ):
-        super().__init__(
-            input_len, 
-            output_dim, 
-            task=task, 
-            loss_fxn=loss_fxn, 
-            **kwargs
-        )
+        super(Hybrid, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.output_dim = output_dim
+        self.conv_kwargs = conv_kwargs
+        self.recurrent_kwargs = recurrent_kwargs
+        self.dense_kwargs = dense_kwargs
+
+        # Create the blocks
         self.conv1d_tower = towers.Conv1DTower(
             input_len=input_len,
-            input_channels=4, 
             **conv_kwargs
         )
         self.recurrent_block = blocks.RecurrentBlock(
@@ -227,7 +222,7 @@ class Hybrid(SequenceModel):
         out = self.dense_block(out[:, -1, :])
         return out
 
-class TutorialCNN( SequenceModel):
+class TutorialCNN(nn.Module):
     """Tutorial CNN model
 
     This is a very simple one layer convolutional model for testing purposes. It is featured in testing and tutorial
@@ -244,23 +239,20 @@ class TutorialCNN( SequenceModel):
     loss_fxn : str, optional
         Loss function.
     **kwargs
-        Keyword arguments to pass to the SequenceModel class.
+        Keyword arguments to pass to the nn.Module class.
     """
     def __init__(
         self,
         input_len: int,
         output_dim: int,
-        task: str = "regression",
-        loss_fxn: str = "mse",
-        **kwargs
     ):
-        super().__init__(
-            input_len, 
-            output_dim,  
-            task=task, 
-            loss_fxn=loss_fxn,
-            **kwargs
-        )
+        super(TutorialCNN, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.output_dim = output_dim
+
+        # Create the blocks
         self.conv1 = nn.Conv1d(4, 30, 21)
         self.dense = nn.Linear(30, output_dim)
             
@@ -269,3 +261,51 @@ class TutorialCNN( SequenceModel):
         x = F.max_pool1d(x, x.size()[-1]).flatten(1, -1)
         x = self.dense(x)
         return x
+
+class Inception(nn.Module):
+    def __init__(
+        self,
+        input_len: int,
+        output_dim: int,
+        channels = [4, 64, 128, 256],
+        kernel_size2: int = 4,
+        kernel_size3: int = 8,
+        conv_maxpool_kernel_size: int = 3,
+        dense_kwargs: dict = {}
+    ):
+        super(Inception, self).__init__()
+
+        # Set the attributes
+        self.input_len = input_len
+        self.output_dim = output_dim
+        self.channels = channels
+        self.kernel_size2 = kernel_size2
+        self.kernel_size3 = kernel_size3
+        self.conv_maxpool_kernel_size = conv_maxpool_kernel_size
+        self.dense_kwargs = dense_kwargs
+
+        # Create the blocks
+        conv_tower = nn.Sequential()
+        for i in range(1, len(self.channels)):
+            conv_tower.append(
+                layers.InceptionConv1D(
+                    in_channels=self.channels[i-1],
+                    out_channels=self.channels[i],
+                    kernel_size2=self.kernel_size2,
+                    kernel_size3=self.kernel_size3,
+                    conv_maxpool_kernel_size=self.conv_maxpool_kernel_size,
+                )
+            )
+        self.conv_tower = nn.Sequential(*conv_tower)
+        self.dense_block = blocks.DenseBlock(
+            input_dim=self.channels[-1] * self.input_len,
+            output_dim=self.output_dim,
+            **self.dense_kwargs
+        )
+
+    def forward(self, x):
+        x = self.conv_tower(x)
+        x = x.view(x.shape[0], -1)
+        x = self.dense_block(x)
+        return x
+    

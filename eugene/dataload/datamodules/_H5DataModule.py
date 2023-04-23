@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torch.utils.data import TensorDataset, DataLoader
 from ..datasets._SeqDataset import SeqDataset
 from torchvision import transforms
-from .._transforms import ToTensor
+from .._augment import ToTensor
 
 # From evoaug_analysis -- https://github.com/p-koo/evoaug_analysis/blob/main/evoaug_analysis/utils.py
 class H5DataModule(pl.LightningDataModule):

@@ -1,40 +1,22 @@
 import torch
 import numpy as np
 from tqdm.auto import tqdm
-from abc import ABC, abstractmethod
 from typing import Union, Callable, Optional, Tuple
 from pytorch_lightning import seed_everything
 from pytorch_lightning.core import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
-from ._losses import LOSS_REGISTRY, MNLLLoss, log1pMSELoss
-from ._optimizers import OPTIMIZER_REGISTRY
-from ._schedulers import SCHEDULER_REGISTRY
-from ._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
+from base._losses import LOSS_REGISTRY
+from base._optimizers import OPTIMIZER_REGISTRY
+from base._schedulers import SCHEDULER_REGISTRY
+from base._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
 
-class SequenceModel(LightningModule, ABC):
+class BaseModule(LightningModule):
     """
-    Base sequence model class to be inherited by all models in EUGENe
-
-    Parameters:
-    ----------
-    input_len (int):
-        length of input sequence
-    output_dim (int):
-        number of output dimensions
-    task (str):
-        task of the model
-    loss_fxn (str):
-        loss function to use
-    hp_metric (str):
-        metric to use for hyperparameter tuning
-    kwargs (dict):
-        additional arguments to pass to the model
+    TODO: Make this a protocol with expectations for multiple child class modules
     """
-    @abstractmethod
     def __init__(
         self,
-        input_len: int,
-        output_dim: int,
+        model: torch.nn.Module,
         task: str = "regression",
         loss_fxn: Union[str, Callable] = "mse",
         optimizer: str = "adam",
@@ -47,14 +29,14 @@ class SequenceModel(LightningModule, ABC):
         metric_kwargs: dict = None,
         seed: int = None,
         save_hyperparams: bool = True,
-        arch: str = None,
+        arch: str = None,  # TODO: this should be a class attribute
         name: str = None
     ):
         super().__init__()
 
         # Set the base attributes of a Sequence model
-        self.input_len = input_len
-        self.output_dim = output_dim
+        self.input_len = model.input_len
+        self.output_dim = model.output_dim
         self.task = task
         
         # Set the loss function
@@ -87,12 +69,11 @@ class SequenceModel(LightningModule, ABC):
             self.save_hyperparameters()
 
         # Set the architecture
-        self.arch = arch if arch is not None else self.__class__.__name__
+        self.arch = arch if arch is not None else self.model.__class__.__name__
 
         # Set the model name
         self.name = name if name is not None else "model"
 
-    @abstractmethod
     def forward(self, x) -> torch.Tensor:
         """
         Forward pass of the model. This method must be implemented by the child class.
@@ -102,20 +83,21 @@ class SequenceModel(LightningModule, ABC):
         x (torch.Tensor):
             input sequence
         """
+        self.model(x)
 
     def predict(self, x, batch_size=128):
         """
         Predict the output of the model in batches
         """
         with torch.no_grad():
-            device = self.device
-            self.eval()
+            device = self.model.device
+            self.model.eval()
             if isinstance(x, np.ndarray):
                 x = torch.from_numpy(x.astype(np.float32))
             outs = []
             for _, i in tqdm(enumerate(range(0, len(x), batch_size)), desc="Predicting on batches", total=len(x)//batch_size):
                 batch = x[i:i+batch_size].to(device)
-                outs.append(self(batch))
+                outs.append(self.model(batch))
             return torch.cat(outs)
         
     def _common_step(self, batch, batch_idx, stage: str):
@@ -137,7 +119,7 @@ class SequenceModel(LightningModule, ABC):
         """
         # Get and log loss
         X, y = batch["seq"], batch["target"]
-        outs = self(X).squeeze(dim=1)
+        outs = self.model(X).squeeze(dim=1)
         loss = self.loss_fxn(outs, y.float()) # train
         return {
             "loss": loss, 
@@ -214,7 +196,7 @@ class SequenceModel(LightningModule, ABC):
 
     def summary(self):
         """Print a summary of the model"""
-        print(f"Model: {self.__class__.__name__}")
+        print(f"Model: {self.model.__class__.__name__}")
         print(f"Sequence length: {self.input_len}")
         print(f"Output dimension: {self.output_dim}")
         print(f"Task: {self.task}")
@@ -228,8 +210,18 @@ class SequenceModel(LightningModule, ABC):
         print(f"\tMetric parameters: {self.metric_kwargs}")
         print(f"Seed: {self.seed}")
         print(f"Parameters summary:")
-        return ModelSummary(self)
+        return ModelSummary(self.model)
 
+    @property
+    def model(self) -> nn.Module:
+        """Model"""
+        return self._model
+    
+    @model.setter
+    def model(self, value: nn.Module):
+        """Set model"""
+        self._model = value
+        
     @property
     def input_len(self) -> int:
         """Input length"""
@@ -319,98 +311,3 @@ class SequenceModel(LightningModule, ABC):
     def seed(self, value: int):
         """Set seed"""
         self._seed = value
-
-class ProfileModel(LightningModule, ABC):
-    """
-    A model that is a profile of a sequence.
-    """
-    @abstractmethod
-    def __init__(
-        self, 
-        input_len: int,
-        output_dim: int,
-        task: str = "profile",
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-        **kwargs
-    ):
-        super().__init__()
-        self.input_len = input_len
-        self.output_dim = output_dim
-        self.task = task
-        self.profile_loss = "MNLLLoss"
-        self.count_loss = "log1pMSELoss"
-
-        # Set the architecture
-        self.arch = arch if arch is not None else self.__class__.__name__
-
-        # Set the model name
-        self.name = name if name is not None else "model"
-
-    def training_step(self, batch, batch_idx):
-        """Training step"""
-        step_dict = self._common_step(batch, batch_idx, "train")
-        self.log("train_loss", step_dict["loss"])
-        return step_dict
-
-    def predict(self, X: torch.Tensor, X_ctl: Optional[torch.Tensor] = None, batch_size: int = 128) -> Tuple[torch.Tensor, torch.Tensor]:
-        with torch.no_grad():
-            starts = np.arange(0, X.shape[0], batch_size)
-            ends = starts + batch_size
-
-            y_profiles, y_counts = [], []
-            for start, end in zip(starts, ends):
-                X_batch = X[start:end].cuda()
-                X_ctl_batch = None if X_ctl is None else X_ctl[start:end].cuda()
-
-                y_profiles_, y_counts_ = self(X_batch, X_ctl_batch)
-                y_profiles_ = y_profiles_.cpu()
-                y_counts_ = y_counts_.cpu()
-                
-                y_profiles.append(y_profiles_)
-                y_counts.append(y_counts_)
-
-            y_profiles = torch.cat(y_profiles)
-            y_counts = torch.cat(y_counts)
-            return y_profiles, y_counts
-    
-    def validation_step(self, batch, batch_idx):
-        """Validation step"""
-        step_dict = self._common_step(batch, batch_idx, "val")
-        self.log("val_loss", step_dict["loss"], on_step=False, on_epoch=True)
-
-    def test_step(self, batch, batch_idx):
-        """Test step"""
-        step_dict = self._common_step(batch, batch_idx, "test")
-        self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
-
-    def _common_step(self, batch, batch_idx, stage: str):
-        X, X_ctl, y = batch
-        y_profile, y_counts = self(X, X_ctl)
-        y_profile = y_profile.reshape(y_profile.shape[0], -1)
-        y_profile = torch.nn.functional.log_softmax(y_profile, dim=-1)
-        
-        y = y.reshape(y.shape[0], -1)
-
-        # Calculate the profile and count losses
-        profile_loss = MNLLLoss(y_profile, y).mean()
-        count_loss = log1pMSELoss(y_counts, y.sum(dim=-1).reshape(-1, 1)).mean()
-
-        # Extract the profile loss for logging
-        profile_loss_ = profile_loss.item()
-        count_loss_ = count_loss.item()
-
-        # Mix losses together and update the model
-        loss = profile_loss + self.alpha * count_loss
-
-        return {
-            "loss": loss,
-            "profile_loss": profile_loss_,
-            "count_loss": count_loss_,
-        }
-    
-    def configure_optimizers(self):
-        """Configure the optimizers"""
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
-    

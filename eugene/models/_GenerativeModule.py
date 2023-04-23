@@ -13,7 +13,7 @@ from collections import OrderedDict
 from torchmetrics import Accuracy
 
 
-class GAN(BaseModel):
+class GAN(LightningModule):
     def __init__(
         self,
         # seq_len: int,

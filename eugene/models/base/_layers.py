@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 import torch.nn.functional as F
+from ._regularizers import WeightDecay
 
 # ACTIVATIONS -- Layers that apply a non-linear activation function
 class Identity(nn.Module):

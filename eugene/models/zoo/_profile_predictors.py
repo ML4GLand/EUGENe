@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import ProfileModel
 from .base import _layers as layers
 from .base import _blocks as blocks
 from .base import _towers as towers
 
-class BPNet(ProfileModel):
+class BPNet(nn.Module):
 	"""A basic BPNet model with stranded profile and total count prediction.
 	This is a reference implementation for BPNet. The model takes in
 	one-hot encoded sequence, runs it through: 
@@ -73,22 +72,21 @@ class BPNet(ProfileModel):
 		name=None, 
 		trimming=None, 
 		verbose=True,
-		**kwargs
 	):
-		super().__init__(
-			input_len=input_len,
-			output_dim=output_dim,
-			**kwargs
-		)
+		super(BPNet, self).__init__()
+
+		# Set the attributes
+		self.input_len = input_len
+		self.output_dim = output_dim
 		self.n_filters = n_filters
 		self.n_layers = n_layers
 		self.n_outputs = n_outputs
 		self.n_control_tracks = n_control_tracks
-
 		self.alpha = alpha
 		self.name = name or "bpnet.{}.{}".format(n_filters, n_layers)
 		self.trimming = trimming or 2 ** n_layers
 
+		# Build the model
 		self.iconv = torch.nn.Conv1d(4, n_filters, kernel_size=21, padding=10)
 		self.irelu = torch.nn.ReLU()
 

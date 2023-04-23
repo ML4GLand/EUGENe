@@ -6,7 +6,7 @@ from torch.utils.data import random_split, DataLoader
 from torchvision import transforms
 from .._io import read
 from ._SeqDataset import SeqDataset
-from .._transforms import ReverseComplement, Augment, OneHotEncode, ToTensor
+from .._augment import ReverseComplement, Augment, OneHotEncode, ToTensor
 
 
 class SeqDataModule(pl.LightningDataModule):

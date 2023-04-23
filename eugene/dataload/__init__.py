@@ -17,4 +17,4 @@ from ._io import (
     write_numpy, 
     write_h5sd
 )
-from ._transforms import OneHotEncode, ReverseComplement, Transpose
+from ._augment import OneHotEncode, ReverseComplement, Transpose
