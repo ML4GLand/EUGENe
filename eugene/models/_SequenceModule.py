@@ -1,14 +1,19 @@
-import torch
+from typing import Callable, Optional, Tuple, Union
+
 import numpy as np
-from tqdm.auto import tqdm
-from typing import Union, Callable, Optional, Tuple
+import torch
+import torch.nn as nn
 from pytorch_lightning import seed_everything
 from pytorch_lightning.core import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
-from base._losses import LOSS_REGISTRY
-from base._optimizers import OPTIMIZER_REGISTRY
-from base._schedulers import SCHEDULER_REGISTRY
-from base._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
+from tqdm.auto import tqdm
+
+from .base._losses import LOSS_REGISTRY
+from .base._metrics import (DEFAULT_METRIC_KWARGS, DEFAULT_TASK_METRICS,
+                            METRIC_REGISTRY)
+from .base._optimizers import OPTIMIZER_REGISTRY
+from .base._schedulers import SCHEDULER_REGISTRY
+
 
 class SequenceModule(LightningModule):
     """
@@ -50,9 +55,13 @@ class SequenceModule(LightningModule):
         super().__init__()
 
         # Set the base attributes of a Sequence model
+        self.arch = arch
         self.input_len = arch.input_len
         self.output_dim = arch.output_dim
+
+        # Set the task
         self.task = task
+        self.arch_name = arch_name if arch_name is not None else self.arch.__class__.__name__
         
         # Set the loss function
         self.loss_fxn = LOSS_REGISTRY[loss_fxn] if isinstance(loss_fxn, str) else loss_fxn
@@ -83,9 +92,6 @@ class SequenceModule(LightningModule):
         if save_hyperparams:
             self.save_hyperparameters()
 
-        # Set the architecture
-        self.arch_name = arch_name if arch_name is not None else self.arch.__class__.__name__
-
         # Set the model name, if none given make up a fun one
         self.model_name = model_name if model_name is not None else "model"
 
@@ -98,21 +104,22 @@ class SequenceModule(LightningModule):
         x (torch.Tensor):
             input sequence
         """
-        self.model(x)
+        return self.arch(x)
 
     def predict(self, x, batch_size=128):
         """
         Predict the output of the model in batches.
         """
         with torch.no_grad():
-            device = self.arch.device
-            self.arch.eval()
+            device = self.device
+            self.eval()
             if isinstance(x, np.ndarray):
                 x = torch.from_numpy(x.astype(np.float32))
             outs = []
             for _, i in tqdm(enumerate(range(0, len(x), batch_size)), desc="Predicting on batches", total=len(x)//batch_size):
                 batch = x[i:i+batch_size].to(device)
-                outs.append(self.model(batch))
+                out = self(batch).detach().cpu()
+                outs.append(out)
             return torch.cat(outs)
         
     def _common_step(self, batch, batch_idx, stage: str):
@@ -134,7 +141,7 @@ class SequenceModule(LightningModule):
         """
         # Get and log loss
         X, y = batch["seq"], batch["target"]
-        outs = self.model(X).squeeze(dim=1)
+        outs = self(X).squeeze(dim=1)
         loss = self.loss_fxn(outs, y.float()) # train
         return {
             "loss": loss, 
@@ -200,7 +207,6 @@ class SequenceModule(LightningModule):
         else:
             scheduler = self.scheduler(
                 optimizer,
-
                 **self.scheduler_kwargs
             )
             return {
@@ -225,37 +231,17 @@ class SequenceModule(LightningModule):
         print(f"\tMetric parameters: {self.metric_kwargs}")
         print(f"Seed: {self.seed}")
         print(f"Parameters summary:")
-        return ModelSummary(self.model)
+        return ModelSummary(self)
 
     @property
-    def model(self) -> nn.Module:
+    def arch(self) -> nn.Module:
         """Model"""
-        return self._model
+        return self._arch
     
     @arch.setter
-    def model(self, value: nn.Module):
+    def arch(self, value: nn.Module):
         """Set model"""
-        self._model = value
-        
-    @property
-    def input_len(self) -> int:
-        """Input length"""
-        return self._input_len
-    
-    @input_len.setter
-    def input_len(self, value: int):
-        """Set input length"""
-        self._input_len = value
-
-    @property
-    def output_dim(self) -> int:
-        """Output dimension"""
-        return self._output_dim
-    
-    @output_dim.setter
-    def output_dim(self, value: int):
-        """Set output dimension"""
-        self._output_dim = value
+        self._arch = value
      
     @property
     def task(self) -> str:

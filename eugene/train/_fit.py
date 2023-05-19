@@ -1,14 +1,16 @@
-import numpy as np
 from os import PathLike
-from seqdata import SeqData
-from typing import Union, List
-from .._settings import settings
-from torch.utils.data import Dataset, DataLoader
-from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
+from typing import List, Union
+
+import numpy as np
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from pytorch_lightning import LightningModule, Trainer, seed_everything
+from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
+from seqdata import SeqData
+from torch.utils.data import DataLoader, Dataset
+
+from .._settings import settings
 
 LOGGER_REGISTRY = {
     "csv": CSVLogger,

@@ -1,6 +1,7 @@
 import torch
 from seqpro import ohe_seq
 
+
 class OneHotEncode(object):
     """One-hot encode the input sequence if its not already one-hot encoded"""
 
@@ -20,7 +21,7 @@ class ReverseComplement(object):
     def __call__(self, sample):
         seq = sample["seq"]
         if torch.rand(1) > self.p:
-            sample["seq"] = torch.flip(seq, [0])
+            sample["seq"] = torch.flip(seq, [0, 1])
         return sample
 
 class Transpose(object):
