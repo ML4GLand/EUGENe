@@ -1,3 +1,4 @@
+import os
 from os import PathLike
 from typing import List, Union
 
@@ -6,15 +7,18 @@ from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
+from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger, WandbLogger
 from seqdata import SeqData
 from torch.utils.data import DataLoader, Dataset
 
 from .._settings import settings
 
+# Note that CSVLogger is currently hanging training with SequenceModule right now
+# Note that if you use wandb logger, it comes with a few extra steps. Show a notebook for this
 LOGGER_REGISTRY = {
-    "csv": CSVLogger,
+    #"csv": CSVLogger,
     "tensorboard": TensorBoardLogger,
+    #"wandb": WandbLogger,
 }
 
 def fit(
@@ -157,11 +161,11 @@ def fit(
         raise ValueError("No data provided to train on.")
     
     # Set-up callbacks
-    logger = LOGGER_REGISTRY[logger](log_dir, name=name, version=version)
+    logger = LOGGER_REGISTRY[logger](save_dir=log_dir, name=name, version=version)
     callbacks = []
     if model_checkpoint_monitor is not None:
         model_checkpoint_callback = ModelCheckpoint(
-            dirpath=logger.log_dir + "/checkpoints", 
+            dirpath=os.path.join(logger.save_dir, logger.name, logger.version, "checkpoints"), 
             save_top_k=model_checkpoint_k, 
             monitor=model_checkpoint_monitor
         )

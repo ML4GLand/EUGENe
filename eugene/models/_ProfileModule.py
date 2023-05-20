@@ -1,8 +1,10 @@
-import torch
-import numpy as np
 from typing import Optional, Tuple
-from pytorch_lightning.core import LightningModule
+
+import numpy as np
+import torch
 from base._losses import MNLLLoss, log1pMSELoss
+from pytorch_lightning.core import LightningModule
+
 
 class ProfileModel(LightningModule):
     """
