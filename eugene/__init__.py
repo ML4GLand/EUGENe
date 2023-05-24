@@ -2,6 +2,7 @@
 
 # Set default logging handler to avoid logging with logging.lastResort logger.
 import logging
+
 from ._settings import settings
 
 try:

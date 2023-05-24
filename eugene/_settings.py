@@ -1,6 +1,8 @@
-import torch
 from pathlib import Path
 from typing import Union
+
+import torch
+
 
 class EugeneConfig:
     """
