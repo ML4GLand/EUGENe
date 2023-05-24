@@ -1,6 +1,7 @@
-import numpy as np
 import inspect
 from functools import wraps
+
+import numpy as np
 from seqdata import SeqData
 
 
