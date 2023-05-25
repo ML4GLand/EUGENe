@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 
 from .base._losses import LOSS_REGISTRY
 from .base._metrics import (DEFAULT_METRIC_KWARGS, DEFAULT_TASK_METRICS,
-                            METRIC_REGISTRY)
+                            METRIC_REGISTRY, calculate_metric)
 from .base._optimizers import OPTIMIZER_REGISTRY
 from .base._schedulers import SCHEDULER_REGISTRY
 
@@ -90,7 +90,7 @@ class SequenceModule(LightningModule):
         
         # Set the hyperparameters if passed in 
         if save_hyperparams:
-            self.save_hyperparameters()
+            self.save_hyperparameters(ignore=['arch'])
 
         # Set the model name, if none given make up a fun one
         self.model_name = model_name if model_name is not None else "model"
@@ -154,7 +154,7 @@ class SequenceModule(LightningModule):
         step_dict = self._common_step(batch, batch_idx, "train")
         self.log("train_loss", step_dict["loss"], on_step=True, on_epoch=False)
         self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
-        self.train_metric(step_dict["outs"], step_dict["y"])
+        calculate_metric(self.train_metric, self.metric_name, step_dict["outs"], step_dict["y"])
         self.log(f"train_{self.metric_name}_epoch", self.train_metric, on_step=False, on_epoch=True)
         return step_dict
 
@@ -162,14 +162,14 @@ class SequenceModule(LightningModule):
         """Validation step"""
         step_dict = self._common_step(batch, batch_idx, "val")
         self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
-        self.val_metric(step_dict["outs"], step_dict["y"])
+        calculate_metric(self.val_metric, self.metric_name, step_dict["outs"], step_dict["y"])
         self.log(f"val_{self.metric_name}_epoch", self.val_metric, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
         """Test step"""
         step_dict = self._common_step(batch, batch_idx, "test")
         self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        self.test_metric(step_dict["outs"], step_dict["y"])
+        calculate_metric(self.test_metric, self.metric_name, step_dict["outs"], step_dict["y"])
         self.log(f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True)
 
     def configure_metrics(self, metric, metric_kwargs):
