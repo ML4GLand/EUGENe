@@ -140,7 +140,7 @@ class SequenceModule(LightningModule):
             dictionary of metrics
         """
         # Get and log loss
-        X, y = batch["seq"], batch["target"]
+        X, y = batch["ohe_seq"], batch["target"]
         outs = self(X).squeeze(dim=1)
         loss = self.loss_fxn(outs, y.float()) # train
         return {

@@ -1,17 +1,17 @@
 import os
 from os import PathLike
 from typing import List, Union
-
+import xarray as xr
 import numpy as np
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger, WandbLogger
-from seqdata import SeqData
 from torch.utils.data import DataLoader, Dataset
-
-from .._settings import settings
+import seqdata as sd
+from eugene import settings
+import torch
 
 # Note that CSVLogger is currently hanging training with SequenceModule right now
 # Note that if you use wandb logger, it comes with a few extra steps. Show a notebook for this
@@ -21,25 +21,23 @@ LOGGER_REGISTRY = {
     #"wandb": WandbLogger,
 }
 
-def fit(
+def fit_sequence_module(
     model: LightningModule,
-    sdata: SeqData = None,
+    sdata,
+    seq_key: str,
     target_keys: Union[str, List[str]] = None,
     train_key: str = "train_val",
     epochs: int = 10,
     gpus: int = None,
     batch_size: int = None,
     num_workers: int = None,
-    logger: str = "csv",
+    logger: str = "tensorboard",
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
-    train_dataset: Dataset = None,
-    val_dataset: Dataset = None,
     train_dataloader: DataLoader = None,
     val_dataloader: DataLoader = None,
-    seq_transforms: List[str] = None,
-    transform_kwargs: dict = {},
+    seq_transforms = None,
     early_stopping_metric: str = "val_loss_epoch",
     drop_last=True,
     early_stopping_callback: bool = True,
@@ -120,42 +118,40 @@ def fit(
     # Set-up dataloaders
     if train_dataloader is not None:
         assert val_dataloader is not None
-    elif train_dataset is not None:
-        assert val_dataset is not None
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
     elif sdata is not None:
         if target_keys is not None:
-            targs = sdata.seqs_annot[target_keys].values
+            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
+            targs = sdata["target"].values
             if len(targs.shape) == 1:
                 nan_mask = np.isnan(targs)
             else:
                 nan_mask = np.any(np.isnan(targs), axis=1)
             print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
-            sdata = sdata[~nan_mask]  
-        train_idx = np.where(sdata.seqs_annot[train_key] == True)[0]
-        train_dataset = sdata[train_idx].to_dataset(
-            target_keys=target_keys,
-            seq_transforms=seq_transforms,
-            transform_kwargs=transform_kwargs,
-        )
-        train_dataloader = train_dataset.to_dataloader(
-            batch_size=batch_size, 
-            num_workers=num_workers, 
+            sdata = sdata.isel(_sequence=~nan_mask)
+        train_mask = np.where(sdata[train_key])[0]
+        train_sdata = sdata.isel(_sequence=train_mask)
+        val_sdata = sdata.isel(_sequence=~train_mask)
+        train_dataloader = sd.get_torch_dataloader(
+            train_sdata,
+            sample_dims=["_sequence"],
+            variables=[seq_key, "target"],
+            transforms=seq_transforms,
+            prefetch_factor=None,
             shuffle=True,
-            drop_last=drop_last
-        )
-        val_idx = np.where(sdata.seqs_annot[train_key] == False)[0]
-        val_dataset = sdata[val_idx].to_dataset(
-            target_keys=target_keys,
-            seq_transforms=seq_transforms,
-            transform_kwargs=transform_kwargs,
-        )
-        val_dataloader = val_dataset.to_dataloader(
+            drop_last=drop_last,
             batch_size=batch_size,
-            num_workers=num_workers,
+            num_workers=num_workers
+        )
+        val_dataloader = sd.get_torch_dataloader(
+            val_sdata,
+            sample_dims=["_sequence"],
+            variables=[seq_key, "target"],
+            transforms=seq_transforms,
+            prefetch_factor=None,
             shuffle=False,
-            drop_last=drop_last
+            drop_last=drop_last,
+            batch_size=batch_size,
+            num_workers=num_workers
         )
     else:
         raise ValueError("No data provided to train on.")

@@ -46,7 +46,8 @@ def calculate_metric(
         float: The calculated metric.
     """
     if metric_name in ["accuracy", "auroc", "f1score", "precision", "recall"]:
-        y = torch.argmax(y.squeeze(), dim=1)
+        if len(y.shape) > 1:
+            y = torch.argmax(y.squeeze(), dim=1)
     else:
         outs = outs.squeeze()
     metric(outs, y)

@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LambdaLR
-from .base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
+from ..models.base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
 from ..datasets import random_ohe_seqs
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary

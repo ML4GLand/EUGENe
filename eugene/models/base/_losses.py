@@ -88,5 +88,9 @@ LOSS_REGISTRY = {
 	"MNLLLoss": MNLLLoss,
 }
 
-
-
+DEFAULT_LOSS_REGISTRY = {
+     "regression": "mse",
+     "binary_classification": "bce",
+     "multiclass_classification": "cross_entropy",
+     "multilabel_classification": "bce"
+}
