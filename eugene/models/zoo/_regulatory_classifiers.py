@@ -333,3 +333,4 @@ class Satori(nn.Module):
         dense_kwargs.setdefault("hidden_dims", [])
         dense_kwargs.setdefault("output_dim", self.output_dim)
         return conv_kwargs, mha_kwargs, dense_kwargs
+    
