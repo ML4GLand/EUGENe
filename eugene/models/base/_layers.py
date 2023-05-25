@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 import torch.nn.functional as F
-from ._regularizers import WeightDecay
 
 # ACTIVATIONS -- Layers that apply a non-linear activation function
 class Identity(nn.Module):
-    def __init__(self):
+    def __init__(self, inplace: bool = False):
         super(Identity, self).__init__()
+        self.inplace = inplace
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return input
@@ -27,68 +27,118 @@ class Exponential(nn.Module):
         inplace_str = 'inplace=True' if self.inplace else ''
         return inplace_str
    
+class GELU(nn.Module):
+    __constants__ = ['inplace']
+    inplace: bool
+
+    def __init__(self, inplace: bool = False):
+        super(GELU, self).__init__()
+        self.inplace = inplace
+    
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return F.gelu(input)
+    
+    def extra_repr(self) -> str:
+        inplace_str = 'inplace=True' if self.inplace else ''
+        return inplace_str
+    
+class Sigmoid(nn.Module):
+    __constants__ = ['inplace']
+    inplace: bool
+
+    def __init__(self, inplace: bool = False):
+        super(Sigmoid, self).__init__()
+        self.inplace = inplace
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return torch.sigmoid(input)
+
+    def extra_repr(self) -> str:
+        inplace_str = 'inplace=True' if self.inplace else ''
+        return inplace_str
+    
+class Softplus(nn.Module):
+    __constants__ = ['inplace']
+    inplace: bool
+
+    def __init__(self, beta: float = 1, threshold: float = 20, inplace: bool = False):
+        super(Softplus, self).__init__()
+        self.inplace = inplace
+        self.beta = beta
+        self.threshold = threshold
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return F.softplus(input, self.beta, self.threshold)
+    
+    def extra_repr(self) -> str:
+        inplace_str = 'inplace=True' if self.inplace else ''
+        return inplace_str
+
 ACTIVATION_REGISTRY = {
     "relu": nn.ReLU,
     "leaky_relu": nn.LeakyReLU,
-    "gelu": nn.GELU,
+    "gelu": GELU,
     "elu": nn.ELU,
-    "sigmoid": nn.Sigmoid,
+    "sigmoid": Sigmoid,
     "tanh": nn.Tanh,
-    "softplus": nn.Softplus,
+    "softplus": Softplus,
     "identity": Identity,
     "exponential": Exponential
 }
 
 # CONVOLUTIONS -- Layers that convolve the input
 class BiConv1D(nn.Module):
-	def __init__(
-		self, 
-		in_channels, 
-		out_channels, 
-		kernel_size, 
-		stride=1, 
-		padding="same", 
-		dilation=1, 
-		groups=1, 
-		bias=True,
-		dropout_rate=0.0, 
-		device=None,
-		dtype=None,
-	):
-		super(BiConv1D, self).__init__()
-		self.in_channels = in_channels
-		self.out_channels = out_channels
-		self.kernel_size = kernel_size
-		self.stride = stride
-		self.padding = padding
-		self.dilation = dilation
-		self.groups = groups
-		self.weight = nn.init.xavier_uniform_(nn.Parameter(torch.zeros(out_channels, in_channels, kernel_size)))
-		if bias:   
-			self.bias = nn.Parameter(torch.zeros(out_channels))
-		else:
-			self.bias = None
-		if dropout_rate != 0.0 and dropout_rate is not None:
-			self.dropout_rate = dropout_rate
-		else:
-			self.dropout_rate = None
-			
-	def forward(self, x):
-		x_fwd = F.conv1d(x, self.weight, stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)  		
-		x_rev = F.conv1d(x, torch.flip(self.weight, dims=[0, 1]), stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)
-		if self.bias is not None:
-			x_fwd = torch.add(x_fwd.transpose(1, 2), self.bias).transpose(1, 2)
-			x_rev = torch.add(x_rev.transpose(1, 2), self.bias).transpose(1, 2)
-		if self.dropout_rate is not None:
-			x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
-			x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate)
-		return torch.add(x_fwd, x_rev)
+    """
+    Note that activation and dropout ARE included in this layer.
+    """
+    def __init__(
+        self, 
+        in_channels, 
+        out_channels, 
+        kernel_size, 
+        stride=1, 
+        padding="same", 
+        dilation=1, 
+        groups=1, 
+        bias=True,
+        dropout_rate=0.0, 
+        device=None,
+        dtype=None,
+    ):
+        super(BiConv1D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.dilation = dilation
+        self.groups = groups
+        self.weight = nn.init.xavier_uniform_(nn.Parameter(torch.zeros(out_channels, in_channels, kernel_size)))
+        if bias:   
+            self.bias = nn.Parameter(torch.zeros(out_channels))
+        else:
+            self.bias = None
+        if dropout_rate != 0.0 and dropout_rate is not None:
+            self.dropout_rate = dropout_rate
+        else:
+            self.dropout_rate = None
+            
+    def forward(self, x):
+        x_fwd = F.conv1d(x, self.weight, stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)  		
+        x_rev = F.conv1d(x, torch.flip(self.weight, dims=[0, 1]), stride=self.stride, padding=self.padding, dilation=self.dilation, groups=self.groups)
+        if self.bias is not None:
+            x_fwd = torch.add(x_fwd.transpose(1, 2), self.bias).transpose(1, 2)
+            x_rev = torch.add(x_rev.transpose(1, 2), self.bias).transpose(1, 2)
+        if self.dropout_rate is not None:
+            x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
+            x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate)
+        return torch.add(x_fwd, x_rev)
 
 
-	def __repr__(self):
-		return "BiConv1D({}, {}, kernel_size={}, stride={}, padding={}, dilation={}, groups={}, bias={})".format(
-			self.in_channels, self.out_channels, self.kernel_size, self.stride, self.padding, self.dilation, self.groups, self.bias is not None
-		)
+    def __repr__(self):
+        return "BiConv1D({}, {}, kernel_size={}, stride={}, padding={}, dilation={}, groups={}, bias={})".format(
+            self.in_channels, self.out_channels, self.kernel_size, self.stride, self.padding, self.dilation, self.groups, self.bias is not None
+        )
 
 class InceptionConv1D(nn.Module):
     def __init__(
@@ -102,11 +152,15 @@ class InceptionConv1D(nn.Module):
         kernel_size3=5,
 	    conv_maxpool_kernel_size=3,
         conv_maxpool_out_channels=None,
+        device=None,
+        dtype=None,
+        **kwargs
 	):
         super(InceptionConv1D, self).__init__()
 
-        # If out_channels is not specified, split it evenly between the paths
-        if out_channels is not None:
+        # If conv1_out_channels is not specified, default to 1/4 of out_channels
+        if conv1_out_channels is None:
+            assert out_channels is not None, "out_channels must be specified if conv1_out_channels is not"
             conv1_out_channels = out_channels // 4
             conv2_out_channels = out_channels // 4
             conv3_out_channels = out_channels // 4  

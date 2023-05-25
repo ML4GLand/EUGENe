@@ -54,7 +54,7 @@ class Tower(nn.Module):
                     steps=repeats,
                     base=mult
                 )
-            ).to(dtype=signature(block).parameters[arg].annotation)
+            ).to(dtype=signature(block).parameters[arg].annotation).tolist()
 
         self.blocks = nn.Sequential()
         for i in range(repeats):

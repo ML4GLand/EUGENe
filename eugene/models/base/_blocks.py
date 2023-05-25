@@ -59,7 +59,6 @@ class Conv1DBlock(nn.Module):
             padding=self.conv_padding,
             dilation=self.conv_dilation,
             bias=self.conv_bias
-
         )
 
         # Define the activation
