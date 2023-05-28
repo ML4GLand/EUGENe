@@ -141,7 +141,7 @@ class SequenceModule(LightningModule):
         """
         # Get and log loss
         X, y = batch["ohe_seq"], batch["target"]
-        outs = self(X).squeeze(dim=1)
+        outs = self(X).squeeze()
         loss = self.loss_fxn(outs, y.float()) # train
         return {
             "loss": loss, 
@@ -312,3 +312,4 @@ class SequenceModule(LightningModule):
     def seed(self, value: int):
         """Set seed"""
         self._seed = value
+        

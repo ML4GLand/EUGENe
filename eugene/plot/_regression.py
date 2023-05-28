@@ -1,4 +1,5 @@
 import numpy as np
+import xarray as xr
 from os import PathLike
 import matplotlib.pyplot as plt
 from typing import Union, Sequence
@@ -47,8 +48,8 @@ def _plot_performance_scatter(
     ----
     This function uses Matplotlib as opposed to Seaborn.
     """
-    target = sdata.seqs_annot[target_key]
-    prediction = sdata.seqs_annot[prediction_key]
+    target = sdata[target_key].to_numpy()
+    prediction = sdata[prediction_key].to_numpy()
 
     nan_mask = ~np.isnan(target)
     target = target[nan_mask]
@@ -59,13 +60,14 @@ def _plot_performance_scatter(
     pearsr = (pearsonr(target, prediction)[0] if "pearsonr" in metrics else None)
     spearr = (spearmanr(target, prediction).correlation if "spearmanr" in metrics else None)
     if "c" in kwargs:
-        if kwargs["c"] in sdata.seqs_annot.columns:
-            kwargs["c"] = sdata.seqs_annot[kwargs["c"]]
+        if kwargs["c"] in sdata.data_vars.keys():
+            kwargs["c"] = sdata[kwargs["c"]]
     ax = _create_matplotlib_axes(1, subplot_size=figsize) if ax is None else ax
     if groupby is not None:
         i = 0
         print("Group", "R2", "MSE", "Pearsonr", "Spearmanr")
-        for group, data in sdata.seqs_annot.groupby(groupby):
+        seqs_annot = sdata[[groupby, target_key, prediction_key]].to_dataframe()
+        for group, data in seqs_annot.groupby(groupby):
             target = data[target_key]
             prediction = data[prediction_key]
             group_r2 = r2_score(target, prediction) if "r2" in metrics else None
@@ -162,8 +164,10 @@ def performance_scatter(
         prediction_keys = [prediction_keys]
     with plt.rc_context(rc_context):
         for (target_key, prediction_key) in zip(target_keys, prediction_keys):
-            nan_mask = ~np.isnan(sdata.seqs_annot[target_key])
-            sdata = sdata[nan_mask]
+            targs = sdata[target_key].values
+            nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
+            print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
+            sdata = sdata.where(~nan_mask, drop=True)
             ax = _plot_performance_scatter(
                 sdata, 
                 target_key=target_key, 

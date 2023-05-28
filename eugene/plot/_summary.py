@@ -144,11 +144,6 @@ def _model_performances(
     if isinstance(metrics, str):
         metrics = [metrics]
     true = sdataframe[target_key]
-    prediction_keys = (
-        sdataframe.columns[sdataframe.columns.str.contains("predictions")]
-        if prediction_keys is None
-        else prediction_keys 
-    )
     predicts = sdataframe[prediction_keys]
     bin_predicts = (predicts >= clf_thresh).astype(int)
     scores = pd.DataFrame()
@@ -228,7 +223,8 @@ def performance_summary(
     -------
     ax : matplotlib.axes.Axes
     """
-    sdataframe = sdata.seqs_annot
+    prediction_keys = prediction_keys = [k for k in sdata.keys() if "preds" in k] if prediction_keys is None else prediction_keys
+    sdataframe = sdata[["id"] + [target_key] + prediction_keys].to_dataframe().set_index("id")
     if groupby is None:
         scores = _model_performances(
             sdataframe, 

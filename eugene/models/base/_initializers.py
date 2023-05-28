@@ -74,22 +74,44 @@ def init_weights(
 def init_motif_weights(
     model,
     layer_name,
-    motifs: MotifSet,
-    **kwargs
+    motifs,
+    list_index=None,
 ):
-    """Initialize the weights of a model.
+    """Initialize the convolutional kernel of choice using a set of motifs
+
+    This function is designed to initialize the convolutional kernels of a given layer of a model with a set of motifs.
+    It has only been tested on nn.Conv1d layers and ParameterList layers that have a shape of (num_kernels, 4, kernel_size).
+    Simply use the named module of the layer you want to initialize and pass it to this function. If the layer is a ParameterList,
+    you must also pass the index of the kernel you want to initialize. If the layer is a Conv1d layer, you can pass None as the index.
 
     Parameters
     ----------
-    model : LightningModule
+    model : 
         The model to initialize.
-    motifs : Union[Motif, MotifSet, PathLike]
-        Motifs to use for initialization.
-    initializer : str, optional
-        The name of the initializer to use, by default "kaiming_normal"
-    **kwargs
-        Additional arguments to pass to the initializer.
+    layer_name : str
+        The name of the layer to initialize. You can use the list_available_layers function to get a list of available layers.
+    motifs : MotifSet
+        A MotifSet object containing the motifs to initialize the kernel with.
+    list_index : int, optional
+        The index of the kernel to initialize. Only required if the layer is a ParameterList layer, by default None
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from eugene import models
+    >>> from motifdata import MotifSet
+    >>> model = models.zoo.DeepSTARR(input_len=1000, output_dim=1)
+    >>> motifs = MotifSet("path/to/motifs.txt")
+    >>> list_available_layers(model)
+    >>> init_motif_weights(model, "conv1d_tower.layers.0", motifs)
     """
     layer = get_layer(model, layer_name)
-    pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=True)
-    layer.weight = nn.Parameter(pwms)
+    if list_index is not None:
+        pwms = to_kernel(motifs, size=layer[list_index].size(), convert_to_pwm=True)
+        layer[list_index] = nn.Parameter(pwms)
+    else:
+        pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=True)
+        layer.weight = nn.Parameter(pwms)

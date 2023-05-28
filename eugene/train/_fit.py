@@ -26,20 +26,22 @@ def fit_sequence_module(
     sdata,
     seq_key: str,
     target_keys: Union[str, List[str]] = None,
+    in_memory: bool = False,
     train_key: str = "train_val",
     epochs: int = 10,
     gpus: int = None,
     batch_size: int = None,
     num_workers: int = None,
+    prefetch_factor: int = None,
+    seq_transforms = None,
+    drop_last=True,
+    train_dataloader: DataLoader = None,
+    val_dataloader: DataLoader = None,
     logger: str = "tensorboard",
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
-    train_dataloader: DataLoader = None,
-    val_dataloader: DataLoader = None,
-    seq_transforms = None,
     early_stopping_metric: str = "val_loss_epoch",
-    drop_last=True,
     early_stopping_callback: bool = True,
     early_stopping_patience=5,
     early_stopping_verbose=False,
@@ -110,6 +112,7 @@ def fit_sequence_module(
     gpus = gpus if gpus is not None else settings.gpus
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
+    prefetch_factor = prefetch_factor if prefetch_factor is not None else None
     log_dir = log_dir if log_dir is not None else settings.logging_dir
     model_name = model.__class__.__name__
     name = name if name is not None else model_name
@@ -117,41 +120,51 @@ def fit_sequence_module(
 
     # Set-up dataloaders
     if train_dataloader is not None:
-        assert val_dataloader is not None
+        assert val_dataloader is not None, "If train_dataloader is specified, val_dataloader must be specified as well."
     elif sdata is not None:
         if target_keys is not None:
-            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
+            if isinstance(target_keys, str):
+                target_keys = [target_keys]
+            if len(target_keys) == 1:
+                sdata["target"] = sdata[target_keys[0]]
+            else:
+                sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
             targs = sdata["target"].values
             if len(targs.shape) == 1:
-                nan_mask = np.isnan(targs)
+                nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
             else:
-                nan_mask = np.any(np.isnan(targs), axis=1)
-            print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
-            sdata = sdata.isel(_sequence=~nan_mask)
-        train_mask = np.where(sdata[train_key])[0]
-        train_sdata = sdata.isel(_sequence=train_mask)
-        val_sdata = sdata.isel(_sequence=~train_mask)
+                nan_mask = xr.DataArray(np.any(np.isnan(targs), axis=1), dims=["_sequence"])
+            print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
+            sdata = sdata.where(~nan_mask, drop=True)
+        if in_memory:
+            print(f"Loading {seq_key} and {target_keys} into memory")
+            sdata[seq_key].load()
+            sdata["target"].load()
+        sdata[train_key].load()
+        train_sdata = sdata.where(sdata[train_key] == 1, drop=True)
+        val_sdata = sdata.where(sdata[train_key] == 0, drop=True)
         train_dataloader = sd.get_torch_dataloader(
             train_sdata,
             sample_dims=["_sequence"],
             variables=[seq_key, "target"],
-            transforms=seq_transforms,
-            prefetch_factor=None,
-            shuffle=True,
-            drop_last=drop_last,
             batch_size=batch_size,
-            num_workers=num_workers
+            num_workers=num_workers,
+            prefetch_factor=prefetch_factor,
+            transforms=seq_transforms,
+            shuffle=True,
+            drop_last=drop_last
+
         )
         val_dataloader = sd.get_torch_dataloader(
             val_sdata,
             sample_dims=["_sequence"],
             variables=[seq_key, "target"],
-            transforms=seq_transforms,
-            prefetch_factor=None,
-            shuffle=False,
-            drop_last=drop_last,
             batch_size=batch_size,
-            num_workers=num_workers
+            num_workers=num_workers,
+            prefetch_factor=prefetch_factor,
+            transforms=seq_transforms,
+            shuffle=False,
+            drop_last=drop_last
         )
     else:
         raise ValueError("No data provided to train on.")

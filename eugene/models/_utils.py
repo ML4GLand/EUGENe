@@ -1,10 +1,15 @@
 import importlib
+import os
 
 import torch
 import yaml
+from .._settings import settings
 
 
-def load_config(config_path):
+def load_config(config_path, **kwargs):
+    # If config path is just a filename, assume it's in the default config directory
+    if "/" not in config_path:
+        config_path = os.path.join(settings.config_dir, config_path)
     with open(config_path, "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     module_name = config.pop("module")
@@ -14,7 +19,7 @@ def load_config(config_path):
     model_type = getattr(importlib.import_module("eugene.models.zoo"), arch_name)
     model = model_type(**arch)
     module_type = getattr(importlib.import_module("eugene.models"), module_name)
-    module = module_type(model, **config)
+    module = module_type(model, **config, **kwargs)
     return module
 
 def load_model(model_path):

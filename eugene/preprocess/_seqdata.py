@@ -15,7 +15,7 @@ def make_unique_ids_sdata(
     """Make unique ids for each sequence in a sdata object."""
     sdata = sdata.copy() if copy else sdata
     n_digits = len(str(sdata.dims["_sequence"]))
-    sdata[id_var] = np.array([ "seq{num:0{width}}".format(num=i, width=n_digits)for i in range(sdata.dims["_sequence"])])
+    sdata[id_var] = xr.DataArray(["seq{num:0{width}}".format(num=i, width=n_digits)for i in range(sdata.dims["_sequence"])], dims=["_sequence"])
     return sdata if copy else None
 
 def ohe_seqs_sdata(
@@ -69,6 +69,7 @@ def train_test_split_sdata(
         sdata[train_key] = ~sdata["chr"].isin(chr)
         return sdata if copy else None
     else:
-        train_indeces, _, = train_test_split(sdata[id_var], train_size=test_size, shuffle=shuffle)
+        train_indeces, _, = train_test_split(sdata[id_var], test_size=test_size, shuffle=shuffle)
         sdata[train_key] = sdata[id_var].isin(train_indeces)
         return sdata if copy else None
+    

@@ -47,3 +47,6 @@ def get_output_size(modules, input_size):
 
 def get_layer(model, layer_name):
     return dict([*model.named_modules()])[layer_name]
+
+def list_available_layers(model):
+    return [name for name, _ in model.named_modules() if len(name) > 0]
