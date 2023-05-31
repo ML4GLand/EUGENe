@@ -1,8 +1,7 @@
 import torch
-from seqpro import ohe
 
 
-class RandomDeletion(object):
+class RandomDeletion:
     """Randomly deletes a contiguous stretch of nucleotides from sequences in a training
     batch according to a random number between a user-defined delete_min and delete_max.
     A different deletion is applied to each sequence.
@@ -64,7 +63,7 @@ class RandomDeletion(object):
         return torch.stack(x_aug)
 
 
-class RandomInsertion(object):
+class RandomInsertion:
     """Randomly inserts a contiguous stretch of nucleotides from sequences in a training
     batch according to a random number between a user-defined insert_min and insert_max.
     A different insertions is applied to each sequence. Each sequence is padded with random
@@ -116,7 +115,7 @@ class RandomInsertion(object):
             insert_beginning_len = torch.div((self.insert_max - insert_len), 2, rounding_mode='floor').item()
 
             # index for other half (to pad random DNA at end of sequence)
-            insert_end_len = self.insert_max - insert_len - insert_beginning_len
+            self.insert_max - insert_len - insert_beginning_len
 
             # removes deletion and pads beginning and end of sequence with random DNA to ensure same length
             x_aug.append( torch.cat([insertion[:,:insert_beginning_len],                                # random dna padding
@@ -128,7 +127,7 @@ class RandomInsertion(object):
         return torch.stack(x_aug)
 
 
-class RandomTranslocation(object):
+class RandomTranslocation:
     """Randomly cuts sequence in two pieces and shifts the order for each in a training
     batch. This is implemented with a roll transformation with a user-defined shift_min
     and shift_max. A different roll (positive or negative) is applied to each sequence.
@@ -176,7 +175,7 @@ class RandomTranslocation(object):
 
 
 
-class RandomInversion(object):
+class RandomInversion:
     """Randomly inverts a contiguous stretch of nucleotides from sequences in a training
     batch according to a user-defined invert_min and invert_max. A different insertions
     is applied to each sequence. Each sequence is padded with random DNA to ensure same
@@ -225,7 +224,7 @@ class RandomInversion(object):
 
 
 
-class RandomMutation(object):
+class RandomMutation:
     """Randomly mutates sequences in a training batch according to a user-defined
     mutate_frac. A different set of mutations is applied to each sequence.
 
@@ -273,7 +272,7 @@ class RandomMutation(object):
 
 
 
-class RandomRC(object):
+class RandomRC:
     """Randomly applies a reverse-complement transformation to each sequence in a training
     batch according to a user-defined probability, rc_prob. This is applied to each sequence
     independently.
@@ -312,7 +311,7 @@ class RandomRC(object):
         return x_aug
 
 
-class RandomNoise(object):
+class RandomNoise:
     """Randomly add Gaussian noise to a batch of sequences with according to a user-defined
     noise_mean and noise_std. A different set of noise is applied to each sequence.
 
@@ -341,3 +340,38 @@ class RandomNoise(object):
             Sequences with random noise.
         """
         return x + torch.normal(self.noise_mean, self.noise_std, x.shape).to(x.device)
+    
+
+class RandomJitter:
+    def __init__(self, max_jitter: int, length_axis: int) -> None:
+        """Randomly jitter a sequence that has been padded on either side to support 
+        jittering by `max_jitter` amount.
+
+        Parameters
+        ----------
+        max_jitter : int
+        length_axis : int
+            Axis that corresponds to the length dimension.
+        """
+        self.max_jitter = max_jitter
+        self.length_axis = length_axis
+        
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply random jittering.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Batch of sequences where the length axis corresponds to the `length_axis`
+            parameter given at initialization. E.g. shape: (N, A, L), then 
+            `length_axis` should be 2.
+
+        Returns
+        -------
+        torch.Tensor
+            Jittered sequence.
+        """
+        length = x.shape[self.length_axis]
+        start = torch.randint(0, self.max_jitter, (1,))
+        end = length - self.max_jitter*2 + start
+        return x[(slice(None),) * (self.length_axis % x.ndim) + (slice(start, end),)]
