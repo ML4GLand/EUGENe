@@ -102,7 +102,7 @@ def _plot_seq_features(
 def _plot_seq_logo(
     ax: Axes,
     seq: str,
-    imp_scores: np.ndarray = None,
+    attrs: np.ndarray = None,
     highlight: list = [],
     threshold: float = None,
     ylab="Importance Score",
@@ -119,7 +119,7 @@ def _plot_seq_logo(
         The axes object to plot on
     seq : str
         The sequence to plot
-    imp_scores : np.ndarray
+    attrs : np.ndarray
         The importance scores to plot
     highlight : list
         A list of positions to highlight
@@ -137,14 +137,14 @@ def _plot_seq_logo(
     This was adapted from the viz_sequence package:
     https://github.com/kundajelab/vizsequence
     """
-    if imp_scores is None:
+    if attrs is None:
         from seqpro import ohe_seq
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
         ax.set_yticklabels([])
         ax.set_yticks([])
-        imp_scores = ohe_seq(seq)
+        attrs = ohe_seq(seq)
     else:
         ylab = "Importance Score" if ylab is None else ylab
 
@@ -154,7 +154,7 @@ def _plot_seq_logo(
         print(to_highlight)
         viz_sequence.plot_weights_given_ax(
             ax,
-            imp_scores,
+            attrs,
             subticks_frequency=10,
             highlight=to_highlight,
             height_padding_factor=1,
@@ -163,7 +163,7 @@ def _plot_seq_logo(
     else:
         viz_sequence.plot_weights_given_ax(
             ax,
-            imp_scores,
+            attrs,
             subticks_frequency=int(len(seq) / 10),
             height_padding_factor=1,
             **kwargs,
@@ -238,7 +238,7 @@ def seq_track_features(
         if sdata.pos_annot is not None
         else None
     )
-    imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
+    attrs = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
 
     # Define subplots
     _, ax = (
@@ -256,7 +256,7 @@ def seq_track_features(
         _plot_seq_logo(
             ax[1],
             seq,
-            imp_scores=imp_scores,
+            attrs=attrs,
             highlight=highlight,
             threshold=threshold,
             **kwargs,
@@ -265,7 +265,7 @@ def seq_track_features(
         _plot_seq_logo(
             ax,
             seq,
-            imp_scores=imp_scores,
+            attrs=attrs,
             highlight=highlight,
             threshold=threshold,
             **kwargs,
@@ -291,7 +291,7 @@ def seq_track_features(
 def multiseq_track_features(
     sdata,
     seq_ids: list,
-    uns_keys: str = None,
+    attr_keys: str = None,
     ylabs: list = None,
     width=None,
     height=None,
@@ -334,27 +334,27 @@ def multiseq_track_features(
     """
     if isinstance(seq_ids, str):
         seq_ids = [seq_ids]
-    if isinstance(uns_keys, str):
-        uns_keys = [uns_keys]
-    ylabs = ylabs if ylabs is not None else ["Importance Score"] * len(uns_keys)
+    if isinstance(attr_keys, str):
+        attr_keys = [attr_keys]
+    ylabs = ylabs if ylabs is not None else ["Importance Score"] * len(attr_keys)
     seq_idx = np.where(sdata.seqs_annot.index.isin(seq_ids))[0]
     seqs = sdata.seqs[seq_idx]
     fig_width = (
         len(seq_ids) * int(len(seqs[0]) / 20) if width is None else width
     )  # make each sequence width proportional to its length and multiply by the number of sequences
     fig_height = (
-        len(uns_keys) * 4 if height is None else height
-    )  # make each sequence height proportional to the number of uns_keys
-    _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0):
+        len(attr_keys) * 4 if height is None else height
+    )  # make each sequence height proportional to the number of attr_keys
+    _, ax = plt.subplots(len(attr_keys), len(seq_ids), figsize=(fig_width, fig_height))
+    for i, uns_key in tqdm(enumerate(attr_keys), desc="Importance values", position=0):
         for j, seq in enumerate(seqs):
-            imp_scores = (
+            attrs = (
                 sdata.uns[uns_key][seq_idx[j]] if uns_key in sdata.uns.keys() else None
             )
             _plot_seq_logo(
                 ax.flatten()[i * len(seq_ids) + j],
                 seq,
-                imp_scores=imp_scores,
+                attrs=attrs,
                 ylab=ylabs[i],
             )
             if i == 0:
@@ -370,7 +370,8 @@ def multiseq_track_features(
 def seq_track(
     sdata,
     seq_id: str,
-    uns_key: str,
+    attrs_key: str,
+    id_key="id",
     vocab: str = "DNA",
     highlights: list = [],
     highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
@@ -422,17 +423,17 @@ def seq_track(
         highlights = [highlights]
     if isinstance(highlight_colors, str):
         highlight_colors = [highlight_colors] * len(highlights)
-    seq_idx = np.where(sdata.seqs_annot.index == seq_id)[0][0]
-    imp_scores = sdata.uns[uns_key][seq_idx] if uns_key in sdata.uns.keys() else None
-    viz_seq = pd.DataFrame(imp_scores.T, columns=vocab_dict[vocab])
+    seq_idx = np.where(sdata[id_key].to_numpy() == seq_id)[0]
+    attrs = sdata[attrs_key][seq_idx].squeeze()
+    viz_seq = pd.DataFrame(attrs.T, columns=vocab_dict[vocab])
     viz_seq.index.name = "pos"
     y_max = np.max(viz_seq.values)
     y_min = np.min(viz_seq.values)
     nn_logo = lm.Logo(viz_seq, **kwargs)
-
+    
     # style using Logo methods
     nn_logo.style_spines(visible=False)
-    nn_logo.style_spines(spines=["left"], visible=True, bounds=[y_min, y_max])
+    nn_logo.style_spines(spines=["left"], visible=True, bounds=[float(y_min), float(y_max)])
 
     # style using Axes methods
     nn_logo.ax.set_xlim([0, len(viz_seq)])
@@ -455,7 +456,8 @@ def seq_track(
 def multiseq_track(
     sdata,
     seq_ids: list,
-    uns_keys: str = None,
+    attrs_keys: str,
+    id_key="id",
     ylabs: list = None,
     width: int = None,
     height: int = None,
@@ -471,7 +473,7 @@ def multiseq_track(
     Attempts to make each sequence width proportional to its length and multiply by the number of sequences
     if no width is passed in.
 
-    Attempts to make each sequence height proportional to the number of uns_keys passed in (the number of different
+    Attempts to make each sequence height proportional to the number of attr_keys passed in (the number of different
     importance scores to plot) if no height is passed in.
 
     Parameters
@@ -480,7 +482,7 @@ def multiseq_track(
         The SeqData object with sequences and importances to plot a logo for
     seq_ids : list
         The sequence ids to plot
-    uns_keys : list
+    attr_keys : list
         The keys in the sdata.uns dictionary that contain the importance scores to plot
     ylabs : list
         The ylabs to use for each importance score
@@ -502,21 +504,23 @@ def multiseq_track(
     """
     if isinstance(seq_ids, str):
         seq_ids = [seq_ids]
-    if isinstance(uns_keys, str):
-        uns_keys = [uns_keys]
+    if isinstance(attrs_keys, str):
+        attrs_keys = [attrs_keys]
     if isinstance(ylabs, str):
         ylabs = [ylabs]
-    seq = sdata.seqs[0]
-    ylabs= ylabs if ylabs is not None else ["Importance Score"] * len(uns_keys)
-    fig_width = (len(seq_ids) * int(len(seq) / 20) if width is None else width)  
-    fig_height = (len(uns_keys) * 4 if height is None else height)
-    _, ax = plt.subplots(len(uns_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, uns_key in tqdm(enumerate(uns_keys), desc="Importance values", position=0, total=len(uns_keys)):
+    example_attr = sdata[attrs_keys[0]][0]
+    seq_len = example_attr.sizes["length"]
+    ylabs= ylabs if ylabs is not None else ["Importance Score"] * len(attrs_keys)
+    fig_width = (len(seq_ids) * int(len(seq_len) / 20) if width is None else width)  
+    fig_height = (len(attrs_keys) * 4 if height is None else height)
+    _, ax = plt.subplots(len(attrs_keys), len(seq_ids), figsize=(fig_width, fig_height))
+    for i, attrs_key in tqdm(enumerate(attrs_keys), desc="Importance values", position=0, total=len(attrs_keys)):
         for j, seq_id in enumerate(seq_ids):
             seq_track(
                 sdata,
                 seq_id=seq_id,
-                uns_key=uns_key,
+                attrs_key=attrs_key,
+                id_key=id_key,
                 ax=ax.flatten()[i * len(seq_ids) + j],
                 ylab=ylabs[i],
                 title=seq_id,
@@ -531,8 +535,8 @@ def multiseq_track(
 
 def filter_viz(
     sdata,
-    filter_id: Union[str, int],
-    uns_key: str = "pfms",
+    filter_num: Union[str, int],
+    pfms_key: str,
     vocab: str = "DNA",
     title: str = None,
     return_ax: bool = False,
@@ -549,7 +553,7 @@ def filter_viz(
     ----------
     sdata : SeqData
         The SeqData object with sequences and pfms to plot a logo for
-    filter_id : str or int
+    filter_num : str or int
         The filter id to plot
     uns_key : str
         The key in the sdata.uns dictionary that contains the pfms to plot
@@ -565,25 +569,15 @@ def filter_viz(
     ax : matplotlib.axes.Axes
         The axes object if return_ax is True
     """
-    pfm = sdata.uns[uns_key][filter_id]
-    if isinstance(pfm, np.ndarray):
-        pfm = pd.DataFrame(pfm, columns=vocab_dict[vocab])
+    pfm = sdata[pfms_key][filter_num].squeeze()
+    pfm = pd.DataFrame(pfm, columns=vocab_dict[vocab])
     vocab = vocab_dict[vocab]
-    if pfm[vocab[0]].dtype == "float64":
-        pfm.fillna(0.25, inplace=True)
-        info_mat = lm.transform_matrix(
-            pfm, 
-            from_type="probability", 
-            to_type="information"
-        )
-    elif pfm[vocab.keys[0]].dtype == "int64":
-        pfm.fillna(1, inplace=True)
-        info_mat = lm.transform_matrix(
-            pfm, 
-            from_type="counts", 
-            to_type="information", 
-            allow_nan=True
-        )
+    pfm.fillna(1, inplace=True)
+    info_mat = lm.transform_matrix(
+        pfm, 
+        from_type="counts", 
+        to_type="information", 
+    )
     if "N" in pfm.columns:
         info_mat = info_mat.drop("N", axis=1)
     logo = lm.Logo(info_mat, **kwargs)
@@ -594,7 +588,7 @@ def filter_viz(
     logo.ax.set_yticks([0, 1, 2])
     logo.ax.set_yticklabels(["0", "1", "2"])
     logo.ax.set_ylabel("bits")
-    logo.ax.set_title(title if title is not None else filter_id)
+    logo.ax.set_title(title if title is not None else filter_num)
     if save is not None:
         _save_fig(save)
     if return_ax:
@@ -602,10 +596,10 @@ def filter_viz(
 
 def multifilter_viz(
     sdata,
-    filter_ids: list,
+    filter_nums: list,
+    pfms_key: str,
     num_rows: int = None,
     num_cols: int = None,
-    uns_key: str = "pfms",
     titles: list = None,
     figsize=(12,10),
     save: PathLike = None,
@@ -622,7 +616,7 @@ def multifilter_viz(
     ----------
     sdata : SeqData
         The SeqData object with sequences and pfms to plot a logo for
-    filter_ids : list
+    filter_nums : list
         The filter ids to plot
     num_rows : int
         The number of rows to use for the figure
@@ -646,13 +640,13 @@ def multifilter_viz(
     _, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
     for i in range(num_rows):
         for j in range(num_cols):
-            filter_id = filter_ids[i * num_cols + j]
+            filter_num = filter_nums[i * num_cols + j]
             filter_viz(
                 sdata,
-                filter_id=filter_id,
-                uns_key=uns_key,
+                filter_num=filter_num,
+                pfms_key=pfms_key,
                 ax=ax.flatten()[i * num_cols + j],
-                title=titles[i * num_cols + j] if titles is not None else filter_id,
+                title=titles[i * num_cols + j] if titles is not None else filter_num,
                 save=None,
                 **kwargs,
             )
