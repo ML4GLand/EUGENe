@@ -76,6 +76,10 @@ def init_motif_weights(
     layer_name,
     motifs,
     list_index=None,
+    convert_to_pwm=True,
+    divide_by_bg=False,
+    motif_align="center",
+    kernel_align="center"
 ):
     """Initialize the convolutional kernel of choice using a set of motifs
 
@@ -110,8 +114,8 @@ def init_motif_weights(
     """
     layer = get_layer(model, layer_name)
     if list_index is not None:
-        pwms = to_kernel(motifs, size=layer[list_index].size(), convert_to_pwm=True)
+        pwms = to_kernel(motifs, size=layer[list_index].size(), convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
         layer[list_index] = nn.Parameter(pwms)
     else:
-        pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=True)
+        pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
         layer.weight = nn.Parameter(pwms)
