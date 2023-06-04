@@ -1,12 +1,24 @@
 import importlib
 import os
-
 import torch
 import yaml
 from .._settings import settings
 
+def get_layer(
+    model, 
+    layer_name
+):
+    return dict([*model.named_modules()])[layer_name]
 
-def load_config(config_path, **kwargs):
+def list_available_layers(
+    model
+):
+    return [name for name, _ in model.named_modules() if len(name) > 0]
+
+def load_config(
+    config_path, 
+    **kwargs
+):
     # If config path is just a filename, assume it's in the default config directory
     if "/" not in config_path:
         config_path = os.path.join(settings.config_dir, config_path)
@@ -22,15 +34,12 @@ def load_config(config_path, **kwargs):
     module = module_type(model, **config, **kwargs)
     return module
 
-def load_model(model_path):
+def load_model(
+    model_path
+):
     model_state = torch.load(model_path)
     arch = model_state["hyper_parameters"]["arch"]
     model_type = getattr(importlib.import_module("eugene.models.zoo"), arch)
     model = model_type(**model_state["hyper_parameters"])
     model.load_state_dict(model_state["state_dict"])
-    return model
-
-def get_model(arch, model_config):
-    model_type = getattr(importlib.import_module("eugene.models.zoo"), arch)
-    model = model_type(**model_config)
     return model

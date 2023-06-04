@@ -142,7 +142,7 @@ class SequenceModule(LightningModule):
         # Get and log loss
         X, y = batch["ohe_seq"], batch["target"]
         outs = self(X).squeeze()
-        loss = self.loss_fxn(outs, y.float()) # train
+        loss = self.loss_fxn(outs, y) # train
         return {
             "loss": loss, 
             "outs": outs.detach(), 
@@ -152,7 +152,7 @@ class SequenceModule(LightningModule):
     def training_step(self, batch, batch_idx):
         """Training step"""
         step_dict = self._common_step(batch, batch_idx, "train")
-        self.log("train_loss", step_dict["loss"], on_step=True, on_epoch=False)
+        self.log("train_loss", step_dict["loss"], on_step=True, on_epoch=False, prog_bar=True)
         self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
         calculate_metric(self.train_metric, self.metric_name, step_dict["outs"], step_dict["y"])
         self.log(f"train_{self.metric_name}_epoch", self.train_metric, on_step=False, on_epoch=True)
@@ -163,7 +163,7 @@ class SequenceModule(LightningModule):
         step_dict = self._common_step(batch, batch_idx, "val")
         self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
         calculate_metric(self.val_metric, self.metric_name, step_dict["outs"], step_dict["y"])
-        self.log(f"val_{self.metric_name}_epoch", self.val_metric, on_step=False, on_epoch=True)
+        self.log(f"val_{self.metric_name}_epoch", self.val_metric, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         """Test step"""

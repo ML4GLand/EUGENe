@@ -2,7 +2,10 @@ import torchinfo
 import numpy as np
 import torch.nn as nn
 
-def get_conv1dblock_output_len(modules, input_len):
+def get_conv1dblock_output_len(
+    modules, 
+    input_len
+):
     """
     Get the dimension of the flattened output of a convolutional modules with only Conv1d and Maxpool1d layers.
     This will be deprecated in the future.
@@ -38,15 +41,12 @@ def get_conv1dblock_output_len(modules, input_len):
             output_len = np.ceil((output_len - module.kernel_size + 1) / module.stride)
     return int(output_len)
 
-def get_output_size(modules, input_size):
+def get_output_size(
+    modules, 
+    input_size
+):
     if isinstance(input_size, int):
         input_size = (input_size, )
     summary = torchinfo.summary(modules, input_size=(1, *input_size), verbose=0, device="cpu")
     out_size = summary.summary_list[-1].output_size[1:]
     return out_size
-
-def get_layer(model, layer_name):
-    return dict([*model.named_modules()])[layer_name]
-
-def list_available_layers(model):
-    return [name for name, _ in model.named_modules() if len(name) > 0]

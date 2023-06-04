@@ -76,6 +76,7 @@ def init_motif_weights(
     layer_name,
     motifs,
     list_index=None,
+    initializer="kaiming_normal",
     convert_to_pwm=True,
     divide_by_bg=False,
     motif_align="center",
@@ -113,9 +114,15 @@ def init_motif_weights(
     >>> init_motif_weights(model, "conv1d_tower.layers.0", motifs)
     """
     layer = get_layer(model, layer_name)
-    if list_index is not None:
-        pwms = to_kernel(motifs, size=layer[list_index].size(), convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
-        layer[list_index] = nn.Parameter(pwms)
-    else:
-        pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
+    if list_index is None:
+        layer_size = layer.weight.size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(motifs, kernel=kernel, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
         layer.weight = nn.Parameter(pwms)
+    else:
+        layer_size = layer[list_index].size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(motifs, kernel=kernel, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
+        layer[list_index] = nn.Parameter(pwms)

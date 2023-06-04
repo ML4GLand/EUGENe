@@ -1,19 +1,15 @@
-import sys, os
-from contextlib import contextmanager
+import os
+import logging
 
-
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
-
-def make_directory(directory):
-    """make directory"""
-    if not os.path.isdir(directory):
-        pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-        print("Making directory: " + directory)
+def make_dirs(
+    output_dir,
+    overwrite=False,
+):
+    if os.path.exists(output_dir):
+        if overwrite:
+            logging.info("Overwriting existing directory: {}".format(output_dir))
+            os.system("rm -rf {}".format(output_dir))
+        else:
+            print("Output directory already exists: {}".format(output_dir))
+            return
+    os.makedirs(output_dir)
