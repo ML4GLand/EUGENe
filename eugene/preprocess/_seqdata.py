@@ -15,7 +15,7 @@ def make_unique_ids_sdata(
     """Make unique ids for each sequence in a sdata object."""
     sdata = sdata.copy() if copy else sdata
     n_digits = len(str(sdata.dims["_sequence"]))
-    sdata[id_var] = xr.DataArray(["seq{num:0{width}}".format(num=i, width=n_digits)for i in range(sdata.dims["_sequence"])], dims=["_sequence"])
+    sdata[id_var] = xr.DataArray(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(sdata.dims["_sequence"])], dims=["_sequence"])
     return sdata if copy else None
 
 def ohe_seqs_sdata(

@@ -172,6 +172,13 @@ class SequenceModule(LightningModule):
         calculate_metric(self.test_metric, self.metric_name, step_dict["outs"], step_dict["y"])
         self.log(f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True)
 
+    def predict_step(self, batch, batch_idx, dataloader_idx=None):
+        """Predict step"""
+        X, y = batch["ohe_seq"], batch["target"]
+        y = y.detach().cpu().numpy()
+        outs = self(X).squeeze().detach().cpu().numpy()
+        return np.column_stack([outs, y])
+    
     def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
         Keeping this a function allows for the metric to be reconfigured

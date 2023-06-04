@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Dict
 import torch.nn.init as init
-from ._utils import get_layer
+from .._utils import get_layer
 from motifdata import to_kernel
 from motifdata import  MotifSet
 

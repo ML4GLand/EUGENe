@@ -13,13 +13,11 @@ class PredictionWriter(BasePredictionWriter):
         self.file_label = file_label
 
     def write_on_epoch_end(self, trainer, pl_module, outputs, batch_indices):
-        outputs = np.concatenate(outputs[0], axis=0)
+        outputs = np.concatenate(outputs, axis=0)
         num_outputs = pl_module.output_dim
         pred_cols = [f"predictions_{i}" for i in range(num_outputs)]
         target_cols = [f"target_{i}" for i in range(num_outputs)]
-        pred_df = pd.DataFrame(
-            data=outputs, columns=["names"] + pred_cols + target_cols
-        )
+        pred_df = pd.DataFrame(data=outputs, columns=pred_cols + target_cols)
         pred_df.to_csv(
             os.path.join(self.output_dir, self.file_label) + "_predictions.tsv",
             sep="\t",
