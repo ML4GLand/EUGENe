@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 import eugene as eu
 from pathlib import Path
-from eugene.interpret._filter_viz import _get_first_conv_layer, _get_activations_from_layer, _get_filter_activators, _get_pfms
+from eugene.interpret._filters import _get_first_conv_layer, _get_activations_from_layer, _get_filter_activators, _get_pfms
 HERE = Path(__file__).parent
 
 @pytest.fixture
