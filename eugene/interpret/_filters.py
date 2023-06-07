@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from tqdm.auto import tqdm
 from seqexplainer import get_layer_outputs
@@ -5,6 +6,10 @@ from seqexplainer import get_activators_max_seqlets, get_activators_n_seqlets, g
 from seqdata import get_torch_dataloader
 import xarray as xr
 from .._settings import settings
+from motifdata import from_kernel
+from motifdata._transform import pfms_to_ppms
+from motifdata import write_meme
+from eugene.utils import make_dirs
 
 def generate_pfms_sdata(
     model,
@@ -84,10 +89,53 @@ def generate_pfms_sdata(
         )
 
     # Convert the activators to PFMs
-    pfms = get_pfms(activators)
-    prefix = ""
-    suffix = ""
+    pfms = get_pfms(activators, kernel_size=kernel_size)
 
     # Store the PFMs in the sdata
     sdata[f"{prefix}{layer_name}_pfms{suffix}"] = xr.DataArray(pfms, dims=["_num_kernels", "_kernel_size", "_ohe"])
     return sdata if copy else None
+
+def filters_to_meme_sdata(
+    sdata,
+    filters_key: str,
+    filter_inds=None,
+    axis_order=("_num_kernels", "_ohe", "_kernel_size"),
+    output_dir: str = None,
+    filename="filters.meme",
+    alphabet="ACGT",
+    bg={"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25},
+):
+    # Make sure the output directory exists
+    output_dir = output_dir if output_dir is not None else settings.output_dir
+    make_dirs(output_dir)
+    outfile = os.path.join(output_dir, filename)
+
+    # Grab the filters if they are there
+    try:
+        pfms = sdata[filters_key].transpose(*axis_order).to_numpy()
+    except KeyError:
+        print("No filters found in sdata. Run generate_pfms_sdata first.")
+    
+    # Subset down to the filters you want
+    if filter_inds is None:
+        filter_inds = range(pfms.shape[0])
+
+    # 
+    alphabet_len = len(alphabet)
+    if alphabet_len != pfms.shape[1]:
+        raise ValueError(f"Alphabet length ({alphabet_len}) does not match second dimension of pfms: ({pfms.shape[1]}).")
+
+    # Convert pfms to ppms and to a motif set
+    ppms = pfms_to_ppms(pfms, pseudocount=0)
+    motif_set = from_kernel(
+        kernel=ppms,
+        alphabet=alphabet,
+        bg=bg
+    )
+
+    # Write the motif set to a meme file
+    write_meme(
+        motif_set=motif_set,
+        filename=outfile
+    )
+    

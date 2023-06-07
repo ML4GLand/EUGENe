@@ -1,5 +1,5 @@
 import numpy as np
-from .metrics._binary_classification import calculate_auroc, calculate_aupr
+from .metrics._multiclass_classification import calculate_auroc, calculate_aupr
 from .metrics._regression import calculate_mse, calculate_pearsonr, calculate_spearmanr
 
 def evaluate_model(y_test, pred, task, verbose=True):

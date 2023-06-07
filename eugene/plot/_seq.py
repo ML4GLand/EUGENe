@@ -443,9 +443,10 @@ def seq_track(
     nn_logo.ax.set_xlabel(xlab)
     nn_logo.ax.set_title(title)
     for i, highlight in enumerate(highlights):
+        print(highlight)
         nn_logo.highlight_position_range(
-            pmin=highlight[0], 
-            pmax=highlight[1], 
+            pmin=int(highlight[0]), 
+            pmax=int(highlight[1]), 
             color=highlight_colors[i]
         )
     if save is not None:

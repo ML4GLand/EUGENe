@@ -106,7 +106,7 @@ class SequenceModule(LightningModule):
         """
         return self.arch(x)
 
-    def predict(self, x, batch_size=128):
+    def predict(self, x, batch_size=128, verbose=True):
         """
         Predict the output of the model in batches.
         """
@@ -116,7 +116,7 @@ class SequenceModule(LightningModule):
             if isinstance(x, np.ndarray):
                 x = torch.from_numpy(x.astype(np.float32))
             outs = []
-            for _, i in tqdm(enumerate(range(0, len(x), batch_size)), desc="Predicting on batches", total=len(x)//batch_size):
+            for _, i in tqdm(enumerate(range(0, len(x), batch_size)), desc="Predicting on batches", total=len(x)//batch_size, disable=not verbose):
                 batch = x[i:i+batch_size].to(device)
                 out = self(batch).detach().cpu()
                 outs.append(out)

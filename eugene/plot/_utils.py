@@ -175,7 +175,7 @@ def _plot_seaborn(
     return ax
 
 def _violin_long(
-    sdata,
+    dataframe,
     groups: Union[str, Sequence[str]],
     title: str = None,
     xlab: str = "variable",
@@ -215,7 +215,7 @@ def _violin_long(
     """
 
     groups = [groups] if isinstance(groups, str) else groups
-    long = sdata.seqs_annot.melt(value_vars=groups)
+    long = dataframe.melt(value_vars=groups)
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
     sns.violinplot(data=long, x="variable", y="value", ax=ax, **kwargs)
