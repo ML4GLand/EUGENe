@@ -112,7 +112,7 @@ class Conv1DTower(nn.Module):
         pool_types = pool_types if type(pool_types) == list else [pool_types] * len(conv_channels)
         self.pool_types = [layers.POOLING_REGISTRY[pool_type] if isinstance(pool_type, str) else pool_type for pool_type in pool_types]
         self.pool_kernels = pool_kernels if pool_kernels is not None else [1] * len(self.pool_types)
-        self.pool_strides = pool_kernels if pool_strides is not None else [1] * len(self.pool_types)
+        self.pool_strides = pool_strides if pool_strides is not None else [1] * len(self.pool_types)
         self.pool_padding = pool_padding if pool_padding is not None else [0] * len(self.pool_types)
         self.pool_dilations = pool_dilations if pool_dilations is not None else [1] * len(self.pool_types)
         assert len(self.pool_types) == len(self.pool_kernels) == len(self.pool_strides) == len(self.pool_padding) == len(self.pool_dilations), "Pooling parameters must be of equal length"
@@ -187,10 +187,10 @@ class Conv1DTower(nn.Module):
             if self.batchnorm and not self.batchnorm_first:
                 self.layers.append(nn.BatchNorm1d(conv_channels[i]))
             
-            # Define output parameters
-            self.out_channels = self.conv_channels[-1]
-            self.output_len = get_conv1dblock_output_len(self.layers, input_len=self.input_len)
-            self.flatten_dim = self.output_len * self.out_channels
+        # Define output parameters
+        self.out_channels = self.conv_channels[-1]
+        self.output_len = get_conv1dblock_output_len(self.layers, input_len=self.input_len)
+        self.flatten_dim = self.output_len * self.out_channels
 
     def forward(self, x):
         return self.layers(x)

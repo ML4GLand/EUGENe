@@ -94,7 +94,7 @@ def predictions_sequence_module(
     )
     pred_cols = preds.columns
     for i, target_key in enumerate(target_keys):
-        print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
+        #print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
         sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(preds[pred_cols[i]].values, dims=["_sequence"])
     return sdata if copy else None
 
@@ -227,6 +227,6 @@ def train_val_predictions_sequence_module(
     # Add the predictions to the sdata
     pred_cols = ordered_preds.columns
     for i, target_key in enumerate(target_keys):
-        print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
+        #print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
         sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(ordered_preds[pred_cols[i]].values, dims=["_sequence"])
     return sdata if copy else None

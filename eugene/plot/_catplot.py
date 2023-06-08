@@ -43,9 +43,14 @@ def countplot(
     -------
         None
     """
+    keys = [keys] if isinstance(keys, str) else keys
+    if groupby is None:
+            sdata_df = sdata[keys].to_dataframe()
+    else:
+        sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata.seqs_annot,
+            sdata_df,
             keys,
             func=sns.countplot,
             groupby=groupby,
@@ -91,9 +96,10 @@ def histplot(
     -------
         None
     """
+    sdata_df = sdata[keys].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata.seqs_annot,
+            sdata_df,
             keys,
             func=sns.histplot,
             orient=orient,
@@ -141,9 +147,14 @@ def boxplot(
     -------
         None
     """
+    keys = [keys] if isinstance(keys, str) else keys
+    if groupby is None:
+        sdata_df = sdata[keys].to_dataframe()
+    else:
+        sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata.seqs_annot,
+            sdata_df,
             keys,
             func=sns.boxplot,
             groupby=groupby,
@@ -152,7 +163,7 @@ def boxplot(
         )
         if jitter == True:
             _plot_seaborn(
-                sdata.seqs_annot,
+                sdata_df,
                 keys,
                 func=sns.stripplot,
                 groupby=groupby,
@@ -200,13 +211,15 @@ def violinplot(
      -------
          None
     """
-    print("here")
+    keys = [keys] if isinstance(keys, str) else keys
+    if groupby is None:
+        sdata_df = sdata[keys].to_dataframe()
+    else:
+        sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         if groupby is not None and isinstance(groupby, Iterable) and keys is None:
-            sdata_df = sdata[groupby].to_dataframe()
             _violin_long(sdata_df, groupby, **kwargs)
         else:
-            sdata_df = sdata[keys].to_dataframe()
             ax = _plot_seaborn(
                 sdata_df,
                 keys,
@@ -251,8 +264,10 @@ def scatterplot(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
+    keys = [keys] if isinstance(keys, str) else keys
+    sdata_df = sdata[keys].to_dataframe()
     ax = _plot_seaborn(
-        sdata.seqs_annot, 
+        sdata_df, 
         keys=x, 
         func=sns.scatterplot, 
         groupby=y, 
