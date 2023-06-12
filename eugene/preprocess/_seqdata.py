@@ -20,14 +20,41 @@ def make_unique_ids_sdata(
     sdata[id_var] = xr.DataArray(["seq{num:0{width}}".format(num=i, width=n_digits) for i in range(sdata.dims["_sequence"])], dims=["_sequence"])
     return sdata if copy else None
 
+def pad_seqs_sdata(
+    sdata,
+    length,
+    seq_key="seq",
+    pad="right",
+    pad_value="N",
+    copy=False
+):
+    """Pad sequences in a SeqData object."""
+    sdata = sdata.copy() if copy else sdata
+    padded_seqs = sp.pad_seqs(
+        seqs=sdata['seq'].values,
+        pad=pad,
+        pad_value=pad_value,
+        length=length
+    )
+    sdata[f"{seq_key}_padded"] = xr.DataArray(padded_seqs, dims=["_sequence", "length"])
+    return sdata if copy else None
+
 def ohe_seqs_sdata(
     sdata,
     alphabet="DNA",
-    var_key="ohe_seq",
+    seq_key="seq",
+    ohe_key="ohe_seq",
+    fill_value = 0,
     copy=False
 ):
     sdata = sdata.copy() if copy else sdata
-    sdata[var_key] = xr.DataArray(sp.ohe(sdata["seq"].to_numpy(), sp.ALPHABETS[alphabet]), dims=['_sequence', "length", "_ohe"])
+    ohe_seqs = sp.ohe(sdata[seq_key].values, sp.ALPHABETS[alphabet])
+    if fill_value != 0:
+        ohe_seqs = ohe_seqs.astype(type(fill_value))
+        ohe_seqs[(ohe_seqs == 0).all(-1)] = np.array(np.repeat(fill_value, ohe_seqs.shape[-1]), dtype=type(fill_value))
+    sdata[ohe_key] = xr.DataArray(ohe_seqs, dims=['_sequence', "length", "_ohe"])
+    
+
     return sdata if copy else None
 
 def train_test_split_sdata(
@@ -37,7 +64,8 @@ def train_test_split_sdata(
     test_size=0.2,
     homology_threshold=None,
     shuffle=True,
-    chr=None, 
+    chroms=None, 
+    chroms_key="chrom",
     copy=False
 ):
     """
@@ -66,9 +94,9 @@ def train_test_split_sdata(
         train_indeces, _, = train_test_validation_split(seq_id_dict, threshold=homology_threshold, test_size=test_size, alignment_mode="needle", nucleotide=True)
         sdata[train_key] = sdata[id_var].isin(train_indeces)
         return sdata if copy else None
-    elif chr is not None:
-        chr = [chr] if isinstance(chr, str) else chr
-        sdata[train_key] = ~sdata["chr"].isin(chr)
+    elif chroms is not None:
+        chroms = [chroms] if isinstance(chroms, str) else chroms
+        sdata[train_key] = ~sdata[chroms_key].isin(chroms)
         return sdata if copy else None
     else:
         train_indeces, _, = train_test_split(sdata[id_var], test_size=test_size, shuffle=shuffle)

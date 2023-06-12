@@ -214,6 +214,8 @@ def violinplot(
     keys = [keys] if isinstance(keys, str) else keys
     if groupby is None:
         sdata_df = sdata[keys].to_dataframe()
+    elif groupby is not None and isinstance(groupby, Iterable) and keys is None:
+        sdata_df = sdata[groupby].to_dataframe()
     else:
         sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):

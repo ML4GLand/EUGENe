@@ -433,7 +433,10 @@ def seq_track(
     
     # style using Logo methods
     nn_logo.style_spines(visible=False)
-    nn_logo.style_spines(spines=["left"], visible=True, bounds=[float(y_min), float(y_max)])
+    if float(y_min) == 0 and float(y_max) == 0:
+        nn_logo.style_spines(spines=["left"], visible=False)
+    else:
+        nn_logo.style_spines(spines=["left"], visible=True, bounds=[float(y_min), float(y_max)])
 
     # style using Axes methods
     nn_logo.ax.set_xlim([0, len(viz_seq)])

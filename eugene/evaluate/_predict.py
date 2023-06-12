@@ -157,7 +157,6 @@ def train_val_predictions_sequence_module(
     copy: bool = False
 ):
     # Set-up dataloaders
-    print(hex(id(sdata)))
     sdata = sdata.copy() if copy else sdata
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers

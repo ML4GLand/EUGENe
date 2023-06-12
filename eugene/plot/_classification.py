@@ -58,8 +58,8 @@ def _plot_binary_confusion_mtx(
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
     cf_names = ["True Neg", "False Pos", "False Neg", "True Pos"]
-    ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-    ps = binarize(sdata.seqs_annot[prediction_key].values.reshape(-1, 1), threshold=threshold)
+    ts = sdata[target_key].values.reshape(-1, 1)
+    ps = binarize(sdata[prediction_key].values.reshape(-1, 1), threshold=threshold)
     cf_mtx = confusion_matrix(ts, ps)
     cf_pcts = [ "{0:.2%}".format(value) for value in (cf_mtx / cf_mtx.sum(axis=1)[:, None]).flatten()]
     labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(cf_mtx.flatten(), cf_pcts, cf_names)]
@@ -187,8 +187,8 @@ def auroc(
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
     for label, target_key, prediction_key in zip(labels, target_keys, prediction_keys):
-        ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-        ps = sdata.seqs_annot[prediction_key].values.reshape(-1, 1)
+        ts = sdata[target_key].values.reshape(-1, 1)
+        ps = sdata[prediction_key].values.reshape(-1, 1)
         fpr, tpr, _ = roc_curve(ts, ps)
         roc_auc = auc(fpr, tpr)
         print(roc_auc, label)
@@ -247,8 +247,8 @@ def auprc(
     target_keys, prediction_keys, labels = _check_input(sdata, target_keys, prediction_keys, labels)
     _, ax = plt.subplots(1, 1, figsize=figsize)
     for label, target_key, prediction_key in zip(labels, target_keys, prediction_keys):
-        ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-        ps = sdata.seqs_annot[prediction_key].values.reshape(-1, 1)
+        ts = sdata[target_key].values.reshape(-1, 1)
+        ps = sdata[prediction_key].values.reshape(-1, 1)
         precision, recall, _ = precision_recall_curve(ts, ps)
         average_precision = average_precision_score(ts, ps)
         ax.plot(recall, precision, label=f"{label} (AP = {average_precision:.3f})", **kwargs)

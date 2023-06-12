@@ -17,7 +17,10 @@ def generate_pfms_sdata(
     seq_key,
     layer_name,
     kernel_size=None,
+    activations=None,
+    seqs=None,
     num_seqlets=100,
+    padding=0,
     activation_threshold=None,
     num_filters=None,
     batch_size=None,
@@ -37,37 +40,46 @@ def generate_pfms_sdata(
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     prefetch_factor = prefetch_factor if prefetch_factor is not None else None
-
-    # Create the dataloader
-    dl = get_torch_dataloader(
-        sdata,
-        sample_dims=["_sequence"],
-        variables=[seq_key],
-        batch_size=batch_size,
-        num_workers=num_workers,
-        prefetch_factor=prefetch_factor,
-        transforms=transforms,
-        shuffle=False,
-        drop_last=False
-    )
-
-    # Compute the acivations for each sequence
-    layer_outs = []
-    all_seqs = []
-    for _, batch in tqdm(enumerate(dl), total=len(dl), desc=f"Getting activations on batches of size {batch_size}"):
-        batch_seqs = batch[seq_key]
-        outs = get_layer_outputs(
-            model=model, 
-            inputs=batch_seqs,
-            layer_name=layer_name, 
+    
+    if activations is None:
+        # Create the dataloader
+        dl = get_torch_dataloader(
+            sdata,
+            sample_dims=["_sequence"],
+            variables=[seq_key],
             batch_size=batch_size,
-            device=device,
-            verbose=False
+            num_workers=num_workers,
+            prefetch_factor=prefetch_factor,
+            transforms=transforms,
+            shuffle=False,
+            drop_last=False
         )
-        layer_outs.append(outs)
-        all_seqs.append(batch_seqs.detach().cpu().numpy())
-    layer_outs = np.concatenate(layer_outs, axis=0)
-    all_seqs = np.concatenate(all_seqs, axis=0)
+
+        # Compute the acivations for each sequence
+        layer_outs = []
+        all_seqs = []
+        for _, batch in tqdm(enumerate(dl), total=len(dl), desc=f"Getting activations on batches of size {batch_size}"):
+            batch_seqs = batch[seq_key]
+            outs = get_layer_outputs(
+                model=model, 
+                inputs=batch_seqs,
+                layer_name=layer_name, 
+                batch_size=batch_size,
+                device=device,
+                verbose=False
+            )
+            layer_outs.append(outs)
+            all_seqs.append(batch_seqs.detach().cpu().numpy())
+        layer_outs = np.concatenate(layer_outs, axis=0)
+        all_seqs = np.concatenate(all_seqs, axis=0)
+    else:
+        layer_outs = activations
+        all_seqs = seqs
+        print(f"Using provided activations of shape {layer_outs.shape} and sequences of shape {all_seqs.shape}.")
+
+    if num_filters is None:
+        num_filters = layer_outs.shape[1]
+        print(f"Using all {num_filters} filters.")
 
     # Get the maximal activators
     if activation_threshold is None:
@@ -76,6 +88,7 @@ def generate_pfms_sdata(
             activations=layer_outs,
             sequences=all_seqs,
             kernel_size=kernel_size,
+            padding=padding,
             num_seqlets=num_seqlets,
             num_filters=num_filters,
         )
@@ -87,12 +100,12 @@ def generate_pfms_sdata(
             activation_threshold=activation_threshold,
             num_filters=num_filters,
         )
-
+    
     # Convert the activators to PFMs
     pfms = get_pfms(activators, kernel_size=kernel_size)
 
     # Store the PFMs in the sdata
-    sdata[f"{prefix}{layer_name}_pfms{suffix}"] = xr.DataArray(pfms, dims=["_num_kernels", "_kernel_size", "_ohe"])
+    sdata[f"{prefix}{layer_name}_pfms{suffix}"] = xr.DataArray(pfms, dims=[f"_{layer_name}_{num_filters}_filters", f"_{layer_name}_{kernel_size}_kernel_size", "_ohe"])
     return sdata if copy else None
 
 def filters_to_meme_sdata(

@@ -186,7 +186,7 @@ def fit_sequence_module(
         else:
             nan_mask = xr.DataArray(np.any(np.isnan(targs), axis=1), dims=["_sequence"])
         print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
-        sdata = sdata.where(~nan_mask, drop=True)
+        #sdata = sdata.where(~nan_mask, drop=True)
     if in_memory:
         print(f"Loading {seq_key} and {target_keys} into memory")
         sdata[seq_key].load()

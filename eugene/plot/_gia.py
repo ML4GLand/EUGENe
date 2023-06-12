@@ -11,6 +11,7 @@ def positional_gia_plot(
     id_key: str = "id",
     xlab: str = "Position",
     ylab: str = "Predicted Score",
+    ylim: tuple = None,
     save: PathLike = None, 
     return_axes: bool = False
 ):
@@ -48,6 +49,8 @@ def positional_gia_plot(
         concat_df = pd.concat([concat_df, df])
     concat_df.reset_index(drop=True, inplace=True)
     g = sns.lineplot(data=concat_df, x=xlab, y=ylab, hue="feature")
+    if ylim is not None:
+        g.set(ylim=ylim)
     if save:
         _save_fig(save)
     if return_axes:
