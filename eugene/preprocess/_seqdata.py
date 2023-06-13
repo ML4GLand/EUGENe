@@ -1,15 +1,14 @@
 import os
 import sys
+from typing import Optional
 
 bin_dir = os.path.dirname(sys.executable)
 os.environ["PATH"] += os.pathsep + bin_dir
 import dask.array as da
 import dask_ml as dml
 import numpy as np
-import pandas as pd
 import seqpro as sp
 import xarray as xr
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
@@ -54,73 +53,19 @@ def ohe_seqs_sdata(
     return sdata if copy else None
 
 
-def train_test_split_sdata(
-    sdata,
-    train_key="train_val",
-    id_var="id",
-    test_size=0.2,
-    homology_threshold=None,
-    shuffle=True,
-    chroms=None,
-    chroms_key="chrom",
-    copy=False,
-):
-    """
-    Train test split ,object.
-
-    Parameters
-    ----------
-    sdata :
-        object to split
-    train_key : str, optional
-        Key to use for train/val split, by default "train_val"
-    chr : str, optional
-        Chromosome to use for train/val split, by default None
-    copy : bool, optional
-        Whether to return a copy of th,object, by default False
-    """
-    sdata = sdata.copy() if copy else sdata
-    if homology_threshold is not None:
-        try:
-            from graph_part import train_test_validation_split
-        except ImportError:
-            raise ImportError(
-                "Please install graph_part to use homology_treshold (https://github.com/graph-part/graph-part))"
-            )
-        seqs = sdata["seq"].to_numpy().astype("U")
-        ids = sdata[id_var].to_numpy()
-        seq_id_dict = dict(zip(ids, seqs))
-        (
-            train_indeces,
-            _,
-        ) = train_test_validation_split(
-            seq_id_dict,
-            threshold=homology_threshold,
-            test_size=test_size,
-            alignment_mode="needle",
-            nucleotide=True,
-        )
-        sdata[train_key] = sdata[id_var].isin(train_indeces)
-        return sdata if copy else None
-    elif chroms is not None:
-        chroms = [chroms] if isinstance(chroms, str) else chroms
-        sdata[train_key] = ~sdata[chroms_key].isin(chroms)
-        return sdata if copy else None
-    else:
-        (
-            train_indeces,
-            _,
-        ) = train_test_split(sdata[id_var], test_size=test_size, shuffle=shuffle)
-        sdata[train_key] = xr.DataArray(
-            pd.Index(sdata[id_var].values).isin(train_indeces.values),
-            dims=["_sequence"],
-        )
-        return sdata if copy else None
-
-
 def train_test_chrom_split(
     sdata: xr.Dataset, test_chroms: list[str], train_key="train_val"
 ):
+    """Add a variable labeling sequences as part of the train or test split based on chromosome.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+    test_chroms : list[str]
+        List of chromosomes to put into test split.
+    train_key : str, optional
+        Name of the variable holding the labels such that True = train and False = test, by default "train_val"
+    """
     train_mask = (~sdata.chrom.isin(test_chroms)).compute()
     sdata[train_key] = train_mask
 
@@ -131,8 +76,24 @@ def train_test_random_split(
     train_key="train_val",
     groups=None,
     test_size=0.1,
-    random_state=None,
+    random_state: Optional[int] = None,
 ):
+    """Add a variable labeling sequences as part of the train or test split, splitting randomly.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+    dim : str
+        Dimension to split randomly.
+    train_key : str, optional
+        Name of the variable holding the labels such that True = train and False = test, by default "train_val"
+    groups : ArrayLike, optional
+        Groups to stratify the splits by, by default None
+    test_size : float, optional
+        Proportion of data to put in the test set, by default 0.1
+    random_state : int, optional
+        Random seed, by default None
+    """
     splitter = dml.model_selection.ShuffleSplit(
         n_splits=1, test_size=test_size, random_state=random_state
     )
@@ -151,6 +112,25 @@ def train_test_homology_split(
     test_size=0.1,
     nucleotide=True,
 ):
+    """Add a variable labeling sequences as part of the train or test split, splitting by homology.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+    seq_var : str
+        Variable containing the sequences.
+    train_key : str, optional
+        Name of the variable holding the labels, by default "train_val"
+    test_size : float, optional
+        Proportion of data to put in the test set, by default 0.1
+    nucleotide : bool, optional
+        Whether the input sequences are nucleotides or not, by default True
+
+    Raises
+    ------
+    ImportError
+        If [graph-part](https://github.com/graph-part/graph-part) is not installed.
+    """
     try:
         from graph_part import train_test_validation_split
     except ImportError:
