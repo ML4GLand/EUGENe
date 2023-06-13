@@ -6,6 +6,7 @@ from typing import Type, Dict, Union, Callable, List, Any
 from ._utils import get_output_size, get_conv1dblock_output_len
 from . import _layers as layers
 
+
 class Tower(nn.Module):
     def __init__(
         self,
@@ -15,8 +16,8 @@ class Tower(nn.Module):
         static_block_args: Dict[str, Any] = None,
         dynamic_block_args: Dict[str, Any] = None,
         mults: Dict[str, float] = None,
-        name: str = "tower"
-        ):
+        name: str = "tower",
+    ):
         """A tower of blocks.
 
         Parameters
@@ -46,29 +47,31 @@ class Tower(nn.Module):
 
         for arg, mult in mults.items():
             # replace initial value with geometric progression
-            init_val = dynamic_block_args.get(arg, signature(block).parameters[arg].default)
+            init_val = dynamic_block_args.get(
+                arg, signature(block).parameters[arg].default
+            )
             dynamic_block_args[arg] = (
-                init_val*torch.logspace(
-                    start=0,
-                    end=repeats-1,
-                    steps=repeats,
-                    base=mult
+                (
+                    init_val
+                    * torch.logspace(start=0, end=repeats - 1, steps=repeats, base=mult)
                 )
-            ).to(dtype=signature(block).parameters[arg].annotation).tolist()
+                .to(dtype=signature(block).parameters[arg].annotation)
+                .tolist()
+            )
 
         self.blocks = nn.Sequential()
         for i in range(repeats):
             args = {arg: vals[i] for arg, vals in dynamic_block_args.items()}
             args.update(static_block_args)
             self.blocks.add_module(f"{self.block_name}_{i}", block(**args))
-          
+
         self.output_size = get_output_size(self.blocks, self.input_size)
 
     def forward(self, x):
         return self.blocks(x)
-        
-class Conv1DTower(nn.Module):
 
+
+class Conv1DTower(nn.Module):
     def __init__(
         self,
         input_len: int,
@@ -87,7 +90,7 @@ class Conv1DTower(nn.Module):
         pool_padding: list = None,
         dropout_rates: float = 0.0,
         batchnorm: bool = False,
-        batchnorm_first: bool = False
+        batchnorm_first: bool = False,
     ):
         super(Conv1DTower, self).__init__()
 
@@ -98,24 +101,75 @@ class Conv1DTower(nn.Module):
         # Define convolutional layers
         self.conv_channels = conv_channels
         self.conv_kernels = conv_kernels
-        self.conv_strides = conv_strides if conv_strides is not None else [1] * len(conv_channels) 
-        self.conv_dilations = conv_dilations if conv_dilations is not None else [1] * len(conv_channels) 
-        self.conv_padding = conv_padding if type(conv_padding) == list else [conv_padding] * len(conv_channels) 
-        self.conv_biases = conv_biases if type(conv_biases) == list else [conv_biases] * len(conv_channels)
-        assert len(self.conv_channels) == len(self.conv_kernels) == len(self.conv_strides) == len(self.conv_dilations) == len(self.conv_padding) == len(self.conv_biases), "Convolutional parameters must be of the same length"
+        self.conv_strides = (
+            conv_strides if conv_strides is not None else [1] * len(conv_channels)
+        )
+        self.conv_dilations = (
+            conv_dilations if conv_dilations is not None else [1] * len(conv_channels)
+        )
+        self.conv_padding = (
+            conv_padding
+            if type(conv_padding) == list
+            else [conv_padding] * len(conv_channels)
+        )
+        self.conv_biases = (
+            conv_biases
+            if type(conv_biases) == list
+            else [conv_biases] * len(conv_channels)
+        )
+        assert (
+            len(self.conv_channels)
+            == len(self.conv_kernels)
+            == len(self.conv_strides)
+            == len(self.conv_dilations)
+            == len(self.conv_padding)
+            == len(self.conv_biases)
+        ), "Convolutional parameters must be of the same length"
 
         # Define activation layers
-        activations = activations if type(activations) == list else [activations] * len(conv_channels)
-        self.activations = [layers.ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations]
-        
+        activations = (
+            activations
+            if type(activations) == list
+            else [activations] * len(conv_channels)
+        )
+        self.activations = [
+            layers.ACTIVATION_REGISTRY[activation](inplace=False)
+            if isinstance(activation, str)
+            else activation
+            for activation in activations
+        ]
+
         # Define pooling layers
-        pool_types = pool_types if type(pool_types) == list else [pool_types] * len(conv_channels)
-        self.pool_types = [layers.POOLING_REGISTRY[pool_type] if isinstance(pool_type, str) else pool_type for pool_type in pool_types]
-        self.pool_kernels = pool_kernels if pool_kernels is not None else [1] * len(self.pool_types)
-        self.pool_strides = pool_strides if pool_strides is not None else [1] * len(self.pool_types)
-        self.pool_padding = pool_padding if pool_padding is not None else [0] * len(self.pool_types)
-        self.pool_dilations = pool_dilations if pool_dilations is not None else [1] * len(self.pool_types)
-        assert len(self.pool_types) == len(self.pool_kernels) == len(self.pool_strides) == len(self.pool_padding) == len(self.pool_dilations), "Pooling parameters must be of equal length"
+        pool_types = (
+            pool_types
+            if type(pool_types) == list
+            else [pool_types] * len(conv_channels)
+        )
+        self.pool_types = [
+            layers.POOLING_REGISTRY[pool_type]
+            if isinstance(pool_type, str)
+            else pool_type
+            for pool_type in pool_types
+        ]
+        self.pool_kernels = (
+            pool_kernels if pool_kernels is not None else [1] * len(self.pool_types)
+        )
+        self.pool_strides = (
+            pool_strides if pool_strides is not None else [1] * len(self.pool_types)
+        )
+        self.pool_padding = (
+            pool_padding if pool_padding is not None else [0] * len(self.pool_types)
+        )
+        self.pool_dilations = (
+            pool_dilations if pool_dilations is not None else [1] * len(self.pool_types)
+        )
+        assert (
+            len(self.pool_types)
+            == len(self.pool_kernels)
+            == len(self.pool_strides)
+            == len(self.pool_padding)
+            == len(self.pool_dilations)
+        ), "Pooling parameters must be of equal length"
 
         # Define dropout layers
         if dropout_rates != 0.0 and dropout_rates is not None:
@@ -125,16 +179,15 @@ class Conv1DTower(nn.Module):
                 self.dropout_rates = dropout_rates
         else:
             self.dropout_rates = []
-            
+
         # Define batchnorm layers
         self.batchnorm = batchnorm
         self.batchnorm_first = batchnorm_first
-        
+
         # Build block
         self.layers = nn.Sequential()
         for i in range(len(conv_channels)):
-            
-            # Add a convolutional layer 
+            # Add a convolutional layer
             if i == 0:
                 self.layers.append(
                     nn.Conv1d(
@@ -157,16 +210,16 @@ class Conv1DTower(nn.Module):
                         padding=self.conv_padding[i],
                     )
                 )
-            
+
             # Add a batchnorm layer if specified
             if batchnorm and batchnorm_first:
                 self.layers.append(nn.BatchNorm1d(self.conv_channels[i]))
-            
+
             # Add an activation layer if specified
             if i < len(self.activations):
                 if self.activations[i] is not None:
                     self.layers.append(self.activations[i])
-            
+
             # Add a pooling layer if specified
             if i < len(self.pool_types):
                 if self.pool_types[i] is not None:
@@ -174,10 +227,10 @@ class Conv1DTower(nn.Module):
                         self.pool_types[i](
                             kernel_size=self.pool_kernels[i],
                             stride=self.pool_strides[i],
-                            padding=self.pool_padding[i]
+                            padding=self.pool_padding[i],
                         )
                     )
-            
+
             # Add a dropout layer if specified
             if i < len(self.dropout_rates):
                 if self.dropout_rates[i] is not None:
@@ -186,14 +239,17 @@ class Conv1DTower(nn.Module):
             # Add a batchnorm layer if specified
             if self.batchnorm and not self.batchnorm_first:
                 self.layers.append(nn.BatchNorm1d(conv_channels[i]))
-            
+
         # Define output parameters
         self.out_channels = self.conv_channels[-1]
-        self.output_len = get_conv1dblock_output_len(self.layers, input_len=self.input_len)
+        self.output_len = get_conv1dblock_output_len(
+            self.layers, input_len=self.input_len
+        )
         self.flatten_dim = self.output_len * self.out_channels
 
     def forward(self, x):
         return self.layers(x)
+
 
 class BiConv1DTower(nn.Module):
     """Generates a PyTorch module with the convolutional architecture described in:
@@ -214,20 +270,21 @@ class BiConv1DTower(nn.Module):
         Stride of the convolutional layers. Applies the same stride to all layers
     dropout_rate : float
         Dropout rate of the convolutional layers. Applies the same rate to all layers
-    
+
     Returns
     -------
     torch.nn.Module
         TODO: Add description
     """
+
     def __init__(
-        self, 
+        self,
         filters: int,
         kernel_size: int,
-        input_size: int = 4, 
-        layers: int = 1, 
-        stride: int = 1, 
-        dropout_rate: float = 0.15
+        input_size: int = 4,
+        layers: int = 1,
+        stride: int = 1,
+        dropout_rate: float = 0.15,
     ):
         super().__init__()
         self.filters = filters

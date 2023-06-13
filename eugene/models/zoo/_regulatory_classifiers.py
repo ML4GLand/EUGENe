@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 from ..base import _layers as layers
 from ..base import _blocks as blocks
 from ..base import _towers as towers
 
+
 class DeepSEA(nn.Module):
     """DeepSEA model implementation for EUGENe
-    
+
     Default parameters are those specified in the DeepSEA paper. We currently do not implement a "ds" or "ts" model
     for DeepSEA.
 
@@ -24,25 +25,28 @@ class DeepSEA(nn.Module):
     dropout_rates:
         list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
     """
+
     def __init__(
         self,
         input_len: int,
         output_dim: int,
         conv_kwargs: dict = {},
-        dense_kwargs: dict = {}
+        dense_kwargs: dict = {},
     ):
         super(DeepSEA, self).__init__()
 
         # Set the attributes
         self.input_len = input_len
         self.output_dim = output_dim
-        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, dense_kwargs
+        )
 
         # Create the blocks
         self.conv1d_tower = towers.Conv1DTower(**self.conv_kwargs)
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.conv1d_tower.flatten_dim, 
-            output_dim=output_dim, 
+            input_dim=self.conv1d_tower.flatten_dim,
+            output_dim=output_dim,
             **self.dense_kwargs
         )
 
@@ -64,29 +68,33 @@ class DeepSEA(nn.Module):
         conv_kwargs.setdefault("dropout_rates", [0.2, 0.2, 0.5])
         conv_kwargs.setdefault("batchnorm", False)
         dense_kwargs.setdefault("hidden_dims", [925])
-        return conv_kwargs,dense_kwargs 
+        return conv_kwargs, dense_kwargs
+
 
 class Basset(nn.Module):
     """
     TODO
     """
+
     def __init__(
-        self, 
+        self,
         input_len: int,
-        output_dim: int, 
-        conv_kwargs = {},
-        dense_kwargs = {},
+        output_dim: int,
+        conv_kwargs={},
+        dense_kwargs={},
     ):
         super(Basset, self).__init__()
 
         # Set the attributes
         self.input_len = input_len
         self.output_dim = output_dim
-        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, dense_kwargs
+        )
         self.conv1d_tower = towers.Conv1DTower(**self.conv_kwargs)
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.conv1d_tower.flatten_dim, 
-            output_dim=output_dim, 
+            input_dim=self.conv1d_tower.flatten_dim,
+            output_dim=output_dim,
             **self.dense_kwargs
         )
 
@@ -95,7 +103,7 @@ class Basset(nn.Module):
         x = x.view(x.size(0), self.conv1d_tower.flatten_dim)
         x = self.dense_block(x)
         return x
-        
+
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("input_len", self.input_len)
@@ -114,40 +122,42 @@ class Basset(nn.Module):
         dense_kwargs.setdefault("batchnorm", True)
         dense_kwargs.setdefault("batchnorm_first", True)
         dense_kwargs.setdefault("activations", "relu")
-        return conv_kwargs,dense_kwargs 
+        return conv_kwargs, dense_kwargs
+
 
 class FactorizedBasset(nn.Module):
     """
     TODO
     """
+
     def __init__(
-		self, 
+        self,
         input_len: int = 1000,
-        output_dim = 1, 
-        conv1_kwargs = {},
-		conv2_kwargs = {},
-		conv3_kwargs = {},
-		maxpool_kernels = None,
-		dense_kwargs = {},
+        output_dim=1,
+        conv1_kwargs={},
+        conv2_kwargs={},
+        conv3_kwargs={},
+        maxpool_kernels=None,
+        dense_kwargs={},
     ):
-        super(FactorizedBasset, self).__init__()        
+        super(FactorizedBasset, self).__init__()
 
         # Set the attributes
         self.input_len = input_len
         self.output_dim = output_dim
-        self.conv1_kwargs, self.conv2_kwargs, self.conv3_kwargs, self.maxpool_kernels, self.dense_kwargs = self.kwarg_handler(
-            conv1_kwargs, 
-            conv2_kwargs, 
-            conv3_kwargs, 
-            maxpool_kernels, 
-            dense_kwargs	
+        (
+            self.conv1_kwargs,
+            self.conv2_kwargs,
+            self.conv3_kwargs,
+            self.maxpool_kernels,
+            self.dense_kwargs,
+        ) = self.kwarg_handler(
+            conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, dense_kwargs
         )
 
         # Create the blocks
         self.conv1d_tower1 = towers.Conv1DTower(
-            input_len=input_len, 
-            input_channels=4,
-            **self.conv1_kwargs
+            input_len=input_len, input_channels=4, **self.conv1_kwargs
         )
         self.conv1d_tower2 = towers.Conv1DTower(
             input_len=self.conv1d_tower1.output_len,
@@ -161,7 +171,7 @@ class FactorizedBasset(nn.Module):
         )
         self.dense_block = blocks.DenseBlock(
             input_dim=self.conv1d_tower3.flatten_dim,
-            output_dim=output_dim, 
+            output_dim=output_dim,
             **self.dense_kwargs
         )
 
@@ -172,8 +182,10 @@ class FactorizedBasset(nn.Module):
         x = x.view(x.size(0), self.conv1d_tower3.flatten_dim)
         x = self.dense_block(x)
         return x
-    
-    def kwarg_handler(self, conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, dense_kwargs):
+
+    def kwarg_handler(
+        self, conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, dense_kwargs
+    ):
         """Sets default kwargs FactorizedBasset"""
         conv1_kwargs.setdefault("conv_channels", [48, 64, 100, 150, 300])
         conv1_kwargs.setdefault("conv_kernels", [3, 3, 3, 7, 7])
@@ -210,7 +222,8 @@ class FactorizedBasset(nn.Module):
         dense_kwargs.setdefault("batchnorm", True)
         dense_kwargs.setdefault("batchnorm_first", True)
         dense_kwargs.setdefault("activations", "relu")
-        return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels,dense_kwargs 
+        return conv1_kwargs, conv2_kwargs, conv3_kwargs, maxpool_kernels, dense_kwargs
+
 
 class DanQ(nn.Module):
     """DanQ model from Quang and Xie, 2016;
@@ -226,13 +239,14 @@ class DanQ(nn.Module):
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
+
     def __init__(
         self,
         input_len: int,
         output_dim: int,
         conv_kwargs: dict = {},
         recurrent_kwargs: dict = {},
-        dense_kwargs: dict = {}
+        dense_kwargs: dict = {},
     ):
         super(DanQ, self).__init__()
 
@@ -246,12 +260,11 @@ class DanQ(nn.Module):
         # Build the model
         self.conv1d_tower = towers.Conv1DTower(**self.conv_kwargs)
         self.recurrent_block = blocks.RecurrentBlock(
-            input_dim=self.conv1d_tower.out_channels, 
-            **self.recurrent_kwargs
+            input_dim=self.conv1d_tower.out_channels, **self.recurrent_kwargs
         )
         self.dense_block = blocks.DenseBlock(
             input_dim=self.recurrent_block.out_channels,
-            output_dim=output_dim, 
+            output_dim=output_dim,
             **self.dense_kwargs
         )
 
@@ -282,36 +295,43 @@ class DanQ(nn.Module):
         dense_kwargs.setdefault("batchnorm", False)
         return conv_kwargs, recurrent_kwargs, dense_kwargs
 
+
 class Satori(nn.Module):
-        
     def __init__(
-        self, 
-        input_len, 
+        self,
+        input_len,
         output_dim,
         conv_kwargs: dict = {},
         mha_kwargs: dict = {},
         dense_kwargs: dict = {},
     ):
         super(Satori, self).__init__()
-        
+
         # Set the attrubutes
         self.input_len = input_len
         self.output_dim = output_dim
-        self.conv_kwargs, self.mha_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, mha_kwargs, dense_kwargs)
-        
+        self.conv_kwargs, self.mha_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, mha_kwargs, dense_kwargs
+        )
+
         # Build the model
         self.conv_block = blocks.Conv1DBlock(**self.conv_kwargs)
-        self.mha_layer = layers.MultiHeadAttention(input_dim=self.conv_block.output_size[-1], **self.mha_kwargs)
+        self.mha_layer = layers.MultiHeadAttention(
+            input_dim=self.conv_block.output_size[-1], **self.mha_kwargs
+        )
         self.flatten = nn.Flatten()
-        self.dense_block = blocks.DenseBlock(input_dim=self.conv_block.output_channels*self.conv_block.output_size[-1], **self.dense_kwargs)
-        
+        self.dense_block = blocks.DenseBlock(
+            input_dim=self.conv_block.output_channels * self.conv_block.output_size[-1],
+            **self.dense_kwargs
+        )
+
     def forward(self, x):
         x = self.conv_block(x)
         x = self.mha_layer(x)
         x = self.flatten(x)
         x = self.dense_block(x)
         return x
-    
+
     def kwarg_handler(self, conv_kwargs, mha_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("input_len", self.input_len)
@@ -333,4 +353,3 @@ class Satori(nn.Module):
         dense_kwargs.setdefault("hidden_dims", [])
         dense_kwargs.setdefault("output_dim", self.output_dim)
         return conv_kwargs, mha_kwargs, dense_kwargs
-    

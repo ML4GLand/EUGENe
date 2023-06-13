@@ -5,11 +5,9 @@ import matplotlib.pyplot as plt
 from typing import Union, Sequence
 from sklearn.metrics import r2_score, mean_squared_error
 from scipy.stats import spearmanr, pearsonr
-from ._utils import (
-    _create_matplotlib_axes,
-    _save_fig
-)
+from ._utils import _create_matplotlib_axes, _save_fig
 from .. import settings
+
 
 def _plot_performance_scatter(
     sdata,
@@ -57,8 +55,10 @@ def _plot_performance_scatter(
 
     r2 = r2_score(target, prediction) if "r2" in metrics else None
     mse = mean_squared_error(target, prediction) if "mse" in metrics else None
-    pearsr = (pearsonr(target, prediction)[0] if "pearsonr" in metrics else None)
-    spearr = (spearmanr(target, prediction).correlation if "spearmanr" in metrics else None)
+    pearsr = pearsonr(target, prediction)[0] if "pearsonr" in metrics else None
+    spearr = (
+        spearmanr(target, prediction).correlation if "spearmanr" in metrics else None
+    )
     if "c" in kwargs:
         if kwargs["c"] in sdata.data_vars.keys():
             kwargs["c"] = sdata[kwargs["c"]]
@@ -71,27 +71,24 @@ def _plot_performance_scatter(
             target = data[target_key]
             prediction = data[prediction_key]
             group_r2 = r2_score(target, prediction) if "r2" in metrics else None
-            group_mse = mean_squared_error(target, prediction if "mse" in metrics else None)
-            group_pearsr = pearsonr(target, prediction)[0] if "pearsonr" in metrics else None
-            group_spearr = spearmanr(target, prediction).correlation if "spearmanr" in metrics else None
-            im = ax.scatter(
-                target, 
-                prediction, 
-                label=group, 
-                color="bgrcm"[i], 
-                **kwargs
+            group_mse = mean_squared_error(
+                target, prediction if "mse" in metrics else None
             )
+            group_pearsr = (
+                pearsonr(target, prediction)[0] if "pearsonr" in metrics else None
+            )
+            group_spearr = (
+                spearmanr(target, prediction).correlation
+                if "spearmanr" in metrics
+                else None
+            )
+            im = ax.scatter(target, prediction, label=group, color="bgrcm"[i], **kwargs)
             print(group, group_r2, group_mse, group_spearr)
             i += 1
             ax.legend()
     else:
         im = ax.scatter(
-            target, 
-            prediction, 
-            edgecolor="black", 
-            linewidth=0.1, 
-            s=10, 
-            **kwargs
+            target, prediction, edgecolor="black", linewidth=0.1, s=10, **kwargs
         )
     if "c" in kwargs:
         plt.colorbar(im, location="bottom", label=kwargs["c"].name)
@@ -104,10 +101,18 @@ def _plot_performance_scatter(
         1.02, 0.90, f"MSE: {mse:.2f}", transform=plt.gca().transAxes, fontsize=16
     ) if mse is not None else None
     ax.text(
-        1.02, 0.85, rf"Spearman $\rho$: {spearr:.2f}", transform=plt.gca().transAxes, fontsize=16,
+        1.02,
+        0.85,
+        rf"Spearman $\rho$: {spearr:.2f}",
+        transform=plt.gca().transAxes,
+        fontsize=16,
     ) if spearr is not None else None
     ax.text(
-        1.02, 0.80, rf"Pearson $r$: {pearsr:.2f}", transform=plt.gca().transAxes, fontsize=16,
+        1.02,
+        0.80,
+        rf"Pearson $r$: {pearsr:.2f}",
+        transform=plt.gca().transAxes,
+        fontsize=16,
     ) if pearsr is not None else None
     lims = [
         np.min([ax.get_xlim(), ax.get_ylim()]),  # min of both axes
@@ -121,6 +126,7 @@ def _plot_performance_scatter(
         _save_fig(save)
     return ax
 
+
 def performance_scatter(
     sdata,
     target_keys: Union[str, Sequence[str]],
@@ -132,10 +138,10 @@ def performance_scatter(
 ) -> None:
     """
     Plot a scatter plot of the performance of the model on a subset of the sequences.
-    
+
     Classic predicted vs observed scatterplot that will be annotated with r2, mse and spearman correlation.
     If a groupby key is passed, the scatterplot will be colored according to group.
-    
+
     Parameters
     ----------
     sdata : SeqData
@@ -163,16 +169,13 @@ def performance_scatter(
         target_keys = [target_keys]
         prediction_keys = [prediction_keys]
     with plt.rc_context(rc_context):
-        for (target_key, prediction_key) in zip(target_keys, prediction_keys):
+        for target_key, prediction_key in zip(target_keys, prediction_keys):
             targs = sdata[target_key].values
             nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
             print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
             sdata = sdata.where(~nan_mask, drop=True)
             ax = _plot_performance_scatter(
-                sdata, 
-                target_key=target_key, 
-                prediction_key=prediction_key, 
-                **kwargs
+                sdata, target_key=target_key, prediction_key=prediction_key, **kwargs
             )
     if return_axes:
         return ax

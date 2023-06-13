@@ -13,7 +13,7 @@ class AdversarialModel(LightningModule):
         loss_fxn=nn.CrossEntropyLoss(),
         optim="AdamW",
         clean=False,
-        lr=0.01
+        lr=0.01,
     ):
         super().__init__()
         self.model = model
@@ -54,7 +54,7 @@ class AdversarialModel(LightningModule):
         clean_loss = self.loss_fn(clean_logits, labels)
         clean_acc = (clean_logits.argmax(dim=1)).eq(labels).sum().item() / len(imgs)
         self.log("clean_val_loss", clean_loss, prog_bar=True)
-        self.log('clean_val_acc', clean_acc, prog_bar=True)
+        self.log("clean_val_acc", clean_acc, prog_bar=True)
         return clean_loss, clean_acc
 
     def test_step(self, batch, batch_idx):
@@ -65,14 +65,16 @@ class AdversarialModel(LightningModule):
         clean_acc = (clean_logits.argmax(dim=1)).eq(labels).sum().item() / len(imgs)
 
         self.log("clean_test_loss", clean_loss, prog_bar=True)
-        self.log('clean_test_acc', clean_acc, prog_bar=True)
+        self.log("clean_test_acc", clean_acc, prog_bar=True)
         return clean_loss, clean_acc
 
     def configure_optimizers(self):
         optim = self.optim
         if issubclass(optim, torch.optim.SGD):
             if self.lr is not None:
-                return optim(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4)
+                return optim(
+                    self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4
+                )
             else:
                 return optim(self.model.parameters(), momentum=0.9, weight_decay=1e-4)
         elif issubclass(optim, (torch.optim.Adam, torch.optim.AdamW)):
@@ -82,4 +84,3 @@ class AdversarialModel(LightningModule):
                 return optim(self.model.parameters(), weight_decay=1e-4)
         else:
             return self.optim
-        

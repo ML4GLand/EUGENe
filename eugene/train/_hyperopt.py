@@ -12,16 +12,20 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from ray import tune
 from ray.air import session
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from ray.tune.schedulers import (ASHAScheduler, MedianStoppingRule,
-                                 PopulationBasedTraining)
+from ray.tune.schedulers import (
+    ASHAScheduler,
+    MedianStoppingRule,
+    PopulationBasedTraining,
+)
 from ray.tune.search import BasicVariantGenerator
 from ray.tune.search.bayesopt import BayesOptSearch
 from ray.tune.search.hyperopt import HyperOptSearch
 from torch.utils.data import DataLoader
 
+
 def hyperopt_with_tune(
     config: dict,
-    sdata = None,
+    sdata=None,
     seq_key: str = "ohe_seq",
     target_keys: Union[str, List[str]] = None,
     train_key: str = "train_val",
@@ -35,7 +39,7 @@ def hyperopt_with_tune(
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     drop_last=True,
-    seed: int = None
+    seed: int = None,
 ):
     module_name = config.pop("module")
     arch_config = config["model"].pop("arch")
@@ -54,13 +58,17 @@ def hyperopt_with_tune(
     print(f"Logging to {log_dir}.")
     name = name if name is not None else config["model"]["model_name"]
     print(f"Experiment name: {name}.")
-    seed_everything(seed, workers=True) if seed is not None else seed_everything(settings.seed)
+    seed_everything(seed, workers=True) if seed is not None else seed_everything(
+        settings.seed
+    )
     batch_size = config["batch_size"]
     if train_dataloader is not None:
         assert val_dataloader is not None
     elif sdata is not None:
         if target_keys is not None:
-            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
+            sdata["target"] = xr.concat(
+                [sdata[target_key] for target_key in target_keys], dim="_targets"
+            ).transpose("_sequence", "_targets")
             targs = sdata["target"].values
             if len(targs.shape) == 1:
                 nan_mask = np.isnan(targs)
@@ -80,7 +88,7 @@ def hyperopt_with_tune(
             shuffle=True,
             drop_last=drop_last,
             batch_size=batch_size,
-            num_workers=num_workers
+            num_workers=num_workers,
         )
         val_dataloader = sd.get_torch_dataloader(
             val_sdata,
@@ -91,7 +99,7 @@ def hyperopt_with_tune(
             shuffle=False,
             drop_last=drop_last,
             batch_size=batch_size,
-            num_workers=num_workers
+            num_workers=num_workers,
         )
     else:
         raise ValueError("No data provided to train on.")
@@ -105,18 +113,26 @@ def hyperopt_with_tune(
         logger=logger,
         callbacks=callbacks,
     )
-    trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    trainer.fit(
+        model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader
+    )
+
 
 scheduler_dict = {
     "ASHAScheduler": ASHAScheduler,
     "MedianStoppingRule": MedianStoppingRule,
     "PopulationBasedTraining": PopulationBasedTraining,
-    
 }
 default_scheduler_args = {
-    "ASHAScheduler": {"metric":"loss", "mode":"min", "max_t":10, "grace_period":1, "reduction_factor":2},
-    "MedianStoppingRule": {"metric":"loss", "mode":"min", "grace_period":1},
-    "PopulationBasedTraining": {"metric":"loss", "mode":"min", "grace_period":1},
+    "ASHAScheduler": {
+        "metric": "loss",
+        "mode": "min",
+        "max_t": 10,
+        "grace_period": 1,
+        "reduction_factor": 2,
+    },
+    "MedianStoppingRule": {"metric": "loss", "mode": "min", "grace_period": 1},
+    "PopulationBasedTraining": {"metric": "loss", "mode": "min", "grace_period": 1},
 }
 algo_dict = {
     "BayesOptSearch": BayesOptSearch,
@@ -124,14 +140,15 @@ algo_dict = {
     "BasicVariantGenerator": BasicVariantGenerator,
 }
 default_algo_args = {
-    "BayesOptSearch": {"metric":"loss", "mode":"min"},
-    "HyperOptSearch": {"metric":"loss", "mode":"min"},
+    "BayesOptSearch": {"metric": "loss", "mode": "min"},
+    "HyperOptSearch": {"metric": "loss", "mode": "min"},
     "BasicVariantGenerator": {},
 }
 
+
 def hyperopt(
     config,
-    sdata = None,
+    sdata=None,
     seq_key: str = "ohe_seq",
     target_keys: Union[str, List[str]] = None,
     train_key: str = "train_val",
@@ -151,7 +168,7 @@ def hyperopt(
     seed: int = None,
     scheduler_kwargs: dict = None,
     algorithm_kwargs: dict = None,
-    **kwargs
+    **kwargs,
 ):
     """Perform hyperparameter optimization using HyperOpt."""
     print("Performing hyperparameter optimization using HyperOpt.")
@@ -171,7 +188,7 @@ def hyperopt(
         val_dataloader=val_dataloader,
         seq_transforms=seq_transforms,
         seed=seed,
-        **kwargs
+        **kwargs,
     )
     if scheduler_kwargs is None or len(scheduler_kwargs) == 0:
         scheduler_kwargs = default_scheduler_args[scheduler]
@@ -190,10 +207,7 @@ def hyperopt(
         storage_path=settings.logging_dir,
         keep_checkpoints_num=1,
         checkpoint_score_attr="min-val_loss_epoch",
-        resources_per_trial={
-            "cpu": cpus,
-            "gpu": gpus
-        },
-        name=name
+        resources_per_trial={"cpu": cpus, "gpu": gpus},
+        name=name,
     )
     return analysis

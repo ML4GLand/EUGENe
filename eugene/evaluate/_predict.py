@@ -9,6 +9,7 @@ import xarray as xr
 import seqdata as sd
 from ._utils import PredictionWriter
 
+
 def predictions(
     model: LightningModule,
     dataloader: DataLoader,
@@ -16,7 +17,7 @@ def predictions(
     out_dir: os.PathLike = None,
     name: str = None,
     version: str = "",
-    file_label: str = ""
+    file_label: str = "",
 ):
     gpus = gpus if gpus is not None else settings.gpus
     model_name = model.model_name
@@ -36,9 +37,10 @@ def predictions(
     preds.columns = [f"predictions_{i}" for i in range(num_outs)]
     return preds
 
+
 def predictions_sequence_module(
     model: LightningModule,
-    sdata = None,
+    sdata=None,
     seq_key: str = "ohe_seq",
     target_keys: Union[str, List[str]] = None,
     gpus: int = None,
@@ -54,7 +56,7 @@ def predictions_sequence_module(
     file_label: str = "",
     prefix: str = "",
     suffix: str = "",
-    copy: bool = False
+    copy: bool = False,
 ):
     sdata = sdata.copy() if copy else sdata
     batch_size = batch_size if batch_size is not None else settings.batch_size
@@ -68,7 +70,9 @@ def predictions_sequence_module(
         if len(target_keys) == 1:
             sdata["target"] = sdata[target_keys[0]]
         else:
-            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
+            sdata["target"] = xr.concat(
+                [sdata[target_key] for target_key in target_keys], dim="_targets"
+            ).transpose("_sequence", "_targets")
     if in_memory:
         print(f"Loading {seq_key} and {target_keys} into memory")
         sdata[seq_key].load()
@@ -81,7 +85,7 @@ def predictions_sequence_module(
         num_workers=num_workers,
         prefetch_factor=prefetch_factor,
         transforms=transforms,
-        shuffle=False
+        shuffle=False,
     )
     preds = predictions(
         model=model,
@@ -90,13 +94,16 @@ def predictions_sequence_module(
         out_dir=out_dir,
         name=name,
         version=version,
-        file_label=file_label
+        file_label=file_label,
     )
     pred_cols = preds.columns
     for i, target_key in enumerate(target_keys):
-        #print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
-        sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(preds[pred_cols[i]].values, dims=["_sequence"])
+        # print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
+        sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(
+            preds[pred_cols[i]].values, dims=["_sequence"]
+        )
     return sdata if copy else None
+
 
 def train_val_predictions(
     model: LightningModule,
@@ -130,15 +137,21 @@ def train_val_predictions(
     t = np.concatenate(train_predictor.predict(model, train_dataloader), axis=0)
     v = np.concatenate(val_predictor.predict(model, val_dataloader), axis=0)
     num_outs = model.output_dim
-    preds = pd.concat([pd.DataFrame(data=t[:, 0:num_outs]), pd.DataFrame(data=v[:, 0:num_outs]),], axis=0).reset_index(drop=True)
+    preds = pd.concat(
+        [
+            pd.DataFrame(data=t[:, 0:num_outs]),
+            pd.DataFrame(data=v[:, 0:num_outs]),
+        ],
+        axis=0,
+    ).reset_index(drop=True)
     preds.columns = [f"predictions_{i}" for i in range(num_outs)]
     preds[train_key] = [True] * len(t) + [False] * len(v)
     return preds
-    
+
 
 def train_val_predictions_sequence_module(
     model: LightningModule,
-    sdata = None,
+    sdata=None,
     seq_key: str = "ohe_seq",
     target_keys: Union[str, List[str]] = None,
     train_key="train_val",
@@ -154,7 +167,7 @@ def train_val_predictions_sequence_module(
     version: str = "",
     prefix: str = "",
     suffix: str = "",
-    copy: bool = False
+    copy: bool = False,
 ):
     # Set-up dataloaders
     sdata = sdata.copy() if copy else sdata
@@ -169,7 +182,9 @@ def train_val_predictions_sequence_module(
         if len(target_keys) == 1:
             sdata["target"] = sdata[target_keys[0]]
         else:
-            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
+            sdata["target"] = xr.concat(
+                [sdata[target_key] for target_key in target_keys], dim="_targets"
+            ).transpose("_sequence", "_targets")
     if in_memory:
         print(f"Loading {seq_key} and {target_keys} into memory")
         sdata[seq_key].load()
@@ -186,8 +201,7 @@ def train_val_predictions_sequence_module(
         prefetch_factor=prefetch_factor,
         transforms=transforms,
         shuffle=False,
-        drop_last=False
-
+        drop_last=False,
     )
     val_dataloader = sd.get_torch_dataloader(
         val_sdata,
@@ -198,7 +212,7 @@ def train_val_predictions_sequence_module(
         prefetch_factor=prefetch_factor,
         transforms=transforms,
         shuffle=False,
-        drop_last=False
+        drop_last=False,
     )
 
     # Predict with train_val_predictions function
@@ -211,11 +225,13 @@ def train_val_predictions_sequence_module(
         name=name,
         version=version,
     )
-    
-    # Create an empty dataframe the same size as preds
-    ordered_preds = pd.DataFrame(index=preds.index, columns=preds.columns).drop(columns=["train_val"])
 
-    # Grab the train and val predictions and put them in the right place 
+    # Create an empty dataframe the same size as preds
+    ordered_preds = pd.DataFrame(index=preds.index, columns=preds.columns).drop(
+        columns=["train_val"]
+    )
+
+    # Grab the train and val predictions and put them in the right place
     train_preds = preds[preds[train_key] == True].drop(columns=["train_val"])
     train_pred_index = np.where(sdata[train_key].values == 1)[0]
     val_preds = preds[preds[train_key] == False].drop(columns=["train_val"])
@@ -226,6 +242,8 @@ def train_val_predictions_sequence_module(
     # Add the predictions to the sdata
     pred_cols = ordered_preds.columns
     for i, target_key in enumerate(target_keys):
-        #print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
-        sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(ordered_preds[pred_cols[i]].values, dims=["_sequence"])
+        # print(f"Adding {prefix}{target_key}_predictions{suffix} to sdata")
+        sdata[f"{prefix}{target_key}_predictions{suffix}"] = xr.DataArray(
+            ordered_preds[pred_cols[i]].values, dims=["_sequence"]
+        )
     return sdata if copy else None

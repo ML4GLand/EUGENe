@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+
 def median_calc(y_true, y_score):
     """
     Calculate the median of the scores in y_score for the positive class labels (1) in y_true.
@@ -12,7 +13,7 @@ def median_calc(y_true, y_score):
         The true binary labels. Assumed to be 1 for positive and 0 for negative.
     y_score : array-like
         The scores predicted by a model
-    
+
     Returns
     -------
     median : float
@@ -53,7 +54,7 @@ def auc_calc(y_true, y_score):
 def escore(y_true, y_score):
     """
     Calculate the E-score for a binary y_true against scores in y_score.
-    The E-score is 
+    The E-score is
 
     Parameters
     ----------

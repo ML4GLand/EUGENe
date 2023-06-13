@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 from ..base import _layers as layers
 from ..base import _blocks as blocks
 from ..base import _towers as towers
+
 
 class Jores21CNN(nn.Module):
     """
@@ -40,6 +41,7 @@ class Jores21CNN(nn.Module):
     hidden_dim : int, optional
         Dimension of the hidden layer.
     """
+
     def __init__(
         self,
         input_len: int,
@@ -93,30 +95,30 @@ class Jores21CNN(nn.Module):
         x = self.fc2(x)
         return x
 
+
 class DeepSTARR(nn.Module):
     """DeepSTARR model from de Almeida et al., 2022; see <https://www.nature.com/articles/s41588-022-01048-5>
 
     Parameters
     """
+
     def __init__(
-        self, 
-        input_len: int,
-        output_dim: int, 
-        conv_kwargs = {},
-        dense_kwargs = {}
+        self, input_len: int, output_dim: int, conv_kwargs={}, dense_kwargs={}
     ):
         super(DeepSTARR, self).__init__()
 
         # Set the attributes
         self.input_len = input_len
         self.output_dim = output_dim
-        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, dense_kwargs)       
-    
+        self.conv_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, dense_kwargs
+        )
+
         # Create the blocks
         self.conv1d_tower = towers.Conv1DTower(**self.conv_kwargs)
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.conv1d_tower.flatten_dim, 
-            output_dim=output_dim, 
+            input_dim=self.conv1d_tower.flatten_dim,
+            output_dim=output_dim,
             **self.dense_kwargs
         )
 
@@ -125,7 +127,7 @@ class DeepSTARR(nn.Module):
         x = x.view(x.size(0), self.conv1d_tower.flatten_dim)
         x = self.dense_block(x)
         return x
-        
+
     def kwarg_handler(self, conv_kwargs, dense_kwargs):
         """Sets default kwargs for conv and fc modules if not specified"""
         conv_kwargs.setdefault("input_len", self.input_len)
@@ -143,4 +145,3 @@ class DeepSTARR(nn.Module):
         dense_kwargs.setdefault("batchnorm", True)
         dense_kwargs.setdefault("batchnorm_first", True)
         return conv_kwargs, dense_kwargs
-    

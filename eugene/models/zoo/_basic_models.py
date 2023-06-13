@@ -5,11 +5,12 @@ from ..base import _layers as layers
 from ..base import _blocks as blocks
 from ..base import _towers as towers
 
+
 class FCN(nn.Module):
     """
     Instantiate a fully connected neural network with the specified layers and parameters.
-    
-    By default, this architecture flattens the one-hot encoded sequence and passes 
+
+    By default, this architecture flattens the one-hot encoded sequence and passes
     it through a set of layers that are fully connected. The task defines how the output is
     treated (e.g. sigmoid activation for binary classification). The loss function is
     should be matched to the task (e.g. binary cross entropy ("bce") for binary classification).
@@ -25,12 +26,13 @@ class FCN(nn.Module):
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
+
     def __init__(
         self,
         input_len: int,
         output_dim: int,
         input_dims: int = 4,
-        dense_kwargs: dict = {}
+        dense_kwargs: dict = {},
     ):
         super(FCN, self).__init__()
 
@@ -43,15 +45,14 @@ class FCN(nn.Module):
 
         # Create the blocks
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.flattened_input_dims, 
-            output_dim=output_dim, 
-            **dense_kwargs
+            input_dim=self.flattened_input_dims, output_dim=output_dim, **dense_kwargs
         )
 
     def forward(self, x):
         x = x.flatten(start_dim=1)
         x = self.dense_block(x)
         return x
+
 
 class CNN(nn.Module):
     """
@@ -73,9 +74,10 @@ class CNN(nn.Module):
         The task of the model.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
-        default passes the flattened output of the convolutional layers directly to 
+        default passes the flattened output of the convolutional layers directly to
         the output layer.
     """
+
     def __init__(
         self,
         input_len: int,
@@ -91,13 +93,10 @@ class CNN(nn.Module):
         self.conv_kwargs = conv_kwargs
 
         # Create the blocks
-        self.conv1d_tower = towers.Conv1DTower(
-            input_len=input_len,
-            **conv_kwargs
-        )
+        self.conv1d_tower = towers.Conv1DTower(input_len=input_len, **conv_kwargs)
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.conv1d_tower.flatten_dim, 
-            output_dim=output_dim, 
+            input_dim=self.conv1d_tower.flatten_dim,
+            output_dim=output_dim,
             **dense_kwargs
         )
 
@@ -106,6 +105,7 @@ class CNN(nn.Module):
         x = x.view(x.size(0), self.conv1d_tower.flatten_dim)
         x = self.dense_block(x)
         return x
+
 
 class RNN(nn.Module):
     """
@@ -129,6 +129,7 @@ class RNN(nn.Module):
         default passes the recurrent output of the recurrent layers directly to the
         output layer.
     """
+
     def __init__(
         self,
         input_len: int,
@@ -136,7 +137,7 @@ class RNN(nn.Module):
         recurrent_kwargs: dict,
         input_dims: int = 4,
         dense_kwargs: dict = {},
-    ): 
+    ):
         super(RNN, self).__init__()
 
         # Set the attributes
@@ -148,27 +149,27 @@ class RNN(nn.Module):
 
         # Create the blocks
         self.recurrent_block = blocks.RecurrentBlock(
-            input_dim=input_dims,
-            **recurrent_kwargs
+            input_dim=input_dims, **recurrent_kwargs
         )
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.recurrent_block.out_channels, 
-            output_dim=output_dim, 
+            input_dim=self.recurrent_block.out_channels,
+            output_dim=output_dim,
             **dense_kwargs
         )
-        
+
     def forward(self, x):
         x, _ = self.recurrent_block(x)
         x = x[:, -1, :]
         x = self.dense_block(x)
         return x
 
+
 class Hybrid(nn.Module):
     """
     A hybrid model that uses both a CNN and an RNN to extract features then passes the
     features through a set of fully connected layers.
-    
-    By default, the CNN is used to extract features from the input sequence, and the RNN is used to 
+
+    By default, the CNN is used to extract features from the input sequence, and the RNN is used to
     to combine those features. The output of the RNN is passed to a set of fully connected
     layers to make the final prediction.
 
@@ -183,6 +184,7 @@ class Hybrid(nn.Module):
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
+
     def __init__(
         self,
         input_len: int,
@@ -201,17 +203,13 @@ class Hybrid(nn.Module):
         self.dense_kwargs = dense_kwargs
 
         # Create the blocks
-        self.conv1d_tower = towers.Conv1DTower(
-            input_len=input_len,
-            **conv_kwargs
-        )
+        self.conv1d_tower = towers.Conv1DTower(input_len=input_len, **conv_kwargs)
         self.recurrent_block = blocks.RecurrentBlock(
-            input_dim=self.conv1d_tower.out_channels, 
-            **recurrent_kwargs
+            input_dim=self.conv1d_tower.out_channels, **recurrent_kwargs
         )
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.recurrent_block.out_channels, 
-            output_dim=output_dim, 
+            input_dim=self.recurrent_block.out_channels,
+            output_dim=output_dim,
             **dense_kwargs
         )
 
@@ -221,6 +219,7 @@ class Hybrid(nn.Module):
         out, _ = self.recurrent_block(x)
         out = self.dense_block(out[:, -1, :])
         return out
+
 
 class TutorialCNN(nn.Module):
     """Tutorial CNN model
@@ -241,6 +240,7 @@ class TutorialCNN(nn.Module):
     **kwargs
         Keyword arguments to pass to the nn.Module class.
     """
+
     def __init__(
         self,
         input_len: int,
@@ -255,23 +255,24 @@ class TutorialCNN(nn.Module):
         # Create the blocks
         self.conv1 = nn.Conv1d(4, 30, 21)
         self.dense = nn.Linear(30, output_dim)
-            
+
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.max_pool1d(x, x.size()[-1]).flatten(1, -1)
         x = self.dense(x)
         return x
 
+
 class Inception(nn.Module):
     def __init__(
         self,
         input_len: int,
         output_dim: int,
-        channels = [4, 64, 128, 256],
+        channels=[4, 64, 128, 256],
         kernel_size2: int = 4,
         kernel_size3: int = 8,
         conv_maxpool_kernel_size: int = 3,
-        dense_kwargs: dict = {}
+        dense_kwargs: dict = {},
     ):
         super(Inception, self).__init__()
 
@@ -289,7 +290,7 @@ class Inception(nn.Module):
         for i in range(1, len(self.channels)):
             conv_tower.append(
                 layers.InceptionConv1D(
-                    in_channels=self.channels[i-1],
+                    in_channels=self.channels[i - 1],
                     out_channels=self.channels[i],
                     kernel_size2=self.kernel_size2,
                     kernel_size3=self.kernel_size3,
@@ -308,4 +309,3 @@ class Inception(nn.Module):
         x = x.view(x.shape[0], -1)
         x = self.dense_block(x)
         return x
-    

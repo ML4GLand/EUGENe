@@ -6,8 +6,8 @@ METRIC_REGISTRY = {
     "pearson": torchmetrics.PearsonCorrCoef,
     "spearman": torchmetrics.SpearmanCorrCoef,
     "explainedvariance": torchmetrics.ExplainedVariance,
-    "auroc": torchmetrics.AUROC, # can be binary, multiclass, or multilabel, can handle logits or probabilities
-    "accuracy": torchmetrics.Accuracy, # can be binary, multiclass, or multilabel, can handle logits or probabilities
+    "auroc": torchmetrics.AUROC,  # can be binary, multiclass, or multilabel, can handle logits or probabilities
+    "accuracy": torchmetrics.Accuracy,  # can be binary, multiclass, or multilabel, can handle logits or probabilities
     "f1score": torchmetrics.F1Score,
     "precision": torchmetrics.Precision,
     "recall": torchmetrics.Recall,
@@ -18,7 +18,7 @@ DEFAULT_TASK_METRICS = {
     "multitask_regression": "r2score",
     "binary_classification": "auroc",
     "multiclass_classification": "auroc",
-    "multilabel_classification": "auroc"
+    "multilabel_classification": "auroc",
 }
 
 DEFAULT_METRIC_KWARGS = {
@@ -28,12 +28,8 @@ DEFAULT_METRIC_KWARGS = {
     "multilabel_classification": {"task": "multilabel"},
 }
 
-def calculate_metric(
-    metric,
-    metric_name,
-    outs,
-    y
-):
+
+def calculate_metric(metric, metric_name, outs, y):
     """Calculate a metric from a metric name and the model outputs and targets.
 
     Args:

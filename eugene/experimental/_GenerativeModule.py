@@ -4,7 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LambdaLR
-from ..models.base import BaseModel, BasicFullyConnectedModule, BasicConv1D, BasicRecurrent
+from ..models.base import (
+    BaseModel,
+    BasicFullyConnectedModule,
+    BasicConv1D,
+    BasicRecurrent,
+)
 from ..datasets import random_ohe_seqs
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities.model_summary import ModelSummary
@@ -28,14 +33,10 @@ class GAN(LightningModule):
         b1: float = 0.5,
         b2: float = 0.9,
         n_critic: int = 5,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
-            input_len=None,
-            output_dim=None,
-            lr=gen_lr,
-            save_hp=False,
-            **kwargs
+            input_len=None, output_dim=None, lr=gen_lr, save_hp=False, **kwargs
         )
         self.latent_dim = latent_dim
         self.generator = generator
@@ -63,7 +64,7 @@ class GAN(LightningModule):
     # def test_step(self, batch, batch_idx):
     #     return self._common_step(batch, batch_idx, None, "test")
 
-    def _common_step(self, batch, batch_idx, optimizer_idx, stage : str):
+    def _common_step(self, batch, batch_idx, optimizer_idx, stage: str):
         # Get a batch
         _, x, _, _ = batch
 
@@ -86,8 +87,10 @@ class GAN(LightningModule):
                 gen_loss = F.binary_cross_entropy(fake, valid)
             elif self.mode == "wgan" or self.mode == "wgangp":
                 gen_loss = -torch.mean(fake)
-            self.log(f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True)    
-            
+            self.log(
+                f"{stage}_generator_loss", gen_loss, on_step=True, rank_zero_only=True
+            )
+
             # To return
             # tqdm_dict = {'g_loss': gen_loss.detach()}
             # output = OrderedDict({
@@ -108,13 +111,12 @@ class GAN(LightningModule):
             fake_labels = torch.zeros(x.size(0), 1, dtype=torch.long).type_as(x)
 
             if self.mode == "gan":
-
                 # Real seqs and labels (all 1s)
                 real_loss = F.binary_cross_entropy(real, real_labels)
 
                 # Fake seqs and labels (all 0s)
                 fake_loss = F.binary_cross_entropy(fake, fake_labels)
-                
+
                 # Total discriminator loss is average
                 disc_loss = (real_loss + fake_loss) / 2
 
@@ -128,9 +130,18 @@ class GAN(LightningModule):
             elif self.mode == "wgangp":
                 gradient_penalty = self.compute_gradient_penalty(x, gen_seqs.data)
 
-                disc_loss = -torch.mean(real) + torch.mean(fake) + self.lambda_gp * gradient_penalty
+                disc_loss = (
+                    -torch.mean(real)
+                    + torch.mean(fake)
+                    + self.lambda_gp * gradient_penalty
+                )
 
-            self.log(f"{stage}_discriminator_loss", disc_loss, on_step=True, rank_zero_only=True)
+            self.log(
+                f"{stage}_discriminator_loss",
+                disc_loss,
+                on_step=True,
+                rank_zero_only=True,
+            )
 
             # preds = torch.round(torch.sigmoid(torch.cat((real, fake))))
             # labels = torch.cat((real_labels, fake_labels))
@@ -138,31 +149,29 @@ class GAN(LightningModule):
             # metric = accuracy(preds, labels)
             # self.log(f"{stage}_metric", metric, on_step=True, rank_zero_only=True)
 
-            tqdm_dict = {'d_loss': disc_loss}
-            output = OrderedDict({
-                'loss': disc_loss,
-                'progress_bar': tqdm_dict,
-                'log': tqdm_dict
-            })
+            tqdm_dict = {"d_loss": disc_loss}
+            output = OrderedDict(
+                {"loss": disc_loss, "progress_bar": tqdm_dict, "log": tqdm_dict}
+            )
             return output
 
     def configure_optimizers(self):
         gen_optimizer = self.optimizer_dict[self.optimizer](
-            self.generator.parameters(), 
-            lr=self.gen_lr, 
+            self.generator.parameters(),
+            lr=self.gen_lr,
             betas=(self.b1, self.b2),
-            **self.optimizer_kwargs
+            **self.optimizer_kwargs,
         )
         disc_optimizer = self.optimizer_dict[self.optimizer](
-            self.discriminator.parameters(), 
-            lr=self.disc_lr, 
+            self.discriminator.parameters(),
+            lr=self.disc_lr,
             betas=(self.b1, self.b2),
-            **self.optimizer_kwargs
+            **self.optimizer_kwargs,
         )
 
         return (
-            {'optimizer': gen_optimizer, 'frequency': 1},
-            {'optimizer': disc_optimizer, 'frequency': self.n_critic}
+            {"optimizer": gen_optimizer, "frequency": 1},
+            {"optimizer": disc_optimizer, "frequency": self.n_critic},
         )
 
     def compute_gradient_penalty(self, x, fake_samples):
@@ -171,7 +180,9 @@ class GAN(LightningModule):
         # Random weight term for interpolation between real and fake samples
         alpha = torch.Tensor(np.random.random((real_samples.shape))).type_as(x)
         # Get random interpolation between real and fake samples
-        interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+        interpolates = (
+            alpha * real_samples + ((1 - alpha) * fake_samples)
+        ).requires_grad_(True)
         interpolates = interpolates.type_as(x)
         d_interpolates = self.discriminator(interpolates)
         fake = torch.Tensor(real_samples.shape[0], 1).fill_(1.0).type_as(x)

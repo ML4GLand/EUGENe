@@ -5,11 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
 
-def binarize_values(
-    values, 
-    upper_threshold=0.5, 
-    lower_threshold=None
-):
+def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     """
     Function to binarize values based on thresholds
 
@@ -29,9 +25,8 @@ def binarize_values(
         bin_values = np.where(values <= upper_threshold, 0, bin_values)
     return bin_values
 
-def ohe_features(
-    values
-):
+
+def ohe_features(values):
     """
     Function to one-hot encode features
 

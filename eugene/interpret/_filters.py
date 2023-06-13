@@ -11,6 +11,7 @@ from motifdata._transform import pfms_to_ppms
 from motifdata import write_meme
 from eugene.utils import make_dirs
 
+
 def generate_pfms_sdata(
     model,
     sdata,
@@ -30,7 +31,7 @@ def generate_pfms_sdata(
     transforms={},
     prefix="",
     suffix="",
-    copy= False
+    copy=False,
 ):
     # Copy the data if requested
     sdata = sdata.copy() if copy else sdata
@@ -40,7 +41,7 @@ def generate_pfms_sdata(
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
     prefetch_factor = prefetch_factor if prefetch_factor is not None else None
-    
+
     if activations is None:
         # Create the dataloader
         dl = get_torch_dataloader(
@@ -52,21 +53,25 @@ def generate_pfms_sdata(
             prefetch_factor=prefetch_factor,
             transforms=transforms,
             shuffle=False,
-            drop_last=False
+            drop_last=False,
         )
 
         # Compute the acivations for each sequence
         layer_outs = []
         all_seqs = []
-        for _, batch in tqdm(enumerate(dl), total=len(dl), desc=f"Getting activations on batches of size {batch_size}"):
+        for _, batch in tqdm(
+            enumerate(dl),
+            total=len(dl),
+            desc=f"Getting activations on batches of size {batch_size}",
+        ):
             batch_seqs = batch[seq_key]
             outs = get_layer_outputs(
-                model=model, 
+                model=model,
                 inputs=batch_seqs,
-                layer_name=layer_name, 
+                layer_name=layer_name,
                 batch_size=batch_size,
                 device=device,
-                verbose=False
+                verbose=False,
             )
             layer_outs.append(outs)
             all_seqs.append(batch_seqs.detach().cpu().numpy())
@@ -75,7 +80,9 @@ def generate_pfms_sdata(
     else:
         layer_outs = activations
         all_seqs = seqs
-        print(f"Using provided activations of shape {layer_outs.shape} and sequences of shape {all_seqs.shape}.")
+        print(
+            f"Using provided activations of shape {layer_outs.shape} and sequences of shape {all_seqs.shape}."
+        )
 
     if num_filters is None:
         num_filters = layer_outs.shape[1]
@@ -100,13 +107,21 @@ def generate_pfms_sdata(
             activation_threshold=activation_threshold,
             num_filters=num_filters,
         )
-    
+
     # Convert the activators to PFMs
     pfms = get_pfms(activators, kernel_size=kernel_size)
 
     # Store the PFMs in the sdata
-    sdata[f"{prefix}{layer_name}_pfms{suffix}"] = xr.DataArray(pfms, dims=[f"_{layer_name}_{num_filters}_filters", f"_{layer_name}_{kernel_size}_kernel_size", "_ohe"])
+    sdata[f"{prefix}{layer_name}_pfms{suffix}"] = xr.DataArray(
+        pfms,
+        dims=[
+            f"_{layer_name}_{num_filters}_filters",
+            f"_{layer_name}_{kernel_size}_kernel_size",
+            "_ohe",
+        ],
+    )
     return sdata if copy else None
+
 
 def filters_to_meme_sdata(
     sdata,
@@ -128,27 +143,21 @@ def filters_to_meme_sdata(
         pfms = sdata[filters_key].transpose(*axis_order).to_numpy()
     except KeyError:
         print("No filters found in sdata. Run generate_pfms_sdata first.")
-    
+
     # Subset down to the filters you want
     if filter_inds is None:
         filter_inds = range(pfms.shape[0])
 
-    # 
+    #
     alphabet_len = len(alphabet)
     if alphabet_len != pfms.shape[1]:
-        raise ValueError(f"Alphabet length ({alphabet_len}) does not match second dimension of pfms: ({pfms.shape[1]}).")
+        raise ValueError(
+            f"Alphabet length ({alphabet_len}) does not match second dimension of pfms: ({pfms.shape[1]})."
+        )
 
     # Convert pfms to ppms and to a motif set
     ppms = pfms_to_ppms(pfms, pseudocount=0)
-    motif_set = from_kernel(
-        kernel=ppms,
-        alphabet=alphabet,
-        bg=bg
-    )
+    motif_set = from_kernel(kernel=ppms, alphabet=alphabet, bg=bg)
 
     # Write the motif set to a meme file
-    write_meme(
-        motif_set=motif_set,
-        filename=outfile
-    )
-    
+    write_meme(motif_set=motif_set, filename=outfile)

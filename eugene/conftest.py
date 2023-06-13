@@ -40,7 +40,9 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session")
 def _random1000():
     import eugene as eu
+
     return eu.datasets.random1000()
+
 
 @pytest.fixture
 def random1000(_random1000):
