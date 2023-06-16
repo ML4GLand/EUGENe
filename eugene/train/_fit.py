@@ -1,20 +1,21 @@
 import os
 from os import PathLike
-from typing import List, Union
+from typing import Dict, List, Type, Union
+
+import seqdata as sd
 import xarray as xr
-import numpy as np
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger, WandbLogger
+from pytorch_lightning.loggers import CSVLogger, Logger, TensorBoardLogger, WandbLogger
 from torch.utils.data import DataLoader
-import seqdata as sd
+
 from eugene import settings
 
 # Note that CSVLogger is currently hanging training with SequenceModule right now
 # Note that if you use wandb logger, it comes with a few extra steps. Show a notebook for this
-LOGGER_REGISTRY = {
+LOGGER_REGISTRY: Dict[str, Type[Logger]] = {
     "csv": CSVLogger,
     "tensorboard": TensorBoardLogger,
     "wandb": WandbLogger,
@@ -27,7 +28,7 @@ def fit(
     val_dataloader: DataLoader = None,
     epochs: int = 10,
     gpus: int = None,
-    logger: str = "tensorboard",
+    logger: Union[str, Logger] = "tensorboard",
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
@@ -89,7 +90,7 @@ def fit(
 # Have a couple of fit methods that are meant to take in a SeqData and call the above function
 def fit_sequence_module(
     model: LightningModule,
-    sdata=None,
+    sdata: "xr.Dataset",
     seq_key: str = None,
     target_keys: Union[str, List[str]] = None,
     in_memory: bool = False,
@@ -184,13 +185,10 @@ def fit_sequence_module(
             sdata["target"] = xr.concat(
                 [sdata[target_key] for target_key in target_keys], dim="_targets"
             ).transpose("_sequence", "_targets")
-        targs = sdata["target"].values
-        if len(targs.shape) == 1:
-            nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
-        else:
-            nan_mask = xr.DataArray(np.any(np.isnan(targs), axis=1), dims=["_sequence"])
-        print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
-        # sdata = sdata.where(~nan_mask, drop=True)
+        nan_mask = sdata['target'].isnull()
+        if sdata["target"].ndim > 1:
+            nan_mask = nan_mask.any('_targets')
+        print(f"Dropping {nan_mask.sum().compute().item()} sequences with NaN targets.")
     if in_memory:
         print(f"Loading {seq_key} and {target_keys} into memory")
         sdata[seq_key].load()
