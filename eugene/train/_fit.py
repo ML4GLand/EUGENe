@@ -194,8 +194,8 @@ def fit_sequence_module(
         sdata[seq_key].load()
         sdata["target"].load()
     sdata[train_key].load()
-    train_sdata = sdata.where(sdata[train_key] == 1, drop=True)
-    val_sdata = sdata.where(sdata[train_key] == 0, drop=True)
+    train_sdata = sdata.sel(_sequence=(sdata[train_key] == True).compute())  # noqa
+    val_sdata = sdata.sel(_sequence=(sdata[train_key] == False).compute())  # noqa
     train_dataloader = sd.get_torch_dataloader(
         train_sdata,
         sample_dims=["_sequence"],
