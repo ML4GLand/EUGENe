@@ -18,7 +18,7 @@ def metric_curve(
     title: str = None,
     xlab: str = "minibatch step",
     ylab: str = None,
-    ax = None,
+    ax=None,
     return_axes: bool = False,
     **kwargs
 ) -> None:
@@ -69,12 +69,13 @@ def metric_curve(
     if return_axes:
         return ax
 
+
 def loss_curve(
     log_path: PathLike = None,
     title: str = None,
     xlab: str = "minibatch_step",
     ylab: str = "loss",
-    ax = None,
+    ax=None,
     return_axes: bool = False,
     **kwargs
 ) -> None:
@@ -106,28 +107,23 @@ def loss_curve(
     """
     log_path = settings.logging_dir if log_path is None else log_path
     ax = metric_curve(
-        log_path, 
-        metric="loss", 
-        title=title, 
-        xlab=xlab, 
-        ylab=ylab, 
-        ax=ax,
-        **kwargs
+        log_path, metric="loss", title=title, xlab=xlab, ylab=ylab, ax=ax, **kwargs
     )
     if return_axes:
         return ax
 
+
 def training_summary(
-    log_path: PathLike = None, 
-    metric: str = "r2", 
+    log_path: PathLike = None,
+    metric: str = "r2",
     figsize=(12, 6),
-    save: str = None, 
+    save: str = None,
     return_axes: bool = False,
     **kwargs
 ) -> None:
     """
     Plots the training summary from a given training run
-    
+
     Convenience function to plot loss and metric together.
 
     Parameters

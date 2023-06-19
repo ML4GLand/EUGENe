@@ -16,13 +16,9 @@ MODEL = "hybrid"
 STRAND = "ss"
 TASK = "regression"
 LOSS_FXN = "mse"
-CNN_KWARGS=dict(channels=[4, 16, 32], 
-                conv_kernels=[15, 5], 
-                pool_kernels=[1, 1])
-RNN_KWARGS=dict(output_dim=32,
-                bidirectional=True,
-                batch_first=True)
-FCN_KWARGS=dict(hidden_dims=[50])
+CNN_KWARGS = dict(channels=[4, 16, 32], conv_kernels=[15, 5], pool_kernels=[1, 1])
+RNN_KWARGS = dict(output_dim=32, bidirectional=True, batch_first=True)
+FCN_KWARGS = dict(hidden_dims=[50])
 HERE = Path(__file__).parent
 
 
@@ -56,7 +52,7 @@ def check_model(test_model, sdata, transpose=False):
         sdata,
         target_keys=["activity_0", "activity_1"],
         transform_kwargs=transform_kwargs,
-        store_only=True
+        store_only=True,
     )
     assert "activity_0_predictions" in sdata.seqs_annot.columns
 
@@ -69,7 +65,7 @@ def test_FCN(sdata):
         task=TASK,
         aggr=None,
         loss_fxn=LOSS_FXN,
-        fc_kwargs=FCN_KWARGS
+        fc_kwargs=FCN_KWARGS,
     )
     check_model(model, sdata)
 
@@ -83,7 +79,7 @@ def test_CNN(sdata):
         aggr=None,
         loss_fxn=LOSS_FXN,
         fc_kwargs=FCN_KWARGS,
-        conv_kwargs=CNN_KWARGS
+        conv_kwargs=CNN_KWARGS,
     )
     check_model(model, sdata)
 
@@ -96,7 +92,7 @@ def test_RNN(sdata):
         task=TASK,
         aggr=None,
         loss_fxn=LOSS_FXN,
-        rnn_kwargs=RNN_KWARGS
+        rnn_kwargs=RNN_KWARGS,
     )
     check_model(model, sdata, transpose=True)
 
@@ -111,9 +107,9 @@ def test_Hybrid(sdata):
         loss_fxn=LOSS_FXN,
         fc_kwargs=FCN_KWARGS,
         conv_kwargs=CNN_KWARGS,
-        rnn_kwargs=RNN_KWARGS
+        rnn_kwargs=RNN_KWARGS,
     )
-    check_model(model, sdata) 
+    check_model(model, sdata)
 
 
 def test_DeepBind(sdata):

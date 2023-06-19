@@ -5,6 +5,7 @@ from .._settings import settings
 from seqdata import get_torch_dataloader
 import xarray as xr
 
+
 def attribute_sdata(
     model,
     sdata,
@@ -19,9 +20,8 @@ def attribute_sdata(
     transforms={},
     prefix="",
     suffix="",
-    copy= False
+    copy=False,
 ):
-    
     # Copy the data if requested
     sdata = sdata.copy() if copy else sdata
 
@@ -41,12 +41,16 @@ def attribute_sdata(
         prefetch_factor=prefetch_factor,
         transforms=transforms,
         shuffle=False,
-        drop_last=False
+        drop_last=False,
     )
 
     # Compute the attributions
     attrs = []
-    for _, batch in tqdm(enumerate(dl), total=len(dl), desc=f"Computing saliency on batches of size {batch_size}"):
+    for _, batch in tqdm(
+        enumerate(dl),
+        total=len(dl),
+        desc=f"Computing saliency on batches of size {batch_size}",
+    ):
         attr = attribute(
             model=model,
             inputs=batch[seq_key],
@@ -55,11 +59,13 @@ def attribute_sdata(
             target=target,
             batch_size=batch_size,
             device=device,
-            verbose=False
+            verbose=False,
         )
         attrs.append(attr)
 
     # Store the attributions
     attrs = np.concatenate(attrs)
-    sdata[f"{prefix}{method}_attrs{suffix}"] = xr.DataArray(attrs, dims=["_sequence", "_ohe", "length"])
+    sdata[f"{prefix}{method}_attrs{suffix}"] = xr.DataArray(
+        attrs, dims=["_sequence", "_ohe", "length"]
+    )
     return sdata if copy else None

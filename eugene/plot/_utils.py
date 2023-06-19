@@ -11,13 +11,10 @@ from typing import List, Union, Sequence
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
-def _create_matplotlib_axes(
-    num_axes, 
-    subplot_size=(4, 4)
-) -> List[Axes]:
+def _create_matplotlib_axes(num_axes, subplot_size=(4, 4)) -> List[Axes]:
     """
-    Creates and returns a list of matplotlib axes. 
-    
+    Creates and returns a list of matplotlib axes.
+
     Uses at most 3 columns before breaking into a new row.
     By default each subplot is 4x4.
 
@@ -43,13 +40,8 @@ def _create_matplotlib_axes(
     ax = ax.flatten() if num_axes > 1 else ax
     return ax
 
-def _label_plot(
-    ax: Axes, 
-    title: str, 
-    xlab: str, 
-    ylab: str, 
-    xtick_rot: int = 0
-) -> None:
+
+def _label_plot(ax: Axes, title: str, xlab: str, ylab: str, xtick_rot: int = 0) -> None:
     """
     Labels a passed in axes with a title, x-axis label, and y-axis label.
 
@@ -77,11 +69,9 @@ def _label_plot(
     ax.set_title(title)
     plt.tight_layout()
 
-def _save_fig(
-    file_path: PathLike,
-    dpi=settings.dpi
-):
-    """ 
+
+def _save_fig(file_path: PathLike, dpi=settings.dpi):
+    """
     Save a figure to a file path.
 
     Creates the filepath if it doesn't exist.
@@ -93,6 +83,7 @@ def _save_fig(
     if not os.path.exists(dir):
         os.makedirs(dir)
     plt.savefig(file_path, dpi=dpi)
+
 
 def _plot_seaborn(
     dataframe: pd.DataFrame,
@@ -139,7 +130,7 @@ def _plot_seaborn(
         Path to save figure. If None, then figure is not saved.
         Note that this will create a directory if it does not exist.
     **kwargs
-        Additional keyword arguments to pass to seaborn. This will be 
+        Additional keyword arguments to pass to seaborn. This will be
         dependent on func
 
     Returns
@@ -169,10 +160,11 @@ def _plot_seaborn(
             xtick_rot=xtick_rot,
             ylab=ylab,
         )
-    #plt.show()
+    # plt.show()
     if save is not None:
         _save_fig(save)
     return ax
+
 
 def _violin_long(
     dataframe,
@@ -184,34 +176,34 @@ def _violin_long(
     figsize: tuple = (8, 8),
     save: PathLike = None,
     ax: Axes = None,
-    **kwargs
+    **kwargs,
 ):
     """
-    Plots a violinplot using seaborn on an SeqData object.
-    The difference between this and the _plot_seaborn function is that
-    this function takes a list of groups and plots them on the same
-    plot (i.e. it takes in multiple columns and turns them into a single one
-    in long format. Then plots these as different groups)
+     Plots a violinplot using seaborn on an SeqData object.
+     The difference between this and the _plot_seaborn function is that
+     this function takes a list of groups and plots them on the same
+     plot (i.e. it takes in multiple columns and turns them into a single one
+     in long format. Then plots these as different groups)
 
-   Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    groups : str or list of str
-        Groups to plot.
-    xlabel : str
-        Label for x-axis.
-    ylabel : str
-        Label for y-axis.
-    figsize : tuple
-        Figure size.
-    save : str
-        Filepath to save figure to.
-    **kwargs
+    Parameters
+     ----------
+     sdata : SeqData
+         SeqData object.
+     groups : str or list of str
+         Groups to plot.
+     xlabel : str
+         Label for x-axis.
+     ylabel : str
+         Label for y-axis.
+     figsize : tuple
+         Figure size.
+     save : str
+         Filepath to save figure to.
+     **kwargs
 
-    Returns
-    -------
-    None
+     Returns
+     -------
+     None
     """
 
     groups = [groups] if isinstance(groups, str) else groups
@@ -231,6 +223,7 @@ def _violin_long(
         _save_fig(save)
     return ax
 
+
 def _check_input(
     sdata,
     targets: Union[Sequence[str], str],
@@ -239,8 +232,8 @@ def _check_input(
 ):
     """
     Helper function to check input for plotting functions.
-    
-    Makes sure that the targets, predictions, and labels are all the same length.  
+
+    Makes sure that the targets, predictions, and labels are all the same length.
     """
     if isinstance(targets, str):
         targets = [targets]
@@ -253,6 +246,7 @@ def _check_input(
     if len(targets) != len(labels):
         labels = [f"label_{i}" for i in range(len(targets))]
     return targets, predictions, labels
+
 
 def tflog2pandas(path: str) -> pd.DataFrame:
     """
@@ -273,7 +267,7 @@ def tflog2pandas(path: str) -> pd.DataFrame:
 
     Note
     ----
-    Extraction function modified from 
+    Extraction function modified from
     https://github.com/theRealSuperMario/supermariopy/blob/master/scripts/tflogs2pandas.py
     """
     DEFAULT_SIZE_GUIDANCE = {
@@ -300,10 +294,11 @@ def tflog2pandas(path: str) -> pd.DataFrame:
         traceback.print_exc()
     return runlog_data.reset_index(drop=True)
 
+
 def many_logs2pandas(event_paths):
     """
     Convert many tensorflow log files to pandas DataFrame.
-    
+
     Wraps around tflog2pandas to convert many tensorflow log files to a single
 
     Parameters
@@ -326,13 +321,10 @@ def many_logs2pandas(event_paths):
                 all_logs = all_logs.append(log, ignore_index=True)
     return all_logs
 
-def _const_line(
-    *args, 
-    **kwargs
-):
+
+def _const_line(*args, **kwargs):
     """
     Plots a constant line on current axis
-    """ 
+    """
     x = np.arange(-1, 1.01, 0.01)
-    plt.plot(x, x, c='k', ls='--')
-    
+    plt.plot(x, x, c="k", ls="--")

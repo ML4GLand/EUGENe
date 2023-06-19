@@ -1,5 +1,5 @@
 # EUGENe on sdata
-def count_kmers_sdata(sdata : SeqData, k : int, frequency : bool = False) -> dict:
+def count_kmers_sdata(sdata: SeqData, k: int, frequency: bool = False) -> dict:
     """
     Counts k-mers in a given sequence from a SeqData object.
 
@@ -29,7 +29,9 @@ def count_kmers_sdata(sdata : SeqData, k : int, frequency : bool = False) -> dic
 
 
 # EUGENe on sdata?
-def edit_distance_sdata(sdata1 : SeqData, sdata2 : SeqData, dual : bool = False, average : bool = False) -> list:
+def edit_distance_sdata(
+    sdata1: SeqData, sdata2: SeqData, dual: bool = False, average: bool = False
+) -> list:
     """
     Calculates the nucleotide edit distance between pairs of sequences from a SeqData object.
 
@@ -51,7 +53,9 @@ def edit_distance_sdata(sdata1 : SeqData, sdata2 : SeqData, dual : bool = False,
     edits : list
         List containing itemized amounts of edits between sequences.
     """
-    assert len(sdata1.seqs) == len(sdata2.seqs), "Both SeqData objects must be of the same length."
+    assert len(sdata1.seqs) == len(
+        sdata2.seqs
+    ), "Both SeqData objects must be of the same length."
     distances = []
     for i in range(len(sdata1.seqs)):
         distances.append(edit_distance(sdata1.seqs[i], sdata2.seqs[i], dual))

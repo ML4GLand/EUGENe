@@ -6,16 +6,16 @@ from ._utils import _save_fig
 
 
 def positional_gia_plot(
-    sdata, 
-    keys: list, 
+    sdata,
+    keys: list,
     id_key: str = "id",
     xlab: str = "Position",
     ylab: str = "Predicted Score",
     ylim: tuple = None,
-    save: PathLike = None, 
-    return_axes: bool = False
+    save: PathLike = None,
+    return_axes: bool = False,
 ):
-    """ 
+    """
     Plot a lineplot for each position of the sequence after implanting a feature.
 
     Assumes that the value corresponding to each seqsm_key in the sdata.uns dictionary
@@ -41,9 +41,7 @@ def positional_gia_plot(
     concat_df = pd.DataFrame()
     for key in keys:
         df = pd.DataFrame(index=sdata[id_key].values, data=sdata[key].values).melt(
-            var_name=xlab, 
-            value_name=ylab, 
-            ignore_index=False
+            var_name=xlab, value_name=ylab, ignore_index=False
         )
         df["feature"] = key
         concat_df = pd.concat([concat_df, df])

@@ -2,35 +2,36 @@ import matplotlib.pyplot as plt
 
 
 def pca(
-    sdata, 
-    seqsm_key, 
-    pc1=0, 
-    pc2=1, 
-    loadings=None, 
-    labels=None, 
+    sdata,
+    seqsm_key,
+    pc1=0,
+    pc2=1,
+    loadings=None,
+    labels=None,
     n=5,
     return_axes=False,
-    **kwargs):
+    **kwargs
+):
     """
     Plot the PCA of the data.
 
     Parameters
     ----------
-    sdata : 
+    sdata :
         SeqData The SeqData object.
-    seqsm_key : 
+    seqsm_key :
     str The key of the SeqSM object to use.
-    pc1 : int 
+    pc1 : int
         The first PC to plot.
-    pc2 : int 
+    pc2 : int
         The second PC to plot.
-    color : str 
+    color : str
         The color of the points.
-    loadings : 
+    loadings :
         list of floats The loadings of the PCs.
-    labels : 
+    labels :
         list of str The labels of the points.
-    n : 
+    n :
         int The number of points to plot.
 
     Returns
@@ -47,11 +48,35 @@ def pca(
         if n > loadings.shape[0]:
             n = loadings.shape[0]
         for i in range(n):
-            plt.arrow(0, 0, loadings[0, i], loadings[1, i], color='r', alpha=0.5, head_width=0.07, head_length=0.07, overhang=0.7)
+            plt.arrow(
+                0,
+                0,
+                loadings[0, i],
+                loadings[1, i],
+                color="r",
+                alpha=0.5,
+                head_width=0.07,
+                head_length=0.07,
+                overhang=0.7,
+            )
         if labels is None:
-            plt.text(loadings[0, i] * 1.2, loadings[1, i] * 1.2, "Var" + str(i + 1), color='g', ha='center', va='center')
+            plt.text(
+                loadings[0, i] * 1.2,
+                loadings[1, i] * 1.2,
+                "Var" + str(i + 1),
+                color="g",
+                ha="center",
+                va="center",
+            )
         else:
-            plt.text(loadings[0, i] * 1.2, loadings[1, i] * 1.2, labels[i], color='g', ha='center', va='center')
+            plt.text(
+                loadings[0, i] * 1.2,
+                loadings[1, i] * 1.2,
+                labels[i],
+                color="g",
+                ha="center",
+                va="center",
+            )
     plt.xlim(-1, 1)
     plt.ylim(-1, 1)
     plt.xlabel("PC{}".format(1))
@@ -60,11 +85,7 @@ def pca(
         return ax
 
 
-def skree(
-    sdata, 
-    uns_key, 
-    n_comp=30, 
-    return_variance=False):
+def skree(sdata, uns_key, n_comp=30, return_variance=False):
     """
     Function to generate and output a Skree plot using matplotlib barplot
     Parameters
@@ -76,11 +97,14 @@ def skree(
     -------
 
     """
-    variance={}
-    for i,val in enumerate(sdata.uns[uns_key].explained_variance_ratio_.tolist()):
-        key="PC"+str(i+1)
-        variance[key]=val*100
-    plt.bar(["PC"+str(i) for i in range(1,n_comp+1)],sdata.uns[uns_key].explained_variance_ratio_*100)
+    variance = {}
+    for i, val in enumerate(sdata.uns[uns_key].explained_variance_ratio_.tolist()):
+        key = "PC" + str(i + 1)
+        variance[key] = val * 100
+    plt.bar(
+        ["PC" + str(i) for i in range(1, n_comp + 1)],
+        sdata.uns[uns_key].explained_variance_ratio_ * 100,
+    )
     plt.xticks(rotation=90)
     plt.ylabel("Variance Explained")
     plt.xlabel("Principal Component")
@@ -88,30 +112,23 @@ def skree(
         return variance
 
 
-def umap(
-    sdata, 
-    seqsm_key, 
-    umap1=0, 
-    umap2=1,  
-    n=5,
-    return_axes=False,
-    **kwargs):
+def umap(sdata, seqsm_key, umap1=0, umap2=1, n=5, return_axes=False, **kwargs):
     """
     Plot the UMAP of the data.
 
     Parameters
     ----------
-    sdata : SeqData 
+    sdata : SeqData
         The SeqData object.
-    seqsm_key : str 
+    seqsm_key : str
         The key of the SeqSM object to use.
-    umap1 : int 
+    umap1 : int
         The first UMAP to plot.
-    umap2 : int 
+    umap2 : int
         The second UMAP to plot.
-    color : str 
+    color : str
         The color of the points.
-    n : int 
+    n : int
         The number of points to plot.
 
     Returns

@@ -13,6 +13,7 @@ class RandomDeletion:
     delete_max : int, optional
         Maximum size for random deletion (defaults to 20).
     """
+
     def __init__(self, delete_min=0, delete_max=20):
         self.delete_min = delete_min
         self.delete_max = delete_max
@@ -35,31 +36,47 @@ class RandomDeletion:
 
         # sample random DNA
         a = torch.eye(A)
-        p = torch.tensor([1/A for _ in range(A)])
-        padding = torch.stack([a[p.multinomial(self.delete_max, replacement=True)].transpose(0,1) for _ in range(N)]).to(x.device)
+        p = torch.tensor([1 / A for _ in range(A)])
+        padding = torch.stack(
+            [
+                a[p.multinomial(self.delete_max, replacement=True)].transpose(0, 1)
+                for _ in range(N)
+            ]
+        ).to(x.device)
 
         # sample deletion length for each sequence
         delete_lens = torch.randint(self.delete_min, self.delete_max + 1, (N,))
 
         # sample locations to delete for each sequence
-        delete_inds = torch.randint(L - self.delete_max + 1, (N,)) # deletion must be in boundaries of seq.
+        delete_inds = torch.randint(
+            L - self.delete_max + 1, (N,)
+        )  # deletion must be in boundaries of seq.
 
         # loop over each sequence
         x_aug = []
-        for seq, pad, delete_len, delete_ind in zip(x, padding, delete_lens, delete_inds):
-
+        for seq, pad, delete_len, delete_ind in zip(
+            x, padding, delete_lens, delete_inds
+        ):
             # get index of half delete_len (to pad random DNA at beginning of sequence)
-            pad_begin_index = torch.div(delete_len, 2, rounding_mode='floor').item()
+            pad_begin_index = torch.div(delete_len, 2, rounding_mode="floor").item()
 
             # index for other half (to pad random DNA at end of sequence)
             pad_end_index = delete_len - pad_begin_index
 
             # removes deletion and pads beginning and end of sequence with random DNA to ensure same length
-            x_aug.append( torch.cat([pad[:,:pad_begin_index],                # random dna padding
-                                     seq[:,:delete_ind],                     # sequence up to deletion start index
-                                     seq[:,delete_ind+delete_len:],          # sequence after deletion end index
-                                     pad[:,self.delete_max-pad_end_index:]], # random dna padding
-                                    -1)) # concatenation axis
+            x_aug.append(
+                torch.cat(
+                    [
+                        pad[:, :pad_begin_index],  # random dna padding
+                        seq[:, :delete_ind],  # sequence up to deletion start index
+                        seq[
+                            :, delete_ind + delete_len :
+                        ],  # sequence after deletion end index
+                        pad[:, self.delete_max - pad_end_index :],
+                    ],  # random dna padding
+                    -1,
+                )
+            )  # concatenation axis
         return torch.stack(x_aug)
 
 
@@ -76,6 +93,7 @@ class RandomInsertion:
     insert_max : int, optional
         Maximum size for random insertion, defaults to 20
     """
+
     def __init__(self, insert_min=0, insert_max=20):
         self.insert_min = insert_min
         self.insert_max = insert_max
@@ -98,8 +116,13 @@ class RandomInsertion:
 
         # sample random DNA
         a = torch.eye(A)
-        p = torch.tensor([1/A for _ in range(A)])
-        insertions = torch.stack([a[p.multinomial(self.insert_max, replacement=True)].transpose(0,1) for _ in range(N)]).to(x.device)
+        p = torch.tensor([1 / A for _ in range(A)])
+        insertions = torch.stack(
+            [
+                a[p.multinomial(self.insert_max, replacement=True)].transpose(0, 1)
+                for _ in range(N)
+            ]
+        ).to(x.device)
 
         # sample insertion length for each sequence
         insert_lens = torch.randint(self.insert_min, self.insert_max + 1, (N,))
@@ -109,21 +132,34 @@ class RandomInsertion:
 
         # loop over each sequence
         x_aug = []
-        for seq, insertion, insert_len, insert_ind in zip(x, insertions, insert_lens, insert_inds):
-
+        for seq, insertion, insert_len, insert_ind in zip(
+            x, insertions, insert_lens, insert_inds
+        ):
             # get index of half insert_len (to pad random DNA at beginning of sequence)
-            insert_beginning_len = torch.div((self.insert_max - insert_len), 2, rounding_mode='floor').item()
+            insert_beginning_len = torch.div(
+                (self.insert_max - insert_len), 2, rounding_mode="floor"
+            ).item()
 
             # index for other half (to pad random DNA at end of sequence)
             self.insert_max - insert_len - insert_beginning_len
 
             # removes deletion and pads beginning and end of sequence with random DNA to ensure same length
-            x_aug.append( torch.cat([insertion[:,:insert_beginning_len],                                # random dna padding
-                                     seq[:,:insert_ind],                                                # sequence up to insertion start index
-                                     insertion[:,insert_beginning_len:insert_beginning_len+insert_len], # random insertion
-                                     seq[:,insert_ind:],                                                # sequence after insertion end index
-                                     insertion[:,insert_beginning_len+insert_len:self.insert_max]],     # random dna padding
-                                    -1)) # concatenation axis
+            x_aug.append(
+                torch.cat(
+                    [
+                        insertion[:, :insert_beginning_len],  # random dna padding
+                        seq[:, :insert_ind],  # sequence up to insertion start index
+                        insertion[
+                            :, insert_beginning_len : insert_beginning_len + insert_len
+                        ],  # random insertion
+                        seq[:, insert_ind:],  # sequence after insertion end index
+                        insertion[
+                            :, insert_beginning_len + insert_len : self.insert_max
+                        ],
+                    ],  # random dna padding
+                    -1,
+                )
+            )  # concatenation axis
         return torch.stack(x_aug)
 
 
@@ -140,6 +176,7 @@ class RandomTranslocation:
     shift_max : int, optional
         Maximum size for random shift, defaults to 20.
     """
+
     def __init__(self, shift_min=0, shift_max=20):
         self.shift_min = shift_min
         self.shift_max = shift_max
@@ -169,10 +206,9 @@ class RandomTranslocation:
         # apply random shift to each sequence
         x_rolled = []
         for i, shift in enumerate(shifts):
-            x_rolled.append( torch.roll(x[i], shift.item(), -1) )
+            x_rolled.append(torch.roll(x[i], shift.item(), -1))
         x_rolled = torch.stack(x_rolled).to(x.device)
         return x_rolled
-
 
 
 class RandomInversion:
@@ -188,6 +224,7 @@ class RandomInversion:
     invert_max : int, optional
         Maximum size for random insertion, defaults to 20.
     """
+
     def __init__(self, invert_min=0, invert_max=20):
         self.invert_min = invert_min
         self.invert_max = invert_max
@@ -211,17 +248,27 @@ class RandomInversion:
         inversion_lens = torch.randint(self.invert_min, self.invert_max + 1, (N,))
 
         # randomly select start location for each inversion
-        inversion_inds = torch.randint(L - self.invert_max + 1, (N,)) # inversion must be in boundaries of seq.
+        inversion_inds = torch.randint(
+            L - self.invert_max + 1, (N,)
+        )  # inversion must be in boundaries of seq.
 
         # apply random inversion to each sequence
         x_aug = []
         for seq, inversion_len, inversion_ind in zip(x, inversion_lens, inversion_inds):
-            x_aug.append( torch.cat([seq[:,:inversion_ind],    # sequence up to inversion start index
-                                     torch.flip(seq[:,inversion_ind:inversion_ind+inversion_len], dims=[0,1]), # reverse-complement transformation
-                                     seq[:,inversion_ind+inversion_len:]], # sequence after inversion
-                                    -1)) # concatenation axis
+            x_aug.append(
+                torch.cat(
+                    [
+                        seq[:, :inversion_ind],  # sequence up to inversion start index
+                        torch.flip(
+                            seq[:, inversion_ind : inversion_ind + inversion_len],
+                            dims=[0, 1],
+                        ),  # reverse-complement transformation
+                        seq[:, inversion_ind + inversion_len :],
+                    ],  # sequence after inversion
+                    -1,
+                )
+            )  # concatenation axis
         return torch.stack(x_aug)
-
 
 
 class RandomMutation:
@@ -233,6 +280,7 @@ class RandomMutation:
     mutate_frac : float, optional
         Probability of mutation for each nucleotide, defaults to 0.05.
     """
+
     def __init__(self, mutate_frac=0.05):
         self.mutate_frac = mutate_frac
 
@@ -252,24 +300,32 @@ class RandomMutation:
         N, A, L = x.shape
 
         # determine the number of mutations per sequence
-        num_mutations = round(self.mutate_frac / 0.75 * L) # num. mutations per sequence (accounting for silent mutations)
+        num_mutations = round(
+            self.mutate_frac / 0.75 * L
+        )  # num. mutations per sequence (accounting for silent mutations)
 
         # randomly determine the indices to apply mutations
-        mutation_inds = torch.argsort(torch.rand(N,L))[:, :num_mutations] # see <https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146>0
+        mutation_inds = torch.argsort(torch.rand(N, L))[
+            :, :num_mutations
+        ]  # see <https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146>0
 
         # create random DNA (to serve as random mutations)
         a = torch.eye(A)
-        p = torch.tensor([1/A for _ in range(A)])
-        mutations = torch.stack([a[p.multinomial(num_mutations, replacement=True)].transpose(0,1) for _ in range(N)]).to(x.device)
+        p = torch.tensor([1 / A for _ in range(A)])
+        mutations = torch.stack(
+            [
+                a[p.multinomial(num_mutations, replacement=True)].transpose(0, 1)
+                for _ in range(N)
+            ]
+        ).to(x.device)
 
         # make a copy of the batch of sequences
         x_aug = torch.clone(x)
 
         # loop over sequences and apply mutations
         for i in range(N):
-            x_aug[i,:,mutation_inds[i]] = mutations[i]
+            x_aug[i, :, mutation_inds[i]] = mutations[i]
         return x_aug
-
 
 
 class RandomRC:
@@ -282,9 +338,9 @@ class RandomRC:
     rc_prob : float, optional
         Probability to apply a reverse-complement transformation, defaults to 0.5.
     """
+
     def __init__(self, rc_prob=0.5):
-        """Creates random reverse-complement object usable by EvoAug.
-        """
+        """Creates random reverse-complement object usable by EvoAug."""
         self.rc_prob = rc_prob
 
     def __call__(self, x):
@@ -307,7 +363,7 @@ class RandomRC:
         ind_rc = torch.rand(x_aug.shape[0]) < self.rc_prob
 
         # apply reverse-complement transformation
-        x_aug[ind_rc] = torch.flip(x_aug[ind_rc], dims=[1,2])
+        x_aug[ind_rc] = torch.flip(x_aug[ind_rc], dims=[1, 2])
         return x_aug
 
 
@@ -322,6 +378,7 @@ class RandomNoise:
     noise_std : float, optional
         Standard deviation of the Gaussian noise, defaults to 0.2.
     """
+
     def __init__(self, noise_mean=0.0, noise_std=0.2):
         self.noise_mean = noise_mean
         self.noise_std = noise_std
@@ -340,11 +397,11 @@ class RandomNoise:
             Sequences with random noise.
         """
         return x + torch.normal(self.noise_mean, self.noise_std, x.shape).to(x.device)
-    
+
 
 class RandomJitter:
     def __init__(self, max_jitter: int, length_axis: int) -> None:
-        """Randomly jitter a sequence that has been padded on either side to support 
+        """Randomly jitter a sequence that has been padded on either side to support
         jittering by `max_jitter` amount.
 
         Parameters
@@ -355,7 +412,7 @@ class RandomJitter:
         """
         self.max_jitter = max_jitter
         self.length_axis = length_axis
-        
+
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Apply random jittering.
 
@@ -363,7 +420,7 @@ class RandomJitter:
         ----------
         x : torch.Tensor
             Batch of sequences where the length axis corresponds to the `length_axis`
-            parameter given at initialization. E.g. shape: (N, A, L), then 
+            parameter given at initialization. E.g. shape: (N, A, L), then
             `length_axis` should be 2.
 
         Returns
@@ -373,6 +430,5 @@ class RandomJitter:
         """
         length = x.shape[self.length_axis]
         start = torch.randint(0, self.max_jitter, (1,))
-        end = length - self.max_jitter*2 + start
+        end = length - self.max_jitter * 2 + start
         return x[(slice(None),) * (self.length_axis % x.ndim) + (slice(start, end),)]
-    

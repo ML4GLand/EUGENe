@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name = 'eugene', packages = find_packages())
+setup(name="eugene", packages=find_packages())
 
 with open("README.md", "r") as readme_file:
     readme = readme_file.read()

@@ -6,6 +6,7 @@ import eugene as eu
 import numpy as np
 import pytest
 from pathlib import Path
+
 HERE = Path(__file__).parent
 
 
@@ -13,6 +14,7 @@ HERE = Path(__file__).parent
 def seq():
     seq = eu.utils.random_seq(seq_len=10)
     return seq
+
 
 @pytest.fixture
 def seqs():
@@ -33,8 +35,8 @@ def bad_seqs():
 
 
 def test_sanitize_seqs(bad_seqs):
-    assert eu.pp.sanitize_seq(bad_seqs[0]) == 'AGGAAATC' 
-    assert np.all(eu.pp.sanitize_seqs(bad_seqs) == np.array(['AGGAAATC', 'GGTAA']))
+    assert eu.pp.sanitize_seq(bad_seqs[0]) == "AGGAAATC"
+    assert np.all(eu.pp.sanitize_seqs(bad_seqs) == np.array(["AGGAAATC", "GGTAA"]))
 
 
 def test_ascii_seqs(seq, seqs):
@@ -46,8 +48,13 @@ def test_ascii_seqs(seq, seqs):
 
 def test_reverse_complement_seqs(seq, seqs, jagged_seqs):
     assert seq == eu.pp.reverse_complement_seq(eu.pp.reverse_complement_seq(seq))
-    assert np.all(seqs == eu.pp.reverse_complement_seqs(eu.pp.reverse_complement_seqs(seqs)))
-    assert np.all(jagged_seqs == eu.pp.reverse_complement_seqs(eu.pp.reverse_complement_seqs(jagged_seqs)))
+    assert np.all(
+        seqs == eu.pp.reverse_complement_seqs(eu.pp.reverse_complement_seqs(seqs))
+    )
+    assert np.all(
+        jagged_seqs
+        == eu.pp.reverse_complement_seqs(eu.pp.reverse_complement_seqs(jagged_seqs))
+    )
 
 
 def test_ohe_seqs(seq, seqs, jagged_seqs):
@@ -67,15 +74,15 @@ def test_ohe_seqs(seq, seqs, jagged_seqs):
 def test_dinuc_shuffle_seqs(seq, seqs):
     dnt_shuf_seq = eu.pp.dinuc_shuffle_seq(seq, num_shufs=10)
     assert np.all(seq != dnt_shuf_seq)
-    assert(len(dnt_shuf_seq) == 10)
+    assert len(dnt_shuf_seq) == 10
     dnt_shuf_seqs = eu.pp.dinuc_shuffle_seqs(seqs, num_shufs=10)
-    assert(dnt_shuf_seqs.shape == (10, 10))
+    assert dnt_shuf_seqs.shape == (10, 10)
 
 
 def test_perturb_seqs(seq, seqs):
-    ohe = eu.pp.ohe_seq(seq) 
+    ohe = eu.pp.ohe_seq(seq)
     perturbed_seq = eu.pp.perturb_seq(ohe)
-    assert perturbed_seq.shape == (30, 4, 10) 
+    assert perturbed_seq.shape == (30, 4, 10)
     decoded_perturb = eu.pp.decode_seqs(perturbed_seq)
     assert len(decoded_perturb) == 30
     ohes = eu.pp.ohe_seqs(seqs)

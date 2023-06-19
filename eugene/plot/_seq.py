@@ -12,10 +12,8 @@ from matplotlib.axes import Axes
 from seqpro._helpers import _collapse_pos
 
 
-vocab_dict = {
-    "DNA": ["A", "C", "G", "T"], 
-    "RNA": ["A", "C", "G", "U"]
-}
+vocab_dict = {"DNA": ["A", "C", "G", "T"], "RNA": ["A", "C", "G", "U"]}
+
 
 def _plot_seq_features(
     ax: Axes,
@@ -27,7 +25,7 @@ def _plot_seq_features(
     Plot sequence features using matplotlib.
 
     This uses basic matplotlib rectangles and lines to plot sequence features
-    as blocks. Can be used along with importance scores to give a visual of where the 
+    as blocks. Can be used along with importance scores to give a visual of where the
     a prior known features of a sequence are
 
     Parameters
@@ -99,6 +97,7 @@ def _plot_seq_features(
                     va="bottom",
                 )
 
+
 def _plot_seq_logo(
     ax: Axes,
     seq: str,
@@ -139,6 +138,7 @@ def _plot_seq_logo(
     """
     if attrs is None:
         from seqpro import ohe_seq
+
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
@@ -175,6 +175,7 @@ def _plot_seq_logo(
     if threshold is not None:
         ax.hlines(1, len(seq), threshold / 10, color="red")
 
+
 def seq_track_features(
     sdata,
     seq_id: str,
@@ -192,7 +193,7 @@ def seq_track_features(
     """
     Function to plot tracks from a SeqData object using matplotlib and function
     from viz_sequence package.
-    
+
     This function allows users to also add features from the pos_annot attribute,
     which is not currently available with seq_track function.
 
@@ -286,7 +287,8 @@ def seq_track_features(
     if return_axes:
         return ax
     if save is not None:
-        _save_fig(save)\
+        _save_fig(save)
+
 
 def multiseq_track_features(
     sdata,
@@ -301,9 +303,9 @@ def multiseq_track_features(
 ):
     """
     Wrapper around seq_track_features function to plot multiple tracks from a SeqData object
-    using matplotlib and viz_sequence. This function allows users to also add features from the 
+    using matplotlib and viz_sequence. This function allows users to also add features from the
     pos_annot attribute
-    
+
     Parameters
     ----------
     sdata : SeqData object
@@ -367,6 +369,7 @@ def multiseq_track_features(
     if save is not None:
         _save_fig(save)
 
+
 def seq_track(
     sdata,
     seq_id: str,
@@ -375,7 +378,7 @@ def seq_track(
     vocab: str = "DNA",
     highlights: list = [],
     highlight_colors: list = ["lavenderblush", "lightcyan", "honeydew"],
-    title: str ="",
+    title: str = "",
     ylab: str = "Saliency",
     xlab: str = "Position",
     return_ax: bool = False,
@@ -384,7 +387,7 @@ def seq_track(
 ):
     """
     Plot a track of the importance scores for a sequence using the logomaker package
-    
+
     This function is a wrapper around the logomaker Logo function. See the logomaker documentation
     for more details on the kwargs that can be passed to this function.
 
@@ -403,7 +406,7 @@ def seq_track(
         The vocabulary to use for the sequence
     highlights : list
         A list of positions to highlight in the sequence
-    highlight_colors : list 
+    highlight_colors : list
         A list of colors to use for the highlights
     title : str
         The title to use for the plot
@@ -418,7 +421,7 @@ def seq_track(
     -------
     ax : matplotlib.axes._subplots.AxesSubplot
         The matplotlib axes object
-    """ 
+    """
     if isinstance(highlights, tuple):
         highlights = [highlights]
     if isinstance(highlight_colors, str):
@@ -430,13 +433,15 @@ def seq_track(
     y_max = np.max(viz_seq.values)
     y_min = np.min(viz_seq.values)
     nn_logo = lm.Logo(viz_seq, **kwargs)
-    
+
     # style using Logo methods
     nn_logo.style_spines(visible=False)
     if float(y_min) == 0 and float(y_max) == 0:
         nn_logo.style_spines(spines=["left"], visible=False)
     else:
-        nn_logo.style_spines(spines=["left"], visible=True, bounds=[float(y_min), float(y_max)])
+        nn_logo.style_spines(
+            spines=["left"], visible=True, bounds=[float(y_min), float(y_max)]
+        )
 
     # style using Axes methods
     nn_logo.ax.set_xlim([0, len(viz_seq)])
@@ -448,14 +453,13 @@ def seq_track(
     for i, highlight in enumerate(highlights):
         print(highlight)
         nn_logo.highlight_position_range(
-            pmin=int(highlight[0]), 
-            pmax=int(highlight[1]), 
-            color=highlight_colors[i]
+            pmin=int(highlight[0]), pmax=int(highlight[1]), color=highlight_colors[i]
         )
     if save is not None:
         _save_fig(save)
     if return_ax:
         return nn_logo.ax
+
 
 def multiseq_track(
     sdata,
@@ -469,10 +473,10 @@ def multiseq_track(
     save: str = None,
     **kwargs,
 ):
-    """ 
+    """
     Plot the saliency tracks for multiple sequences across multiple importance scores in one plot.
 
-    Wraps the seq_track function to plot multiple sequences at once across multiple importance scores. 
+    Wraps the seq_track function to plot multiple sequences at once across multiple importance scores.
 
     Attempts to make each sequence width proportional to its length and multiply by the number of sequences
     if no width is passed in.
@@ -514,11 +518,16 @@ def multiseq_track(
         ylabs = [ylabs]
     example_attr = sdata[attrs_keys[0]][0]
     seq_len = example_attr.sizes["length"]
-    ylabs= ylabs if ylabs is not None else ["Importance Score"] * len(attrs_keys)
-    fig_width = (len(seq_ids) * int(len(seq_len) / 20) if width is None else width)  
-    fig_height = (len(attrs_keys) * 4 if height is None else height)
+    ylabs = ylabs if ylabs is not None else ["Importance Score"] * len(attrs_keys)
+    fig_width = len(seq_ids) * int(len(seq_len) / 20) if width is None else width
+    fig_height = len(attrs_keys) * 4 if height is None else height
     _, ax = plt.subplots(len(attrs_keys), len(seq_ids), figsize=(fig_width, fig_height))
-    for i, attrs_key in tqdm(enumerate(attrs_keys), desc="Importance values", position=0, total=len(attrs_keys)):
+    for i, attrs_key in tqdm(
+        enumerate(attrs_keys),
+        desc="Importance values",
+        position=0,
+        total=len(attrs_keys),
+    ):
         for j, seq_id in enumerate(seq_ids):
             seq_track(
                 sdata,
@@ -537,6 +546,7 @@ def multiseq_track(
     if return_axes:
         return ax
 
+
 def filter_viz(
     sdata,
     filter_num: Union[str, int],
@@ -547,7 +557,7 @@ def filter_viz(
     save: str = None,
     **kwargs,
 ):
-    """ 
+    """
     Plot the PFM for a single filter in a SeqData object's uns dictionary as a PWM logo
 
     This function also uses logomaker to generate the PWM and plot it. Check out the logomaker documentation
@@ -578,9 +588,9 @@ def filter_viz(
     vocab = vocab_dict[vocab]
     pfm.fillna(1, inplace=True)
     info_mat = lm.transform_matrix(
-        pfm, 
-        from_type="counts", 
-        to_type="information", 
+        pfm,
+        from_type="counts",
+        to_type="information",
     )
     if "N" in pfm.columns:
         info_mat = info_mat.drop("N", axis=1)
@@ -598,6 +608,7 @@ def filter_viz(
     if return_ax:
         return logo.ax
 
+
 def multifilter_viz(
     sdata,
     filter_nums: list,
@@ -605,7 +616,7 @@ def multifilter_viz(
     num_rows: int = None,
     num_cols: int = None,
     titles: list = None,
-    figsize=(12,10),
+    figsize=(12, 10),
     save: PathLike = None,
     **kwargs,
 ):
@@ -614,9 +625,9 @@ def multifilter_viz(
 
     This function wraps filter_viz. Getting the figure to look nice it more of an art
     than a science. In experimenting so far, I've found that a 8x4 grid with a (12, 10)
-    figure size works well. 
+    figure size works well.
 
-    Parameters 
+    Parameters
     ----------
     sdata : SeqData
         The SeqData object with sequences and pfms to plot a logo for
@@ -634,7 +645,7 @@ def multifilter_viz(
         The figure size to use for the plot
     save : PathLike
         The path to save the figure to
-    
+
     Returns
     -------
     axes : list

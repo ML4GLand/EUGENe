@@ -23,4 +23,3 @@ class PredictionWriter(BasePredictionWriter):
             sep="\t",
             index=False,
         )
-        

@@ -6,6 +6,7 @@ import eugene as eu
 import pytest
 from pathlib import Path
 from eugene.dataload import SeqData
+
 HERE = Path(__file__).parent
 
 
@@ -36,7 +37,9 @@ def test_clean_nan_targets_sdata(sdata):
 
 def test_clamp_targets_sdata(sdata):
     eu.pp.train_test_split_sdata(sdata)
-    eu.pp.clamp_targets_sdata(sdata, "activity_0", 0.8, "train_val", store_clamp_nums=True)
+    eu.pp.clamp_targets_sdata(
+        sdata, "activity_0", 0.8, "train_val", store_clamp_nums=True
+    )
     assert sdata.uns["clamp_nums"] is not None
 
 
@@ -48,7 +51,9 @@ def test_scale_targets_sdata(sdata):
 
 
 def test_binarize_targets_sdata(sdata):
-    eu.pp.binarize_targets_sdata(sdata, target_keys="activity_0", upper_threshold=0, suffix=True, copy=False)
+    eu.pp.binarize_targets_sdata(
+        sdata, target_keys="activity_0", upper_threshold=0, suffix=True, copy=False
+    )
 
 
 def test_train_test_split_sdata(sdata):

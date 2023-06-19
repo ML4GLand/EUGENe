@@ -18,11 +18,13 @@ if __name__ == "__main__":
     ohe_seqs = np.array([ohe(seq) for seq in seqs])
     rev_seqs = [reverse_complement(seq) for seq in seqs]
     rev_ohe_seqs = np.array([encodeDNA(rev_seq) for rev_seq in rev_seqs])
-    ids = np.array(["seq{0:03}".format(i+1) for i in range(num_seqs)])
-    labels = np.array([np.random.randint(0,2) for i in range(num_seqs)])
+    ids = np.array(["seq{0:03}".format(i + 1) for i in range(num_seqs)])
+    labels = np.array([np.random.randint(0, 2) for i in range(num_seqs)])
     activities = np.array([np.random.rand() for i in range(num_seqs)])
 
-    pd.DataFrame(data={"NAME": ids, "SEQ":seqs, "LABEL": labels, "ACTIVITY": activities}).to_csv(out_dir + "test_seqs.tsv", sep="\t", index=False)
+    pd.DataFrame(
+        data={"NAME": ids, "SEQ": seqs, "LABEL": labels, "ACTIVITY": activities}
+    ).to_csv(out_dir + "test_seqs.tsv", sep="\t", index=False)
     np.save(out_dir + "test_seqs", seqs)
     np.save(out_dir + "test_ohe_seqs", ohe_seqs)
     np.save(out_dir + "test_rev_seqs", rev_seqs)

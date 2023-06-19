@@ -1,7 +1,7 @@
 import seaborn as sns
 from .. import settings
 import matplotlib.pyplot as plt
-from typing import Union, Mapping 
+from typing import Union, Mapping
 from typing import Sequence, Iterable
 from ._utils import _plot_seaborn, _violin_long
 
@@ -19,8 +19,8 @@ def countplot(
     Plots a countplot of a column(s) in seqs_annot using Seaborn.
 
     This function can be used to show the counts of observations in a single
-    or multiple columns of seqs_annot within a SeqData. If a groupby is 
-    provided then the counts are grouped by the groupby column.  
+    or multiple columns of seqs_annot within a SeqData. If a groupby is
+    provided then the counts are grouped by the groupby column.
 
     Parameters
     ----------
@@ -45,20 +45,16 @@ def countplot(
     """
     keys = [keys] if isinstance(keys, str) else keys
     if groupby is None:
-            sdata_df = sdata[keys].to_dataframe()
+        sdata_df = sdata[keys].to_dataframe()
     else:
         sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df,
-            keys,
-            func=sns.countplot,
-            groupby=groupby,
-            orient=orient,
-            **kwargs
+            sdata_df, keys, func=sns.countplot, groupby=groupby, orient=orient, **kwargs
         )
     if return_axes:
         return ax
+
 
 def histplot(
     sdata,
@@ -99,15 +95,11 @@ def histplot(
     sdata_df = sdata[keys].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df,
-            keys,
-            func=sns.histplot,
-            orient=orient,
-            ylab="Frequency",
-            **kwargs
+            sdata_df, keys, func=sns.histplot, orient=orient, ylab="Frequency", **kwargs
         )
     if return_axes:
         return ax
+
 
 def boxplot(
     sdata,
@@ -122,7 +114,7 @@ def boxplot(
     """
     Plots a boxplot of a column(s) in seqs_annot using Seaborn.
 
-    This function can be used to show the distribution of a single or multiple 
+    This function can be used to show the distribution of a single or multiple
     columns of seqs_annot within a SeqData. If a groupby is provided then the
     distribution is grouped by the groupby column.
 
@@ -154,12 +146,7 @@ def boxplot(
         sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df,
-            keys,
-            func=sns.boxplot,
-            groupby=groupby,
-            orient=orient,
-            **kwargs
+            sdata_df, keys, func=sns.boxplot, groupby=groupby, orient=orient, **kwargs
         )
         if jitter == True:
             _plot_seaborn(
@@ -174,6 +161,7 @@ def boxplot(
     if return_axes:
         return ax
 
+
 def violinplot(
     sdata,
     keys: Union[str, Sequence[str]] = None,
@@ -187,7 +175,7 @@ def violinplot(
     Plots a violinplot of a column(s) in seqs_annot using Seaborn.
 
     This function can be used to show the distribution of a single or multiple
-    columns of seqs_annot within a SeqData as a violin plot. If a groupby is provided 
+    columns of seqs_annot within a SeqData as a violin plot. If a groupby is provided
     then the distribution is grouped by the groupby column.
 
     Parameters
@@ -233,10 +221,11 @@ def violinplot(
     if return_axes:
         return ax
 
+
 def scatterplot(
-    sdata, 
-    x: str, 
-    y: str, 
+    sdata,
+    x: str,
+    y: str,
     seq_idx: Sequence[int] = None,
     return_axes: bool = False,
     **kwargs
@@ -259,7 +248,7 @@ def scatterplot(
     seq_idx : int or list of int
         Index of sequences to plot.
     **kwargs: dict
-        Additional keyword arguments to pass to _plot_seaborn.    
+        Additional keyword arguments to pass to _plot_seaborn.
     Returns
     -------
     None
@@ -269,13 +258,7 @@ def scatterplot(
     keys = [keys] if isinstance(keys, str) else keys
     sdata_df = sdata[keys].to_dataframe()
     ax = _plot_seaborn(
-        sdata_df, 
-        keys=x, 
-        func=sns.scatterplot, 
-        groupby=y, 
-        xlab=x,
-        ylab=y, 
-        **kwargs
+        sdata_df, keys=x, func=sns.scatterplot, groupby=y, xlab=x, ylab=y, **kwargs
     )
     if return_axes:
         return ax

@@ -14,10 +14,12 @@ from typing import (
 import pandas as pd
 import xarray as xr
 
+
 def concat_seqdatas(seqdatas, keys):
     for i, s in enumerate(seqdatas):
         s["batch"] = keys[i]
     return xr.concat(seqdatas, dim="_sequence")
+
 
 def add_obs(
     sdata: xr.Dataset,
@@ -41,7 +43,7 @@ def add_obs(
     sdata[left_on] = sdata[left_on].astype("U").astype("O")
     df = sdata[left_on].to_dataframe()
     merged_df = df.merge(obs, left_on=left_on, right_on=right_on, how="left")
-    
+
     # Add each column of the merged_df back to the xarray
     for col in merged_df.columns:
         if col == left_on:

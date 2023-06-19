@@ -2,6 +2,7 @@ import abc
 import torch
 import torch.nn as nn
 
+
 class WeightDecay(nn.Module):
     def __init__(self, module, weight_decay, name: str = None):
         if weight_decay <= 0.0:
@@ -46,6 +47,7 @@ class WeightDecay(nn.Module):
     def regularize(self, parameter):
         pass
 
+
 class L2(WeightDecay):
     r"""Regularize module's parameters using L2 weight decay.
 
@@ -75,6 +77,7 @@ class L2(WeightDecay):
     def regularize(self, parameter):
         return self.weight_decay * parameter.data
 
+
 class L1(WeightDecay):
     """Regularize module's parameters using L1 weight decay.
 
@@ -103,8 +106,6 @@ class L1(WeightDecay):
 
     def regularize(self, parameter):
         return self.weight_decay * torch.sign(parameter.data)
-    
-REGULARIZER_REGISTRY = {
-    "l1": L1,
-    "l2": L2
-}
+
+
+REGULARIZER_REGISTRY = {"l1": L1, "l2": L2}

@@ -1,24 +1,26 @@
 import os
 from os import PathLike
-from typing import List, Union
+from typing import Dict, List, Type, Union
+
+import seqdata as sd
 import xarray as xr
-import numpy as np
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
-from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger, WandbLogger
+from pytorch_lightning.loggers import CSVLogger, Logger, TensorBoardLogger, WandbLogger
 from torch.utils.data import DataLoader
-import seqdata as sd
+
 from eugene import settings
 
 # Note that CSVLogger is currently hanging training with SequenceModule right now
 # Note that if you use wandb logger, it comes with a few extra steps. Show a notebook for this
-LOGGER_REGISTRY = {
+LOGGER_REGISTRY: Dict[str, Type[Logger]] = {
     "csv": CSVLogger,
     "tensorboard": TensorBoardLogger,
     "wandb": WandbLogger,
 }
+
 
 def fit(
     model: LightningModule,
@@ -26,22 +28,22 @@ def fit(
     val_dataloader: DataLoader = None,
     epochs: int = 10,
     gpus: int = None,
-    logger: str = "tensorboard",
+    logger: Union[str, Logger] = "tensorboard",
     log_dir: PathLike = None,
     name: str = None,
     version: str = None,
     early_stopping_metric: str = "val_loss_epoch",
     early_stopping_patience=5,
     early_stopping_verbose=False,
-    model_checkpoint_k = 1,
-    model_checkpoint_monitor: str ="val_loss_epoch",
+    model_checkpoint_k=1,
+    model_checkpoint_monitor: str = "val_loss_epoch",
     seed: int = None,
     return_trainer: bool = False,
-    **kwargs
+    **kwargs,
 ):
     # Set-up a seed
     seed_everything(seed, workers=True) if seed is not None else print("No seed set")
-    
+
     # Logger
     logger = LOGGER_REGISTRY[logger](save_dir=log_dir, name=name, version=version)
 
@@ -49,9 +51,11 @@ def fit(
     callbacks = []
     if model_checkpoint_monitor is not None:
         model_checkpoint_callback = ModelCheckpoint(
-            dirpath=os.path.join(logger.save_dir, logger.name, logger.version, "checkpoints"), 
-            save_top_k=model_checkpoint_k, 
-            monitor=model_checkpoint_monitor
+            dirpath=os.path.join(
+                logger.save_dir, logger.name, logger.version, "checkpoints"
+            ),
+            save_top_k=model_checkpoint_k,
+            monitor=model_checkpoint_monitor,
         )
         callbacks.append(model_checkpoint_callback)
     if early_stopping_metric is not None:
@@ -67,27 +71,26 @@ def fit(
 
     # Trainer
     trainer = Trainer(
-        max_epochs=epochs, 
-        logger=logger, 
-        devices=gpus, 
+        max_epochs=epochs,
+        logger=logger,
+        devices=gpus,
         accelerator="auto",
-        callbacks=callbacks, 
-        **kwargs
+        callbacks=callbacks,
+        **kwargs,
     )
 
     # Fit
     trainer.fit(
-        model, 
-        train_dataloaders=train_dataloader, 
-        val_dataloaders=val_dataloader
+        model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader
     )
     if return_trainer:
         return trainer
 
+
 # Have a couple of fit methods that are meant to take in a SeqData and call the above function
 def fit_sequence_module(
     model: LightningModule,
-    sdata = None,
+    sdata: "xr.Dataset",
     seq_key: str = None,
     target_keys: Union[str, List[str]] = None,
     in_memory: bool = False,
@@ -97,7 +100,7 @@ def fit_sequence_module(
     batch_size: int = None,
     num_workers: int = None,
     prefetch_factor: int = None,
-    transforms = None,
+    transforms=None,
     drop_last=True,
     logger: str = "tensorboard",
     log_dir: PathLike = None,
@@ -106,11 +109,11 @@ def fit_sequence_module(
     early_stopping_metric: str = "val_loss_epoch",
     early_stopping_patience=5,
     early_stopping_verbose=False,
-    model_checkpoint_k = 1,
-    model_checkpoint_monitor: str ="val_loss_epoch",
+    model_checkpoint_k=1,
+    model_checkpoint_monitor: str = "val_loss_epoch",
     seed: int = None,
     return_trainer: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Train the model using PyTorch Lightning.
@@ -139,9 +142,9 @@ def fit_sequence_module(
         The name of the experiment.
     version : str
         The version of the experiment.
-    train_dataset :Dataset 
+    train_dataset :Dataset
         The training dataset to use. If None, will be created from sdata.
-    val_dataset :Dataset 
+    val_dataset :Dataset
         The validation dataset to use. If None, will be created from sdata.
     train_dataloader : DataLoader
         The training dataloader to use. If None, will be created from train_dataset.
@@ -169,7 +172,7 @@ def fit_sequence_module(
     trainer : Trainer
         The PyTorch Lightning Trainer object.
     """
-    
+
     # Set-up dataloaders
     batch_size = batch_size if batch_size is not None else settings.batch_size
     num_workers = num_workers if num_workers is not None else settings.dl_num_workers
@@ -179,21 +182,20 @@ def fit_sequence_module(
         if len(target_keys) == 1:
             sdata["target"] = sdata[target_keys[0]]
         else:
-            sdata["target"] = xr.concat([sdata[target_key] for target_key in target_keys], dim="_targets").transpose("_sequence", "_targets")
-        targs = sdata["target"].values
-        if len(targs.shape) == 1:
-            nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
-        else:
-            nan_mask = xr.DataArray(np.any(np.isnan(targs), axis=1), dims=["_sequence"])
-        print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
-        #sdata = sdata.where(~nan_mask, drop=True)
+            sdata["target"] = xr.concat(
+                [sdata[target_key] for target_key in target_keys], dim="_targets"
+            ).transpose("_sequence", "_targets")
+        nan_mask = sdata['target'].isnull()
+        if sdata["target"].ndim > 1:
+            nan_mask = nan_mask.any('_targets')
+        print(f"Dropping {nan_mask.sum().compute().item()} sequences with NaN targets.")
     if in_memory:
         print(f"Loading {seq_key} and {target_keys} into memory")
         sdata[seq_key].load()
         sdata["target"].load()
     sdata[train_key].load()
-    train_sdata = sdata.where(sdata[train_key] == 1, drop=True)
-    val_sdata = sdata.where(sdata[train_key] == 0, drop=True)
+    train_sdata = sdata.sel(_sequence=(sdata[train_key] == True).compute())  # noqa
+    val_sdata = sdata.sel(_sequence=(sdata[train_key] == False).compute())  # noqa
     train_dataloader = sd.get_torch_dataloader(
         train_sdata,
         sample_dims=["_sequence"],
@@ -203,8 +205,7 @@ def fit_sequence_module(
         prefetch_factor=prefetch_factor,
         transforms=transforms,
         shuffle=True,
-        drop_last=drop_last
-
+        drop_last=drop_last,
     )
     val_dataloader = sd.get_torch_dataloader(
         val_sdata,
@@ -215,9 +216,9 @@ def fit_sequence_module(
         prefetch_factor=prefetch_factor,
         transforms=transforms,
         shuffle=False,
-        drop_last=drop_last
+        drop_last=drop_last,
     )
-    
+
     # Set training parameters
     gpus = gpus if gpus is not None else settings.gpus
     log_dir = log_dir if log_dir is not None else settings.logging_dir
@@ -242,14 +243,14 @@ def fit_sequence_module(
         model_checkpoint_monitor=model_checkpoint_monitor,
         seed=seed,
         return_trainer=return_trainer,
-        **kwargs
+        **kwargs,
     )
 
     if return_trainer:
         return trainer
 
-def fit_profile_module(        
-):
+
+def fit_profile_module():
     """
     Fit a profile module.
     """

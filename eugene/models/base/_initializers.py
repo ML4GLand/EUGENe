@@ -4,7 +4,7 @@ from typing import Dict
 import torch.nn.init as init
 from .._utils import get_layer
 from motifdata import to_kernel
-from motifdata import  MotifSet
+from motifdata import MotifSet
 
 
 INITIALIZERS_REGISTRY = {
@@ -20,13 +20,11 @@ INITIALIZERS_REGISTRY = {
     "orthogonal": init.orthogonal_,
     "sparse": init.sparse_,
     "ones": init.ones_,
-    "zeros": init.zeros_
+    "zeros": init.zeros_,
 }
 
-def _init_weights(
-    module, 
-    initializer
-):
+
+def _init_weights(module, initializer):
     """Initialize the weights of a module.
 
     Parameters
@@ -50,14 +48,11 @@ def _init_weights(
         init_func(module.weight)
     elif isinstance(module, nn.ParameterList):
         for param in module:
-            if  param.dim() > 1:
+            if param.dim() > 1:
                 init_func(param)
 
-def init_weights(
-    model,
-    initializer="kaiming_normal",
-    **kwargs
-):
+
+def init_weights(model, initializer="kaiming_normal", **kwargs):
     """Initialize the weights of a model.
 
     Parameters
@@ -71,6 +66,7 @@ def init_weights(
     """
     model.apply(lambda m: _init_weights(m, initializer, **kwargs))
 
+
 def init_motif_weights(
     model,
     layer_name,
@@ -80,7 +76,7 @@ def init_motif_weights(
     convert_to_pwm=True,
     divide_by_bg=False,
     motif_align="center",
-    kernel_align="center"
+    kernel_align="center",
 ):
     """Initialize the convolutional kernel of choice using a set of motifs
 
@@ -91,7 +87,7 @@ def init_motif_weights(
 
     Parameters
     ----------
-    model : 
+    model :
         The model to initialize.
     layer_name : str
         The name of the layer to initialize. You can use the list_available_layers function to get a list of available layers.
@@ -118,11 +114,25 @@ def init_motif_weights(
         layer_size = layer.weight.size()
         kernel = torch.zeros(layer_size)
         INITIALIZERS_REGISTRY[initializer](kernel)
-        pwms = to_kernel(motifs, kernel=kernel, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
+        )
         layer.weight = nn.Parameter(pwms)
     else:
         layer_size = layer[list_index].size()
         kernel = torch.zeros(layer_size)
         INITIALIZERS_REGISTRY[initializer](kernel)
-        pwms = to_kernel(motifs, kernel=kernel, convert_to_pwm=convert_to_pwm, divide_by_bg=divide_by_bg, motif_align=motif_align, kernel_align=kernel_align)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
+        )
         layer[list_index] = nn.Parameter(pwms)
