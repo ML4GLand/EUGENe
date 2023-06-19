@@ -49,7 +49,7 @@ class Jores21CNN(nn.Module):
         layers: int = 2,
         stride: int = 1,
         dropout: float = 0.15,
-        hidden_dim: int = 64,
+        hidden_dim: int = 64
     ):
         super(Jores21CNN, self).__init__()
 

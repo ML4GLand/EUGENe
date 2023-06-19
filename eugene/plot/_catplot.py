@@ -220,7 +220,7 @@ def violinplot(
         sdata_df = sdata[keys + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         if groupby is not None and isinstance(groupby, Iterable) and keys is None:
-            _violin_long(sdata_df, groupby, **kwargs)
+            ax = _violin_long(sdata_df, groupby, **kwargs)
         else:
             ax = _plot_seaborn(
                 sdata_df,

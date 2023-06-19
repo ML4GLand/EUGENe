@@ -262,7 +262,7 @@ class BiConv1DTower(nn.Module):
     def forward(self, x):
         x_fwd = F.conv1d(x, self.kernels[0], stride=self.stride, padding="same")
         x_fwd = torch.add(x_fwd.transpose(1, 2), self.biases[0]).transpose(1, 2)
-        x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
+        x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate, training=self.training)
         x_rev = F.conv1d(
             x,
             torch.flip(self.kernels[0], dims=[0, 1]),
@@ -270,13 +270,13 @@ class BiConv1DTower(nn.Module):
             padding="same",
         )
         x_rev = torch.add(x_rev.transpose(1, 2), self.biases[0]).transpose(1, 2)
-        x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate)
+        x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate, training=self.training)
         for layer in range(1, self.layers):
             x_fwd = F.conv1d(
                 x_fwd, self.kernels[layer], stride=self.stride, padding="same"
             )
             x_fwd = torch.add(x_fwd.transpose(1, 2), self.biases[layer]).transpose(1, 2)
-            x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate)
+            x_fwd = F.dropout(F.relu(x_fwd), p=self.dropout_rate, training=self.training)
             x_rev = F.conv1d(
                 x_rev,
                 torch.flip(self.kernels[layer], dims=[0, 1]),
@@ -284,5 +284,5 @@ class BiConv1DTower(nn.Module):
                 padding="same",
             )
             x_rev = torch.add(x_rev.transpose(1, 2), self.biases[layer]).transpose(1, 2)
-            x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate)
+            x_rev = F.dropout(F.relu(x_rev), p=self.dropout_rate, training=self.training)
         return torch.add(x_fwd, x_rev)
