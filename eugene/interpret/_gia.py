@@ -85,3 +85,16 @@ def positional_gia_sdata(
         )
     else:
         return np.array(predictions)
+
+
+def motif_distance_dependence_gia(
+    model,
+    sdata,
+    feature_A,
+    feature_B,
+    style="deAlmeida22",
+    seq_key: str = "seq",
+    device: str = "cpu",
+    batch_size: int = 128,
+):
+    pass
