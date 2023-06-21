@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 import torch
 
 
@@ -343,28 +345,37 @@ class RandomRC:
         """Creates random reverse-complement object usable by EvoAug."""
         self.rc_prob = rc_prob
 
-    def __call__(self, x):
+    def __call__(self, *x: torch.Tensor) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         """Randomly transforms sequences in a batch with a reverse-complement transformation.
 
         Parameters
         ----------
         x : torch.Tensor
-            Batch of one-hot sequences (shape: (N, A, L)).
+            Batch (or tuple of batches) of one-hot sequences (shape: (N, A, L)).
 
         Returns
         -------
         torch.Tensor
             Sequences with random reverse-complements applied.
         """
-        # make a copy of the sequence
-        x_aug = torch.clone(x)
-
+        n = x[0].shape[0]
         # randomly select sequences to apply rc transformation
-        ind_rc = torch.rand(x_aug.shape[0]) < self.rc_prob
+        ind_rc = torch.rand(n) < self.rc_prob
+        
+        out: List[torch.Tensor] = []
+        for _x in x:
+            # make a copy of the sequence
+            x_aug = torch.clone(_x)
 
-        # apply reverse-complement transformation
-        x_aug[ind_rc] = torch.flip(x_aug[ind_rc], dims=[1, 2])
-        return x_aug
+            # apply reverse-complement transformation
+            x_aug[ind_rc] = torch.flip(x_aug[ind_rc], dims=[1, 2])
+            
+            out.append(x_aug)
+        
+        if len(out) == 1:
+            return out[0]
+        else:
+            return tuple(out)
 
 
 class RandomNoise:
