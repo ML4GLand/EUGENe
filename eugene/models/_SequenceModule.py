@@ -55,7 +55,7 @@ class SequenceModule(LightningModule):
         seed: int = None,
         save_hyperparams: bool = True,
         arch_name: str = None,  # TODO: this should be a class attribute
-        model_name: str = None,
+        model_name: str = None
     ):
         super().__init__()
 

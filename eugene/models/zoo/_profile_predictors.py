@@ -1,13 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .base import _layers as layers
-from .base import _blocks as blocks
-from .base import _towers as towers
+from ..base import _layers as layers
+from ..base import _blocks as blocks
+from ..base import _towers as towers
 
 
 class BPNet(nn.Module):
-    """A basic BPNet model with stranded profile and total count prediction.
+    """
+    This nn.Module was 
+
+    A basic BPNet model with stranded profile and total count prediction.
     This is a reference implementation for BPNet. The model takes in
     one-hot encoded sequence, runs it through:
     (1) a single wide convolution operation
