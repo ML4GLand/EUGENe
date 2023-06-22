@@ -3,7 +3,8 @@ import pandas as pd
 import seaborn as sns
 from os import PathLike
 from ._utils import _save_fig
-
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 def positional_gia_plot(
     sdata,
@@ -53,3 +54,54 @@ def positional_gia_plot(
         _save_fig(save)
     if return_axes:
         return g
+
+def distance_cooperativity_gia_plot(
+    sdata,
+    results_key="cooperativity",
+    distance_key="distance",
+    col_names=None,
+    cols_to_plot=None,
+    motif_a_name="",
+    motif_b_name="",
+):
+    cooperativity_df = pd.DataFrame(np.median(sdata[results_key], axis=1))
+    cooperativity_df["distance"] = [int(d[1:]) for d in sdata[distance_key].values]
+    cooperativity_df[f"relative_to_{motif_a_name}"] = [d[0] for d in sdata[distance_key].values]
+    if col_names is not None:
+        cooperativity_df.columns = col_names + ["distance", f"relative_to_{motif_a_name}"]
+    else:
+        col_names = cooperativity_df.columns[:-2]
+
+    # Plot the results
+    labels = []
+    handles = []
+    for col in col_names:
+        if cols_to_plot is not None and col not in cols_to_plot:
+            continue
+        sns.lineplot(
+            data=cooperativity_df,
+            x="distance",
+            y=col,
+            hue=f"relative_to_{motif_a_name}",
+            linestyle="-"
+        )
+        labels += [f"{col}, +", f"{col}, -"]
+        handles += [
+            Line2D([0], [0], color="orange", linestyle="-"),
+            Line2D([0], [0], color="blue", linestyle="-")
+        ]
+
+    # Denote the dev vs hk lines styles and colors for the relative to motif a with a legend
+    plt.legend(
+        title=f"Relative to {motif_a_name}",
+        loc="upper right",
+        labels=labels,
+        handles=handles
+    )
+
+    # Set the x-axis label to "Distance from motif B to motif A"
+    plt.ylabel("Median predicted cooperativity")
+    plt.xlabel("Motif pair distance")
+    plt.title(f"{motif_a_name}/{motif_b_name} cooperativity")
+
+    plt.show()

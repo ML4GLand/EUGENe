@@ -5,6 +5,8 @@ import xarray as xr
 import numpy as np
 from tqdm.auto import tqdm
 from seqexplainer.gia._perturb import tile_pattern_seq
+from seqexplainer.gia._complex_perturb import embed_deepstarr_distance_cooperativity
+from seqexplainer.gia._gia import deepstarr_motif_distance_cooperativity_gia
 import seqpro as sp
 
 
@@ -92,9 +94,42 @@ def motif_distance_dependence_gia(
     sdata,
     feature_A,
     feature_B,
+    tile_step=1,
     style="deAlmeida22",
     seq_key: str = "seq",
+    results_key: str = "cooperativity",
+    distance_key: str = "distance",
     device: str = "cpu",
     batch_size: int = 128,
 ):
-    pass
+
+    # Make sure the backbones are compatible with the next function
+    backbones = np.array([b"".join(backbone) for backbone in sdata[seq_key].values]).astype('U')
+
+    # Do the embedding based on the passed in style
+    A_seqs, B_seqs, AB_seqs, motif_b_pos, motif_b_distances = embed_deepstarr_distance_cooperativity(
+        null_sequences=backbones,
+        motif_a=feature_A,
+        motif_b=feature_B,
+        step=tile_step
+    )
+
+    # Get results that are dependent on the style
+    cooperativity_results = deepstarr_motif_distance_cooperativity_gia(
+        model=model,
+        b_seqs=backbones,
+        A_seqs=A_seqs,
+        B_seqs=B_seqs,
+        AB_seqs=AB_seqs,
+        motif_b_distances=motif_b_distances,
+        batch_size=batch_size,
+        device=device
+    )
+
+    # Set up the xarray of the results
+    distances = np.array(list(cooperativity_results.keys()))
+    predictions = np.array(list(cooperativity_results.values()))
+
+    # Merge the results with the original dataset
+    sdata[distance_key] = xr.DataArray(distances, dims=[f"_{distance_key}"])
+    sdata[results_key] = xr.DataArray(predictions, dims=[f"_{distance_key}", "_sequence", "_predictions"])

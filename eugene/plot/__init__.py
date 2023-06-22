@@ -13,4 +13,4 @@ from ._seq import (
 )
 from ._dim_reduce import pca, umap, skree
 from ._utils import _const_line
-from ._gia import positional_gia_plot
+from ._gia import positional_gia_plot, distance_cooperativity_gia_plot
