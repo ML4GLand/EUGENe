@@ -1,5 +1,6 @@
 [tool.poetry]
-name = "eugene"
+name = "eugene-tools"
+packages = [{ include = "eugene"}]
 version = "0.1.0"
 description = "Elucidating the Utility of Genomic Elements with Neural Nets"
 authors = ["adamklie <aklie@ucsd.edu>"]
