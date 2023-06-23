@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "eugene"
+version = "0.1.0"
+description = "Elucidating the Utility of Genomic Elements with Neural Nets"
+authors = ["adamklie <aklie@ucsd.edu>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+seqpro = "0.1.1"
+seqdata = "0.1.1"
+seqexplainer = "0.1.0"
+motifdata = "0.1.0"
+seqdatasets = "0.1.0"
+torch = "^1.12.0"
+pytorch-lightning = "^2.0.0"
+einops = "0.6.1"
+torchinfo = "1.8.0"
+scikit-learn = "1.2.0"
+dask_ml = "2023.3.24"
+tensorboard = "2.11.2"
+matplotlib = "^3.6.2"
+seaborn = "^0.12.0"
+graph-part = "^0.1.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

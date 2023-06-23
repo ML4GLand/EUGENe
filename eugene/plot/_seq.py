@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 from ._utils import _save_fig
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from seqpro._helpers import _collapse_pos
+from ._utils import _collapse_pos
 
 
 vocab_dict = {"DNA": ["A", "C", "G", "T"], "RNA": ["A", "C", "G", "U"]}
@@ -137,14 +137,14 @@ def _plot_seq_logo(
     https://github.com/kundajelab/vizsequence
     """
     if attrs is None:
-        from seqpro import ohe_seq
+        from seqpro import ohe
 
         print("No importance scores given, outputting just sequence")
         ylab = "Sequence" if ylab is None else ylab
         ax.spines["left"].set_visible(False)
         ax.set_yticklabels([])
         ax.set_yticks([])
-        attrs = ohe_seq(seq)
+        attrs = ohe(seq)
     else:
         ylab = "Importance Score" if ylab is None else ylab
 

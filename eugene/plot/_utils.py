@@ -328,3 +328,16 @@ def _const_line(*args, **kwargs):
     """
     x = np.arange(-1, 1.01, 0.01)
     plt.plot(x, x, c="k", ls="--")
+
+def _collapse_pos(positions):
+    """Collapse neighbor positions of array to ranges"""
+    ranges = []
+    start = positions[0]
+    for i in range(1, len(positions)):
+        if positions[i - 1] == positions[i] - 1:
+            continue
+        else:
+            ranges.append((start, positions[i - 1] + 2))
+            start = positions[i]
+    ranges.append((start, positions[-1] + 2))
+    return ranges
