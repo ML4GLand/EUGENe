@@ -3,14 +3,11 @@ from typing import List, Union
 import seqdata as sd
 import numpy as np
 import xarray as xr
-import ray
 import importlib
-from eugene import dataload as dl
 from eugene import models, settings
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
 from ray import tune
-from ray.air import session
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray.tune.schedulers import (
     ASHAScheduler,

@@ -11,6 +11,10 @@ import seqpro as sp
 import xarray as xr
 from sklearn.preprocessing import StandardScaler
 
+alphabets ={
+    "DNA": sp.alphabets.DNA,
+    "RNA": sp.alphabets.RNA,
+}
 
 def make_unique_ids_sdata(sdata, id_var="id", copy=False):
     """Make unique ids for each sequence in a sdata object."""
@@ -42,7 +46,7 @@ def ohe_seqs_sdata(
     sdata, alphabet="DNA", seq_key="seq", ohe_key="ohe_seq", fill_value=0, copy=False
 ):
     sdata = sdata.copy() if copy else sdata
-    ohe_seqs = sp.ohe(sdata[seq_key].values, sp.ALPHABETS[alphabet])
+    ohe_seqs = sp.ohe(sdata[seq_key].values, alphabet=alphabets[alphabet])
     if fill_value != 0:
         ohe_seqs = ohe_seqs.astype(type(fill_value))
         ohe_seqs[(ohe_seqs == 0).all(-1)] = np.array(
@@ -102,7 +106,7 @@ def train_test_random_split(
     )
     train_mask = np.full(sdata.sizes[dim], False)
     train_mask[train_idx] = True
-    sdata[train_key] = train_mask
+    sdata[train_key] = xr.DataArray(train_mask, dims=[dim])
 
 
 def train_test_homology_split(

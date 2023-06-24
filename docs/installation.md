@@ -5,19 +5,11 @@ EUGENe is a Python package, and can be installed using `pip`:
 pip install 'eugene-tools'
 ```
 
-The extras `[janggu,kipoi,memesuite]` install dependencies that are needed to use functions from the [Janggu](https://janggu.readthedocs.io), [Kipoi](https://kipoi.org/) and [MEME](https://meme-suite.org/meme) suite respectively. You can install them using:
+Extras for development `[dev, docs]` can be installed using:
 
 ```bash
-pip install 'eugene-tools[janggu,kipoi,memesuite]'
+pip install 'eugene-tools[dev, docs]'
 ```
-
-Or if you only want a single extra:
-
-```bash
-pip install 'eugene-tools[janggu]'
-```
-
-You can run a quick test of your installation, by opening an interactive Python prompt and running
 
 ```python
 import eugene as eu
@@ -27,7 +19,7 @@ import eugene as eu
 In it's current state, EUGENe is a pretty dependency heavy package. Some of this is due to the nature of the field, but we are also working on slimming down the package for future releases
 ```
 
-## Development Version
+## Bleeding edge version
 To work with the latest version [on GitHub](https://github.com/cartercompbio/EUGENe), clone the repository and `cd` into its root directory.
 
 ```bash
@@ -42,7 +34,7 @@ pip install -e .[dev]
 ```
 
 ```{note}
-If you want to edit the docs, you will need top run `pip install -e .[docs]
+If you want to edit the docs, you will need to run `pip install -e .[docs]
 ```
 
 ## Troubleshooting

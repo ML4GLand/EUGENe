@@ -25,7 +25,7 @@ def feature_implant_seq_sdata(
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     sdata[id_key].load()
-    seq_xr = sdata.sel(_sequence=sdata["name"] == seq_id)
+    seq_xr = sdata.sel(_sequence=sdata[id_key] == seq_id)
     if encoding == "str":
         seq = seq_xr[seq_key].values.astype("U")[0]
         implanted_seqs = tile_pattern_seq(

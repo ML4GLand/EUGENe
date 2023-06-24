@@ -45,9 +45,11 @@ def countplot(
     """
     keys = [keys] if isinstance(keys, str) else keys
     if groupby is None:
-        sdata_df = sdata[keys].to_dataframe()
+        sdata_df = sdata[keys].to_dataframe().reset_index()
+        print(sdata_df)
     else:
         sdata_df = sdata[keys + [groupby]].to_dataframe()
+        print(sdata_df)
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
             sdata_df, keys, func=sns.countplot, groupby=groupby, orient=orient, **kwargs
