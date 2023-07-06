@@ -7,7 +7,7 @@
 
 <img src="_static/workflow.png" alt="EUGENe workflow" width=600>
 
-EUGENe represents a computational framework for machine learning based modeling of regulatory sequences. It is designed after the [Scanpy](https://scanpy.readthedocs.io/en/stable/) package for single cell analysis in Python and is meant to make the development of deep learning worlflows in the genomics field more findable, accessible, interoperitable and reproducible (FAIR). 
+EUGENe represents a framework for building sequence-based deep learning models in genomics. It is meant to make the development of worlflows more findable, accessible, interoperitable and reproducible (FAIR). 
 
 EUGENe consists of several modules for handling data and for building, training, evaluating and interpreting deep learners that predict annotations of biological sequences. EUGENe is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. [Jupyter](https://jupyter.org/)).
 

@@ -1,11 +1,13 @@
-import pickle
-
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
+from numpy.typing import NDArray
+from typing import List, Literal, Optional, Union, cast
 
 
-def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
+def binarize_values(
+    values: NDArray[Union[float, int]],
+    upper_threshold: float,
+    lower_threshold: Optional[float] = None
+) -> NDArray[Union[float, int]]:
     """
     Function to binarize values based on thresholds
 
@@ -24,18 +26,3 @@ def binarize_values(values, upper_threshold=0.5, lower_threshold=None):
     else:
         bin_values = np.where(values <= upper_threshold, 0, bin_values)
     return bin_values
-
-
-def ohe_features(values):
-    """
-    Function to one-hot encode features
-
-    Parameters
-    ----------
-    values: numpy.ndarray
-        The values to one-hot encode
-    """
-    ohe = OneHotEncoder(sparse=False)
-    ohe.fit(values)
-    values_ohe = ohe.fit_transform(values)
-    return values_ohe

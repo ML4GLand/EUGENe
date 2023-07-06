@@ -7,23 +7,22 @@ from ..base import _towers as towers
 
 
 class DeepSEA(nn.Module):
-    """DeepSEA model implementation for EUGENe
+    """DeepSEA model implementation in from Zhou et al 2015 in EUGENe
 
-    Default parameters are those specified in the DeepSEA paper. We currently do not implement a "ds" or "ts" model
-    for DeepSEA.
+    This is a flexible implementation of the original DeepSEA model. 
+    If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Zhou et al 2015. 
 
     Parameters
     ----------
-    input_len:
-        int, input sequence length
-    channels:
-        list-like or int, channel width for each conv layer. If int each of the three layers will be the same channel width
-    conv_kernels:
-        list-like or int, conv kernel size for each conv layer. If int will be the same for all conv layers
-    pool_kernels:
-        list-like or int, maxpooling kernel size for the first two conv layers. If int will be the same for all conv layers
-    dropout_rates:
-        list-like or float, dropout rates for each conv layer. If int will be the same for all conv layers
+    input_le : int
+        input sequence length
+    output_dim : int
+        output dimension
+    conv_kwargs : dict
+        keyword arguments for the convolutional tower
+    dense_kwargs : dict
+        keyword arguments for the fully connected block
     """
 
     def __init__(
@@ -72,8 +71,22 @@ class DeepSEA(nn.Module):
 
 
 class Basset(nn.Module):
-    """
-    TODO
+    """Basset model implementation in from Kelley et al 2016 in EUGENe
+
+    This is a flexible implementation of the original Basset model.
+    If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Kelley et al 2016.
+
+    Parameters
+    ----------
+    input_len : int
+        input sequence length
+    output_dim : int
+        output dimension
+    conv_kwargs : dict
+        keyword arguments for the convolutional tower
+    dense_kwargs : dict
+        keyword arguments for the fully connected block
     """
 
     def __init__(
@@ -126,8 +139,22 @@ class Basset(nn.Module):
 
 
 class FactorizedBasset(nn.Module):
-    """
-    TODO
+    """Factorized Basset model implementation in from Wnuk et al 2017 in EUGENe
+
+    This is a flexible implementation of the original Factorized Basset model.
+    If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Wnuk et al 2017.
+
+    Parameters
+    ----------
+    input_len : int
+        input sequence length
+    output_dim : int
+        output dimension
+    conv_kwargs : dict
+        keyword arguments for the convolutional tower
+    dense_kwargs : dict
+        keyword arguments for the fully connected block
     """
 
     def __init__(
@@ -226,17 +253,22 @@ class FactorizedBasset(nn.Module):
 
 
 class DanQ(nn.Module):
-    """DanQ model from Quang and Xie, 2016;
+    """DanQ model from Quang and Xie 2016 in EUGENe
+
+    This is a flexible implementation of the original DanQ model.
+    If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Quang and Xie 2016.
+
 
     Parameters
     ----------
-    input_len:
+    input_len : int
         The length of the input sequence.
-    output_dim:
+    output_dim : int
         The dimension of the output.
-    task:
-        The task of the model.
-    dense_kwargs:
+    conv_kwargs : dict
+        The keyword arguments for the convolutional layer.
+    dense_kwargs : dict
         The keyword arguments for the fully connected layer.
     """
 
@@ -305,6 +337,25 @@ class Satori(nn.Module):
         mha_kwargs: dict = {},
         dense_kwargs: dict = {},
     ):
+        """Satori model from Ullah and Ben-Hur 2021 in EUGENe
+
+        This is a flexible implementation of the original Satori model.
+        If parameters for the CNN, MultiHeadAttention, and FCN are not passed in, the model
+        will be instantiated with the parameters described in Ullah and Ben-Hur 2021.
+
+        Parameters
+        ----------
+        input_len : int
+            The length of the input sequence.
+        output_dim : int
+            The dimension of the output.
+        conv_kwargs : dict
+            The keyword arguments for the convolutional layer.
+        mha_kwargs : dict
+            The keyword arguments for the multi-head attention layer.
+        dense_kwargs : dict
+            The keyword arguments for the fully connected layer.
+        """
         super(Satori, self).__init__()
 
         # Set the attrubutes

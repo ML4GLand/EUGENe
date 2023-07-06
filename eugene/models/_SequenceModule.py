@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, Optional, List, Literal, Dict
 
 import numpy as np
 import torch
@@ -20,43 +20,80 @@ from .base._schedulers import SCHEDULER_REGISTRY
 
 
 class SequenceModule(LightningModule):
-    """
-    Base sequence model class to be inherited by all models in EUGENe
+    """Base LightningModule class for EUGENe that handles models that predict single tensor outputs.
 
-    Parameters:
+    SequenceModules expect to train an architecture that ingests a single tensor (usually one-hot encoded DNA sequences) as input and 
+    outputs a single tensor. Examples of models that can be trained with SequenceModule include:
+        
+        - DeepBind
+        - DeepSEA
+        - DanQ
+        - Basset
+        - DeepSTARR
+
+    And many more!
+
+    The SequenceModule class handles the loss function, optimizer, scheduler, and metric for the model unless otherwise specified. We currently 
+    support custom loss functions, but only a set of pre-defined optimizers, schedulers, and metrics. We are working on adding support for custom
+    optimizers, schedulers, and metrics, but for now you can find the list of supported optimizers, schedulers, and metrics in the documentation.
+
+    Parameters
     ----------
-    input_len (int):
-        length of input sequence
-    output_dim (int):
-        number of output dimensions
-    task (str):
-        task of the model
-    loss_fxn (str):
-        loss function to use
-    hp_metric (str):
-        metric to use for hyperparameter tuning
-    kwargs (dict):
-        additional arguments to pass to the model
+    arch : torch.nn.Module
+        The architecture to train. e.g. DeepBind, DeepSEA, DanQ, Basset, DeepSTARR
+    task : Literal["regression", "binary_classification", "multiclass_classification", "multilabel_classification"]
+        task of the model. SequenceModule currently supports "regression", "binary_classification", "multiclass_classification"
+        and "multilabel_classification"
+    loss_fxn : Union[str, Callable]
+        loss function to use. If not specified, it will be inferred from the task. e.g. if the task is "regression", the loss function
+        will be set to "mse". Custom loss functions can be passed in as a Callable.
+    optimizer : Literal["adam", "sgd"]
+        optimizer to use. We currently support "adam" and "sgd"
+    optimizer_lr : float
+        starting learning rate for the optimizer
+    optimizer_kwargs : dict
+        additional arguments to pass to the optimizer
+    scheduler : Optional[str]
+        scheduler to use. We currently support "reduce_lr_on_plateau"
+    scheduler_monitor : str
+        metric to monitor for the scheduler
+    scheduler_kwargs : dict
+        additional arguments to pass to the scheduler
+    metric : Optional[str]
+        metric (other than loss) to track during training. If not specified, it will be inferred from the task. e.g. if the task is "regression", the metric
+        will be set to "r2score". We currently support "r2score", "pearson", "spearman", "explainedvariance", "auroc", "accuracy", "f1score", "precision", and "recall"
+    metric_kwargs : dict
+        additional arguments to pass to the metric. Note that for many cases, specific metrics and task combinations require specific keyword arguments. For example,
+        "multilable_classifcation" should use "auroc" as the metric, and the "task" keyword argument should be set to "multilabel". See the documentation for more details.
+    seed : Optional[int]
+        seed to use for reproducibility. If not specified, no seed will be set.
+    save_hyperparams : bool
+        whether to save the hyperparameters of the model. If True, the hyperparameters will be saved in the model checkpoint directory
+    arch_name : Optional[str]
+        name of the architecture. If not specified, it will be inferred from the architecture class name
+    model_name : Optional[str]
+        name of the specific instantiation of the model. If not specified, it will be set to "model". This is useful for keeping track of multiple models
+        that might have the same architecture
     """
 
     def __init__(
         self,
         arch: torch.nn.Module,
-        task: str = "regression",
+        task: Literal["regression", "binary_classification", "multiclass_classification", "multilabel_classification"] = "regression",
         loss_fxn: Union[str, Callable] = "mse",
-        optimizer: str = "adam",
+        optimizer: Literal["adam", "sgd"] = "adam",
         optimizer_lr: float = 1e-3,
-        optimizer_kwargs: dict = {},
-        scheduler: str = None,
+        optimizer_kwargs: Dict = {},
+        scheduler: Optional[str] = None,
         scheduler_monitor: str = "val_loss_epoch",
-        scheduler_kwargs: dict = {},
-        metric: str = None,
-        metric_kwargs: dict = None,
-        seed: int = None,
+        scheduler_kwargs: Dict = {},
+        metric: Optional[str] = None,
+        metric_kwargs: Dict = {},
+        seed: Optional[int] = None,
         save_hyperparams: bool = True,
-        arch_name: str = None,  # TODO: this should be a class attribute
-        model_name: str = None
-    ):
+        arch_name: Optional[str] = None,  # TODO: this should be a class attribute
+        model_name: Optional[str] = None,
+    ) -> None:
         super().__init__()
 
         # Set the base attributes of a Sequence model
@@ -81,18 +118,12 @@ class SequenceModule(LightningModule):
         self.optimizer_kwargs = optimizer_kwargs
 
         # Set the scheduler
-        self.scheduler = (
-            SCHEDULER_REGISTRY[scheduler] if scheduler is not None else None
-        )
+        self.scheduler = (SCHEDULER_REGISTRY[scheduler] if scheduler is not None else None)
         self.scheduler_monitor = scheduler_monitor
         self.scheduler_kwargs = scheduler_kwargs
 
         # Set the metric
-        (
-            self.train_metric,
-            self.metric_kwargs,
-            self.metric_name,
-        ) = self.configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
+        self.train_metric, self.metric_kwargs, self.metric_name = self.configure_metrics(metric=metric, metric_kwargs=metric_kwargs)
         self.val_metric = self.train_metric.clone()
         self.test_metric = self.train_metric.clone()
 
@@ -111,19 +142,26 @@ class SequenceModule(LightningModule):
         self.model_name = model_name if model_name is not None else "model"
 
     def forward(self, x) -> torch.Tensor:
-        """
-        Forward pass of the arch.
+        """Forward pass of the arch.
 
         Parameters:
         ----------
-        x (torch.Tensor):
+        x: torch.Tensor
             input sequence
         """
         return self.arch(x)
 
     def predict(self, x, batch_size=128, verbose=True):
-        """
-        Predict the output of the model in batches.
+        """Predict the output of the model in batches.
+
+        Parameters:
+        ----------
+        x : np.ndarray or torch.Tensor
+            input sequence, can be a numpy array or a torch tensor
+        batch_size : int
+            batch size
+        verbose : bool
+            whether to show a progress bar
         """
         with torch.no_grad():
             device = self.device
@@ -147,11 +185,11 @@ class SequenceModule(LightningModule):
 
         Parameters:
         ----------
-        batch (tuple):
+        batch: tuple
             batch of data
-        batch_idx (int):
+        batch_idx: int
             index of the batch
-        stage (str):
+        stage: str
             stage of the training
 
         Returns:
@@ -173,7 +211,7 @@ class SequenceModule(LightningModule):
         )
         self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
         calculate_metric(
-            self.train_metric, self.metric_name, step_dict["outs"], step_dict["y"]
+            self.train_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
         self.log(
             f"train_{self.metric_name}_epoch",
@@ -188,7 +226,7 @@ class SequenceModule(LightningModule):
         step_dict = self._common_step(batch, batch_idx, "val")
         self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
         calculate_metric(
-            self.val_metric, self.metric_name, step_dict["outs"], step_dict["y"]
+            self.val_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
         self.log(
             f"val_{self.metric_name}_epoch",
@@ -203,7 +241,7 @@ class SequenceModule(LightningModule):
         step_dict = self._common_step(batch, batch_idx, "test")
         self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
         calculate_metric(
-            self.test_metric, self.metric_name, step_dict["outs"], step_dict["y"]
+            self.test_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
         self.log(
             f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True
@@ -218,9 +256,10 @@ class SequenceModule(LightningModule):
 
     def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
+        
         Keeping this a function allows for the metric to be reconfigured
-        in inherited classes
-        TODO: add support for multiple metrics
+        in inherited classes TODO: add support for multiple metrics
+        
         Returns:
         ----------
         torchmetrics.Metric:

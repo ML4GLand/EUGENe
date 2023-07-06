@@ -5,6 +5,7 @@ import torch.nn.init as init
 from .._utils import get_layer
 from motifdata import to_kernel
 from motifdata import MotifSet
+from typing import Union, Callable, Optional, Any, Tuple, List, Literal
 
 
 INITIALIZERS_REGISTRY = {
@@ -24,7 +25,11 @@ INITIALIZERS_REGISTRY = {
 }
 
 
-def _init_weights(module, initializer):
+def _init_weights(
+    module: nn.Module,
+    initializer: str = "xavier_uniform",
+    **kwargs,
+) -> None:
     """Initialize the weights of a module.
 
     Parameters
@@ -52,7 +57,11 @@ def _init_weights(module, initializer):
                 init_func(param)
 
 
-def init_weights(model, initializer="kaiming_normal", **kwargs):
+def init_weights(
+    model: nn.Module,
+    initializer: str = "kaiming_normal",
+    **kwargs,
+) -> None:
     """Initialize the weights of a model.
 
     Parameters
@@ -68,15 +77,15 @@ def init_weights(model, initializer="kaiming_normal", **kwargs):
 
 
 def init_motif_weights(
-    model,
-    layer_name,
-    motifs,
-    list_index=None,
-    initializer="kaiming_normal",
-    convert_to_pwm=True,
-    divide_by_bg=False,
-    motif_align="center",
-    kernel_align="center",
+    model: nn.Module,
+    layer_name: str,
+    motifs: MotifSet,
+    list_index: Optional[int] = None,
+    initializer: str = "kaiming_normal",
+    convert_to_pwm: bool = True,
+    divide_by_bg: bool = True,
+    motif_align: Literal["center", "left", "right"] = "center",
+    kernel_align: Literal["center", "left", "right"] = "center",
 ):
     """Initialize the convolutional kernel of choice using a set of motifs
 
@@ -85,6 +94,8 @@ def init_motif_weights(
     Simply use the named module of the layer you want to initialize and pass it to this function. If the layer is a ParameterList,
     you must also pass the index of the kernel you want to initialize. If the layer is a Conv1d layer, you can pass None as the index.
 
+    This function modifies the model in place.
+
     Parameters
     ----------
     model :
@@ -92,9 +103,19 @@ def init_motif_weights(
     layer_name : str
         The name of the layer to initialize. You can use the list_available_layers function to get a list of available layers.
     motifs : MotifSet
-        A MotifSet object containing the motifs to initialize the kernel with.
+        A MotifSet object containing the motifs to initialize the kernel with. MotifSets are from the package motifdata.
     list_index : int, optional
         The index of the kernel to initialize. Only required if the layer is a ParameterList layer, by default None
+    initializer : str, optional
+        The name of the initializer to use, by default "kaiming_normal"
+    convert_to_pwm : bool, optional
+        Whether to convert the kernel to a PWM after initializing, by default True
+    divide_by_bg : bool, optional
+        Whether to divide the kernel by the background frequencies after initializing, by default True
+    motif_align : Literal["center", "left", "right"], optional
+        How to align the motifs when converting to a PWM, by default "center"
+    kernel_align : Literal["center", "left", "right"], optional
+        How to align the kernel when converting to a PWM, by default "center"
 
     Returns
     -------

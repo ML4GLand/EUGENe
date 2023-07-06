@@ -29,7 +29,7 @@ DEFAULT_METRIC_KWARGS = {
 }
 
 
-def calculate_metric(metric, metric_name, outs, y):
+def calculate_metric(metric, metric_name, metric_kwargs, outs, y):
     """Calculate a metric from a metric name and the model outputs and targets.
 
     Args:
@@ -43,7 +43,11 @@ def calculate_metric(metric, metric_name, outs, y):
     """
     if metric_name in ["accuracy", "auroc", "f1score", "precision", "recall"]:
         if len(y.shape) > 1:
-            y = torch.argmax(y.squeeze(), dim=1)
+            if "task" in metric_kwargs:
+                if "multilabel" in metric_kwargs["task"]:
+                    y = y.squeeze().long()
+                else:
+                    y = torch.argmax(y.squeeze(), dim=1)
     else:
         outs = outs.squeeze()
     metric(outs, y)

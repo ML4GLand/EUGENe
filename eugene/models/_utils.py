@@ -1,20 +1,44 @@
 import importlib
+from typing import List, Tuple, Union
+from pathlib import Path
 import os
+from os import PathLike
 import torch
 import yaml
 from .._settings import settings
 
 
-def get_layer(model, layer_name):
-    return dict([*model.named_modules()])[layer_name]
-
-
 def list_available_layers(model):
+    """List all layers in a model"""
     return [name for name, _ in model.named_modules() if len(name) > 0]
 
 
-def load_config(config_path, **kwargs):
-    # If config path is just a filename, assume it's in the default config directory
+def get_layer(model, layer_name):
+    """Get a layer from a model by name"""
+    return dict([*model.named_modules()])[layer_name]
+
+
+def load_config(
+    config_path: Union[str, PathLike],
+    **kwargs
+):
+    """Instantiate a module or architecture from a config file
+
+    This function is used to instantiate a module or architecture from a
+    config file. The config file must be a YAML file with TODO
+
+    Parameters
+    ----------
+    config_path : str or PathLike
+        Path to a YAML config file
+    **kwargs
+        Additional keyword arguments to pass to the module or architecture
+
+    Returns
+    -------
+    Union[SequenceModule, ProfileModule, nn.Module]
+    
+    """
     if "/" not in config_path:
         config_path = os.path.join(settings.config_dir, config_path)
     with open(config_path, "r") as f:
@@ -37,12 +61,3 @@ def load_config(config_path, **kwargs):
         model = model_type(**arch)
     else:
         raise ValueError("Config file must contain either a 'model' or 'module' key")
-
-
-def load_model(model_path):
-    model_state = torch.load(model_path)
-    arch = model_state["hyper_parameters"]["arch"]
-    model_type = getattr(importlib.import_module("eugene.models.zoo"), arch)
-    model = model_type(**model_state["hyper_parameters"])
-    model.load_state_dict(model_state["state_dict"])
-    return model

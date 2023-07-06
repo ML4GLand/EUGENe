@@ -22,12 +22,6 @@ class Jores21CNN(nn.Module):
         Length of the input sequence.
     output_dim : int
         Dimension of the output.
-    strand : str, optional
-        Strand of the input. Only ss is supported for this model
-    task : str, optional
-        Task of the model. Either "regression" or "classification".
-    aggr : str, optional
-        Aggregation method. Does not apply to this model and will be ignored
     filters : int, optional
         Number of filters in the convolutional layers.
     kernel_size : int, optional
@@ -97,9 +91,22 @@ class Jores21CNN(nn.Module):
 
 
 class DeepSTARR(nn.Module):
-    """DeepSTARR model from de Almeida et al., 2022; see <https://www.nature.com/articles/s41588-022-01048-5>
+    """DeepSTARR model from de Almeida et al 2022
+
+    This is a flexible implementation of the original DeepSTARR model.
+    If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Quang and Xie 2016.
 
     Parameters
+    ----------
+    input_len : int
+        Length of the input sequence.
+    output_dim : int
+        Dimension of the output.
+    conv_kwargs : dict, optional
+        Keyword arguments for the convolutional tower.
+    dense_kwargs : dict, optional
+        Keyword arguments for the dense block.
     """
 
     def __init__(

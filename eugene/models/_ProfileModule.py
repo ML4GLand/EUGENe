@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, Literal
 
 import numpy as np
 import torch
@@ -15,8 +15,45 @@ from .base._schedulers import SCHEDULER_REGISTRY
 
 
 class ProfileModule(LightningModule):
-    """
-    A model that is a profile of a sequence.
+    """LightningModule class for training models that predict profile data (both shape and count).
+
+    ProfileModules handles BPNet style training, where the model has multiple output tensors (“heads”), 
+    can take in optional control inputs, and uses multiple loss functions. We currently support only BPNet
+    training without a bias model, but are working on adding support for chromBPNet style training as well.
+
+    Only losses and metrics from the bpnet-lite repo have been tested here and are default. As the training of 
+    BPNet style models advances in PyTorch, we will add support for more loss functions and metrics.
+
+    Parameters
+    ----------
+    arch : torch.nn.Module
+        The architecture to train. Currently only supports BPNet as a built-in, but you can define your own that is compatible.
+    task : str, optional
+        The task to train the model for. Currently only supports "profile" as a built-in.
+    profile_loss_fxn : str
+        The loss function to use for the profile head. Defaults to "MNLLLoss". This is the only loss function that has been tested
+    count_loss_fxn : str
+        The loss function to use for the count head. Defaults to "log1pMSELoss". This is the only loss function that has been tested
+    optimizer : str
+        optimizer to use. We currently support "adam" and "sgd"
+    optimizer_lr : float
+        starting learning rate for the optimizer
+    optimizer_kwargs : dict
+        additional arguments to pass to the optimizer
+    scheduler : str
+        scheduler to use. We currently support "reduce_lr_on_plateau"
+    scheduler_monitor : str
+        metric to monitor for the scheduler
+    scheduler_kwargs : dict
+        additional arguments to pass to the scheduler
+    seed : int
+        seed to use for reproducibility
+    save_hyperparams : bool
+        whether to save the hyperparameters
+    arch_name : str
+        name of the architecture
+    model_name : str
+        name of the model
     """
 
     def __init__(
@@ -25,15 +62,13 @@ class ProfileModule(LightningModule):
         task: str = "profile",
         profile_loss_fxn: Optional[str] = "MNLLLoss",
         count_loss_fxn: Optional[str] = "log1pMSELoss",
-        optimizer: Optional[str] = "adam",
+        optimizer: Literal["adam", "sgd"] = "adam",
         optimizer_lr: Optional[float] = 1e-3,
         optimizer_kwargs: Optional[dict] = {},
         scheduler: Optional[str] = None,
         scheduler_monitor: str = "count_loss",
         scheduler_kwargs: dict = {},
-        metric: str = None,
-        metric_kwargs: dict = None,
-        seed: int = None,
+        seed: Optional[int] = None,
         save_hyperparams: bool = True,
         arch_name: Optional[str] = None,
         model_name: Optional[str] = None
@@ -67,8 +102,6 @@ class ProfileModule(LightningModule):
         self.scheduler_monitor = scheduler_monitor
         self.scheduler_kwargs = scheduler_kwargs
 
-        # Ignore the metric for now
-
         # Set the seed
         if seed is not None:
             self.seed = seed
@@ -87,9 +120,9 @@ class ProfileModule(LightningModule):
         """
         Forward pass of the arch.
 
-        Parameters:
+        Parameters
         ----------
-        x (torch.Tensor):
+        x : torch.Tensor
             input sequence
         """
         return self.arch(x, x_ctl)
@@ -100,6 +133,22 @@ class ProfileModule(LightningModule):
         X_ctl: Optional[torch.Tensor] = None,
         batch_size: int = 128,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Predict the profile and count for a set of sequences.
+
+        Parameters
+        ----------
+        X : torch.Tensor
+            input sequences
+        X_ctl : torch.Tensor, optional
+            control profile
+        batch_size : int, optional
+            batch size to use for prediction
+
+        Returns
+        -------
+        tuple(torch.Tensor, torch.Tensor)
+            predicted profile and count
+        """
         device = next(self.parameters()).device
         with torch.no_grad():
             starts = np.arange(0, X.shape[0], batch_size)
@@ -123,6 +172,22 @@ class ProfileModule(LightningModule):
 
 
     def _common_step(self, batch, batch_idx, stage: str):
+        """Common step for training, validation and test
+
+        Parameters:
+        ----------
+        batch: tuple
+            batch of data
+        batch_idx: int
+            index of the batch
+        stage: str
+            stage of the training
+
+        Returns:
+        ----------
+        dict:
+            dictionary of metrics
+        """
         X, X_ctl, y = batch
         y_profile, y_counts = self(X, X_ctl)
         y_profile = y_profile.reshape(y_profile.shape[0], -1)
@@ -157,10 +222,6 @@ class ProfileModule(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
-        #step_dict = self._common_step(batch, batch_idx, "val")
-        #self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
-        #self.log("val_profile_loss_epoch", step_dict["profile_loss"], on_step=False, on_epoch=True, prog_bar=True)
-        #self.log("val_count_loss_epoch", step_dict["count_loss"], on_step=False, on_epoch=True, prog_bar=True)
         X, X_ctl, y = batch
         y_profile, y_counts = self(X, X_ctl)
         z = y_profile.shape

@@ -30,7 +30,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "myst_parser",
     "nbsphinx",
-    "sphinx_gallery.load_style",
+#    "sphinx_gallery.load_style",
 ]
 
 autosummary_generate = True

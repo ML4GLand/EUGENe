@@ -8,7 +8,10 @@ from ..base import _towers as towers
 
 class BPNet(nn.Module):
     """
-    This nn.Module was 
+    This nn.Module was taken without permission from a Mr. Schreiber.
+    Just kidding, he made it open source so ipso facto I do have permission.
+    Anyway the documentation below is from him, so yell at him if it doesn't
+    work
 
     A basic BPNet model with stranded profile and total count prediction.
     This is a reference implementation for BPNet. The model takes in
@@ -38,6 +41,7 @@ class BPNet(nn.Module):
     (4) The count prediction task is predicting the total counts across
     both strands. The counts are then distributed across strands according
     to the single log softmax from 3.
+    
     Parameters
     ----------
     n_filters: int, optional
@@ -121,12 +125,14 @@ class BPNet(nn.Module):
 
     def forward(self, X, X_ctl=None):
         """A forward pass of the model.
+        
         This method takes in a nucleotide sequence X, a corresponding
         per-position value from a control track, and a per-locus value
         from the control track and makes predictions for the profile
         and for the counts. This per-locus value is usually the
         log(sum(X_ctl_profile)+1) when the control is an experimental
         read track but can also be the output from another model.
+        
         Parameters
         ----------
         X: torch.tensor, shape=(batch_size, 4, sequence_length)
@@ -134,6 +140,7 @@ class BPNet(nn.Module):
         X_ctl: torch.tensor, shape=(batch_size, n_strands, sequence_length)
                 A value representing the signal of the control at each position in
                 the sequence.
+       
         Returns
         -------
         y_profile: torch.tensor, shape=(batch_size, n_strands, out_length)

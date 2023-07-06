@@ -3,6 +3,7 @@ try:
     from ._hyperopt import hyperopt
     
     RAY_AVAILABLE = True
+
 except ImportError:
     RAY_AVAILABLE = False
     def no_ray():

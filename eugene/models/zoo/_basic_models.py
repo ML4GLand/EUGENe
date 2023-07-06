@@ -4,16 +4,16 @@ import torch.nn.functional as F
 from ..base import _layers as layers
 from ..base import _blocks as blocks
 from ..base import _towers as towers
+from typing import Union, Callable, Optional, Any, Tuple, List
 
 
 class FCN(nn.Module):
-    """
+    """Basic fully connected network
+
     Instantiate a fully connected neural network with the specified layers and parameters.
 
     By default, this architecture flattens the one-hot encoded sequence and passes
-    it through a set of layers that are fully connected. The task defines how the output is
-    treated (e.g. sigmoid activation for binary classification). The loss function is
-    should be matched to the task (e.g. binary cross entropy ("bce") for binary classification).
+    it through a set of layers that are fully connected.
 
     Parameters
     ----------
@@ -21,8 +21,8 @@ class FCN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    input_dims:
+        The number of input dimensions. This is equivalent to the alphabet length.
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
@@ -45,7 +45,9 @@ class FCN(nn.Module):
 
         # Create the blocks
         self.dense_block = blocks.DenseBlock(
-            input_dim=self.flattened_input_dims, output_dim=output_dim, **dense_kwargs
+            input_dim=self.flattened_input_dims, 
+            output_dim=output_dim, 
+            **dense_kwargs
         )
 
     def forward(self, x):
@@ -55,14 +57,13 @@ class FCN(nn.Module):
 
 
 class CNN(nn.Module):
-    """
+    """Basic convolutional network
+
     Instantiate a CNN model with a set of convolutional layers and a set of fully
     connected layers.
 
     By default, this architecture passes the one-hot encoded sequence through a set
-    1D convolutions with 4 channels. The task defines how the output is treated (e.g.
-    sigmoid activation for binary classification). The loss function is should be matched
-    to the task (e.g. binary cross entropy ("bce") for binary classification).
+    1D convolutions with 4 channels followed by a set of fully connected layers.
 
     Parameters
     ----------
@@ -70,8 +71,8 @@ class CNN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    conv_kwargs:
+        The keyword arguments for the convolutional layers.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the flattened output of the convolutional layers directly to
@@ -93,7 +94,10 @@ class CNN(nn.Module):
         self.conv_kwargs = conv_kwargs
 
         # Create the blocks
-        self.conv1d_tower = towers.Conv1DTower(input_len=input_len, **conv_kwargs)
+        self.conv1d_tower = towers.Conv1DTower(
+            input_len=input_len, 
+            **conv_kwargs
+        )
         self.dense_block = blocks.DenseBlock(
             input_dim=self.conv1d_tower.flatten_dim,
             output_dim=output_dim,
@@ -108,7 +112,8 @@ class CNN(nn.Module):
 
 
 class RNN(nn.Module):
-    """
+    """Basic recurrent network
+
     Instantiate an RNN model with a set of recurrent layers and a set of fully
     connected layers.
 
@@ -122,8 +127,10 @@ class RNN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    recurrent_kwargs:
+        The keyword arguments for the recurrent layers.
+    input_dims:
+        The number of input dimensions. This is equivalent to the alphabet length.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the recurrent output of the recurrent layers directly to the
@@ -165,7 +172,8 @@ class RNN(nn.Module):
 
 
 class Hybrid(nn.Module):
-    """
+    """Basic hybrid network
+
     A hybrid model that uses both a CNN and an RNN to extract features then passes the
     features through a set of fully connected layers.
 
@@ -179,8 +187,10 @@ class Hybrid(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    conv_kwargs:
+        The keyword arguments for the convolutional layers.
+    recurrent_kwargs:
+        The keyword arguments for the recurrent layers.
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """
@@ -203,7 +213,10 @@ class Hybrid(nn.Module):
         self.dense_kwargs = dense_kwargs
 
         # Create the blocks
-        self.conv1d_tower = towers.Conv1DTower(input_len=input_len, **conv_kwargs)
+        self.conv1d_tower = towers.Conv1DTower(
+            input_len=input_len,
+            **conv_kwargs
+        )
         self.recurrent_block = blocks.RecurrentBlock(
             input_dim=self.conv1d_tower.out_channels, **recurrent_kwargs
         )
@@ -224,8 +237,9 @@ class Hybrid(nn.Module):
 class TutorialCNN(nn.Module):
     """Tutorial CNN model
 
-    This is a very simple one layer convolutional model for testing purposes. It is featured in testing and tutorial
-    notebooks.
+    This is a very simple one layer convolutional model for testing purposes. It has 4 input channels,
+    a single convolutional layer of width 21 and with 30 output channels, and a single dense layer with
+    30 hidden units. This model is featured in testing and tutorial notebooks.
 
     Parameters
     ----------
@@ -233,12 +247,6 @@ class TutorialCNN(nn.Module):
         Length of the input sequence.
     output_dim : int
         Dimension of the output.
-    task : str, optional
-        Task of the model. Either "regression" or "classification".
-    loss_fxn : str, optional
-        Loss function.
-    **kwargs
-        Keyword arguments to pass to the nn.Module class.
     """
 
     def __init__(
@@ -264,11 +272,36 @@ class TutorialCNN(nn.Module):
 
 
 class Inception(nn.Module):
+    """Inecption1DConv network
+
+    Instantiate a CNN model with a set of convolutional layers and a set of fully connected layers in
+    the same way as CNN, but the convolutional layers are replaced with InceptionConv1D layers. These layers
+    follow from the 2D inception layers in the original Inception architecture, but have been modified for 1D
+
+    Parameters
+    ----------
+    input_len:
+        The length of the input sequence.
+    output_dim:
+        The dimension of the output.
+    channels:
+        The number of channels in each layer of the InceptionConv1D tower.
+    kernel_size2:
+        The kernel for the first non 1 unit convolution in each layer
+    kernel_size3:
+        The kernel for the second non 1 unit convolution in each layer
+    conv_maxpool_kernel_size:
+        The kernel size for the maxpooling layer in each layer
+    dense_kwargs:
+        The keyword arguments for the fully connected layer. If not provided, the
+        default passes the flattened output of the convolutional layers directly to
+        the output layer.
+    """
     def __init__(
         self,
         input_len: int,
         output_dim: int,
-        channels=[4, 64, 128, 256],
+        channels: List[int] = [4, 32, 64, 128],
         kernel_size2: int = 4,
         kernel_size3: int = 8,
         conv_maxpool_kernel_size: int = 3,
@@ -311,7 +344,8 @@ class Inception(nn.Module):
         return x
 
 class dsFCN(nn.Module):
-    """
+    """Basic FCN model with reverse complement
+
     Instantiate a fully connected neural network with the specified layers and parameters.
     
     By default, this architecture flattens the one-hot encoded sequence and passes 
@@ -385,7 +419,8 @@ class dsFCN(nn.Module):
     
 
 class dsCNN(nn.Module):
-    """
+    """Basic CNN model with reverse complement
+
     Instantiate a CNN model with a set of convolutional layers and a set of fully
     connected layers.
 
@@ -470,7 +505,8 @@ class dsCNN(nn.Module):
     
 
 class dsRNN(nn.Module):
-    """
+    """Basic RNN model with reverse complement
+
     Instantiate an RNN model with a set of recurrent layers and a set of fully
     connected layers.
 
@@ -552,7 +588,8 @@ class dsRNN(nn.Module):
 
 
 class dsHybrid(nn.Module):
-    """
+    """Basic hybrid network with reverse complement
+    
     A hybrid model that uses both a CNN and an RNN to extract features then passes the
     features through a set of fully connected layers.
     

@@ -7,11 +7,8 @@ from ..base import _towers as towers
 
 
 class DeepBind(nn.Module):
-    """
-    DeepBind model implemented from Alipanahi et al 2015 in PyTorch
+    """DeepBind architecture implemented from Alipanahi et al 2015 in PyTorch
 
-    DeepBind is a model that takes in a DNA or RNA sequence and outputs a probability of
-    binding for a given DNA transcription factor or RNA binding protein respectively.
     This is a flexible implementation of the original DeepBind architecture that allows users
     to modify the number of convolutional layers, the number of fully connected layers, and
     many more hyperparameters. If parameters for the CNN and FCN are not passed in, the model
@@ -28,30 +25,12 @@ class DeepBind(nn.Module):
         Length of input sequence
     output_dim : int
         Number of output classes
-    mode : str
-        Mode of model, either "dna" or "rbp"
-    strand : str
-        Strand of model, either "ss", "ds", or "ts"
-    task : str
-        Task of model, either "regression" or "classification"
-    aggr : str
-        Aggregation method of model, either "max" or "avg"
-    loss_fxn : str
-        Loss function of model, either "mse" or "cross_entropy"
-    optimizer : str
-        Optimizer of model, either "adam" or "sgd"
-    lr : float
-        Learning rate of model
-    scheduler : str
-        Scheduler of model, either "lr_scheduler" or "plateau"
-    scheduler_patience : int
-        Scheduler patience of model
-    mp_kwargs : dict
-        Keyword arguments for multiprocessing
     conv_kwargs : dict
         Keyword arguments for convolutional layers
     dense_kwargs : dict
         Keyword arguments for fully connected layers
+    mode : str
+        Mode of model, either "dna" or "rbp"
     """
 
     def __init__(
@@ -112,7 +91,77 @@ class DeepBind(nn.Module):
 
 
 class ResidualBind(nn.Module):
-    # TODO: clean this up
+    """ResidualBind architecture implemented from Koo et al 2021 in PyTorch
+
+    This is a flexible implementation of the original ResidualBind architecture that allows users
+    many hyperparameters. If parameters for the CNN and FCN are not passed in, the model
+    will be instantiated with the parameters described in Koo et al 2021.
+
+    Parameters
+    ----------
+    input_len : int
+        Length of input sequence
+    output_dim : int
+        Number of output neurons
+    input_chanels : int, optional
+        Number of input channels, by default 4
+    conv_channels : list, optional
+        Number of channels in the first convolutional layer, by default [96]
+    conv_kernel_size : list, optional
+        Kernel size of the first convolutional layer, by default [11]
+    conv_stride_size : list, optional
+        Stride size of the first convolutional layer, by default [1]
+    conv_dilation_rate : list, optional
+        Dilation rate of the first convolutional layer, by default [1]
+    conv_padding : str, optional
+        Padding of the first convolutional layer, by default "valid"
+    conv_activation : str, optional
+        Activation function of the first convolutional layer, by default "relu"
+    conv_batchnorm : bool, optional
+        Whether to use batchnorm in the first convolutional layer, by default True
+    conv_batchnorm_first : bool, optional
+        Whether to use batchnorm before or after the activation in the first convolutional layer, by default True
+    conv_dropout_rates : float, optional
+        Dropout rate of the first convolutional layer, by default 0.1
+    conv_biases : bool, optional
+        Whether to use biases in the first convolutional layer, by default False
+    residual_channels : list, optional
+        Number of channels in the residual blocks, by default [96, 96, 96]
+    residual_kernel_size : list, optional
+        Kernel size of the residual blocks, by default [3, 3, 3]
+    residual_stride_size : list, optional
+        Stride size of the residual blocks, by default [1, 1, 1]
+    residual_dilation_rate : list, optional
+        Dilation rate of the residual blocks, by default [1, 2, 4]
+    residual_padding : str, optional
+        Padding of the residual blocks, by default "same"
+    residual_activation : str, optional
+        Activation function of the residual blocks, by default "relu"
+    residual_batchnorm : bool, optional
+        Whether to use batchnorm in the residual blocks, by default True
+    residual_batchnorm_first : bool, optional
+        Whether to use batchnorm before or after the activation in the residual blocks, by default True
+    residual_dropout_rates : float, optional
+        Dropout rate of the residual blocks, by default 0.1
+    residual_biases : bool, optional
+        Whether to use biases in the residual blocks, by default False
+    pool_kernel_size : int, optional
+        Kernel size of the average pooling layer, by default 10
+    pool_dropout_rate : float, optional
+        Dropout rate of the average pooling layer, by default 0.2
+    dense_hidden_dims : list, optional
+        Number of neurons in the fully connected layers, by default [256]
+    dense_activation : str, optional
+        Activation function of the fully connected layers, by default "relu"
+    dense_batchnorm : bool, optional
+        Whether to use batchnorm in the fully connected layers, by default True
+    dense_batchnorm_first : bool, optional
+        Whether to use batchnorm before or after the activation in the fully connected layers, by default True
+    dense_dropout_rates : float, optional
+        Dropout rate of the fully connected layers, by default 0.5
+    dense_biases : bool, optional
+        Whether to use biases in the fully connected layers, by default False
+    """
     def __init__(
         self,
         input_len,
@@ -217,23 +266,17 @@ class ResidualBind(nn.Module):
 
 
 class Kopp21CNN(nn.Module):
-    """
-    Custom convolutional model used in Kopp et al. 2021 paper
+    """Custom convolutional model used in Kopp et al. 2021 paper
 
     PyTorch implementation of the TensorFlow model described here:
     https://github.com/wkopp/janggu_usecases/tree/master/01_jund_prediction
 
-    This model can only be run in "ds" mode. The reverse complement must be included in the Dataloader
     Parameters
     ----------
     input_len : int
         Length of the input sequence.
     output_dim : int
         Dimension of the output.
-    strand : str, optional
-        Strand of the input. This model is only implemented for "ds"
-    task : str, optional
-        Task for this model. By default "binary_classification" for this mode
     aggr : str, optional
         Aggregation method. Either "concat", "max", or "avg". By default "max" for this model.
     filters : list, optional
