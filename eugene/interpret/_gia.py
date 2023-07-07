@@ -9,10 +9,11 @@ from seqexplainer.gia._complex_perturb import embed_deepstarr_distance_cooperati
 from seqexplainer.gia._gia import deepstarr_motif_distance_cooperativity_gia
 import seqpro as sp
 
+from typing import Optional, List, Dict, Any
 
 def feature_implant_seq_sdata(
     model: torch.nn.Module,
-    sdata,
+    sdata: xr.Dataset,
     seq_id: str,
     feature: np.ndarray,
     seq_key: str = "ohe_seq",
@@ -22,6 +23,36 @@ def feature_implant_seq_sdata(
     store: bool = True,
     device: str = "cpu",
 ):
+    """Implant a feature into a sequence in an xarray dataset and return the model predictions.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to use for predictions.
+    sdata : xr.Dataset
+        The dataset containing the sequence data.
+    seq_id : str
+        The ID of the sequence to implant the feature into.
+    feature : np.ndarray
+        The feature to implant.
+    seq_key : str, optional
+        The key for the sequence data in the dataset, by default "ohe_seq".
+    id_key : str, optional
+        The key for the sequence IDs in the dataset, by default "id".
+    feature_name : str, optional
+        The name of the feature, by default "feature".
+    encoding : str, optional
+        The encoding of the sequence data, either "onehot" or "str", by default "onehot".
+    store : bool, optional
+        Whether to store the predictions in the dataset, by default True.
+    device : str, optional
+        The device to use for predictions, by default "cpu".
+
+    Returns
+    -------
+    np.ndarray
+        The model predictions.
+    """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     sdata[id_key].load()
@@ -51,7 +82,7 @@ def feature_implant_seq_sdata(
 
 def positional_gia_sdata(
     model: torch.nn.Module,
-    sdata,
+    sdata: xr.Dataset,
     feature: np.ndarray,
     feature_name="feature",
     seq_key: str = "ohe_seq",
@@ -60,6 +91,35 @@ def positional_gia_sdata(
     device: str = "cpu",
     encoding: str = "onehot",
 ):
+    """Implant a feature into all sequences in an xarray dataset and return the model predictions.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to use for predictions.
+    sdata : xr.Dataset
+        The dataset containing the sequence data.
+    feature : np.ndarray
+        The feature to implant.
+    feature_name : str, optional
+        The name of the feature, by default "feature".
+    seq_key : str, optional
+        The key for the sequence data in the dataset, by default "ohe_seq".
+    id_key : str, optional
+        The key for the sequence IDs in the dataset, by default "id".
+    store_key : str, optional
+        The key to store the predictions in the dataset, by default None.
+    device : str, optional
+        The device to use for predictions, by default "cpu".
+    encoding : str, optional
+        The encoding of the sequence data, either "onehot" or "str", by default "onehot".
+
+    Returns
+    -------
+    np.ndarray
+        The model predictions.
+
+    """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
     predictions = []

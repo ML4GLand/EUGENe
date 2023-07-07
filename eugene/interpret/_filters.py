@@ -1,38 +1,90 @@
 import os
+from typing import Union, Optional, List, Dict, Any, Literal, Tuple
+
 import numpy as np
+import xarray as xr
+import torch.nn as nn
 from tqdm.auto import tqdm
+
 from seqexplainer import get_layer_outputs
 from seqexplainer import get_activators_max_seqlets, get_activators_n_seqlets, get_pfms
 from seqdata import get_torch_dataloader
-import xarray as xr
-from .._settings import settings
 from motifdata import from_kernel
 from motifdata._transform import pfms_to_ppms
 from motifdata import write_meme
 from eugene.utils import make_dirs
+from .._settings import settings
 
 
 def generate_pfms_sdata(
-    model,
-    sdata,
-    seq_key,
-    layer_name,
-    kernel_size=None,
-    activations=None,
-    seqs=None,
-    num_seqlets=100,
-    padding=0,
-    activation_threshold=None,
-    num_filters=None,
-    batch_size=None,
-    device=None,
-    num_workers=None,
-    prefetch_factor=None,
-    transforms={},
-    prefix="",
-    suffix="",
-    copy=False,
-):
+    model: nn.Module,
+    sdata: xr.Dataset,
+    seq_var: str,
+    layer_name: str,
+    kernel_size: Optional[int] = None,
+    activations: Optional[np.ndarray] = None,
+    seqs: Optional[np.ndarray] = None,
+    num_seqlets: int = 100,
+    padding: int = 0,
+    activation_threshold: Optional[float] = None,
+    num_filters: Optional[int] = None,
+    batch_size: Optional[int] = None,
+    device: Optional[str] = None,
+    num_workers: Optional[int] = None,
+    prefetch_factor: Optional[int] = None,
+    transforms: Optional[Dict[str, Any]] = None,
+    prefix: str = "",
+    suffix: str = "",
+    copy: bool = False,
+) -> Optional[xr.Dataset]:
+    """Generate position frequency matrices (PFMs) for a given layer in a PyTorch model.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to generate PFMs for.
+    sdata : xr.Dataset
+        The dataset to use for generating PFMs.
+    seq_var : str
+        The name of the sequence variable in the dataset.
+    layer_name : str
+        The name of the layer to generate PFMs for.
+    kernel_size : int, optional
+        The size of the kernel to use for generating PFMs. If not specified, the kernel size will be inferred from the layer.
+    activations : torch.Tensor, optional
+        The activations to use for generating PFMs. If not specified, the activations will be computed using the dataset and layer.
+    seqs : List[str], optional
+        The sequences to use for generating PFMs. If not specified, the sequences will be inferred from the dataset.
+    num_seqlets : int, optional
+        The number of sequencelets to use for generating PFMs.
+    padding : int, optional
+        The amount of padding to use when generating sequencelets.
+    activation_threshold : float, optional
+        The threshold to use for selecting sequencelets based on their activation values.
+    num_filters : int, optional
+        The number of filters to use for generating PFMs. If not specified, all filters will be used.
+    batch_size : int, optional
+        The batch size to use when generating PFMs.
+    device : str, optional
+        The device to use for generating PFMs.
+    num_workers : int, optional
+        The number of workers to use for generating PFMs.
+    prefetch_factor : int, optional
+        The prefetch factor to use when generating PFMs.
+    transforms : Dict[str, Any], optional
+        The transforms to apply to the dataset.
+    prefix : str, optional
+        The prefix to use for the output file.
+    suffix : str, optional
+        The suffix to use for the output file.
+    copy : bool, optional
+        Whether to copy the dataset before generating PFMs.
+    
+    Returns
+    -------
+    pfms : np.ndarray
+        The position frequency matrices.
+    """
     # Copy the data if requested
     sdata = sdata.copy() if copy else sdata
 
@@ -47,7 +99,7 @@ def generate_pfms_sdata(
         dl = get_torch_dataloader(
             sdata,
             sample_dims=["_sequence"],
-            variables=[seq_key],
+            variables=[seq_var],
             batch_size=batch_size,
             num_workers=num_workers,
             prefetch_factor=prefetch_factor,
@@ -64,7 +116,7 @@ def generate_pfms_sdata(
             total=len(dl),
             desc=f"Getting activations on batches of size {batch_size}",
         ):
-            batch_seqs = batch[seq_key]
+            batch_seqs = batch[seq_var]
             outs = get_layer_outputs(
                 model=model,
                 inputs=batch_seqs,
@@ -124,15 +176,40 @@ def generate_pfms_sdata(
 
 
 def filters_to_meme_sdata(
-    sdata,
-    filters_key: str,
-    filter_inds=None,
-    axis_order=("_num_kernels", "_ohe", "_kernel_size"),
-    output_dir: str = None,
-    filename="filters.meme",
-    alphabet="ACGT",
-    bg={"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25},
-):
+    sdata: xr.Dataset,
+    filters_var: str,
+    filter_inds: Optional[List[int]] = None,
+    axis_order: Tuple[str, str, str] = ("_num_kernels", "_ohe", "_kernel_size"),
+    output_dir: Optional[str] = None,
+    filename: str = "filters.meme",
+    alphabet: str = "ACGT",
+    bg: Dict[str, float] = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25},
+) -> None:
+    """Convert position frequency matrices (PFMs) to a MEME motif file.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        The dataset containing the PFMs.
+    filters_var : str
+        The name of the variable containing the PFMs.
+    filter_inds : List[int], optional
+        The indices of the filters to convert to a MEME file. If not specified, all filters will be converted.
+    axis_order : Tuple[str, str, str], optional
+        The order of the axes in the PFMs. By default, the axes are assumed to be in the order (num_kernels, ohe, kernel_size).
+    output_dir : str, optional
+        The directory to write the MEME file to. By default, the MEME file will be written to the output directory specified in the settings.
+    filename : str, optional
+        The name of the MEME file to write.
+    alphabet : str, optional
+        The alphabet to use for the MEME file.
+    bg : Dict[str, float], optional
+        The background frequencies to use for the MEME file.
+    
+    Returns
+    -------
+    None
+    """
     # Make sure the output directory exists
     output_dir = output_dir if output_dir is not None else settings.output_dir
     make_dirs(output_dir)
@@ -140,7 +217,7 @@ def filters_to_meme_sdata(
 
     # Grab the filters if they are there
     try:
-        pfms = sdata[filters_key].transpose(*axis_order).to_numpy()
+        pfms = sdata[filters_var].transpose(*axis_order).to_numpy()
     except KeyError:
         print("No filters found in sdata. Run generate_pfms_sdata first.")
 

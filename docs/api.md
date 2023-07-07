@@ -91,14 +91,6 @@ This module is designed to help users prepare their SeqDatas for model training 
 
    dataload.RandomRC
 ```
-```{eval-rst}
-.. module:: eugene
-```
-
-```{eval-rst}
-.. automodule:: eugene
-   :noindex:
-```
 
 ## `models`
 
@@ -181,4 +173,204 @@ This module is designed to allow users to easily build and initialize several ne
    models.list_available_layers
    models.get_layer
    models.load_config
+```
+
+## `train`
+
+```
+from eugene import train
+```
+
+Training procedures for data and models.
+
+```{eval-rst}
+.. module:: eugene.train
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   train.fit
+   train.fit_sequence_module
+   train.hyperopt
+```
+
+## `evaluate`
+
+```
+from eugene import evaluate
+```
+
+Evaluation functions for trained models. Both prediction helpers and metrics.
+
+```{eval-rst}
+.. module:: eugene.evaluate
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+### Predictions
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   evaluate.predictions
+   evaluate.predictions_sequence_module
+   evaluate.train_val_predictions
+   evaluate.train_val_predictions_sequence_module
+```
+
+## `interpret`
+
+```
+from eugene import interpret
+```
+
+Interpretation suite of EUGENe, currently broken into filter visualization, feature attribution and *in silico* experimentation
+
+```{eval-rst}
+.. module:: eugene.intepret
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+### Filter interpretation
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   interpret.generate_pfms_sdata
+   interpret.filters_to_meme_sdata
+```
+
+### Attribution analysis
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   interpret.attribute_sdata
+```
+
+### *Global importance analysis (GIA)*
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   interpret.positional_gia_sdata
+   interpret.motif_distance_dependence_gia
+```
+
+### Generative
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   interpret.evolve_seqs_sdata
+```
+## `plot`
+
+```
+from eugene import plot
+```
+
+Plotting suite in EUGENe for multiple aspects of the workflow.
+
+```{eval-rst}
+.. module:: eugene.plot
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+### Categorical plotting
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   plot.countplot
+   plot.histplot
+   plot.boxplot
+   plot.violinplot
+   plot.scatterplot
+```
+
+### Training summaries
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   plot.metric_curve
+   plot.loss_curve
+   plot.training_summary
+```
+
+### Performance
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   plot.performance_scatter
+   plot.confusion_mtx
+   plot.auroc
+   plot.auprc
+   plot.performance_summary
+```
+
+### Sequences
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   plot.seq_track
+   plot.multiseq_track
+   plot.filter_viz
+   plot.multifilter_viz
+```
+
+### Global importance analysis (GIA)
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   plot.positional_gia_plot
+   plot.distance_cooperativity_gia_plot
+```
+
+## Utilities
+
+```{eval-rst}
+.. module:: eugene.utils
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+### File I/O
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/
+
+   utils.make_dirs
 ```

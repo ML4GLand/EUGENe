@@ -1,25 +1,26 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from os import PathLike
-import matplotlib.pyplot as plt
-from typing import Union, Sequence
-from sklearn.metrics import r2_score, mean_squared_error
-from scipy.stats import spearmanr, pearsonr
-from ._utils import _create_matplotlib_axes, _save_fig
+from scipy.stats import pearsonr, spearmanr
+from sklearn.metrics import mean_squared_error, r2_score
+from typing import Optional, Sequence, Union
+
 from .. import settings
+from ._utils import _create_matplotlib_axes, _save_fig
 
 
 def _plot_performance_scatter(
-    sdata,
+    sdata: xr.Dataset,
     target_key: str,
     prediction_key: str,
     metrics: Union[str, Sequence[str]] = ["r2", "mse", "pearsonr", "spearmanr"],
-    groupby=None,
+    groupby: Optional[str] = None,
     figsize: tuple = (8, 8),
-    save: PathLike = None,
-    ax: bool = None,
+    save: Optional[PathLike] = None,
+    ax: Optional[bool] = None,
     **kwargs,
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plot a scatter plot of the performance of the model on a subset of the sequences.
 
@@ -40,7 +41,7 @@ def _plot_performance_scatter(
 
     Returns
     -------
-    None
+    
 
     Note
     ----
@@ -128,14 +129,14 @@ def _plot_performance_scatter(
 
 
 def performance_scatter(
-    sdata,
-    target_keys: Union[str, Sequence[str]],
-    prediction_keys: Union[str, Sequence[str]],
-    seq_idx: Union[Sequence[int], np.ndarray] = None,
+    sdata: xr.Dataset,
+    target_vars: Union[str, Sequence[str]],
+    prediction_vars: Union[str, Sequence[str]],
+    seq_idx: Optional[Union[Sequence[int], np.ndarray]] = None,
     rc_context: dict = settings.rc_context,
     return_axes: bool = False,
     **kwargs,
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plot a scatter plot of the performance of the model on a subset of the sequences.
 
@@ -160,16 +161,16 @@ def performance_scatter(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    if isinstance(target_keys, str) and isinstance(prediction_keys, str):
-        target_keys = [target_keys]
-        prediction_keys = [prediction_keys]
-    if type(target_keys) is list and type(prediction_keys) is list:
-        assert len(target_keys) == len(prediction_keys)
+    if isinstance(target_vars, str) and isinstance(prediction_vars, str):
+        target_vars = [target_vars]
+        prediction_vars = [prediction_vars]
+    if type(target_vars) is list and type(prediction_vars) is list:
+        assert len(target_vars) == len(prediction_vars)
     else:
-        target_keys = [target_keys]
-        prediction_keys = [prediction_keys]
+        target_vars = [target_vars]
+        prediction_vars = [prediction_vars]
     with plt.rc_context(rc_context):
-        for target_key, prediction_key in zip(target_keys, prediction_keys):
+        for target_key, prediction_key in zip(target_vars, prediction_vars):
             targs = sdata[target_key].values
             nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
             print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
@@ -179,3 +180,4 @@ def performance_scatter(
             )
     if return_axes:
         return ax
+    

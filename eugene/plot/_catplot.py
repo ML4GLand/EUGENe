@@ -1,20 +1,19 @@
 import seaborn as sns
 from .. import settings
 import matplotlib.pyplot as plt
-from typing import Union, Mapping
-from typing import Sequence, Iterable
+from typing import Union, Mapping, Sequence, Iterable, Optional, List, Dict, Any
 from ._utils import _plot_seaborn, _violin_long
-
+import xarray as xr
 
 def countplot(
-    sdata,
-    keys: Union[str, Sequence[str]],
-    groupby: str = None,
+    sdata: xr.Dataset,
+    vars: Union[str, Sequence[str]],
+    groupby: Optional[str] = None,
     orient: str = "h",
     rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plots a countplot of a column(s) in seqs_annot using Seaborn.
 
@@ -25,9 +24,9 @@ def countplot(
     Parameters
     ----------
     sdata : SeqData
-        SeqData object that contains keys in seqs_annot.
-    keys : str or list of str
-        Keys to plot. Will be plotted in separate adjacent subplots.
+        SeqData object that contains vars in seqs_annot.
+    vars : str or list of str
+        vars to plot. Will be plotted in separate adjacent subplots.
     groupby : str
         Key to group by. If None, will plot counts of each key.
     orient : str
@@ -38,34 +37,30 @@ def countplot(
         Return axes.
     **kwargs
         Additional keyword arguments to pass to seaborn.
-
-    Returns
-    -------
-        None
     """
-    keys = [keys] if isinstance(keys, str) else keys
+    vars = [vars] if isinstance(vars, str) else vars
     if groupby is None:
-        sdata_df = sdata[keys].to_dataframe().reset_index()
+        sdata_df = sdata[vars].to_dataframe().reset_index()
         print(sdata_df)
     else:
-        sdata_df = sdata[keys + [groupby]].to_dataframe()
+        sdata_df = sdata[vars + [groupby]].to_dataframe()
         print(sdata_df)
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df, keys, func=sns.countplot, groupby=groupby, orient=orient, **kwargs
+            sdata_df, vars, func=sns.countplot, groupby=groupby, orient=orient, **kwargs
         )
     if return_axes:
         return ax
 
 
 def histplot(
-    sdata,
-    keys: Union[str, Sequence[str]],
+    sdata: xr.Dataset,
+    vars: Union[str, Sequence[str]],
     orient: str = "v",
     rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plots a histogram of a column(s) in seqs_annot using seaborn.
 
@@ -77,8 +72,8 @@ def histplot(
     ----------
     sdata : SeqData
         SeqData object.
-    keys : str or list of str
-        Keys to plot.
+    vars : str or list of str
+        vars to plot.
     groupby : str
         Key to group by.
     orient : str
@@ -89,30 +84,26 @@ def histplot(
         Return axes.
     **kwargs
         Additional keyword arguments to pass to seaborn.
-
-    Returns
-    -------
-        None
     """
-    sdata_df = sdata[keys].to_dataframe()
+    sdata_df = sdata[vars].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df, keys, func=sns.histplot, orient=orient, ylab="Frequency", **kwargs
+            sdata_df, vars, func=sns.histplot, orient=orient, ylab="Frequency", **kwargs
         )
     if return_axes:
         return ax
 
 
 def boxplot(
-    sdata,
-    keys: Union[str, Sequence[str]],
-    groupby: str = None,
+    sdata: xr.Dataset,
+    vars: Union[str, Sequence[str]],
+    groupby: Optional[str] = None,
     orient: str = "v",
     jitter=False,
     rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plots a boxplot of a column(s) in seqs_annot using Seaborn.
 
@@ -124,8 +115,8 @@ def boxplot(
     ----------
     sdata : SeqData
         SeqData object.
-    keys : str or list of str
-        Keys to plot.
+    vars : str or list of str
+        vars to plot.
     groupby : str
         Key to group by.
     orient : str
@@ -136,24 +127,25 @@ def boxplot(
         Return axes.
     **kwargs
         Additional keyword arguments to pass to seaborn.
-
-    Returns
-    -------
-        None
     """
-    keys = [keys] if isinstance(keys, str) else keys
+    vars = [vars] if isinstance(vars, str) else vars
     if groupby is None:
-        sdata_df = sdata[keys].to_dataframe()
+        sdata_df = sdata[vars].to_dataframe()
     else:
-        sdata_df = sdata[keys + [groupby]].to_dataframe()
+        sdata_df = sdata[vars + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df, keys, func=sns.boxplot, groupby=groupby, orient=orient, **kwargs
+            sdata_df, 
+            vars, 
+            func=sns.boxplot, 
+            groupby=groupby, 
+            orient=orient, 
+            **kwargs
         )
         if jitter == True:
             _plot_seaborn(
                 sdata_df,
-                keys,
+                vars,
                 func=sns.stripplot,
                 groupby=groupby,
                 orient=orient,
@@ -165,14 +157,14 @@ def boxplot(
 
 
 def violinplot(
-    sdata,
-    keys: Union[str, Sequence[str]] = None,
-    groupby: str = None,
+    sdata: xr.Dataset,
+    vars: Optional[Union[str, Sequence[str]]] = None,
+    groupby: Optional[str] = None,
     orient: str = "v",
     rc_context: Mapping[str, str] = settings.rc_context,
     return_axes: bool = False,
     **kwargs
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plots a violinplot of a column(s) in seqs_annot using Seaborn.
 
@@ -181,11 +173,11 @@ def violinplot(
     then the distribution is grouped by the groupby column.
 
     Parameters
-     ----------
+    ----------
      sdata : SeqData
          SeqData object.
-     keys : str or list of str
-         Keys to plot.
+     vars : str or list of str
+         vars to plot.
      groupby : str
          Key to group by.
      orient : str
@@ -201,20 +193,20 @@ def violinplot(
      -------
          None
     """
-    keys = [keys] if isinstance(keys, str) else keys
+    vars = [vars] if isinstance(vars, str) else vars
     if groupby is None:
-        sdata_df = sdata[keys].to_dataframe()
-    elif groupby is not None and isinstance(groupby, Iterable) and keys is None:
+        sdata_df = sdata[vars].to_dataframe()
+    elif groupby is not None and isinstance(groupby, Iterable) and vars is None:
         sdata_df = sdata[groupby].to_dataframe()
     else:
-        sdata_df = sdata[keys + [groupby]].to_dataframe()
+        sdata_df = sdata[vars + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
-        if groupby is not None and isinstance(groupby, Iterable) and keys is None:
+        if groupby is not None and isinstance(groupby, Iterable) and vars is None:
             ax = _violin_long(sdata_df, groupby, **kwargs)
         else:
             ax = _plot_seaborn(
                 sdata_df,
-                keys,
+                vars,
                 func=sns.violinplot,
                 groupby=groupby,
                 orient=orient,
@@ -228,10 +220,10 @@ def scatterplot(
     sdata,
     x: str,
     y: str,
-    seq_idx: Sequence[int] = None,
+    seq_idx: Optional[Sequence[int]] = None,
     return_axes: bool = False,
     **kwargs
-) -> None:
+) -> Optional[plt.Axes]:
     """
     Plots a scatterplot of two columns in seqs_annot using Seaborn.
 
@@ -257,10 +249,10 @@ def scatterplot(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    keys = [keys] if isinstance(keys, str) else keys
-    sdata_df = sdata[keys].to_dataframe()
+    vars = [vars] if isinstance(vars, str) else vars
+    sdata_df = sdata[vars].to_dataframe()
     ax = _plot_seaborn(
-        sdata_df, keys=x, func=sns.scatterplot, groupby=y, xlab=x, ylab=y, **kwargs
+        sdata_df, vars=x, func=sns.scatterplot, groupby=y, xlab=x, ylab=y, **kwargs
     )
     if return_axes:
         return ax

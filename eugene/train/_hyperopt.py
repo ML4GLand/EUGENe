@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import List, Union
+from typing import List, Union, Optional, Literal
 import seqdata as sd
 import numpy as np
 import xarray as xr
@@ -22,22 +22,73 @@ from torch.utils.data import DataLoader
 
 def hyperopt_with_tune(
     config: dict,
-    sdata=None,
-    seq_key: str = "ohe_seq",
-    target_keys: Union[str, List[str]] = None,
-    train_key: str = "train_val",
+    sdata: Optional[xr.Dataset] = None,
+    seq_var: str = "ohe_seq",
+    target_vars: Optional[Union[str, List[str]]] = None,
+    train_var: str = "train_val",
     epochs: int = 10,
-    gpus: int = None,
-    num_workers: int = None,
-    log_dir: PathLike = None,
-    name: str = None,
-    version: str = None,
-    train_dataloader: DataLoader = None,
-    val_dataloader: DataLoader = None,
-    seq_transforms: List[str] = None,
-    drop_last=True,
-    seed: int = None,
+    gpus: Optional[int] = None,
+    num_workers: Optional[int] = None,
+    log_dir: Optional[PathLike] = None,
+    name: Optional[str] = None,
+    version: Optional[str] = None,
+    train_dataloader: Optional[DataLoader] = None,
+    val_dataloader: Optional[DataLoader] = None,
+    transforms: Optional[List[str]] = None,
+    drop_last: bool = False,
+    seed: Optional[int] = None,
 ):
+    """The trainable for hyperparameter optimization using RayTune
+    
+    This function makes use of the PyTorch Lightning TuneReportCallback
+    to perform hyperparameter optimization. This function serves as the callable (or trainable)
+    argument to the tune.run function. The function is called with the config argument
+    that should define the search space for the hyperparameter optimization as well as the model
+    architecture and training parameters. The function also takes in either a SeqData object
+    or  a PyTorch DataLoader object for training and validation. If a SeqData object is provided,
+    the function will create the PyTorch DataLoader objects using the provided SeqData object.
+    If a PyTorch DataLoader object is provided, the function will use the provided DataLoader
+    objects for training and validation. 
+
+    Parameters
+    ----------
+    config : dict
+        A dictionary containing the hyperparameter search space, model architecture, and training
+        parameters. The dictionary should have the following structure:
+        {
+            "model":...
+    sdata : Optional[xr.Dataset], optional
+        A SeqData object containing the data to train on, by default None
+    seq_var : str, optional
+        The name of the sequence variable in the SeqData object, by default "ohe_seq"
+    target_vars : Optional[Union[str, List[str]]], optional
+        The name(s) of the target variable(s) in the SeqData object, by default None
+    train_var : str, optional
+        The name of the training variable in the SeqData object, by default "train_val"
+    epochs : int, optional
+        The number of epochs to train for, by default 10
+    gpus : Optional[int], optional
+        The number of GPUs to use for training, by default None
+    num_workers : Optional[int], optional
+        The number of workers to use for the PyTorch DataLoader, by default None
+    log_dir : Optional[PathLike], optional
+        The path to the directory to log to, by default None
+    name : Optional[str], optional
+        The name of the experiment, by default None
+    version : Optional[str], optional
+        The version of the experiment, by default None
+    train_dataloader : Optional[DataLoader], optional
+        A PyTorch DataLoader object to use for training, by default None
+    val_dataloader : Optional[DataLoader], optional
+        A PyTorch DataLoader object to use for validation, by default None
+    transforms : Optional[List[str]], optional
+        A list of transforms to apply to the data, by default None
+    drop_last : bool, optional
+        Whether or not to drop the last batch of data if it is smaller than the batch size,
+        by default False
+    seed : Optional[int], optional
+        The seed to use for reproducibility, by default None
+    """
     module_name = config.pop("module")
     arch_config = config["model"].pop("arch")
     arch_name = config["model"]["arch_name"]
@@ -62,9 +113,9 @@ def hyperopt_with_tune(
     if train_dataloader is not None:
         assert val_dataloader is not None
     elif sdata is not None:
-        if target_keys is not None:
+        if target_vars is not None:
             sdata["target"] = xr.concat(
-                [sdata[target_key] for target_key in target_keys], dim="_targets"
+                [sdata[target_var] for target_var in target_vars], dim="_targets"
             ).transpose("_sequence", "_targets")
             targs = sdata["target"].values
             if len(targs.shape) == 1:
@@ -73,14 +124,14 @@ def hyperopt_with_tune(
                 nan_mask = np.any(np.isnan(targs), axis=1)
             print(f"Dropping {nan_mask.sum()} sequences with NaN targets.")
             sdata = sdata.isel(_sequence=~nan_mask)
-        train_mask = np.where(sdata[train_key])[0]
+        train_mask = np.where(sdata[train_var])[0]
         train_sdata = sdata.isel(_sequence=train_mask)
         val_sdata = sdata.isel(_sequence=~train_mask)
         train_dataloader = sd.get_torch_dataloader(
             train_sdata,
             sample_dims=["_sequence"],
-            variables=[seq_key, "target"],
-            transforms=seq_transforms,
+            variables=[seq_var, "target"],
+            transforms=transforms,
             prefetch_factor=None,
             shuffle=True,
             drop_last=drop_last,
@@ -90,8 +141,8 @@ def hyperopt_with_tune(
         val_dataloader = sd.get_torch_dataloader(
             val_sdata,
             sample_dims=["_sequence"],
-            variables=[seq_key, "target"],
-            transforms=seq_transforms,
+            variables=[seq_var, "target"],
+            transforms=transforms,
             prefetch_factor=None,
             shuffle=False,
             drop_last=drop_last,
@@ -144,37 +195,99 @@ default_algo_args = {
 
 
 def hyperopt(
-    config,
-    sdata=None,
-    seq_key: str = "ohe_seq",
-    target_keys: Union[str, List[str]] = None,
-    train_key: str = "train_val",
-    scheduler="ASHAScheduler",
-    algorithm="BasicVariantGenerator",
+    config: dict,
+    sdata: xr.Dataset = None,
+    seq_var: str = "ohe_seq",
+    target_vars: Optional[Union[str, List[str]]] = None,
+    train_var: str = "train_val",
+    scheduler: str = "ASHAScheduler",
+    algorithm: str = "BasicVariantGenerator",
     num_samples: int = 10,
     epochs: int = 10,
-    gpus: int = None,
+    gpus: Optional[int] = None,
     cpus: int = 1,
-    num_workers: int = None,
-    log_dir: PathLike = None,
-    name: str = None,
-    version: str = None,
-    train_dataloader: DataLoader = None,
-    val_dataloader: DataLoader = None,
-    seq_transforms: List[str] = None,
-    seed: int = None,
-    scheduler_kwargs: dict = None,
-    algorithm_kwargs: dict = None,
+    num_workers: Optional[int] = None,
+    log_dir: Optional[PathLike] = None,
+    name: Optional[str] = None,
+    version: Optional[str] = None,
+    train_dataloader: Optional[DataLoader] = None,
+    val_dataloader: Optional[DataLoader] = None,
+    transforms: Optional[List[str]] = None,
+    seed: Optional[int] = None,
+    scheduler_kwargs: Optional[dict] = None,
+    algorithm_kwargs: Optional[dict] = None,
     **kwargs,
 ):
-    """Perform hyperparameter optimization using HyperOpt."""
+    """Perform hyperparameter optimization using RayTune
+
+    This function performs hyperparameter optimization using RayTune. The function
+    takes in a dictionary defining the hyperparameter search space, model architecture,
+    and training parameters. The function also takes in either a SeqData object
+    or a PyTorch DataLoader object for training and validation. If a SeqData object is provided,
+    the function will create the PyTorch DataLoader objects using the provided SeqData object.
+    If a PyTorch DataLoader object is provided, the function will use the provided DataLoader
+    objects for training and validation.
+
+    Parameters
+    ----------
+    config : dict
+        A dictionary containing the hyperparameter search space, model architecture, and training
+        parameters. The dictionary should have the following structure:
+        {
+            "model":...
+    sdata : xr.Dataset, optional
+        A SeqData object containing the data to train on, by default None
+    seq_var : str, optional
+        The name of the sequence variable in the SeqData object, by default "ohe_seq"
+    target_vars : Optional[Union[str, List[str]]], optional
+        The name(s) of the target variable(s) in the SeqData object, by default None
+    train_var : str, optional
+        The name of the training variable in the SeqData object, by default "train_val"
+    scheduler : str, optional
+        The name of the scheduler to use for hyperparameter optimization, by default "ASHAScheduler"
+    algorithm : str, optional
+        The name of the algorithm to use for hyperparameter optimization, by default "BasicVariantGenerator"
+    num_samples : int, optional
+        The number of hyperparameter combinations to try, by default 10
+    epochs : int, optional
+        The number of epochs to train for, by default 10
+    gpus : Optional[int], optional
+        The number of GPUs to use for training, by default None
+    cpus : int, optional
+        The number of CPUs to use for training, by default 1
+    num_workers : Optional[int], optional
+        The number of workers to use for the PyTorch DataLoader, by default None
+    log_dir : Optional[PathLike], optional
+        The path to the directory to log to, by default None
+    name : Optional[str], optional
+        The name of the experiment, by default None
+    version : Optional[str], optional
+        The version of the experiment, by default None
+    train_dataloader : Optional[DataLoader], optional
+        A PyTorch DataLoader object to use for training, by default None
+    val_dataloader : Optional[DataLoader], optional
+        A PyTorch DataLoader object to use for validation, by default None
+    transforms : Optional[List[str]], optional
+        A list of transforms to apply to the data, by default None
+    seed : Optional[int], optional
+        The seed to use for reproducibility, by default None
+    scheduler_kwargs : Optional[dict], optional
+        A dictionary of keyword arguments to pass to the scheduler, by default None
+    algorithm_kwargs : Optional[dict], optional
+        A dictionary of keyword arguments to pass to the algorithm, by default None
+    
+    Returns
+    -------
+    analysis : ray.tune.Analysis
+        The analysis object returned by ray.tune.run
+    """
     print("Performing hyperparameter optimization using HyperOpt.")
     trainable = tune.with_parameters(
         hyperopt_with_tune,
         sdata=sdata,
-        seq_key=seq_key,
-        target_keys=target_keys,
-        train_key=train_key,
+        seq_var=seq_var,
+        target_vars=target_vars,
+        train_var=train_var,
         epochs=epochs,
         gpus=gpus,
         num_workers=num_workers,
@@ -183,7 +296,7 @@ def hyperopt(
         version=version,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
-        seq_transforms=seq_transforms,
+        transforms=transforms,
         seed=seed,
         **kwargs,
     )

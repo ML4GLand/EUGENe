@@ -86,8 +86,8 @@ def pca(
 
 
 def skree(sdata, uns_key, n_comp=30, return_variance=False):
-    """
-    Function to generate and output a Skree plot using matplotlib barplot
+    """Function to generate and output a Skree plot using matplotlib barplot
+    
     Parameters
     ----------
     pca_obj : scikit-learn pca object

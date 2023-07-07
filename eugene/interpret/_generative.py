@@ -5,44 +5,56 @@ from .._settings import settings
 import xarray as xr
 import numpy as np
 
+from typing import Optional, List, Dict, Any
+
 
 def evolve_seqs_sdata(
     model: torch.nn.Module,
-    sdata,
+    sdata: xr.Dataset,
     rounds: int,
-    seq_key: str = "ohe_seq",
+    seq_var: str = "ohe_seq",
     axis_order=("_sequence", "_ohe", "length"),
     add_seqs=True,
     return_seqs: bool = False,
     device: str = "cpu",
     batch_size: int = 128,
     copy: bool = False,
-    **kwargs,
-):
-    """
-    In silico evolve a set of sequences that are stored in a SeqData object.
+) -> Optional[xr.Dataset]:
+    """In silico evolve a set of sequences that are stored in a SeqData object.
+
+    This function is a wrapper around the `evolution` function from the `seqexplainer`
+    package. It takes a SeqData object containing sequences and evolves them in silico
+    using the specified model. The evolved sequences are stored in the SeqData object
+    as a new variable. The function returns the evolved sequences if `return_seqs` is
+    set to True.
 
     Parameters
     ----------
-    model: torch.nn.Module
+    model : torch.nn.Module
         The model to score the sequences with
-    sdata: SeqData
+    sdata : xr.Dataset
         The SeqData object containing the sequences to evolve
-    rounds: int
+    rounds : int
         The number of rounds of evolution to perform
-    return_seqs: bool, optional
-        Whether to return the evolved sequences
-    device: str, optional
-        Whether to use a 'cpu' or 'cuda'.
-    copy: bool, optional
-        Whether to copy the SeqData object before mutating it
-    kwargs: dict, optional
-        Additional arguments to pass to the evolution function
+    seq_var : str, optional
+        The name of the sequence variable in the SeqData object, by default "ohe_seq"
+    axis_order : tuple, optional
+        The axis order of the sequence variable in the SeqData object, by default ("_sequence", "_ohe", "length")
+    add_seqs : bool, optional
+        Whether to add the evolved sequences to the SeqData object, by default True
+    return_seqs : bool, optional
+        Whether to return the evolved sequences, by default False
+    device : str, optional
+        The device to use for scoring the sequences, by default "cpu"
+    batch_size : int, optional
+        The batch size to use for scoring the sequences, by default 128
+    copy : bool, optional
+        Whether to copy the SeqData object before adding the evolved sequences, by default False
 
     Returns
     -------
-    sdata: SeqData
-        The SeqData object containing the evolved sequences
+    sdata   
+        The SeqData object with the evolved sequences added
     """
 
     sdata = sdata.copy() if copy else sdata
@@ -51,7 +63,7 @@ def evolve_seqs_sdata(
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
 
     # Grab seqs
-    ohe_seqs = sdata[seq_key].transpose(*axis_order).to_numpy()
+    ohe_seqs = sdata[seq_var].transpose(*axis_order).to_numpy()
     evolved_seqs = np.zeros(ohe_seqs.shape)
     deltas = np.zeros((sdata.dims["_sequence"], rounds))
 

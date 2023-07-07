@@ -4,9 +4,7 @@ from .metrics._regression import calculate_mse, calculate_pearsonr, calculate_sp
 
 
 def evaluate_model(y_test, pred, task, verbose=True):
-    if (
-        task == "regression"
-    ):  # isinstance(pl_model.criterion, torch.nn.modules.loss.MSELoss):
+    if (task == "regression"):
         mse = calculate_mse(y_test, pred)
         pearsonr = calculate_pearsonr(y_test, pred)
         spearmanr = calculate_spearmanr(y_test, pred)

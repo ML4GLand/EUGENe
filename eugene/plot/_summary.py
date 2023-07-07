@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Union
+from typing import Union, Sequence, Optional
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ from sklearn.metrics import (
 from scipy.stats import spearmanr, pearsonr, kendalltau
 from ._utils import _plot_seaborn, _save_fig
 from .. import settings
-
+import xarray as xr
 
 metric_dict = {
     "r2": r2_score,
@@ -35,9 +35,9 @@ metric_dict = {
 def _model_performances_across_groups(
     sdataframe: pd.DataFrame,
     target_key: str,
-    prediction_keys: list = None,
-    prediction_groups: list = None,
-    groupby: str = None,
+    prediction_keys: Optional[list] = None,
+    prediction_groups: Optional[list] = None,
+    groupby: Optional[str] = None,
     metrics: str = "r2",
     clf_thresh: float = 0,
     **kwargs
@@ -137,8 +137,8 @@ def _model_performances_across_groups(
 def _model_performances(
     sdataframe: pd.DataFrame,
     target_key: str,
-    prediction_keys: list = None,
-    prediction_groups: list = None,
+    prediction_keys: Optional[list] = None,
+    prediction_groups: Optional[list] = None,
     metrics: str = "r2",
     clf_thresh: float = 0,
 ):
@@ -225,16 +225,16 @@ def _model_performances(
 def performance_summary(
     sdata,
     target_key: str,
-    prediction_keys: list = None,
-    prediction_groups: list = None,
-    groupby: str = None,
+    prediction_keys: Optional[list] = None,
+    prediction_groups: Optional[list] = None,
+    groupby: Optional[str] = None,
     add_swarm: bool = False,
     size: int = 5,
     metrics: Union[str, list] = "r2",
     orient: str = "v",
     rc_context=settings.rc_context,
     return_axes: bool = False,
-    save: PathLike = None,
+    save: Optional[PathLike] = None,
     **kwargs
 ):
     """
