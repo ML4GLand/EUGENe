@@ -281,6 +281,7 @@ Interpretation suite of EUGENe, currently broken into filter visualization, feat
 
    interpret.evolve_seqs_sdata
 ```
+
 ## `plot`
 
 ```

@@ -21,8 +21,7 @@ def _plot_performance_scatter(
     ax: Optional[bool] = None,
     **kwargs,
 ) -> Optional[plt.Axes]:
-    """
-    Plot a scatter plot of the performance of the model on a subset of the sequences.
+    """Plot a scatter plot of the performance of the model on a subset of the sequences.
 
     Classic predicted vs observed scatterplot that will be annotated with r2, mse and spearman correlation.
     If a groupby key is passed, the scatterplot will be colored according to group.
@@ -137,8 +136,7 @@ def performance_scatter(
     return_axes: bool = False,
     **kwargs,
 ) -> Optional[plt.Axes]:
-    """
-    Plot a scatter plot of the performance of the model on a subset of the sequences.
+    """Plot a scatter plot of the performance of the model on a subset of the sequences.
 
     Classic predicted vs observed scatterplot that will be annotated with r2, mse and spearman correlation.
     If a groupby key is passed, the scatterplot will be colored according to group.
