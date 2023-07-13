@@ -41,10 +41,8 @@ def countplot(
     vars = [vars] if isinstance(vars, str) else vars
     if groupby is None:
         sdata_df = sdata[vars].to_dataframe().reset_index()
-        print(sdata_df)
     else:
         sdata_df = sdata[vars + [groupby]].to_dataframe()
-        print(sdata_df)
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
             sdata_df, vars, func=sns.countplot, groupby=groupby, orient=orient, **kwargs
