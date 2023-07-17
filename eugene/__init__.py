@@ -10,11 +10,11 @@ try:
 except ModuleNotFoundError:
     import importlib_metadata
 
-package_name = "eugene"
+package_name = "eugene-tools"
 __version__ = importlib_metadata.version(package_name)
 
 # This prevents double output.
-eugene_logger = logging.getLogger("eugene-tools")
+eugene_logger = logging.getLogger("eugene")
 eugene_logger.propagate = False
 
 __all__ = [
