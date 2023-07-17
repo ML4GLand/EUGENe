@@ -44,19 +44,11 @@ def check_attribution_method(model, sdata, inputs, method, **kwargs):
     Check that an attribution method works
     """
     explains = eu.interpret.nn_explain(
-        model=model, 
-        inputs=inputs, 
-        target=0, 
-        saliency_type=method,
-        **kwargs
+        model=model, inputs=inputs, target=0, saliency_type=method, **kwargs
     )
     assert explains.shape == (10, 4, 100)
     eu.interpret.feature_attribution_sdata(
-        sdata=sdata,
-        model=model,
-        target=0,
-        method=method,
-        **kwargs
+        sdata=sdata, model=model, target=0, method=method, **kwargs
     )
     assert sdata.uns[f"{method}_imps"].shape == (1000, 4, 100)
 
@@ -86,11 +78,9 @@ def test_pca(model, sdata):
     Test PCA
     """
     from sklearn.decomposition import PCA
+
     eu.interpret.feature_attribution_sdata(
-        sdata=sdata,
-        model=model,
-        target=0,
-        method="InputXGradient"
+        sdata=sdata, model=model, target=0, method="InputXGradient"
     )
     eu.interpret.pca(sdata, uns_key="InputXGradient_imps")
     assert sdata.seqsm["InputXGradient_imps_pca"].shape == (1000, 30)
@@ -100,14 +90,8 @@ def test_pca(model, sdata):
 
 def test_aggregate_importances_sdata(model, sdata):
     eu.interpret.feature_attribution_sdata(
-        sdata=sdata,
-        model=model,
-        target=0,
-        method="InputXGradient"
+        sdata=sdata, model=model, target=0, method="InputXGradient"
     )
     eu.dataload.motif.jaspar_annots_sdata(sdata, motif_names=["GATA1"])
     eu.interpret.aggregate_importances_sdata(sdata, uns_key="InputXGradient_imps")
     assert "InputXGradient_imps_agg_scores" in sdata.pos_annot.df.columns
-
-
-

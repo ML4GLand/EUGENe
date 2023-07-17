@@ -5,8 +5,8 @@ from typing import Union, Callable, List
 from ._utils import get_output_size
 from . import _layers as layers
 
-class Conv1DBlock(nn.Module):
 
+class Conv1DBlock(nn.Module):
     def __init__(
         self,
         input_len: int,
@@ -26,14 +26,14 @@ class Conv1DBlock(nn.Module):
         norm_type: Union[str, Callable] = "batchnorm",
         norm_dim: int = None,
         dropout_rate: float = 0.0,
-        order: str ="conv-norm-act-pool-dropout"
+        order: str = "conv-norm-act-pool-dropout",
     ):
         super(Conv1DBlock, self).__init__()
 
         # Define the block's attributes
         self.input_len = input_len
         self.input_channels = input_channels
-        self.output_channels = output_channels 
+        self.output_channels = output_channels
         self.conv_kernel = conv_kernel
         self.conv_stride = conv_stride
         self.conv_dilation = conv_dilation
@@ -50,7 +50,11 @@ class Conv1DBlock(nn.Module):
         self.order = order
 
         # Define the conv layer
-        self.conv_type = layers.CONVOLUTION_REGISTRY[conv_type] if isinstance(conv_type, str) else conv_type
+        self.conv_type = (
+            layers.CONVOLUTION_REGISTRY[conv_type]
+            if isinstance(conv_type, str)
+            else conv_type
+        )
         conv = self.conv_type(
             in_channels=self.input_channels,
             out_channels=self.output_channels,
@@ -58,19 +62,22 @@ class Conv1DBlock(nn.Module):
             stride=self.conv_stride,
             padding=self.conv_padding,
             dilation=self.conv_dilation,
-            bias=self.conv_bias
-
+            bias=self.conv_bias,
         )
 
         # Define the activation
-        activation = layers.ACTIVATION_REGISTRY[self.activation](inplace=False) if isinstance(self.activation, str) else self.activation
+        activation = (
+            layers.ACTIVATION_REGISTRY[self.activation](inplace=False)
+            if isinstance(self.activation, str)
+            else self.activation
+        )
 
         # Define the pooling layer
         if self.pool_type is not None:
             pool = layers.POOLING_REGISTRY[self.pool_type](
                 kernel_size=self.pool_kernel,
                 stride=self.pool_stride,
-                padding=self.pool_padding,              
+                padding=self.pool_padding,
             )
         else:
             pool = pool
@@ -108,24 +115,25 @@ class Conv1DBlock(nn.Module):
             else:
                 raise ValueError("Invalid layer type: {}".format(layer))
 
-        self.output_size = get_output_size(self.layers, (self.input_channels, self.input_len))
-        
+        self.output_size = get_output_size(
+            self.layers, (self.input_channels, self.input_len)
+        )
+
     def forward(self, x):
         return self.layers(x)
 
 
 class DenseBlock(nn.Module):
-    
     def __init__(
-        self, 
-        input_dim: int, 
-        output_dim: int, 
+        self,
+        input_dim: int,
+        output_dim: int,
         hidden_dims: list = [],
         activations: Union[str, Callable, List[Union[str, Callable]]] = "relu",
         dropout_rates: float = 0.0,
         batchnorm: bool = False,
         batchnorm_first: bool = False,
-        biases: bool = True
+        biases: bool = True,
     ):
         super(DenseBlock, self).__init__()
 
@@ -134,20 +142,29 @@ class DenseBlock(nn.Module):
         self.output_dim = output_dim
         self.num_layers = len(hidden_dims) + 1
         self.hidden_dims = hidden_dims if len(hidden_dims) > 0 else [input_dim]
-        
+
         # Define the activations
-        activations = activations if type(activations) == list else [activations] * len(hidden_dims)
-        self.activations = [layers.ACTIVATION_REGISTRY[activation](inplace=False) if isinstance(activation, str) else activation for activation in activations] 
+        activations = (
+            activations
+            if type(activations) == list
+            else [activations] * len(hidden_dims)
+        )
+        self.activations = [
+            layers.ACTIVATION_REGISTRY[activation](inplace=False)
+            if isinstance(activation, str)
+            else activation
+            for activation in activations
+        ]
 
         # Define the dropout rates
         if dropout_rates != 0.0 and dropout_rates is not None:
             if type(dropout_rates) == float:
                 self.dropout_rates = [dropout_rates] * len(hidden_dims)
             elif type(dropout_rates) == list:
-                self.dropout_rates = dropout_rates 
+                self.dropout_rates = dropout_rates
         else:
             self.dropout_rates = []
-        
+
         # Define the batchnorm
         self.batchnorm = batchnorm
         self.batchnorm_first = batchnorm_first
@@ -158,30 +175,25 @@ class DenseBlock(nn.Module):
         # Build the block
         self.layers = nn.Sequential()
         j = 0
-        for i in range(self.num_layers-1):
-            
+        for i in range(self.num_layers - 1):
             # Add the linear layer
             if i == 0:
                 self.layers.append(
-                    nn.Linear(
-                        self.input_dim,
-                        self.hidden_dims[0],
-                        bias=self.biases[0]
-                    )
+                    nn.Linear(self.input_dim, self.hidden_dims[0], bias=self.biases[0])
                 )
             else:
                 self.layers.append(
                     nn.Linear(
                         self.hidden_dims[i - 1],
                         self.hidden_dims[i],
-                        bias=self.biases[i]
+                        bias=self.biases[i],
                     )
                 )
 
             # Add batchnorm if specified
             if batchnorm and batchnorm_first:
                 self.layers.append(nn.BatchNorm1d(self.hidden_dims[i]))
-            
+
             # Add activation
             if i < len(self.activations):
                 if self.activations[i] is not None:
@@ -201,23 +213,18 @@ class DenseBlock(nn.Module):
 
         # Add the final linear layer
         self.layers.append(
-            nn.Linear(
-                self.hidden_dims[-1],
-                self.output_dim,
-                bias=self.biases[-1]
-            )
+            nn.Linear(self.hidden_dims[-1], self.output_dim, bias=self.biases[-1])
         )
-        
+
         # If enough droupout rates are specified, add the final dropout
         if len(self.dropout_rates) > j:
             self.layers.append(nn.Dropout(self.dropout_rates[j]))
 
     def forward(self, x):
         return self.layers(x)
-        
+
 
 class RecurrentBlock(nn.Module):
-
     def __init__(
         self,
         input_dim: int,
@@ -227,7 +234,7 @@ class RecurrentBlock(nn.Module):
         bidirectional: bool = False,
         dropout_rates: float = 0.0,
         bias=True,
-        batch_first=True
+        batch_first=True,
     ):
         super(RecurrentBlock, self).__init__()
 
@@ -249,11 +256,13 @@ class RecurrentBlock(nn.Module):
             bias=self.bias,
             batch_first=self.batch_first,
             dropout=self.dropout_rates,
-            bidirectional=self.bidirectional
+            bidirectional=self.bidirectional,
         )
 
         # Define output parameters
-        self.out_channels = self.hidden_dim * 2 if self.bidirectional else self.hidden_dim
+        self.out_channels = (
+            self.hidden_dim * 2 if self.bidirectional else self.hidden_dim
+        )
 
     def forward(self, x):
         return self.layers(x)
@@ -262,5 +271,5 @@ class RecurrentBlock(nn.Module):
 BLOCK_REGISTRY = {
     "dense": DenseBlock,
     "conv1d": Conv1DBlock,
-    "recurrent": RecurrentBlock
+    "recurrent": RecurrentBlock,
 }

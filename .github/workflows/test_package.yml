@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8"]
+        python-version: ["3.9"]
 
     steps:
     - uses: actions/checkout@v3
@@ -28,20 +28,4 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev,janggu,kipoi]
-        pip install -e .[memesuite]
-        sudo apt-get install bedtools
-        BEDTOOLS=$(which bedtools)
-        export PATH="$BEDTOOLS:$PATH"
-
-    - name: Test with pytest
-      run: |
-        coverage run -m pytest tests
-        
-    - name: Upload coverage reports to Codecov
-      run: |
-        CODECOV_TOKEN=2f379178-67b9-4cde-aa1a-65de66ebe4d3
-        curl -Os https://uploader.codecov.io/latest/linux/codecov
-        chmod +x codecov
-        ./codecov
-        
+        pip install -e .

@@ -1,199 +1,291 @@
+import os
+import sys
+from typing import Any, Dict, Generic, List, Literal, Optional, Type, Union, cast
+
+import dask.array as da
+import dask_ml as dml
 import numpy as np
-from tqdm.auto import tqdm
-from seqdata import SeqData
-from ..utils._decorators import track
-from ._dataset import split_train_test, binarize_values
-from seqpro import sanitize_seqs, ohe_seqs, reverse_complement_seqs
+import seqpro as sp
+import xarray as xr
+from sklearn.preprocessing import StandardScaler
+
+bin_dir = os.path.dirname(sys.executable)
+os.environ["PATH"] += os.pathsep + bin_dir
+
+alphabets ={
+    "DNA": sp.alphabets.DNA,
+    "RNA": sp.alphabets.RNA,
+}
 
 
-@track
-def sanitize_seqs_sdata(sdata: SeqData, copy=False) -> SeqData:
-    """
-    Sanitize sequences in SeqData object.
+def make_unique_ids_sdata(
+    sdata: xr.Dataset,
+    id_var: str = "id",
+    copy: bool = False,
+) -> Optional[xr.Dataset]:
+    """Make a set of unique ids for each sequence in a SeqData object and store as new xarray variable. 
 
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object to sanitize.
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-
-    Returns
-    -------
-    SeqData
-        Sanitized SeqData object if copy is True, else the original SeqData object
-        is modified in place.
-    """
-    sdata = sdata.copy() if copy else sdata
-    sdata.seqs = sanitize_seqs(sdata.seqs) if sdata.seqs is not None else None
-    sdata.rev_seqs = (
-        sanitize_seqs(sdata.rev_seqs) if sdata.rev_seqs is not None else None
-    )
-    return sdata if copy else None
-
-@track
-def ohe_seqs_sdata(
-    sdata: SeqData,
-    vocab="DNA",
-    seq_align="center",
-    maxlen=None,
-    fill_value=None,
-    copy=False,
-    **kwargs,
-) -> SeqData:
-    """
-    One-hot encode sequences in SeqData object.
+    Expects that the dimension for the number of sequences is named "_sequence". Otherwise,
+    it will fail. Will also overwrite any existing variable with the same name.
 
     Parameters
     ----------
-    sdata : SeqData
-        SeqData object to one-hot encode.
-    vocab : str, optional
-        Vocabulary to use for one-hot encoding, by default "DNA"
-    seq_align : str, optional
-        Alignment of sequences, by default "center"
-    maxlen : int, optional
-        Maximum length of sequences, by default None
-    fill_value : str, optional
-        Value to pad sequences with, by default None
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-
-    Returns
-    -------
-    SeqData
-        SeqData object with one-hot encoded sequences if copy is True, else the
-        original SeqData object is modified in place.
-    """
-    sdata = sdata.copy() if copy else sdata
-    if sdata.seqs is not None and sdata.ohe_seqs is None:
-        sdata.ohe_seqs = ohe_seqs(
-            sdata.seqs,
-            vocab,
-            seq_align=seq_align,
-            maxlen=maxlen,
-            fill_value=fill_value,
-            **kwargs,
-        )
-    if sdata.rev_seqs is not None:
-        sdata.ohe_rev_seqs = ohe_seqs(
-            sdata.rev_seqs,
-            vocab,
-            seq_align=seq_align,
-            maxlen=maxlen,
-            fill_value=fill_value,
-            **kwargs,
-        )
-    return sdata if copy else None
-
-@track
-def reverse_complement_seqs_sdata(
-    sdata: SeqData, 
-    vocab="DNA", 
-    rc_seqs=False, 
-    copy=False
-) -> SeqData:
-    """
-    Reverse complement sequences in SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
+    sdata : xr.Dataset
         SeqData object.
-    vocab : str, optional
-        Vocabulary to use for one-hot encoding, by default "DNA"
-    rc_seqs : bool, optional
-        Whether to reverse complement the string sequences as well, by default False
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-    Returns
-    -------
-    SeqData
-        SeqData object with reverse complement sequences. If copy is True, a copy
-        of the SeqData object is returned, else the original SeqData object is
-        modified in place.
-    """
-    sdata = sdata.copy() if copy else sdata
-    if sdata.ohe_seqs is not None:
-        sdata.ohe_rev_seqs = reverse_complement_seqs(sdata.ohe_seqs)
-    if sdata.ohe_seqs is None or rc_seqs:
-        sdata.rev_seqs = reverse_complement_seqs(sdata.seqs, vocab)
-    return sdata if copy else None
-
-@track
-def clean_nan_targets_sdata(
-    sdata: SeqData,
-    target_keys: list,
-    nan_threshold=0.5,
-    fill_value=np.nan,
-    copy=False,
-):
-    """
-    Remove targets with excessive NaN values in a SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    target_keys : list
-        List of target keys to clean.
-    nan_threshold : int, optional
-        Maximum fraction of NaN values allowed, by default 1
-    fill_value : int, optional
-        Value to fill NaN values with if target has NaNs but is kept, by default np.nan
+    id_var : str, optional
+        Name of the variable to store the ids in, by default "id"
     copy : bool, optional
         Whether to return a copy of the SeqData object, by default False
 
     Returns
     -------
-    SeqData
-        SeqData object with cleaned targets. If copy is True, a copy of the SeqData
+    xr.Dataset
+        SeqData object with unique ids. If copy is True, a copy of the SeqData
         object is returned, else the original SeqData object is modified in place.
     """
     sdata = sdata.copy() if copy else sdata
-    if type(target_keys) is str:
-        target_keys = [target_keys]
-    dropped_keys = []
-    for target_key in target_keys:
-        if (
-            sdata[target_key].astype(float).isna().sum() / sdata[target_key].__len__()
-            > nan_threshold
-        ):
-            sdata.seqs_annot = sdata.seqs_annot.drop(target_key, axis=1)
-            dropped_keys.append(target_key)
-        else:
-            sdata[target_key].fillna(value=fill_value, inplace=True)
-    print(f"Dropped targets: {dropped_keys}")
+    n_digits = len(str(sdata.dims["_sequence"]))
+    sdata[id_var] = xr.DataArray(
+        [
+            "seq{num:0{width}}".format(num=i, width=n_digits)
+            for i in range(sdata.dims["_sequence"])
+        ],
+        dims=["_sequence"],
+    )
     return sdata if copy else None
 
-@track
-def clamp_targets_sdata(
-    sdata: SeqData,
-    target_keys: list,
-    percentile: float = 0.995,
-    train_key: str = None,
-    clamp_nums: list = None,
-    store_clamp_nums=False,
-    suffix=False,
-    copy=False,
-) -> SeqData:
-    """
-    Clamp targets to a given percentile if they are above that percentile in a SeqData object.
+
+def pad_seqs_sdata(
+    sdata: xr.Dataset,
+    length: int,
+    seq_var: str = "seq", 
+    pad: Literal["left", "both", "right"] = "right",
+    pad_value: Optional[str] = None,
+    copy: bool = False,
+) -> Optional[xr.Dataset]:
+    """Pad sequences in a SeqData object.
+    
+    Wraps the pad_seqs function from SeqPro on the sequences in a SeqData object. Automatically
+    adds a new variable to the SeqData object with the padded sequences called "{seq_var}_padded".
+    Assumes that the dimension for the number of sequences is named "_sequence" and will add dimension
+    called length to the padded sequences. Will also overwrite any existing variable with the same name.
 
     Parameters
     ----------
-    sdata : SeqData
+    sdata : xr.Dataset
         SeqData object.
-    target_keys : list
-        List of target keys to clamp.
+    length : int
+        Length to pad or truncate sequences to.
+    seq_var : str, optional
+        Name of the variable holding the sequences, by default "seq"
+    pad : Literal["left", "both", "right"], optional
+        How to pad. If padding on both sides and an odd amount of padding is needed, 1
+        more pad value will be on the right side, by default "right"
+    pad_val : str, optional
+        Single character to pad sequences with. Needed for string input. Ignored for OHE
+        sequences, by default None
+    copy : bool, optional
+        Whether to return a copy of the SeqData object, by default False
+
+    Returns
+    -------
+    xr.Dataset
+        SeqData object with padded sequences. If copy is True, a copy of the SeqData
+        object is returned, else the original SeqData object is modified in place.
+    """
+    sdata = sdata.copy() if copy else sdata
+    padded_seqs = sp.pad_seqs(seqs=sdata["seq"].values, pad=pad, pad_value=pad_value, length=length)
+    sdata[f"{seq_var}_padded"] = xr.DataArray(padded_seqs, dims=["_sequence", "length"])
+    return sdata if copy else None
+
+
+def ohe_seqs_sdata(
+    sdata: xr.Dataset,
+    alphabet: str = "DNA",
+    seq_var: str = "seq",
+    ohe_var: str = "ohe_seq",
+    fill_value: Union[int, float] = 0,
+    copy: bool = False,
+) -> Optional[xr.Dataset]:
+    """One-hot encode sequences in a SeqData object.
+    
+    Wraps the ohe function from SeqPro on the sequences in a SeqData object. Automatically
+    adds a new variable to the SeqData object with the one-hot encoded sequences called "ohe_seq".
+    with dimensions ()"_sequence", "length", "_ohe"). Will also overwrite any existing variable
+    with the same name.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        SeqData object.
+    alphabet : str, optional
+        Alphabet to use for one-hot encoding, by default "DNA"
+    seq_var : str, optional
+        Name of the variable holding the sequences to be encoded, by default "seq"
+    ohe_var : str, optional
+        Name of the variable to store the one-hot encoded sequences in, by default "ohe_seq"
+    fill_value : Union[int, float], optional
+        Value to fill the one-hot encoded sequences with, by default 0
+    copy : bool, optional
+        Whether to return a copy of the SeqData object, by default False
+    
+    Returns
+    -------
+    xr.Dataset
+        SeqData object with one-hot encoded sequences. If copy is True, a copy of the SeqData
+        object is returned, else the original SeqData object is modified in place.
+    """
+    sdata = sdata.copy() if copy else sdata
+    ohe_seqs = sp.ohe(sdata[seq_var].values, alphabet=alphabets[alphabet])
+    if fill_value != 0:
+        ohe_seqs = ohe_seqs.astype(type(fill_value))
+        ohe_seqs[(ohe_seqs == 0).all(-1)] = np.array(np.repeat(fill_value, ohe_seqs.shape[-1]), dtype=type(fill_value))
+    sdata[ohe_var] = xr.DataArray(ohe_seqs, dims=["_sequence", "length", "_ohe"])
+    return sdata if copy else None
+
+
+def train_test_chrom_split(
+    sdata: xr.Dataset, 
+    test_chroms: List[str],
+    train_var: str = "train_val",
+):
+    """Add a variable labeling sequences as part of the train or test split based on chromosome.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        SeqData object.
+    test_chroms : list[str]
+        List of chromosomes to put into test split.
+    train_var : str, optional
+        Name of the variable holding the labels such that True = train and False = test, by default "train_val"
+    """
+    train_mask = (~sdata.chrom.isin(test_chroms)).compute()
+    sdata[train_var] = train_mask
+
+
+def train_test_random_split(
+    sdata: xr.Dataset,
+    dim: str,
+    train_var: str = "train_val",
+    groups: Optional[Any] = None,
+    test_size: float = 0.1,
+    random_state: Optional[int] = None,
+):
+    """Add a variable labeling sequences as part of the train or test split, splitting randomly.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        SeqData object.
+    dim : str
+        Dimension to split randomly.
+    train_var : str, optional
+        Name of the variable holding the labels such that True = train and False = test, by default "train_val"
+    groups : ArrayLike, optional
+        Groups to stratify the splits by, by default None
+    test_size : float, optional
+        Proportion of data to put in the test set, by default 0.1
+    random_state : int, optional
+        Random seed, by default None
+    """
+    splitter = dml.model_selection.ShuffleSplit(
+        n_splits=1, test_size=test_size, random_state=random_state
+    )
+    train_idx, test_idx = next(
+        splitter.split(da.arange(sdata.sizes[dim]), groups=groups)
+    )
+    train_mask = np.full(sdata.sizes[dim], False)
+    train_mask[train_idx] = True
+    sdata[train_var] = xr.DataArray(train_mask, dims=[dim])
+
+
+def train_test_homology_split(
+    sdata: xr.Dataset,
+    seq_var: str,
+    train_var: str = "train_val",
+    test_size: float = 0.1,
+    nucleotide: bool = True,
+):
+    """Add a variable labeling sequences as part of the train or test split, splitting by homology.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        SeqData object.
+    seq_var : str
+        Variable containing the sequences.
+    train_var : str, optional
+        Name of the variable holding the labels, by default "train_val"
+    test_size : float, optional
+        Proportion of data to put in the test set, by default 0.1
+    nucleotide : bool, optional
+        Whether the input sequences are nucleotides or not, by default True
+
+    Raises
+    ------
+    ImportError
+        If [graph-part](https://github.com/graph-part/graph-part) is not installed.
+    """
+    try:
+        from graph_part import train_test_validation_split
+    except ImportError:
+        raise ImportError(
+            "Install [graph-part](https://github.com/graph-part/graph-part) to split by homology."
+        )
+    seq_length = sdata.sizes[sdata.attrs["length_dim"]]
+    seqs = (
+        sdata[seq_var]
+        .to_numpy()
+        .view(f"S{seq_length}")
+        .squeeze()
+        .astype("U")
+        .astype(object)
+    )
+    outs = train_test_validation_split(
+        seqs,
+        test_size=test_size,
+        initialization_mode="fast-nn",
+        nucleotide=nucleotide,
+        prefilter=True,
+        denominator="shortest",
+    )
+    train_idx, test_idx = map(np.array, outs)
+    train_group = np.full(sdata.sizes[sdata.attrs["sequence_dim"]], "removed")
+    train_group[train_idx] = "train"
+    train_group[test_idx] = "val"
+    sdata[train_var] = train_group
+
+
+def clamp_targets_sdata(
+    sdata: xr.Dataset,
+    target_vars: Union[str, List[str]],
+    percentile: float = 0.995,
+    train_var: Optional[str] = None,
+    clamp_nums: Optional[List[float]] = None,
+    store_clamp_nums: bool = False,
+    suffix: bool = False,
+    copy: bool = False,
+):
+    """
+    Clamp targets to a given percentile in a SeqData object.
+
+    Parameters
+    ----------
+    sdata : xr.Dataset
+        SeqData object.
+    target_vars : list
+        List of target variables to clamp.
     percentile : float, optional
         Percentile to clamp to, by default 0.995
-    train_key : str, optional
+    train_var : str, optional
         Key to use if you only want to calculate percentiles on training data, by default None
     clamp_nums : list, optional
         You can provide numbers to clamp to, by default None
     store_clamp_nums : bool, optional
         Whether to store the clamp numbers in the SeqData object, by default False
+    suffix : bool, optional
+        Whether to add a suffix to the variable name, by default False
     copy : bool, optional
         Whether to return a copy of the SeqData object, by default False
 
@@ -204,230 +296,75 @@ def clamp_targets_sdata(
         object is returned, else the original SeqData object is modified in place.
     """
     sdata = sdata.copy() if copy else sdata
-    if type(target_keys) is str:
-        target_keys = [target_keys]
+    if type(target_vars) is str:
+        target_vars = [target_vars]
     if clamp_nums is None:
-        assert percentile is not None
-        if train_key is not None:
+        if train_var is not None:
+            train_idx = np.where(sdata["train_val"])[0]
             clamp_nums = (
-                sdata[sdata.seqs_annot[train_key]]
-                .seqs_annot[target_keys]
+                sdata.isel(_sequence=train_idx)[target_vars]
+                .to_pandas()
                 .quantile(percentile)
             )
         else:
-            clamp_nums = sdata.seqs_annot[target_keys].quantile(percentile)
+            clamp_nums = sdata[target_vars].to_pandas().quantile(percentile)
     else:
-        assert len(clamp_nums) == len(target_keys)
-    sdata.seqs_annot[
-        [f"{target_key}_clamped" for target_key in target_keys]
-        if suffix
-        else target_keys
-    ] = sdata.seqs_annot[target_keys].clip(upper=clamp_nums, axis=1)
+        assert len(clamp_nums) == len(target_vars)
+    for target_var in target_vars:
+        if suffix:
+            sdata[f"{target_var}_clamped"] = xr.DataArray(
+                sdata[target_var].to_pandas().clip(upper=clamp_nums[target_var]),
+                dims=["_sequence"],
+            )
+        else:
+            sdata[target_var].values = (
+                sdata[target_var].to_pandas().clip(upper=clamp_nums[target_var])
+            )
     if store_clamp_nums:
-        sdata.uns["clamp_nums"] = clamp_nums
+        sdata["clamp_nums"] = xr.DataArray(clamp_nums, dims=["_targets"])
     return sdata if copy else None
 
-@track
+
 def scale_targets_sdata(
-    sdata: SeqData,
-    target_keys,
-    train_key=None,
-    scaler=None,
-    store_scaler=True,
-    suffix=False,
-    copy=False,
-) -> SeqData:
+    sdata: xr.Dataset,
+    target_vars: Union[str, List[str]],
+    train_var: Optional[str] = None,
+    scaler: Optional[StandardScaler] = None,
+    return_scaler: bool = False,
+    suffix: bool = False,
+    copy: bool = False,
+):
     """
-    Scale targets to zero mean and unit variance in a SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    target_keys : list
-        List of target keys to scale.
-    train_key : str, optional
-        Key to use if you only want to calculate percentiles on training data, by default None
-    scaler : sklearn scaler, optional
-        Scaler to use if you want to pass one in, by default None
-    store_scaler : bool, optional
-        Whether to store the scaler in the SeqData object, by default True
-    suffix : bool, optional
-        Whether to add a suffix to the scaled target keys, by default True
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-
-    Returns
-    -------
-    SeqData
-        SeqData object with scaled target_keys. If copy is True, a copy of the SeqData
-        object is returned, else the original SeqData object is modified in place.
+    Scale targets in a SeqData object.
     """
     sdata = sdata.copy() if copy else sdata
-    from sklearn.preprocessing import StandardScaler
-
-    if type(target_keys) is str:
-        target_keys = [target_keys]
-    if train_key is not None:
-        scale_data = sdata[sdata[train_key]].seqs_annot[target_keys]
+    if type(target_vars) is str:
+        target_vars = [target_vars]
+    if train_var is not None:
+        scale_data = sdata.isel(_sequence=np.where(sdata[train_var])[0])[
+            target_vars
+        ].to_pandas()
     else:
-        scale_data = sdata.seqs_annot[target_keys]
-    to_scale = sdata.seqs_annot[target_keys]
-    if len(target_keys) == 1:
+        scale_data = sdata[target_vars].to_pandas()
+    to_scale = sdata[target_vars].to_pandas()
+    if len(target_vars) == 1:
         scale_data = scale_data.values.reshape(-1, 1)
         to_scale.values.reshape(-1, 1)
     if scaler is None:
         scaler = StandardScaler()
         scaler.fit(scale_data)
-    assert scaler.n_features_in_ == len(target_keys)
-    # Remove _scaled to help with fragmentation?
-    sdata.seqs_annot[
-        [f"{target_key}_scaled" for target_key in target_keys]
-        if suffix
-        else target_keys
-    ] = scaler.transform(to_scale)
-    if store_scaler:
-        sdata.uns["scaler"] = scaler
-    return sdata if copy else None
-
-@track
-def binarize_targets_sdata(
-    sdata: SeqData,
-    target_keys,
-    upper_threshold=0.5,
-    lower_threshold=None,
-    suffix=None,
-    copy=False,
-    **kwargs,
-) -> SeqData:
-    """
-    Binarize target values based on passed in thresholds in a SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    target_keys : list
-        List of target keys to binarize.
-    upper_threshold : float, optional
-        Upper threshold to binarize, by default 0.5
-    lower_threshold : float, optional
-        Lower threshold to binarize, by default None
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-
-    Returns
-    -------
-    SeqData
-        SeqData object with binarized targets. If copy is True, a copy of the SeqData
-        object is returned, else the original SeqData object is modified in place.
-    """
-    sdata = sdata.copy() if copy else sdata
-    if type(target_keys) is str:
-        target_keys = [target_keys]
-    for target_key in target_keys:
-        sdata.seqs_annot[
-            f"{target_key}_binarized" if suffix is not None else target_key
-        ] = binarize_values(
-            sdata[target_key], upper_threshold, lower_threshold, **kwargs
-        )
-    return sdata if copy else None
-
-@track
-def train_test_split_sdata(
-    sdata: SeqData, 
-    train_key="train_val", 
-    chr=None, 
-    copy=False, 
-    **kwargs
-) -> SeqData:
-    """
-    Train test split a SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    train_key : str, optional
-        Key to use for train/val split, by default "train_val"
-    chr : str, optional
-        Chromosome to use for train/val split, by default None
-    copy : bool, optional
-        Whether to return a copy of the SeqData object, by default False
-    """
-    sdata = sdata.copy() if copy else sdata
-    if chr is not None:
-        chr = [chr] if isinstance(chr, str) else chr
-        sdata[train_key] = ~sdata["chr"].isin(chr)
-        return sdata if copy else None
+    assert scaler.n_features_in_ == len(target_vars)
+    to_scale = scaler.transform(to_scale)
+    for i, target_var in enumerate(target_vars):
+        if suffix:
+            sdata[f"{target_var}_scaled"] = xr.DataArray(
+                to_scale[:, i], dims=["_sequence"]
+            )
+        else:
+            sdata[target_var].values = to_scale[:, i]
+    if return_scaler and copy:
+        return scaler, sdata
+    elif return_scaler and not copy:
+        return scaler
     else:
-        train_indeces, _, _, _ = split_train_test(
-            X_data=sdata.seqs_annot.index, y_data=sdata.seqs_annot.index, **kwargs
-        )
-        sdata[train_key] = sdata.seqs_annot.index.isin(train_indeces)
         return sdata if copy else None
-
-@track
-def add_ranges_sdata(
-    sdata: SeqData, 
-    chr_delim=":", 
-    rng_delim="-", 
-    copy=False
-) -> SeqData:
-    """
-    Add position annotations to a SeqData object.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        SeqData object.
-    chr_delim : str, optional
-        Delimiter to use for chromosome, by default ":"
-    rng_delim : str, optional
-        Delimiter to use for range, by default "-"
-
-    Returns
-    -------
-    SeqData
-        SeqData object with position annotation.
-    """
-    sdata = sdata.copy() if copy else sdata
-    idx = sdata.seqs_annot.index
-    if chr_delim not in idx[0] or rng_delim not in idx[0]:
-        raise ValueError("Invalid index format.")
-    chr = [i[0] for i in idx.str.split(chr_delim)]
-    rng = [i[1].split(rng_delim) for i in idx.str.split(chr_delim)]
-    sdata["chr"] = chr
-    sdata["start"] = [int(i[0]) for i in rng]
-    sdata["end"] = [int(i[1]) for i in rng]
-    return sdata if copy else None
-
-@track
-def seq_len_sdata(sdata, dummy=False, copy=False):
-    sdata = sdata.copy() if copy else sdata
-    sdata.seqs_annot["seq_len"] = [len(seq) for seq in sdata.seqs]
-    return sdata
-    
-@track
-def downsample_sdata(
-    sdata, 
-    n=None, 
-    frac=None, 
-):
-    sdata = sdata.copy()
-    if n is None and frac is None:
-        raise ValueError("Must specify either n or frac")
-    if n is not None and frac is not None:
-        raise ValueError("Must specify either n or frac, not both")
-    num_seqs = sdata.n_obs
-    if n is not None:
-        if n > num_seqs:
-            raise ValueError("n must be less than or equal to the number of sequences")
-        rand_idx = np.random.choice(num_seqs, n, replace=False)
-        sdata = sdata[rand_idx]
-    elif frac is not None:
-        if frac > 1:
-            raise ValueError("frac must be less than or equal to 1")
-        rand_idx = np.random.choice(num_seqs, int(num_seqs * frac), replace=False)
-        sdata = sdata[rand_idx]
-    return sdata

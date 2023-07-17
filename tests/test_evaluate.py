@@ -39,7 +39,9 @@ def test_predictions(sdata, model):
         file_label="test",
     )
     saved_t = pd.read_csv(
-        f"{HERE}/_output/ssDeepBind_regression/test_predictions.tsv", index_col=0, sep="\t"
+        f"{HERE}/_output/ssDeepBind_regression/test_predictions.tsv",
+        index_col=0,
+        sep="\t",
     )
     assert np.allclose(
         saved_t["predictions_0"].values,
@@ -49,14 +51,26 @@ def test_predictions(sdata, model):
 
 def test_train_val_predictions(sdata, model):
     eu.evaluate.train_val_predictions(
-        model, sdata=sdata, target_keys="activity_0", train_key="train_val", out_dir=f"{HERE}/_output/"
+        model,
+        sdata=sdata,
+        target_keys="activity_0",
+        train_key="train_val",
+        out_dir=f"{HERE}/_output/",
     )
-    saved_t = pd.read_csv(f"{HERE}/_output/ssDeepBind_regression/train_predictions.tsv", index_col=0, sep="\t")
+    saved_t = pd.read_csv(
+        f"{HERE}/_output/ssDeepBind_regression/train_predictions.tsv",
+        index_col=0,
+        sep="\t",
+    )
     assert np.allclose(
         saved_t["predictions_0"].values,
         sdata.seqs_annot.loc[saved_t.index]["activity_0_predictions"].values,
     )
-    saved_v = pd.read_csv(f"{HERE}/_output/ssDeepBind_regression/val_predictions.tsv", index_col=0, sep="\t")
+    saved_v = pd.read_csv(
+        f"{HERE}/_output/ssDeepBind_regression/val_predictions.tsv",
+        index_col=0,
+        sep="\t",
+    )
     assert np.allclose(
         saved_v["predictions_0"].values,
         sdata.seqs_annot.loc[saved_v.index]["activity_0_predictions"].values,

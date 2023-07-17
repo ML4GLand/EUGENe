@@ -12,9 +12,9 @@ suppress_warnings = [
     "myst.header",  # https://github.com/executablebooks/MyST-Parser/issues/262
 ]
 project = "EUGENe"
-copyright = "2022, Adam Klie, Hayden Stites"
-author = "Adam Klie, Hayden Stites"
-release = "0.0.5"
+copyright = "2022, Adam Klie"
+author = "Adam Klie"
+release = "0.1.0"
 
 # default settings
 templates_path = ["_templates"]
@@ -30,7 +30,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "myst_parser",
     "nbsphinx",
-    "sphinx_gallery.load_style",
+#    "sphinx_gallery.load_style",
 ]
 
 autosummary_generate = True
@@ -52,10 +52,10 @@ html_static_path = ["_static"]
 html_show_sphinx = False
 
 # Thumbnail selection for nbsphinx gallery
-nbsphinx_thumbnails = {
-    "tutorials/single_task_regression_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
-    "tutorials/binary_classification_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
-}
+#nbsphinx_thumbnails = {
+#    "tutorials/single_task_regression_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
+#    "tutorials/binary_classification_tutorial": "_static/thumbnails/single_task_regression_thumbnail.png",
+#}
 
 # -- Options for extensions -------------------------------------------------------------------------------
 nbsphinx_execute = "never"

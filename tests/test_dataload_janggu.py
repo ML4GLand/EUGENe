@@ -8,6 +8,7 @@ import eugene as eu
 from pathlib import Path
 from eugene.dataload import SeqData
 from pathlib import Path
+
 HERE = Path(__file__).parent
 
 dataset_dir = f"{HERE}/../eugene/datasets/janggu_resources"
@@ -15,7 +16,7 @@ ref_file = "sample_genome.fa"
 roi_file = "sample.bed"
 bed_file = "scored_sample.bed"
 bam_file = "sample2.bam"
-bw_file = "sample.bw"  
+bw_file = "sample.bw"
 
 
 def check_janggu_load(sdata, has_target=False):
@@ -24,6 +25,7 @@ def check_janggu_load(sdata, has_target=False):
     assert "chr2" in sdata.names[-1]
     if has_target:
         assert sdata.seqs_annot.iloc[:, -1][0] is not np.nan
+
 
 """
 def test_read_bed():
@@ -54,13 +56,14 @@ def test_read_bed_janggu():
     assert isinstance(cov, Cover)
 """
 
+
 def test_read_bam():
     sdata = eu.dl.read_bam(
         bam_file=os.path.join(dataset_dir, bam_file),
         roi_file=os.path.join(dataset_dir, roi_file),
-        ref_file=os.path.join(dataset_dir, ref_file), 
-        binsize=200, 
-        resolution=25
+        ref_file=os.path.join(dataset_dir, ref_file),
+        binsize=200,
+        resolution=25,
     )
     check_janggu_load(sdata, has_target=True)
 
@@ -69,10 +72,10 @@ def test_read_bigwig():
     sdata = eu.dl.read_bigwig(
         bigwig_file=os.path.join(dataset_dir, bw_file),
         roi_file=os.path.join(dataset_dir, roi_file),
-        ref_file=os.path.join(dataset_dir, ref_file), 
+        ref_file=os.path.join(dataset_dir, ref_file),
         dnaflank=50,
         binsize=200,
         resolution=None,
-        collapser="max"
+        collapser="max",
     )
     check_janggu_load(sdata, has_target=True)

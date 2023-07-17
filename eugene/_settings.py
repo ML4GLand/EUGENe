@@ -1,6 +1,8 @@
-import torch
 from pathlib import Path
 from typing import Union
+
+import torch
+
 
 class EugeneConfig:
     """
@@ -24,14 +26,14 @@ class EugeneConfig:
     def __init__(
         self,
         seed: int = 13,
-        progress_bar_style: str = "tqdm", 
+        progress_bar_style: str = "tqdm",
         rc_context: dict = None,
         dpi: int = 300,
         batch_size: int = 128,
         gpus: int = None,
         dl_num_workers: int = 0,
         dl_pin_memory_gpu_training: bool = False,
-        dataset_dir: str ="./eugene_data/",
+        dataset_dir: str = "./eugene_data/",
         logging_dir: str = "./eugene_logs/",
         output_dir: str = "./eugene_output/",
         config_dir: str = "./eugene_configs/",
@@ -87,6 +89,7 @@ class EugeneConfig:
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
     }
+
     @rc_context.setter
     def rc_context(self, rc_context: dict):
         """Matplotlib rc_context."""
@@ -201,5 +204,6 @@ class EugeneConfig:
     @figure_dir.setter
     def figure_dir(self, figure_dir: Union[str, Path]):
         self._figure_dir = Path(figure_dir).resolve()
+
 
 settings = EugeneConfig()
