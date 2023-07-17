@@ -1,6 +1,6 @@
 version: 2
 build:
-  image: latest
+  image: testing
 sphinx:
   configuration: docs/conf.py
 python:
