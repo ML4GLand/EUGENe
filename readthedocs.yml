@@ -14,5 +14,6 @@ build:
       # Install dependencies with 'docs' extras
       # https://python-poetry.org/docs/pyproject/#extrass
       - poetry install --extras docs
+      - pip install . --no-deps
 sphinx:
   configuration: docs/conf.py

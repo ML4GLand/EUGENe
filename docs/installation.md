@@ -14,7 +14,7 @@ conda create -n eugene python=$VERSION
 
 We also recommend installing mamba to speed up the installation process.
 
-# Developmental installation
+## Developmental installation
 To work with the latest version [on GitHub](https://github.com/ML4GLand/EUGENe), clone the repository and `cd` into its root directory.
 
 ```bash
@@ -34,5 +34,5 @@ Extras for development `[dev, docs]` can be installed using:
 pip install -e .[dev, docs]
 ```
 
-# Troubleshooting
+## Troubleshooting
 If you have any issues installing, please [open an issue](https://github.com/cartercompbio/EUGENe/issues) on GitHub!
