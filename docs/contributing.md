@@ -1,78 +1,80 @@
-# Overview
-EUGENe represents a collection of methods, data and models for analyzing genomics sequence data with deep learning. It is very much meant to be a community project, and there are no shortage of places to start contributing to EUGENe, many outside of just writing code. All contributions, including bug reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas are welcome. Everyone within the community is expected to abide by our `code of conduct <https://github.com/pydata/xarray/blob/main/CODE_OF_CONDUCT.md>`_.
+# Contributing
+Coming soon
+
+EUGENe is designed to be a community project and there are no shortage of places to start contributing to EUGENe (many outside of just writing code!). All contributions, including bug reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas, are welcome. Everyone within the community is expected to abide by our `code of conduct <https://github.com/pydata/xarray/blob/main/CODE_OF_CONDUCT.md>`_.
 
 Please do not hesitate to contact us if you have any questions or suggestions.
 
 Large parts of this document came from the [Pandas Contributing Guide](http://pandas.pydata.org/pandas-docs/stable/contributing.html).
 
-Where to start?
+#Where to start?
 
-Bug reports and enhancement requests
+#Bug reports and enhancement requests
 
-#Submitting a bug report
+##Submitting a bug report
 
-Version control, Git, and GitHub
+#Version control, Git, and GitHub
 
-Development workflow
+#Development workflow
+
+##Creating a development environment
+
+##Update the main branch
+
+##Create a new feature branch
+
+##The editing workflow
+
+##Commit and push your changes
+
+##Open a pull request
 
 #Creating a development environment
 
-#Update the main branch
+##Creating a Python Environment
 
-#Create a new feature branch
+##Install pre-commit hooks
 
-#The editing workflow
+#Contributing to the documentation
 
-#Commit and push your changes
+##About the xarray documentation
 
-#Open a pull request
+##How to build the xarray documentation
 
-Creating a development environment
+###Building the documentation
 
-#Creating a Python Environment
+###Writing pages
 
-#Install pre-commit hooks
+####Referring to other documents and sections
 
-Contributing to the documentation
+#Contributing to the code base
 
-#About the xarray documentation
+##Code standards
 
-#How to build the xarray documentation
+###Code formatting
 
-##Building the documentation
+###Backwards compatibility
 
-##Writing pages
+##Testing with continuous integration
 
-###Referring to other documents and sections
+##Test-driven development code writing
 
-Contributing to the code base
+###Writing tests
 
-#Code standards
+###Using `pytest`
 
-##Code formatting
+##Running the test suite
 
-##Backwards compatibility
+##Documenting your code
 
-#Testing with continuous integration
+#Contributing your changes to EUGENe
 
-#Test-driven development code writing
+##Commiting your code
 
-##Writing tests
+##Pushing your code
 
-##Using `pytest`
+##Review your code
 
-#Running the test suite
+##Delete your merged branch
 
-#Documenting your code
-
-Contributing your changes to EUGENe
-
-#Commiting your code
-
-#Pushing your code
-
-#Review your code
-
-#Delete your merged branch
-
-#PR Checklist
+##PR Checklist

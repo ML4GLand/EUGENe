@@ -399,7 +399,7 @@ Plotting suite in EUGENe for multiple aspects of the workflow.
    plot.distance_cooperativity_gia_plot
 ```
 
-## Utilities
+## `utils`
 
 ```{eval-rst}
 .. module:: eugene.utils
