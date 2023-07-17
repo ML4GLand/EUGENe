@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 from typing import Dict
 import torch.nn.init as init
-from ._utils import get_layer
+from .._utils import get_layer
 from motifdata import to_kernel
-from motifdata import  MotifSet
+from motifdata import MotifSet
+from typing import Union, Callable, Optional, Any, Tuple, List, Literal
 
 
 INITIALIZERS_REGISTRY = {
@@ -20,13 +21,15 @@ INITIALIZERS_REGISTRY = {
     "orthogonal": init.orthogonal_,
     "sparse": init.sparse_,
     "ones": init.ones_,
-    "zeros": init.zeros_
+    "zeros": init.zeros_,
 }
 
+
 def _init_weights(
-    module, 
-    initializer
-):
+    module: nn.Module,
+    initializer: str = "xavier_uniform",
+    **kwargs,
+) -> None:
     """Initialize the weights of a module.
 
     Parameters
@@ -50,14 +53,15 @@ def _init_weights(
         init_func(module.weight)
     elif isinstance(module, nn.ParameterList):
         for param in module:
-            if  param.dim() > 1:
+            if param.dim() > 1:
                 init_func(param)
 
+
 def init_weights(
-    model,
-    initializer="kaiming_normal",
-    **kwargs
-):
+    model: nn.Module,
+    initializer: str = "kaiming_normal",
+    **kwargs,
+) -> None:
     """Initialize the weights of a model.
 
     Parameters
@@ -71,25 +75,85 @@ def init_weights(
     """
     model.apply(lambda m: _init_weights(m, initializer, **kwargs))
 
+
 def init_motif_weights(
-    model,
-    layer_name,
+    model: nn.Module,
+    layer_name: str,
     motifs: MotifSet,
-    **kwargs
+    list_index: Optional[int] = None,
+    initializer: str = "kaiming_normal",
+    convert_to_pwm: bool = True,
+    divide_by_bg: bool = True,
+    motif_align: Literal["center", "left", "right"] = "center",
+    kernel_align: Literal["center", "left", "right"] = "center",
 ):
-    """Initialize the weights of a model.
+    """Initialize the convolutional kernel of choice using a set of motifs
+
+    This function is designed to initialize the convolutional kernels of a given layer of a model with a set of motifs.
+    It has only been tested on nn.Conv1d layers and ParameterList layers that have a shape of (num_kernels, 4, kernel_size).
+    Simply use the named module of the layer you want to initialize and pass it to this function. If the layer is a ParameterList,
+    you must also pass the index of the kernel you want to initialize. If the layer is a Conv1d layer, you can pass None as the index.
+
+    This function modifies the model in place.
 
     Parameters
     ----------
-    model : LightningModule
+    model :
         The model to initialize.
-    motifs : Union[Motif, MotifSet, PathLike]
-        Motifs to use for initialization.
+    layer_name : str
+        The name of the layer to initialize. You can use the list_available_layers function to get a list of available layers.
+    motifs : MotifSet
+        A MotifSet object containing the motifs to initialize the kernel with. MotifSets are from the package motifdata.
+    list_index : int, optional
+        The index of the kernel to initialize. Only required if the layer is a ParameterList layer, by default None
     initializer : str, optional
         The name of the initializer to use, by default "kaiming_normal"
-    **kwargs
-        Additional arguments to pass to the initializer.
+    convert_to_pwm : bool, optional
+        Whether to convert the kernel to a PWM after initializing, by default True
+    divide_by_bg : bool, optional
+        Whether to divide the kernel by the background frequencies after initializing, by default True
+    motif_align : Literal["center", "left", "right"], optional
+        How to align the motifs when converting to a PWM, by default "center"
+    kernel_align : Literal["center", "left", "right"], optional
+        How to align the kernel when converting to a PWM, by default "center"
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from eugene import models
+    >>> from motifdata import MotifSet
+    >>> model = models.zoo.DeepSTARR(input_len=1000, output_dim=1)
+    >>> motifs = MotifSet("path/to/motifs.txt")
+    >>> list_available_layers(model)
+    >>> init_motif_weights(model, "conv1d_tower.layers.0", motifs)
     """
     layer = get_layer(model, layer_name)
-    pwms = to_kernel(motifs, tensor=layer.weight.data, convert_to_pwm=True)
-    layer.weight = nn.Parameter(pwms)
+    if list_index is None:
+        layer_size = layer.weight.size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
+        )
+        layer.weight = nn.Parameter(pwms)
+    else:
+        layer_size = layer[list_index].size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
+        )
+        layer[list_index] = nn.Parameter(pwms)

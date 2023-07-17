@@ -1,66 +1,83 @@
+from typing import (
+    Any,
+    Dict,
+    Hashable,
+    Iterable,
+    Literal,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 import pandas as pd
-from os import PathLike
-from typing import Union, List
+import xarray as xr
 
 
-def _read_and_concat_dataframes(
-    file_names: Union[PathLike, List[PathLike]],
-    col_names: Union[str, list] = None,
-    sep: str = "\t",
-    low_memory: bool = False,
-    compression: str = "infer",
-    **kwargs
-) -> pd.DataFrame:
-    """Reads a list of files and concatenates them into a single dataframe.
+def concat_sdatas(
+    sdatas: Iterable[xr.Dataset],
+    keys: Optional[List] = None,
+) -> xr.Dataset:
+    """Concatenate multiple SeqDatas into one.
+
+    Adds a "batch" variable to concatenated SeqData along the "_sequence" dimension.
+    Assumes that there is a _sequence dimension in each SeqData to concatenate on.
+    If there is not it will raise an error.
+
+    Parameters
+    """
+    for i, s in enumerate(sdatas):
+        s["batch"] = keys[i]
+    return xr.concat(sdatas, dim="_sequence")
+
+
+def add_obs(
+    sdata: xr.Dataset,
+    obs: pd.DataFrame,
+    on: Optional[str] = None,
+    left_on: Optional[str] = None,
+    right_on: Optional[str] = None,
+) -> None:
+    """Add observational metadata to a SeqData.
 
     Parameters
     ----------
-    file_names : str or list
-        Path to file or list of paths to files.
-    col_names : str or list, optional
-        Column names to use for the dataframe. If not provided, the column names will be the first row of the file.
-    sep : str, optional
-        Separator to use for the dataframe. Defaults to "\t".
-    low_memory : bool, optional
-        If True, the dataframe will be stored in memory. If False, the dataframe will be stored on disk. Defaults to False.
-    compression : str, optional
-        Compression to use for the dataframe. Defaults to "infer".
-    **kwargs
-        Additional arguments to pass to pd.read_csv.
-
-    Returns
-    -------
-    pd.DataFrame
+    sdata : xr.Dataset
+        The SeqData to add observations to.
+    obs : pd.DataFrame
+        The observations to add.
+    on : str, optional
+        The column name to join on. If not given, left_on and right_on must be given.
+    left_on : str, optional
+        The column name in the SeqData to join on. If not given, on must be given.
+    right_on : str, optional
+        The column name in the observations to join on. If not given, on must be given.
+    
+    Raises
+    ------
+    ValueError
+        If on is not given and left_on or right_on are not given.
+        If on is given and left_on or right_on are given.
     """
-    file_names = [file_names] if isinstance(file_names, str) else file_names
-    dataframe = pd.DataFrame()
-    for file_name in file_names:
-        x = pd.read_csv(
-            file_name,
-            sep=sep,
-            low_memory=low_memory,
-            names=col_names,
-            compression=compression,
-            header=0,
-            **kwargs
-        )
-        dataframe = pd.concat([dataframe, x], ignore_index=True)
-    dataframe.reset_index(inplace=True, drop=True)
-    return dataframe
+    if on is None and (left_on is None or right_on is None):
+        raise ValueError
+    if on is not None and (left_on is not None or right_on is not None):
+        raise ValueError
 
-def _seq2Fasta(seqs, IDs, name="seqs"):
-    """Utility function to generate a fasta file from a list of sequences and identifiers
+    if on is None:
+        assert left_on is not None
+        assert right_on is not None
+    else:
+        left_on = on
+        right_on = on
 
-    Parameters
-    ----------
-    seqs (list-like):
-        list of sequences
-    IDs (list-like):
-        list of identifiers
-    name (str, optional):
-        name of file. Defaults to "seqs".
-    """
-    file = open("{}.fa".format(name), "w")
-    for i in range(len(seqs)):
-        file.write(">" + IDs[i] + "\n" + seqs[i] + "\n")
-    file.close()
+    sdata[left_on] = sdata[left_on].astype("U").astype("O")
+    df = sdata[left_on].to_dataframe()
+    merged_df = df.merge(obs, left_on=left_on, right_on=right_on, how="left")
+
+    for col in merged_df.columns:
+        if col == left_on:
+            continue
+        sdata[col] = xr.DataArray(merged_df[col].values, dims=["_sequence"])

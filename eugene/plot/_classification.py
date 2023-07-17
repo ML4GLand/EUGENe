@@ -10,23 +10,24 @@ from sklearn.metrics import (
     precision_recall_curve,
     average_precision_score,
 )
-from typing import Union, Sequence 
+from typing import Union, Sequence
 from sklearn.preprocessing import binarize
 from ._utils import _check_input, _label_plot, _save_fig
-
+from typing import Optional
+import xarray as xr
 
 def _plot_binary_confusion_mtx(
-    sdata, 
-    target_key: str,
-    prediction_key: str,
-    threshold: float, 
-    title: str = None, 
-    xlab: str = None,
-    ylab: str = None,
+    sdata: xr.Dataset,
+    target_var: str,
+    prediction_var: str,
+    threshold: float,
+    title: Optional[str] = None,
+    xlab: Optional[str] = None,
+    ylab: Optional[str] = None,
     figsize: tuple = (6, 6),
-    save: PathLike = None,
-    ax = None,
-    **kwargs
+    save: Optional[PathLike] = None,
+    ax: Optional[plt.Axes] = None,
+    **kwargs,
 ) -> None:
     """
     Plot a confusion matrix for binary classification.
@@ -58,20 +59,19 @@ def _plot_binary_confusion_mtx(
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
     cf_names = ["True Neg", "False Pos", "False Neg", "True Pos"]
-    ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-    ps = binarize(sdata.seqs_annot[prediction_key].values.reshape(-1, 1), threshold=threshold)
+    ts = sdata[target_var].values.reshape(-1, 1)
+    ps = binarize(sdata[prediction_var].values.reshape(-1, 1), threshold=threshold)
     cf_mtx = confusion_matrix(ts, ps)
-    cf_pcts = [ "{0:.2%}".format(value) for value in (cf_mtx / cf_mtx.sum(axis=1)[:, None]).flatten()]
-    labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(cf_mtx.flatten(), cf_pcts, cf_names)]
+    cf_pcts = [
+        "{0:.2%}".format(value)
+        for value in (cf_mtx / cf_mtx.sum(axis=1)[:, None]).flatten()
+    ]
+    labels = [
+        f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(cf_mtx.flatten(), cf_pcts, cf_names)
+    ]
     labels = np.asarray(labels).reshape(2, 2)
     sns.heatmap(
-        cf_mtx, 
-        annot=labels, 
-        fmt="s", 
-        cmap="Blues", 
-        cbar=False, 
-        ax=ax, 
-        **kwargs
+        cf_mtx, annot=labels, fmt="s", cmap="Blues", cbar=False, ax=ax, **kwargs
     )
     _label_plot(
         ax,
@@ -86,9 +86,9 @@ def _plot_binary_confusion_mtx(
 
 
 def confusion_mtx(
-    sdata,
-    target_key: str,
-    prediction_key: str,
+    sdata: xr.Dataset,
+    target_var: str,
+    prediction_var: str,
     kind: str = "binary",
     threshold: float = 0.5,
     rc_context: dict = settings.rc_context,
@@ -98,16 +98,16 @@ def confusion_mtx(
     """
     Plot a confusion matrix for given targets and predictions within SeqData
 
-    Creates a confusion matrix from the given target and prediction keys held 
-    in the seqs_annot of the passed in SeqData. The 
+    Creates a confusion matrix from the given target and prediction keys held
+    in the seqs_annot of the passed in SeqData. The
 
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
-    target_key : str
+    target_var : str
         Key to use as target.
-    prediction_key : str
+    prediction_var : str
         Key to use as prediction.
     kind : str
         Kind of confusion matrix to plot. Currently only allow for binary
@@ -125,28 +125,30 @@ def confusion_mtx(
     with plt.rc_context(rc_context):
         if kind == "binary":
             ax = _plot_binary_confusion_mtx(
-                sdata, 
-                target_key, 
-                prediction_key, 
-                threshold, 
+                sdata=sdata,
+                target_var=target_var,
+                prediction_var=prediction_var,
+                threshold=threshold,
                 **kwargs
             )
         else:
-            raise ValueError(f"Confusion matrix for '{kind}' classification not currently supported.")
+            raise ValueError(
+                f"Confusion matrix for '{kind}' classification not currently supported."
+            )
     if return_axes:
         return ax
 
 
 def auroc(
-    sdata,
-    target_keys: Union[Sequence[str], str],
-    prediction_keys: Union[Sequence[str], str],
+    sdata: xr.Dataset,
+    target_vars: Union[Sequence[str], str],
+    prediction_vars: Union[Sequence[str], str],
     labels: Union[Sequence[str], str] = "",
     xlab: str = "False Positive Rate",
     ylab: str = "True Positive Rate",
     figsize: tuple = (8, 8),
-    save: str = None,
-    ax = None,
+    save: Optional[str] = None,
+    ax=None,
     **kwargs,
 ) -> None:
     """
@@ -161,9 +163,9 @@ def auroc(
     ----------
     sdata : SeqData
         SeqData object.
-    target_keys : Union[Sequence[str], str]
+    target_vars : Union[Sequence[str], str]
         Target keys to use for plotting.
-    prediction_keys : Union[Sequence[str], str]
+    prediction_vars : Union[Sequence[str], str]
         Prediction keys to use for plotting.
     labels : Union[Sequence[str], str]
         Labels to use for each prediction. If not passed in, the labels_{i} will be used.
@@ -177,18 +179,15 @@ def auroc(
         Path to save the figure. If none, figure will not be saved.
     **kwargs
         Additional keyword arguments to pass to matplotlib plot function
-    """ 
-    target_keys, prediction_keys, labels = _check_input(
-        sdata,
-        target_keys, 
-        prediction_keys, 
-        labels
+    """
+    target_vars, prediction_vars, labels = _check_input(
+        sdata, target_vars, prediction_vars, labels
     )
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
-    for label, target_key, prediction_key in zip(labels, target_keys, prediction_keys):
-        ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-        ps = sdata.seqs_annot[prediction_key].values.reshape(-1, 1)
+    for label, target_var, prediction_var in zip(labels, target_vars, prediction_vars):
+        ts = sdata[target_var].values.reshape(-1, 1)
+        ps = sdata[prediction_var].values.reshape(-1, 1)
         fpr, tpr, _ = roc_curve(ts, ps)
         roc_auc = auc(fpr, tpr)
         print(roc_auc, label)
@@ -204,15 +203,15 @@ def auroc(
 
 
 def auprc(
-    sdata,
-    target_keys: Union[Sequence[str], str],
-    prediction_keys: Union[Sequence[str], str],
+    sdata: xr.Dataset,
+    target_vars: Union[Sequence[str], str],
+    prediction_vars: Union[Sequence[str], str],
     labels: Union[Sequence[str], str] = "",
     xlab: str = "Recall",
     ylab: str = "Precision",
     figsize: tuple = (8, 8),
-    save: str = None,
-    ax = None,
+    save: Optional[str] = None,
+    ax: Optional[plt.Axes] = None,
     **kwargs,
 ) -> None:
     """
@@ -227,9 +226,9 @@ def auprc(
     ----------
     sdata : SeqData
         SeqData object.
-    target_keys : Union[Sequence[str], str]
+    target_vars : Union[Sequence[str], str]
         Target keys to use for plotting.
-    prediction_keys : Union[Sequence[str], str]
+    prediction_vars : Union[Sequence[str], str]
         Prediction keys to use for plotting.
     labels : Union[Sequence[str], str]
         Labels to use for each prediction. If not passed in, the labels_{i} will be used.
@@ -243,15 +242,19 @@ def auprc(
         Path to save the figure. If none, figure will not be saved.
     **kwargs
         Additional keyword arguments to pass to matplotlib plot function
-    """ 
-    target_keys, prediction_keys, labels = _check_input(sdata, target_keys, prediction_keys, labels)
+    """
+    target_vars, prediction_vars, labels = _check_input(
+        sdata, target_vars, prediction_vars, labels
+    )
     _, ax = plt.subplots(1, 1, figsize=figsize)
-    for label, target_key, prediction_key in zip(labels, target_keys, prediction_keys):
-        ts = sdata.seqs_annot[target_key].values.reshape(-1, 1)
-        ps = sdata.seqs_annot[prediction_key].values.reshape(-1, 1)
+    for label, target_var, prediction_var in zip(labels, target_vars, prediction_vars):
+        ts = sdata[target_var].values.reshape(-1, 1)
+        ps = sdata[prediction_var].values.reshape(-1, 1)
         precision, recall, _ = precision_recall_curve(ts, ps)
         average_precision = average_precision_score(ts, ps)
-        ax.plot(recall, precision, label=f"{label} (AP = {average_precision:.3f})", **kwargs)
+        ax.plot(
+            recall, precision, label=f"{label} (AP = {average_precision:.3f})", **kwargs
+        )
         ax.set_xlabel(xlab, fontsize=20)
         ax.set_ylabel(ylab, fontsize=20)
         ax.legend(loc="lower right")

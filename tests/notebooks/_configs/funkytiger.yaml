@@ -1,0 +1,28 @@
+module: SequenceModule
+model:
+  model_name: funkytiger
+  arch_name: CNN
+  arch:
+    input_len: 170
+    output_dim: 1
+    conv_kwargs:
+      input_channels: 4
+      conv_channels: [256, 256, 256]
+      conv_kernels: [8, 3, 3]
+      conv_strides: [1, 1, 1]
+      pool_kernels: [2, 1, 1]
+      dropout_rates: 0.3
+      batchnorm: True
+      activations: elu
+    dense_kwargs:
+      hidden_dims: [64]
+      dropout_rates: 0.3
+      batchnorm: True
+task: regression
+loss_fxn: mse
+optimizer: adam
+optimizer_lr: 0.001
+scheduler: reduce_lr_on_plateau
+scheduler_monitor: val_loss_epoch
+scheduler_kwargs:
+  patience: 2
