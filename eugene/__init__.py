@@ -14,7 +14,7 @@ package_name = "eugene"
 __version__ = importlib_metadata.version(package_name)
 
 # This prevents double output.
-eugene_logger = logging.getLogger("eugene")
+eugene_logger = logging.getLogger("eugene-tools")
 eugene_logger.propagate = False
 
 __all__ = [
