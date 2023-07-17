@@ -37,12 +37,10 @@ pandoc = {version = "^2.2", extras = ["docs"]}
 black = {version = "^22.3", extras = ["dev"]}
 pre-commit = {version = "^2.20", extras = ["dev"]}
 pytest = {version = "^7.1.2", extras = ["dev"]}
-codecov = {version = "^2.0.8", extras = ["dev"]}
-coverage = {version = "^6.5.0", extras = ["dev"]}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8", "sphinx-autodoc-typehints", "sphinx-rtd-theme", "sphinx-nbexamples", "sphinx-gallery", "nbsphinx", "pandoc"]
-dev = ["black", "pre-commit", "pytest", "codecov", "coverage"]
+dev = ["black", "pre-commit", "pytest"]
 
 [build-system]
 requires = ["poetry-core"]
