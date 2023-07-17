@@ -3,7 +3,7 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/eugene-tools)
 ![GitHub stars](https://img.shields.io/github/stars/cartercompbio/EUGENe)
 
-<img src="docs/_static/logos/EugeneLogoText.png" alt="EUGENe Logo" width=350>
+<img src="docs/_static/logos/eugene_logo.png" alt="EUGENe Logo" width=350>
 
 # **E**lucidating the **U**tility of **G**enomic **E**lements with **Ne**ural Nets
 
