@@ -5,11 +5,11 @@ EUGENe is a Python package, and can be installed using `pip`:
 pip install 'eugene-tools'
 ```
 
-## Bleeding edge version
+## Bleeding edge version (TODO)
 To work with the latest version [on GitHub](https://github.com/cartercompbio/EUGENe), clone the repository and `cd` into its root directory.
 
 ```bash
-git clone https://github.com/cartercompbio/EUGENe.git 
+git clone https://github.com/cartercompbio/EUGENe.git
 cd EUGENe
 ```
 

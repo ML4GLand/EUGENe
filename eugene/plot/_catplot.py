@@ -1,9 +1,10 @@
 import seaborn as sns
 from .. import settings
 import matplotlib.pyplot as plt
-from typing import Union, Mapping, Sequence, Iterable, Optional, List, Dict, Any
+from typing import Union, Mapping, Sequence, Iterable, Optional
 from ._utils import _plot_seaborn, _violin_long
 import xarray as xr
+
 
 def countplot(
     sdata: xr.Dataset,
@@ -15,7 +16,7 @@ def countplot(
     **kwargs
 ) -> Optional[plt.Axes]:
     """
-    Plots a countplot of a column(s) in seqs_annot using Seaborn.
+    Plots a countplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the counts of observations in a single
     or multiple columns of seqs_annot within a SeqData. If a groupby is
@@ -60,7 +61,7 @@ def histplot(
     **kwargs
 ) -> Optional[plt.Axes]:
     """
-    Plots a histogram of a column(s) in seqs_annot using seaborn.
+    Plots a histogram of a vars in a SeqData using seaborn.
 
     This function can be used to show the distribution of a single or multiple
     columns of seqs_annot within a SeqData. If a groupby is provided then the
@@ -103,7 +104,7 @@ def boxplot(
     **kwargs
 ) -> Optional[plt.Axes]:
     """
-    Plots a boxplot of a column(s) in seqs_annot using Seaborn.
+    Plots a boxplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the distribution of a single or multiple
     columns of seqs_annot within a SeqData. If a groupby is provided then the
@@ -133,14 +134,9 @@ def boxplot(
         sdata_df = sdata[vars + [groupby]].to_dataframe()
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
-            sdata_df, 
-            vars, 
-            func=sns.boxplot, 
-            groupby=groupby, 
-            orient=orient, 
-            **kwargs
+            sdata_df, vars, func=sns.boxplot, groupby=groupby, orient=orient, **kwargs
         )
-        if jitter == True:
+        if jitter is True:
             _plot_seaborn(
                 sdata_df,
                 vars,
@@ -164,7 +160,7 @@ def violinplot(
     **kwargs
 ) -> Optional[plt.Axes]:
     """
-    Plots a violinplot of a column(s) in seqs_annot using Seaborn.
+    Plots a violinplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the distribution of a single or multiple
     columns of seqs_annot within a SeqData as a violin plot. If a groupby is provided
@@ -247,7 +243,7 @@ def scatterplot(
     """
     if seq_idx is not None:
         sdata = sdata[seq_idx]
-    vars = [vars] if isinstance(vars, str) else vars
+    vars = [x, y]
     sdata_df = sdata[vars].to_dataframe()
     ax = _plot_seaborn(
         sdata_df, vars=x, func=sns.scatterplot, groupby=y, xlab=x, ylab=y, **kwargs

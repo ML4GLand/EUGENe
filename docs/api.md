@@ -41,7 +41,7 @@ This module is designed to let users interact and modify SeqData objects to prep
 ```{eval-rst}
 .. autosummary::
    :toctree: api/
-   
+
    preprocess.train_test_chrom_split
    preprocess.train_test_homology_split
    preprocess.train_test_random_split
@@ -100,6 +100,47 @@ from eugene import models
 
 This module is designed to allow users to easily build and initialize several neural network architectures that are designed for biological sequences.
 
+### Blocks
+Blocks are composed to create architectures in EUGENe. You can find all the arguments that would be passed into the `dense_kwargs` and `recurrent_kwargs` arguments of all built-in model in the `DenseBlock` and `RecurrentBlock` classes, respectively. See the [towers section](#towers) for more information on the `conv_kwargs` argument.
+
+```{eval-rst}
+
+```{eval-rst}
+.. module:: eugene.models
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/classes
+
+   models.DenseBlock
+   models.Conv1DBlock
+   models.RecurrentBlock
+```
+
+### Towers
+The `Conv1DTower` class is currently used for all built-in CNNs. This will be deprecated in the future in favor of the more general `Tower` class. For now, you can find all the arguments that would be passed into the `cnn_kwargs` argument of all built-in CNNs in the `Conv1DTower` class.
+
+```{eval-rst}
+.. module:: eugene.models
+```
+
+```{eval-rst}
+.. currentmodule:: eugene
+```
+
+```{eval-rst}
+.. autosummary::
+   :toctree: api/classes
+
+   models.Tower
+   models.Conv1DTower
+```
+
 ### LightningModules
 
 ```{eval-rst}
@@ -129,6 +170,7 @@ This module is designed to allow users to easily build and initialize several ne
 ```
 
 ### Zoo
+Arguments for the `cnn_kwargs`, `recurrent_kwargs` and `dense_kwargs` of all models can be found in the `Conv1DTower`, `RecurrentBlock` and `DenseBlock` classes, respectively. See the [blocks section](#blocks) and the [towers section](#towers) for more information. The `Satori` architecture currently uses the `MultiHeadAttention` layer which can be found at `eugene.models.base._layers` for more information on the `mha_kwargs` argument.
 
 ```{eval-rst}
 .. module:: eugene.models.zoo

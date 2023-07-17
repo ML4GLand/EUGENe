@@ -10,7 +10,7 @@ EUGENe represents a computational toolkit written in Python for building sequenc
 * **Learn the fundamentals through practice.** Architect, train and interpret deep learning models using EUGENe's streamlined workflow. See if you can recapitulate the results of published studies!
 * **Torture existing models.** Find failure modes or novel behaviors of existing models on novel or synthetically designed datasets.
 * **Apply existing architectures to new data.** Have a new dataset but not sure how to build a model for it? Try training and interpreting established architectures to see what they learn.
-* **Build new architecturess.** Benchmark their performance and interpretability against existing architectures on established datasets
+* **Build new architecturess.** Benchmark their performance and interpretability against existing architectures on established datasets.
 
  EUGENe is primarily designed to be used through its Python API and we feel that users will get the most out of it by using a notebook interface (i.e. [Jupyter](https://jupyter.org/)).
 
@@ -27,7 +27,7 @@ EUGENe is a package that is under active development. If you run errors, please 
 If you use EUGENe for your research, please cite our preprint: [Klie *et al.* bioRxiv 2022](https://www.biorxiv.org/content/10.1101/2022.10.24.513593v1)
 
 # Contributing
-EUGENe is an open-source project and we welcome contributions from the community. If you are interested in contributing, please see the {doc}`contributor's guide <contributors>`.
+EUGENe is an open-source project and we welcome contributions from the community. If you are interested in contributing, please see the {doc}`contributor's guide <contributing>`.
 
 ```{toctree}
 :hidden: true
@@ -37,6 +37,6 @@ installation
 usage-principles
 basic_usage_tutorial
 api
-standards
+contributing
 contributors
 references
