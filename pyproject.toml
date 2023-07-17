@@ -25,7 +25,6 @@ seaborn = "^0.12.0"
 graph-part = "^0.1.2"
 Sphinx = {version = "^6.2.1", extras = ["docs"]}
 sphinx-autobuild = {version = "2021.3.14", extras = ["docs"]}
-<<<<<<< HEAD
 sphinx-autodoc-typehints = {version = "^1.21.1", extras = ["docs"]}
 sphinxcontrib-apidoc = {version = "^0.3.0", extras = ["docs"]}
 sphinx-rtd-theme = {version = "^1.2.2", extras = ["docs"]}
@@ -35,22 +34,6 @@ pandoc = {version = "^2.3", extras = ["docs"]}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "sphinx-autobuild", "sphinx-autodoc-typehints", "sphinxcontrib-apidoc", "sphinx-rtd-theme", "myst-parser", "nbsphinx", "pandoc"]
-=======
-autopep8 = {version = "1.6.0", extras = ["docs"]}
-sphinx-autodoc-typehints = {version = "^1.19.2", extras = ["docs"]}
-sphinx-rtd-theme = {version = "^1.0.0", extras = ["docs"]}
-sphinx-nbexamples = {version = "^0.4.1", extras = ["docs"]}
-sphinx-gallery = {version = "^0.11.1", extras = ["docs"]}
-nbsphinx = {version = "^0.8.9", extras = ["docs"]}
-pandoc = {version = "^2.2", extras = ["docs"]}
-black = {version = "^22.3", extras = ["dev"]}
-pre-commit = {version = "^2.20", extras = ["dev"]}
-pytest = {version = "^7.1.2", extras = ["dev"]}
-
-[tool.poetry.extras]
-docs = ["Sphinx", "myst-parser", "sphinxcontrib-apidoc", "sphinx-autobuild", "autopep8", "sphinx-autodoc-typehints", "sphinx-rtd-theme", "sphinx-nbexamples", "sphinx-gallery", "nbsphinx", "pandoc"]
-dev = ["black", "pre-commit", "pytest"]
->>>>>>> 4598e1d19fb31045895a5e08ccfd1dfaf1421260
 
 [build-system]
 requires = ["poetry-core"]
