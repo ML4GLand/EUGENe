@@ -305,7 +305,7 @@ Interpretation suite of EUGENe, currently broken into filter visualization, feat
    interpret.attribute_sdata
 ```
 
-### *Global importance analysis (GIA)*
+### Global importance analysis (GIA)
 
 ```{eval-rst}
 .. autosummary::
