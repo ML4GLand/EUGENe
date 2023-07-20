@@ -4816,4 +4816,4 @@ docs = ["Sphinx", "myst-parser", "nbsphinx", "pandoc", "sphinx-autobuild", "sphi
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.11"
-content-hash = "46d2b7c72a4ff21e80b1e08eabf0b63e0910edddfdd6160d9fee9f4adeb5fefb"
+content-hash = "0d69769c6a4523ed7e5157d8f149d9041822f697be2d452462aacb264aad572c"

@@ -1,6 +1,6 @@
 # Frequently asked questions (FAQs)
 
- - [I'm new to DL for regulatory genomics. Where should I start?](#im-new-to-dl-for-regulatory-genomics-where-should-i-start)
+ - [I am new to DL for regulatory genomics. Where should I start?](#i-am-new-to-dl-for-regulatory-genomics-where-should-i-start)
 
  - [What is the difference between EUGENe and other DL frameworks?](#what-is-the-difference-between-eugene-and-other-dl-frameworks)
 
@@ -8,21 +8,21 @@
 
  - [Can EUGENe be used to train models at base-pair resolution?](#can-eugene-be-used-to-train-models-at-base-pair-resolution)
 
- - [What are EUGENe's memory requirements?](#what-are-eugenes-memory-requirements) 
+ - [What are the memory requirements of EUGENe?](#what-are-the-memory-requirements-of-eugene)
 
  - [Does EUGENe only support PyTorch?](#does-eugene-only-support-pytorch)
 
 - [Can I incorporate epigenetic tracks as input features in my model?](#can-i-incorporate-epigenetic-tracks-as-input-features-in-my-model)
 
- - [I'm a power user when it comes to DL for regulatory genomics. Why would I use EUGENe?](#im-a-power-user-when-it-comes-to-dl-for-regulatory-genomics-why-would-i-use-eugene)
+ - [I am a power user when it comes to DL for regulatory genomics. Why would I use EUGENe?](#i-am-a-power-user-when-it-comes-to-dl-for-regulatory-genomics-why-would-i-use-eugene)
 
  - [How can I contribute to EUGENe?](#how-can-i-contribute-to-eugene)
 
- - [I'm an industry researcher. Can I contribute to EUGENe?](#im-an-industry-researcher-can-i-contribute-to-eugene)
+ - [I am an industry researcher. Can I contribute to EUGENe?](#i-am-an-industry-researcher-can-i-contribute-to-eugene)
 
- - [What is EUGENe's logo supposed to be?](#what-is-eugenes-logo-supposed-to-be)
+ - [What is the EUGENe logo supposed to be?](#what-is-the-eugene-logo-supposed-to-be)
 
-## I'm new to DL for regulatory genomics. Where should I start?
+## I am new to DL for regulatory genomics. Where should I start?
 Welcome to the field! We recommend starting by installing EUGENe using these {doc}`inststructions <installation>`. Once installed, check out the {doc}`basic usage tutorial <basic_usage_tutorial>` for an example of how to run an end-to-end EUGENe workflow. 
 
 After you've worked through that, we recommend trying to train a model on a different dataset. Use this documentation as well as the [tutorials](TODO) and [use cases](TODO) to guide you through the process. 
@@ -65,13 +65,13 @@ Our long-term goal for a framework such as EUGENe is for it to be framework agno
 ## Can EUGENe be used to train models at base-pair resolution?
 Yes! SeqData by default reads coverage at base-pair resolution and we have recently added BPNet as a "built-in" model architecture that has been shown to work well at base-pair resolution. We are also working on adding more base-pair resolution models to the library and adapting downstream analyses (such as attribution analysis) to work with BPNet (if you just predict the profile they will work fine). See the [BPNet tutorial](TODO) for an example of how to train a BPNet model with EUGENe.
 
-## What are EUGENe's memory requirements?
+## What are the memory requirements of EUGENe?
 As of the 1.0.0 release, EUGENe can now be used for completely out-of-core training. EUGENe’s effective memory limitation is the memory required to load in a single sequence. That is, as long as a single sequence can fit into both a user’s CPU and GPU RAM, a EUGENe model can be trained on that dataset (in this case with a batch size of 1). In practice, training usually occurs in larger batches, but the principle remains the same.
 
 ## Can I incorporate epigenetic tracks as input features in my model?
 Yes! EUGENe does not currently have any built-in models that support epigenetic tracks as input features, but it is possible to incorporate them into your own custom models. SeqData can easily read in epigenetic tracks from a variety of file formats and convert them into a PyTorch dataloader.
 
-## I'm a power user when it comes to DL for regulatory genomics. Why would I use EUGENe?
+## I am a power user when it comes to DL for regulatory genomics. Why would I use EUGENe?
 Thanks for checking out EUGENe. We recognize that users may already have their favorite tool or library (or just don't use PyTorch!). Advanced users may nonetheless find many aspects of EUGENe useful even if they prefer to build their workflows from the existing tools in this space. EUGENe was built in a modular manner, and can therefore be seen as another tool in the toolkit, much like captum or logomaker say, where a user can take advantage of the parts they want and ignore the parts they don’t. 
 
 For instance, a machine learning scientist might be familiar with captum and its usage, but have never worked with a BigWig file before. Such a user could use EUGENe (or just SeqData on its own) to load and preprocess their dataset, and then decide to train, evaluate and interpret the model with other packages or their own bespoke code. EUGENe can also help advanced users reduce repetitive tasks (e.g. boilerplate architecture definitions, training loops, attribution analysis, etc.) and mitigate errors in bespoke implementations.
@@ -81,10 +81,10 @@ Most importantly, we also believe that advanced users can help us further develo
 ## How can I contribute to EUGENe?
 Check out the {doc}`contributor's guide <contributing>` for more information on how to contribute to EUGENe. We welcome contributions such as bug reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas! 
 
-## I'm an industry researcher. Can I contribute to EUGENe?
+## I am an industry researcher. Can I contribute to EUGENe?
 Yes! We hope that EUGENe will grow into a community project that can let you build a network that lasts across jobs and roles. Lifelong employment at a corporation is less and less common. Joining our community will let you build bonds that cross jobs and could help you do your job today better too!
 
-## What is EUGENe's logo supposed to be?
+## What is the EUGENe logo supposed to be?
 Obviously the most important FAQ should be saved for last. The logo is a reference to the character Eugene Fitzherbert from the Disney movie [Tangled](https://www.google.com/search?q=tangled&tbm=isch&sa=X&ved=2ahUKEwiip4i555iAAxWqIUQIHb9QBlcQ0pQJegQIDxAB&biw=1728&bih=1000&dpr=2). The logo is a stylized version of the character's [trademark vest](https://www.google.com/search?q=eugene+fitzherberts+vest&tbm=isch&ved=2ahUKEwjqvOLF55iAAxXyNkQIHY9eAwgQ2-cCegQIABAA&oq=eugene+fitzherberts+vest&gs_lcp=CgNpbWcQAzoKCAAQigUQsQMQQzoFCAAQgAQ6BwgAEIoFEENQ7wRYvQpgiQtoAHAAeACAAUCIAZUDkgEBN5gBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=kc-2ZKqwCfLtkPIPj72NQA&bih=1000&biw=1728), designed by the wonderful [Michelle Franc-Ragsac](https://www.mragsac.com/) formerly of Bioinformatics and Systems Biology program fame at UC San Diego.
 
 We thought this was a fitting analogy for EUGENe, a bioinformatics tool with a good heart and trying to find its place in the world of DL for regulatory genomics.
