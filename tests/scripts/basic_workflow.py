@@ -30,7 +30,7 @@ eu.train.fit(
 eu.evaluate.train_val_predictions(
     model=model,
     sdata=sdata,
-    target_keys="activity_0",
+    target_vars="activity_0",
     ...
 )
 

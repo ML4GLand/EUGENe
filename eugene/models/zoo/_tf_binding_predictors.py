@@ -26,11 +26,18 @@ class DeepBind(nn.Module):
     output_dim : int
         Number of output classes
     conv_kwargs : dict
-        Keyword arguments for convolutional layers
+        Keyword arguments for convolutional layers. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Alipanahi et al 2015 will be used.
     dense_kwargs : dict
-        Keyword arguments for fully connected layers
+        Keyword arguments for fully connected layers. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
     mode : str
-        Mode of model, either "dna" or "rbp"
+        Mode of model, either "dna" or "rbp". Controls the pooling layers.
+        if "dna", only max pooling is used. If "rbp", both max and average
+        pooling are used.
     """
 
     def __init__(
@@ -93,9 +100,10 @@ class DeepBind(nn.Module):
 class ResidualBind(nn.Module):
     """ResidualBind architecture implemented from Koo et al 2021 in PyTorch
 
-    This is a flexible implementation of the original ResidualBind architecture that allows users
-    many hyperparameters. If parameters for the CNN and FCN are not passed in, the model
-    will be instantiated with the parameters described in Koo et al 2021.
+    This is a flexible reimplementation of the original ResidualBind architecture
+    that allows users to tweak  hyperparameters. If parameters for the CNN and FCN 
+    are not passed in, the model will be instantiated with the parameters described 
+    in Koo et al 2021.
 
     Parameters
     ----------

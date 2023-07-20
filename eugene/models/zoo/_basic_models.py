@@ -24,7 +24,9 @@ class FCN(nn.Module):
     input_dims:
         The number of input dimensions. This is equivalent to the alphabet length.
     dense_kwargs:
-        The keyword arguments for the fully connected layer.
+        The keyword arguments for the fully connected layer. These come from
+        the models.DenseBlock class. See the documentation for that class for
+        more information on what arguments are available.
     """
 
     def __init__(
@@ -72,11 +74,15 @@ class CNN(nn.Module):
     output_dim:
         The dimension of the output.
     conv_kwargs:
-        The keyword arguments for the convolutional layers.
+        The keyword arguments for the convolutional layers. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the flattened output of the convolutional layers directly to
-        the output layer.
+        the output layer. These come from the models.DenseBlock class. See the
+        documentation for that class for more information on what arguments are
+        available.
     """
 
     def __init__(
@@ -128,13 +134,17 @@ class RNN(nn.Module):
     output_dim:
         The dimension of the output.
     recurrent_kwargs:
-        The keyword arguments for the recurrent layers.
+        The keyword arguments for the recurrent layers. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available.
     input_dims:
         The number of input dimensions. This is equivalent to the alphabet length.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the recurrent output of the recurrent layers directly to the
-        output layer.
+        output layer. These come from the models.DenseBlock class. See the
+        documentation for that class for more information on what arguments are
+        available.
     """
 
     def __init__(
@@ -188,11 +198,17 @@ class Hybrid(nn.Module):
     output_dim:
         The dimension of the output.
     conv_kwargs:
-        The keyword arguments for the convolutional layers.
+        The keyword arguments for the convolutional layers. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available.
     recurrent_kwargs:
-        The keyword arguments for the recurrent layers.
+        The keyword arguments for the recurrent layers. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available.
     dense_kwargs:
-        The keyword arguments for the fully connected layer.
+        The keyword arguments for the fully connected layer. These come from
+        the models.DenseBlock class. See the documentation for that class for
+        more information on what arguments are available.
     """
 
     def __init__(
@@ -295,7 +311,9 @@ class Inception(nn.Module):
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the flattened output of the convolutional layers directly to
-        the output layer.
+        the output layer. These come from the models.DenseBlock class. See the
+        documentation for that class for more information on what arguments are
+        available.
     """
     def __init__(
         self,
@@ -359,10 +377,18 @@ class dsFCN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    input_dims:
+        The number of input dimensions. This is equivalent to the alphabet length.
+    aggr:
+        The method for aggregating the output of the forward pass of the reverse complement.
+        If "concat", the output of the forward pass and the reverse complement pass are
+        concatenated and passed to the dense block. If "max" or "avg", the output of the
+        forward pass and the reverse complement pass are passed to the dense block and
+        the max or average of the two outputs is returned.
     dense_kwargs:
-        The keyword arguments for the fully connected layer.
+        The keyword arguments for the fully connected layer. These come from
+        the models.DenseBlock class. See the documentation for that class for
+        more information on what arguments are available.
     """
     def __init__(
         self,
@@ -435,12 +461,22 @@ class dsCNN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    conv_kwargs:
+        The keyword arguments for the convolutional layers. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available.
+    aggr:
+        The method for aggregating the output of the forward pass of the reverse complement.
+        If "concat", the output of the forward pass and the reverse complement pass are
+        concatenated and passed to the dense block. If "max" or "avg", the output of the
+        forward pass and the reverse complement pass are passed to the dense block and
+        the max or average of the two outputs is returned.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the flattened output of the convolutional layers directly to 
-        the output layer.
+        the output layer. These come from the models.DenseBlock class. See the
+        documentation for that class for more information on what arguments are
+        available.
     """
     def __init__(
         self,
@@ -520,8 +556,19 @@ class dsRNN(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    recurrent_kwargs:
+        The keyword arguments for the recurrent layers. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available.
+    input_dims:
+        The number of input dimensions. This is equivalent to the alphabet length. You
+        do not need to specify this argument in the recurrent_kwargs dictionary.
+    aggr:
+        The method for aggregating the output of the forward pass of the reverse complement.
+        If "concat", the output of the forward pass and the reverse complement pass are
+        concatenated and passed to the dense block. If "max" or "avg", the output of the
+        forward pass and the reverse complement pass are passed to the dense block and
+        the max or average of the two outputs is returned.
     dense_kwargs:
         The keyword arguments for the fully connected layer. If not provided, the
         default passes the recurrent output of the recurrent layers directly to the
@@ -603,8 +650,22 @@ class dsHybrid(nn.Module):
         The length of the input sequence.
     output_dim:
         The dimension of the output.
-    task:
-        The task of the model.
+    conv_kwargs:
+        The keyword arguments for the convolutional layers. These come from the
+        models.Conv1DTower class. See the documentation for that class for more\
+        information on what arguments are available.
+    recurrent_kwargs:
+        The keyword arguments for the recurrent layers. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available.
+    aggr:
+        The method for aggregating the output of the forward pass of the reverse complement.
+        If "concat_cnn", the output of the forward pass and the reverse complement pass are
+        concatenated and passed to the recurrent block. If "concat_rnn", the output of the
+        recurrent block is concatenated with the output of the reverse complement recurrent
+        block and passed to the dense block. If "max" or "avg", the output of the forward
+        pass and the reverse complement pass are passed to the dense block and the max
+        or average of the two outputs is returned.
     dense_kwargs:
         The keyword arguments for the fully connected layer.
     """

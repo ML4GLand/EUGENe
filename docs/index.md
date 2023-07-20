@@ -39,4 +39,5 @@ basic_usage_tutorial
 api
 contributing
 contributors
+faqs
 references

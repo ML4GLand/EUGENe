@@ -104,9 +104,15 @@ class DeepSTARR(nn.Module):
     output_dim : int
         Dimension of the output.
     conv_kwargs : dict, optional
-        Keyword arguments for the convolutional tower.
+        Keyword arguments for the convolutional tower. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from de Almeida et al 2022 will be used.
     dense_kwargs : dict, optional
-        Keyword arguments for the dense block.
+        Keyword arguments for the dense block. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from de Almeida et al 2022 will be used.
     """
 
     def __init__(

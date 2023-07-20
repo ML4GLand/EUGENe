@@ -12,8 +12,8 @@ from ._utils import _create_matplotlib_axes, _save_fig
 
 def _plot_performance_scatter(
     sdata: xr.Dataset,
-    target_key: str,
-    prediction_key: str,
+    target_var: str,
+    prediction_var: str,
     metrics: Union[str, Sequence[str]] = ["r2", "mse", "pearsonr", "spearmanr"],
     groupby: Optional[str] = None,
     figsize: tuple = (8, 8),
@@ -30,10 +30,10 @@ def _plot_performance_scatter(
     ----------
     sdata : SeqData
         SeqData object.
-    target_key : str
-        Name of the target_key variable.
-    prediction_key : str
-        Name of the prediction_key variable.
+    target_var : str
+        Name of the target_var variable.
+    prediction_var : str
+        Name of the prediction_var variable.
     metrics : str or list of str
         Metrics to plot. Should be the string name of the metric used in PL
     **kwargs
@@ -46,8 +46,8 @@ def _plot_performance_scatter(
     ----
     This function uses Matplotlib as opposed to Seaborn.
     """
-    target = sdata[target_key].to_numpy()
-    prediction = sdata[prediction_key].to_numpy()
+    target = sdata[target_var].to_numpy()
+    prediction = sdata[prediction_var].to_numpy()
 
     nan_mask = ~np.isnan(target)
     target = target[nan_mask]
@@ -66,10 +66,10 @@ def _plot_performance_scatter(
     if groupby is not None:
         i = 0
         print("Group", "R2", "MSE", "Pearsonr", "Spearmanr")
-        seqs_annot = sdata[[groupby, target_key, prediction_key]].to_dataframe()
+        seqs_annot = sdata[[groupby, target_var, prediction_var]].to_dataframe()
         for group, data in seqs_annot.groupby(groupby):
-            target = data[target_key]
-            prediction = data[prediction_key]
+            target = data[target_var]
+            prediction = data[prediction_var]
             group_r2 = r2_score(target, prediction) if "r2" in metrics else None
             group_mse = mean_squared_error(
                 target, prediction if "mse" in metrics else None
@@ -92,8 +92,8 @@ def _plot_performance_scatter(
         )
     if "c" in kwargs:
         plt.colorbar(im, location="bottom", label=kwargs["c"].name)
-    ax.set_xlabel(target_key)
-    ax.set_ylabel(prediction_key)
+    ax.set_xlabel(target_var)
+    ax.set_ylabel(prediction_var)
     ax.text(
         1.02, 0.95, f"$R^2$: {r2:.2f}", transform=plt.gca().transAxes, fontsize=16
     ) if r2 is not None else None
@@ -145,10 +145,10 @@ def performance_scatter(
     ----------
     sdata : SeqData
         SeqData object.
-    target_key : str
-        Name of the target_key variable.
-    prediction_key : str
-        Name of the prediction_key variable.
+    target_var : str
+        Name of the target_var variable.
+    prediction_var : str
+        Name of the prediction_var variable.
     seq_idx : list of int
         List of indices of sequences to plot.
     **kwargs
@@ -168,13 +168,13 @@ def performance_scatter(
         target_vars = [target_vars]
         prediction_vars = [prediction_vars]
     with plt.rc_context(rc_context):
-        for target_key, prediction_key in zip(target_vars, prediction_vars):
-            targs = sdata[target_key].values
+        for target_var, prediction_var in zip(target_vars, prediction_vars):
+            targs = sdata[target_var].values
             nan_mask = xr.DataArray(np.isnan(targs), dims=["_sequence"])
             print(f"Dropping {int(nan_mask.sum().values)} sequences with NaN targets.")
             sdata = sdata.where(~nan_mask, drop=True)
             ax = _plot_performance_scatter(
-                sdata, target_key=target_key, prediction_key=prediction_key, **kwargs
+                sdata, target_var=target_var, prediction_var=prediction_var, **kwargs
             )
     if return_axes:
         return ax

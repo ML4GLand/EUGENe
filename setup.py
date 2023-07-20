@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name="eugene", packages=find_packages())
+setup(name="eugene-tools", packages=find_packages())
 
 with open("README.md", "r") as readme_file:
     readme = readme_file.read()
@@ -8,7 +8,7 @@ with open("README.md", "r") as readme_file:
 requirements = []
 
 setup(
-    name="eugene",
+    name="eugene-tools",
     version="0.1.0",
     author="Adam Klie",
     author_email="aklie@ucsd.edu",

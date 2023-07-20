@@ -9,9 +9,9 @@ from ..base import _towers as towers
 class BPNet(nn.Module):
     """
     This nn.Module was taken without permission from a Mr. Schreiber.
-    Just kidding, he made it open source so ipso facto I do have permission.
+    Just kidding, he made it open source so, ipso facto, I do have permission.
     Anyway the documentation below is from him, so yell at him if it doesn't
-    work
+    work.
 
     A basic BPNet model with stranded profile and total count prediction.
     This is a reference implementation for BPNet. The model takes in

@@ -9,6 +9,6 @@
 
 EUGENe is a Python toolkit for building and evaluating sequence-based deep learning models in genomics. It provides a unified workflow for managing data, training models, and interpreting predictions on biological sequences.
 
-You can read the [current documentation](https://eugene-tools.readthedocs.io/en/latest/index.html) here for getting started.
+You can find the [current documentation](https://eugene-tools.readthedocs.io/en/latest/index.html) here for getting started.
 
 If you use EUGENe for your research, please cite our preprint: [Klie *et al.* bioRxiv 2022](https://www.biorxiv.org/content/10.1101/2022.10.24.513593v1)

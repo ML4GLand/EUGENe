@@ -20,9 +20,15 @@ class DeepSEA(nn.Module):
     output_dim : int
         output dimension
     conv_kwargs : dict
-        keyword arguments for the convolutional tower
+        keyword arguments for the convolutional tower. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Zhou et al 2015 will be used.
     dense_kwargs : dict
-        keyword arguments for the fully connected block
+        keyword arguments for the fully connected block. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Zhou et al 2015 will be used.
     """
 
     def __init__(
@@ -84,9 +90,15 @@ class Basset(nn.Module):
     output_dim : int
         output dimension
     conv_kwargs : dict
-        keyword arguments for the convolutional tower
+        keyword arguments for the convolutional tower. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Kelley et al 2016 will be used.
     dense_kwargs : dict
-        keyword arguments for the fully connected block
+        keyword arguments for the fully connected block. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Kelley et al 2016 will be used.
     """
 
     def __init__(
@@ -152,9 +164,15 @@ class FactorizedBasset(nn.Module):
     output_dim : int
         output dimension
     conv_kwargs : dict
-        keyword arguments for the convolutional tower
+        keyword arguments for the convolutional tower. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Wnuk et al 2017 will be used.
     dense_kwargs : dict
-        keyword arguments for the fully connected block
+        keyword arguments for the fully connected block. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Wnuk et al 2017 will be used.
     """
 
     def __init__(
@@ -267,9 +285,20 @@ class DanQ(nn.Module):
     output_dim : int
         The dimension of the output.
     conv_kwargs : dict
-        The keyword arguments for the convolutional layer.
+        The keyword arguments for the convolutional layer. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Quang and Xie 2016 will be used.
+    recurrent_kwargs : dict
+        The keyword arguments for the recurrent layer. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Quang and Xie 2016 will be used.
     dense_kwargs : dict
-        The keyword arguments for the fully connected layer.
+        The keyword arguments for the fully connected layer. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from Quang and Xie 2016 will be used.
     """
 
     def __init__(
@@ -350,11 +379,20 @@ class Satori(nn.Module):
         output_dim : int
             The dimension of the output.
         conv_kwargs : dict
-            The keyword arguments for the convolutional layer.
+            The keyword arguments for the convolutional layer. These come from the
+            models.Conv1DBlock class. See the documentation for that class for more
+            information on what arguments are available. If not specified,
+            the default parameters from Ullah and Ben-Hur 2021 will be used.
         mha_kwargs : dict
-            The keyword arguments for the multi-head attention layer.
+            The keyword arguments for the multi-head attention layer. These come from the
+            models.base._layers.MultiHeadAttention class. See the documentation for that class for more
+            information on what arguments are available. If not specified,
+            the default parameters from Ullah and Ben-Hur 2021 will be used.
         dense_kwargs : dict
-            The keyword arguments for the fully connected layer.
+            The keyword arguments for the fully connected layer. These come from the
+            models.DenseBlock class. See the documentation for that class for more
+            information on what arguments are available. If not specified,
+            the default parameters from Ullah and Ben-Hur 2021 will be used.
         """
         super(Satori, self).__init__()
 

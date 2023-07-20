@@ -252,10 +252,10 @@ from eugene import train
 train.fit_sequence_module(
     model,
     sdata,
-    seq_key="ohe_seq",
-    target_keys=['target'],
+    seq_var_="ohe_seq",
+    target_var_s=['target'],
     in_memory=True,
-    train_key="train_val",
+    train_var_="train_val",
     epochs=25,
     batch_size=1024,
     drop_last=False,
@@ -315,8 +315,8 @@ from eugene import evaluate
 evaluate.predict_sequence_module(
     model,
     sdata,
-    seq_key="ohe_seq",
-    target_keys=['target'],
+    seq_var_="ohe_seq",
+    target_var_s=['target'],
     in_memory=True,
     batch_size=1024,
     drop_last=False,
@@ -344,7 +344,7 @@ generate_pfms_sdata(
 )
 ```
 
-You can find a detailed tutorial on how to use these methods [here](TODO).
+You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
 
 #### 2. Calculate per nucleotide attributions
 <img src="_static/seqexplainer/seqexplainer_attribute.png" alt="fine tune" width=600>
@@ -358,7 +358,7 @@ def attribute_sdata(
 )
 ```
 
-You can find a detailed tutorial on how to use these methods [here](TODO).
+You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
 
 #### 3. Global importance analysis
 <img src="_static/seqexplainer/seqexplainer_perturb_seqs.png" alt="fine tune" width=600>
@@ -374,6 +374,8 @@ def evolve_sdata(
     sdata
 )
 ```
+
+You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
 
 ### `plot` -- Visualize it all as you go
 This module is designed to help users visualize their data and results from a workflow. We have included several plotting functions that are designed to work with `SeqData` objects and can be broken up into several different categories.

@@ -34,8 +34,8 @@ metric_dict = {
 
 def _model_performances_across_groups(
     sdataframe: pd.DataFrame,
-    target_key: str,
-    prediction_keys: Optional[list] = None,
+    target_var: str,
+    prediction_vars: Optional[list] = None,
     prediction_groups: Optional[list] = None,
     groupby: Optional[str] = None,
     metrics: str = "r2",
@@ -51,10 +51,10 @@ def _model_performances_across_groups(
     Parameters
     ----------
     sdataframe : pd.DataFrame
-        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
-    target_key : str
+        A dataframe containing the target and prediction columns in target_var and prediction_vars respectively.
+    target_var : str
         The name of the column in sdataframe containing the target values.
-    prediction_keys : list, optional
+    prediction_vars : list, optional
         A list of the names of the columns in sdataframe containing the prediction values.
         If None, all columns containing "predictions" in their name will be used.
     prediction_groups : list, optional
@@ -74,16 +74,16 @@ def _model_performances_across_groups(
     """
     if isinstance(metrics, str):
         metrics = [metrics]
-    prediction_keys = (
+    prediction_vars = (
         sdataframe.columns[sdataframe.columns.str.contains("predictions")]
-        if prediction_keys is None
-        else prediction_keys
+        if prediction_vars is None
+        else prediction_vars
     )
     conc = pd.DataFrame()
     for group, data in sdataframe.groupby(groupby):
-        predicts = data[prediction_keys]
+        predicts = data[prediction_vars]
         bin_predicts = (predicts >= clf_thresh).astype(int)
-        true = data[target_key]
+        true = data[target_var]
         scores = pd.DataFrame()
         for metric in metrics:
             func = metric_dict[metric]
@@ -136,8 +136,8 @@ def _model_performances_across_groups(
 
 def _model_performances(
     sdataframe: pd.DataFrame,
-    target_key: str,
-    prediction_keys: Optional[list] = None,
+    target_var: str,
+    prediction_vars: Optional[list] = None,
     prediction_groups: Optional[list] = None,
     metrics: str = "r2",
     clf_thresh: float = 0,
@@ -150,10 +150,10 @@ def _model_performances(
     Parameters
     ----------
     sdataframe : pd.DataFrame
-        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
-    target_key : str
+        A dataframe containing the target and prediction columns in target_var and prediction_vars respectively.
+    target_var : str
         The name of the column in sdataframe containing the target values.
-    prediction_keys : list, optional
+    prediction_vars : list, optional
         A list of the names of the columns in sdataframe containing the prediction values.
         If None, all columns containing "predictions" in their name will be used.
     prediction_groups : list, optional
@@ -171,8 +171,8 @@ def _model_performances(
     """
     if isinstance(metrics, str):
         metrics = [metrics]
-    true = sdataframe[target_key]
-    predicts = sdataframe[prediction_keys]
+    true = sdataframe[target_var]
+    predicts = sdataframe[prediction_vars]
     bin_predicts = (predicts >= clf_thresh).astype(int)
     scores = pd.DataFrame()
     for metric in metrics:
@@ -224,8 +224,8 @@ def _model_performances(
 
 def performance_summary(
     sdata,
-    target_key: str,
-    prediction_keys: Optional[list] = None,
+    target_var: str,
+    prediction_vars: Optional[list] = None,
     prediction_groups: Optional[list] = None,
     groupby: Optional[str] = None,
     add_swarm: bool = False,
@@ -245,10 +245,10 @@ def performance_summary(
     Parameters
     ----------
     sdata : pd.DataFrame
-        A dataframe containing the target and prediction columns in target_key and prediction_keys respectively.
-    target_key : str
+        A dataframe containing the target and prediction columns in target_var and prediction_vars respectively.
+    target_var : str
         The name of the column in sdataframe containing the target values.
-    prediction_keys : list, optional
+    prediction_vars : list, optional
         A list of the names of the columns in sdataframe containing the prediction values.
         If None, all columns containing "predictions" in their name will be used.
     prediction_groups : list, optional
@@ -276,26 +276,26 @@ def performance_summary(
     -------
     ax : matplotlib.axes.Axes
     """
-    prediction_keys = prediction_keys = (
-        [k for k in sdata.keys() if "preds" in k]
-        if prediction_keys is None
-        else prediction_keys
+    prediction_vars = prediction_vars = (
+        [k for k in sdata.vars() if "preds" in k]
+        if prediction_vars is None
+        else prediction_vars
     )
     sdataframe = (
-        sdata[["id"] + [target_key] + prediction_keys].to_dataframe().set_index("id")
+        sdata[["id"] + [target_var] + prediction_vars].to_dataframe().set_index("id")
     )
     if groupby is None:
         scores = _model_performances(
-            sdataframe, target_key, prediction_keys, prediction_groups, metrics
+            sdataframe, target_var, prediction_vars, prediction_groups, metrics
         )
     else:
         scores = _model_performances_across_groups(
-            sdataframe, target_key, prediction_keys, prediction_groups, groupby, metrics
+            sdataframe, target_var, prediction_vars, prediction_groups, groupby, metrics
         )
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
             scores,
-            keys=metrics,
+            vars=metrics,
             func=sns.boxplot,
             groupby="prediction_groups" if groupby is None else groupby,
             orient=orient,
@@ -304,7 +304,7 @@ def performance_summary(
         if add_swarm:
             _plot_seaborn(
                 scores,
-                keys=metrics,
+                vars=metrics,
                 func=sns.swarmplot,
                 groupby="prediction_groups" if groupby is None else groupby,
                 orient=orient,

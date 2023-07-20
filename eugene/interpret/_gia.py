@@ -16,8 +16,8 @@ def feature_implant_seq_sdata(
     sdata: xr.Dataset,
     seq_id: str,
     feature: np.ndarray,
-    seq_key: str = "ohe_seq",
-    id_key: str = "id",
+    seq_var: str = "ohe_seq",
+    id_var: str = "id",
     feature_name: str = "feature",
     encoding: str = "onehot",
     store: bool = True,
@@ -35,9 +35,9 @@ def feature_implant_seq_sdata(
         The ID of the sequence to implant the feature into.
     feature : np.ndarray
         The feature to implant.
-    seq_key : str, optional
+    seq_var : str, optional
         The key for the sequence data in the dataset, by default "ohe_seq".
-    id_key : str, optional
+    id_var : str, optional
         The key for the sequence IDs in the dataset, by default "id".
     feature_name : str, optional
         The name of the feature, by default "feature".
@@ -55,17 +55,17 @@ def feature_implant_seq_sdata(
     """
     device = "cuda" if settings.gpus > 0 else "cpu" if device is None else device
     model.eval().to(device)
-    sdata[id_key].load()
-    seq_xr = sdata.sel(_sequence=sdata[id_key] == seq_id)
+    sdata[id_var].load()
+    seq_xr = sdata.sel(_sequence=sdata[id_var] == seq_id)
     if encoding == "str":
-        seq = seq_xr[seq_key].values.astype("U")[0]
+        seq = seq_xr[seq_var].values.astype("U")[0]
         implanted_seqs = tile_pattern_seq(
             seq, feature, pattern_encoding="str", ohe=False
         )
         implanted_seqs = sp.ohe(implanted_seqs, sp.ALPHABETS["DNA"]).transpose(0, 2, 1)
     elif encoding == "onehot":
-        seq_xr[seq_key] = seq_xr[seq_key].transpose("_sequence", "_ohe", "length")
-        seq = seq_xr[seq_key].values.squeeze()
+        seq_xr[seq_var] = seq_xr[seq_var].transpose("_sequence", "_ohe", "length")
+        seq = seq_xr[seq_var].values.squeeze()
         implanted_seqs = tile_pattern_seq(
             seq, feature, pattern_encoding="onehot", ohe=True
         )
@@ -85,9 +85,9 @@ def positional_gia_sdata(
     sdata: xr.Dataset,
     feature: np.ndarray,
     feature_name="feature",
-    seq_key: str = "ohe_seq",
-    id_key: str = "id",
-    store_key: str = None,
+    seq_var: str = "ohe_seq",
+    id_var: str = "id",
+    store_var: str = None,
     device: str = "cpu",
     encoding: str = "onehot",
 ):
@@ -103,11 +103,11 @@ def positional_gia_sdata(
         The feature to implant.
     feature_name : str, optional
         The name of the feature, by default "feature".
-    seq_key : str, optional
+    seq_var : str, optional
         The key for the sequence data in the dataset, by default "ohe_seq".
-    id_key : str, optional
+    id_var : str, optional
         The key for the sequence IDs in the dataset, by default "id".
-    store_key : str, optional
+    store_var : str, optional
         The key to store the predictions in the dataset, by default None.
     device : str, optional
         The device to use for predictions, by default "cpu".
@@ -124,7 +124,7 @@ def positional_gia_sdata(
     model.eval().to(device)
     predictions = []
     for i, seq_id in tqdm(
-        enumerate(sdata[id_key].values),
+        enumerate(sdata[id_var].values),
         desc="Implanting feature in all seqs of sdata",
         total=sdata.dims["_sequence"],
     ):
@@ -135,14 +135,14 @@ def positional_gia_sdata(
                 seq_id=seq_id,
                 feature=feature,
                 feature_name=feature_name,
-                id_key=id_key,
-                seq_key=seq_key,
+                id_var=id_var,
+                seq_var=seq_var,
                 encoding=encoding,
                 store=False,
             )
         )
-    if store_key is not None:
-        sdata[store_key] = xr.DataArray(
+    if store_var is not None:
+        sdata[store_var] = xr.DataArray(
             predictions, dims=["_sequence", f"{feature_name}_test_slide"]
         )
     else:
@@ -156,15 +156,15 @@ def motif_distance_dependence_gia(
     feature_B,
     tile_step=1,
     style="deAlmeida22",
-    seq_key: str = "seq",
-    results_key: str = "cooperativity",
-    distance_key: str = "distance",
+    seq_var: str = "seq",
+    results_var: str = "cooperativity",
+    distance_var: str = "distance",
     device: str = "cpu",
     batch_size: int = 128,
 ):
 
     # Make sure the backbones are compatible with the next function
-    backbones = np.array([b"".join(backbone) for backbone in sdata[seq_key].values]).astype('U')
+    backbones = np.array([b"".join(backbone) for backbone in sdata[seq_var].values]).astype('U')
 
     # Do the embedding based on the passed in style
     A_seqs, B_seqs, AB_seqs, motif_b_pos, motif_b_distances = embed_deepstarr_distance_cooperativity(
@@ -191,5 +191,5 @@ def motif_distance_dependence_gia(
     predictions = np.array(list(cooperativity_results.values()))
 
     # Merge the results with the original dataset
-    sdata[distance_key] = xr.DataArray(distances, dims=[f"_{distance_key}"])
-    sdata[results_key] = xr.DataArray(predictions, dims=[f"_{distance_key}", "_sequence", "_predictions"])
+    sdata[distance_var] = xr.DataArray(distances, dims=[f"_{distance_var}"])
+    sdata[results_var] = xr.DataArray(predictions, dims=[f"_{distance_var}", "_sequence", "_predictions"])
