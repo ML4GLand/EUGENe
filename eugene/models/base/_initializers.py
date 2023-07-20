@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
+from typing import Dict
 import torch.nn.init as init
-from os import PathLike
-from typing import Union, Dict
-from ...dataload.motif._Motif import Motif, MotifSet
-from ...dataload.motif._convert import _to_array 
+from .._utils import get_layer
+from motifdata import to_kernel
+from motifdata import MotifSet
+from typing import Union, Callable, Optional, Any, Tuple, List, Literal
 
 
 INITIALIZERS_REGISTRY = {
@@ -20,15 +21,15 @@ INITIALIZERS_REGISTRY = {
     "orthogonal": init.orthogonal_,
     "sparse": init.sparse_,
     "ones": init.ones_,
-    "zeros": init.zeros_
+    "zeros": init.zeros_,
 }
 
 
 def _init_weights(
-    module, 
-    initializer,
-    **kwargs
-):
+    module: nn.Module,
+    initializer: str = "xavier_uniform",
+    **kwargs,
+) -> None:
     """Initialize the weights of a module.
 
     Parameters
@@ -52,15 +53,15 @@ def _init_weights(
         init_func(module.weight)
     elif isinstance(module, nn.ParameterList):
         for param in module:
-            if  param.dim() > 1:
+            if param.dim() > 1:
                 init_func(param)
 
 
 def init_weights(
-    model,
-    initializer="kaiming_normal",
-    **kwargs
-):
+    model: nn.Module,
+    initializer: str = "kaiming_normal",
+    **kwargs,
+) -> None:
     """Initialize the weights of a model.
 
     Parameters
@@ -75,82 +76,84 @@ def init_weights(
     model.apply(lambda m: _init_weights(m, initializer, **kwargs))
 
 
-def init_conv(
-    model,
-    weights,
-    module_name: str = "convnet",
-    module_number: int = 0,
-    kernel_name: str = None,
-    kernel_number: int = None,
+def init_motif_weights(
+    model: nn.Module,
+    layer_name: str,
+    motifs: MotifSet,
+    list_index: Optional[int] = None,
+    initializer: str = "kaiming_normal",
+    convert_to_pwm: bool = True,
+    divide_by_bg: bool = True,
+    motif_align: Literal["center", "left", "right"] = "center",
+    kernel_align: Literal["center", "left", "right"] = "center",
 ):
-    if kernel_name is None:
-        assert module_number is not None
-        assert isinstance(
-            model.__getattr__(module_name).module[module_number], nn.Conv1d
-        )
-        model.__getattr__(module_name).module[
-            module_number
-        ].weight = nn.Parameter(weights)
-    else:
-        assert kernel_number is not None
-        assert isinstance(
-            model.__getattr__(module_name).__getattr__(kernel_name)[kernel_number],
-            torch.Tensor,
-        )
-        model.__getattr__(module_name).__getattr__(kernel_name)[
-            kernel_number
-        ] = nn.Parameter(weights)
+    """Initialize the convolutional kernel of choice using a set of motifs
 
+    This function is designed to initialize the convolutional kernels of a given layer of a model with a set of motifs.
+    It has only been tested on nn.Conv1d layers and ParameterList layers that have a shape of (num_kernels, 4, kernel_size).
+    Simply use the named module of the layer you want to initialize and pass it to this function. If the layer is a ParameterList,
+    you must also pass the index of the kernel you want to initialize. If the layer is a Conv1d layer, you can pass None as the index.
 
-def init_from_motifs(
-    model,
-    motifs: Union[PathLike, Dict[str, Motif]],
-    module_name: str,
-    module_number: int = None,
-    kernel_name: str = None,
-    kernel_number: int = None,
-    convert_to_pwm=True,
-):
-    """Initialize a model's convolutional layer from a set of motifs.
+    This function modifies the model in place.
 
     Parameters
     ----------
-    model : LightningModule
+    model :
         The model to initialize.
-    module_name : str
-        The name of the layer to initialize.
-    motifs : Union[PathLike, Dict[str, Motif]]
-        A path to a file containing motifs, or a dictionary of motifs.
-    kwargs : dict
-        Additional arguments to pass to `model.init_from_motifs`.
+    layer_name : str
+        The name of the layer to initialize. You can use the list_available_layers function to get a list of available layers.
+    motifs : MotifSet
+        A MotifSet object containing the motifs to initialize the kernel with. MotifSets are from the package motifdata.
+    list_index : int, optional
+        The index of the kernel to initialize. Only required if the layer is a ParameterList layer, by default None
+    initializer : str, optional
+        The name of the initializer to use, by default "kaiming_normal"
+    convert_to_pwm : bool, optional
+        Whether to convert the kernel to a PWM after initializing, by default True
+    divide_by_bg : bool, optional
+        Whether to divide the kernel by the background frequencies after initializing, by default True
+    motif_align : Literal["center", "left", "right"], optional
+        How to align the motifs when converting to a PWM, by default "center"
+    kernel_align : Literal["center", "left", "right"], optional
+        How to align the kernel when converting to a PWM, by default "center"
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from eugene import models
+    >>> from motifdata import MotifSet
+    >>> model = models.zoo.DeepSTARR(input_len=1000, output_dim=1)
+    >>> motifs = MotifSet("path/to/motifs.txt")
+    >>> list_available_layers(model)
+    >>> init_motif_weights(model, "conv1d_tower.layers.0", motifs)
     """
-    if isinstance(motifs, PathLike):
-        motifs = MinimalMEME(motifs)
-    if kernel_name is None:
-        assert module_number is not None
-        assert isinstance(
-            model.__getattr__(module_name).module[module_number], nn.Conv1d
+    layer = get_layer(model, layer_name)
+    if list_index is None:
+        layer_size = layer.weight.size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
         )
-        layer_size = model.__getattr__(module_name).module[module_number].weight.size()
+        layer.weight = nn.Parameter(pwms)
     else:
-        assert kernel_number is not None
-        assert isinstance(
-            model.__getattr__(module_name).__getattr__(kernel_name)[kernel_number],
-            torch.Tensor,
+        layer_size = layer[list_index].size()
+        kernel = torch.zeros(layer_size)
+        INITIALIZERS_REGISTRY[initializer](kernel)
+        pwms = to_kernel(
+            motifs,
+            kernel=kernel,
+            convert_to_pwm=convert_to_pwm,
+            divide_by_bg=divide_by_bg,
+            motif_align=motif_align,
+            kernel_align=kernel_align,
         )
-        layer_size = (
-            model.__getattr__(module_name)
-            .__getattr__(kernel_name)[kernel_number]
-            .size()
-        )
-    kernel_mtx =  _to_array(
-        layer_size, motifs, convert_to_pwm=convert_to_pwm
-    )
-    init_conv(
-        model=model,
-        weights=kernel_mtx,
-        module_name=module_name,
-        module_number=module_number,
-        kernel_name=kernel_name,
-        kernel_number=kernel_number,
-    )
+        layer[list_index] = nn.Parameter(pwms)

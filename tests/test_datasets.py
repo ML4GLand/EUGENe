@@ -7,14 +7,16 @@ import numpy as np
 import pandas as pd
 import eugene as eu
 from pathlib import Path
+
 HERE = Path(__file__).parent
 eu.settings.dataset_dir = f"{HERE}/_data/datasets"
+
 
 def test_get_dataset_info():
     dataset_info = eu.datasets.get_dataset_info()
     assert dataset_info.index.name == "dataset_name"
     assert "description" in dataset_info
-    
+
 
 def test_random1000():
     sdata = eu.datasets.random1000()
@@ -22,7 +24,7 @@ def test_random1000():
     assert len(sdata.seqs) == 1000
     assert len(sdata.seqs[0]) == 100
     assert isinstance(sdata.seqs_annot, pd.DataFrame)
-    assert sdata.seqs_annot.shape == (1000, 20) 
+    assert sdata.seqs_annot.shape == (1000, 20)
 
 
 def test_ray13():
@@ -32,13 +34,13 @@ def test_ray13():
     assert "Probe_Set" in sdata.seqs_annot.columns
     assert sdata.seqs_annot.shape == (241357, 245)
     sdata_path = eu.datasets.ray13(return_sdata=False)[0]
-    assert os.path.exists(sdata_path) 
+    assert os.path.exists(sdata_path)
 
 
 def test_deBoer20():
     sdata = eu.datasets.deBoer20(0)
     assert sdata.n_obs == 9982
-    assert sdata.names[-1] == "seq9981" 
+    assert sdata.names[-1] == "seq9981"
     sdata_path = eu.datasets.deBoer20(0, return_sdata=False)[0]
     assert os.path.exists(sdata_path)
 
@@ -47,15 +49,15 @@ def test_jores21():
     sdata = eu.datasets.jores21(dataset="leaf", add_metadata=False)
     assert sdata.n_obs == 72158
     assert sdata.names[-1] == "seq72157"
-    assert np.all(sdata.seqs_annot.columns == ['set', 'sp', 'gene', 'enrichment'])
+    assert np.all(sdata.seqs_annot.columns == ["set", "sp", "gene", "enrichment"])
     assert sdata.seqs_annot.shape == (72158, 4)
     sdata_path = eu.datasets.jores21(dataset="leaf", return_sdata=False)[0]
     assert os.path.exists(sdata_path)
-    #TODO: Add in metadata reading
+    # TODO: Add in metadata reading
     sdata = eu.datasets.jores21(dataset="proto", add_metadata=False)
     assert sdata.n_obs == 75808
     assert sdata.names[-1] == "seq75807"
-    assert np.all(sdata.seqs_annot.columns == ['set', 'sp', 'gene', 'enrichment'])
+    assert np.all(sdata.seqs_annot.columns == ["set", "sp", "gene", "enrichment"])
     assert sdata.seqs_annot.shape == (75808, 4)
     sdata_path = eu.datasets.jores21(dataset="proto", return_sdata=False)[0]
     assert os.path.exists(sdata_path)

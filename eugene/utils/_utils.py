@@ -1,18 +1,26 @@
-from contextlib import contextmanager
-import sys, os
+import os
+from os import PathLike
+import logging
 
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
 
-def make_directory(directory):
-    """make directory"""
-    if not os.path.isdir(directory):
-        pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-        print("Making directory: " + directory)
+def make_dirs(
+    output_dir: PathLike,
+    overwrite: bool = False,
+):
+    """Make a directory if it doesn't exist.
+
+    Parameters
+    ----------
+    output_dir : PathLike
+        The path to the directory to create.
+    overwrite : bool, optional
+        Whether to overwrite the directory if it already exists, by default False.
+    """
+    if os.path.exists(output_dir):
+        if overwrite:
+            logging.info("Overwriting existing directory: {}".format(output_dir))
+            os.system("rm -rf {}".format(output_dir))
+        else:
+            print("Output directory already exists: {}".format(output_dir))
+            return
+    os.makedirs(output_dir)
