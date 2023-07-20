@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 from typing import List, Union, Optional, Iterable
 from .datastructures import SeqData
 from ._utils import _read_and_concat_dataframes
-from ..preprocess import reverse_complement_seqs, decode_seqs, ohe_seq
+from ..preprocess._seq_preprocess import reverse_complement_seqs, decode_seqs, ohe_seq
 
 
 def read_csv(

@@ -1,5 +1,5 @@
 import torch
-from ..preprocess import ohe_seq
+from ..preprocess._seq_preprocess import ohe_seq
 
 
 class ReverseComplement(object):

@@ -9,7 +9,7 @@ requirements = []
 
 setup(
     name="eugene",
-    version="0.0.6",
+    version="0.0.8",
     author="Adam Klie",
     author_email="aklie@eng.ucsd.edu",
     description="Elucidating the Utility of Genomic Elements with Neural Nets",
