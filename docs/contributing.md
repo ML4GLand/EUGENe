@@ -1,7 +1,7 @@
 # Contributing
 Coming soon
 
-EUGENe is designed to be a community project and there are no shortage of places to start contributing to EUGENe (many outside of just writing code!). All contributions, including bug reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas, are welcome. Everyone within the community is expected to abide by our `code of conduct <https://github.com/pydata/xarray/blob/main/CODE_OF_CONDUCT.md>`_.
+EUGENe is designed to be a community project and there are no shortage of places to start contributing to EUGENe (many outside of just writing code!). All contributions, including bug reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas, are welcome. Everyone within the community is expected to abide by our [code of conduct](https://github.com/pydata/xarray/blob/main/CODE_OF_CONDUCT.md)
 
 Please do not hesitate to contact us if you have any questions or suggestions.
 

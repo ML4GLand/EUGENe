@@ -9,7 +9,7 @@ from typing import Optional, Union, Sequence, Mapping, List
 
 def positional_gia_plot(
     sdata,
-    keys: list,
+    vars: list,
     id_var: str = "id",
     xlab: str = "Position",
     ylab: str = "Predicted Score",
@@ -40,7 +40,7 @@ def positional_gia_plot(
         Whether to return the matplotlib axes object
     """
     concat_df = pd.DataFrame()
-    for key in keys:
+    for key in vars:
         df = pd.DataFrame(index=sdata[id_var].values, data=sdata[key].values).melt(
             var_name=xlab, value_name=ylab, ignore_index=False
         )

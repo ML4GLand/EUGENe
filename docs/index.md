@@ -36,6 +36,7 @@ EUGENe is an open-source project and we welcome contributions from the community
 installation
 usage-principles
 basic_usage_tutorial
+use-cases
 api
 contributing
 contributors

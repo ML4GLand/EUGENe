@@ -150,18 +150,50 @@ def positional_gia_sdata(
 
 
 def motif_distance_dependence_gia(
-    model,
-    sdata,
-    feature_A,
-    feature_B,
-    tile_step=1,
-    style="deAlmeida22",
+    model: torch.nn.Module,
+    sdata: xr.Dataset,
+    feature_A: str,
+    feature_B: str,
+    tile_step: int = 1,
+    style: str ="deAlmeida22",
     seq_var: str = "seq",
     results_var: str = "cooperativity",
     distance_var: str = "distance",
     device: str = "cpu",
     batch_size: int = 128,
 ):
+    """Calculate the dependence of the model predictions on the distance between two motifs.
+
+    Currently only supports a DeepSTARR style analysis in which a single motif is implanted into
+    the center of a set of background sequences, and a second motif is tiled across the background
+    at different distances from the first motif. A cooperativity score is calculated for the two motifs
+    to quantify the dependence of the model predictions on the distance between the motifs.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to use for predictions.
+    sdata : xr.Dataset
+        The dataset containing the background sequences.
+    feature_A : str
+        The first motif to implant in the center of the background sequences.
+    feature_B : str
+        The second motif to tile across the background sequences.
+    tile_step : int, optional
+        The step size to use to tile feature_B across the background sequences, by default 1.
+    style : str, optional
+        The style of the analysis, by default "deAlmeida22".
+    seq_var : str, optional
+        The key for the sequence data in the dataset, by default "seq".
+    results_var : str, optional
+        The key to store the results in the dataset, by default "cooperativity".
+    distance_var : str, optional
+        The key to store the distances in the dataset, by default "distance".
+    device : str, optional
+        The device to use for predictions, by default "cpu".
+    batch_size : int, optional
+        The batch size to use for predictions, by default 128.
+    """
 
     # Make sure the backbones are compatible with the next function
     backbones = np.array([b"".join(backbone) for backbone in sdata[seq_var].values]).astype('U')

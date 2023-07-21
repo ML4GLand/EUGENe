@@ -124,14 +124,6 @@ Blocks are composed to create architectures in EUGENe. You can find all the argu
 The `Conv1DTower` class is currently used for all built-in CNNs. This will be deprecated in the future in favor of the more general `Tower` class. For now, you can find all the arguments that would be passed into the `cnn_kwargs` argument of all built-in CNNs in the `Conv1DTower` class.
 
 ```{eval-rst}
-.. module:: eugene.models
-```
-
-```{eval-rst}
-.. currentmodule:: eugene
-```
-
-```{eval-rst}
 .. autosummary::
    :toctree: api/classes
 
@@ -140,14 +132,6 @@ The `Conv1DTower` class is currently used for all built-in CNNs. This will be de
 ```
 
 ### LightningModules
-
-```{eval-rst}
-.. module:: eugene.models
-```
-
-```{eval-rst}
-.. currentmodule:: eugene
-```
 
 ```{eval-rst}
 .. autosummary::

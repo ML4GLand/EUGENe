@@ -47,7 +47,7 @@ Zarr stores can be loaded "out-of-core," thanks to functionality form XArray and
 <img src="_static/workflow/dataload.png" alt="seqdata to gpu" width=600>
 
 #### 4. Generalizable dataloaders
- The `to_torch_dataloader()` function provided by `SeqData` let's you flexibly build dataloaders that are compatible with your model. We often need this when working with LightningModules from PyTorch Lightning, that may be expecting batches of data in a specific format. The `to_torch_dataloader()` function is designed to be flexible and can be used to create dataloaders that are compatible with many different architectures. For example, this is how we would create a dataloader for our [SequenceModule](TODO):
+ The `to_torch_dataloader()` function provided by `SeqData` let's you flexibly build dataloaders that are compatible with your model. We often need this when working with LightningModules from PyTorch Lightning, that may be expecting batches of data in a specific format. The `to_torch_dataloader()` function is designed to be flexible and can be used to create dataloaders that are compatible with many different architectures. For example, this is how we would create a dataloader for our [SequenceModule](https://eugene-tools.readthedocs.io/en/latest/api/classes/eugene.models.SequenceModule.html#eugene.models.SequenceModule):
 
  ```python
  transforms = {
@@ -102,7 +102,7 @@ You can perform normalization of training targets directly on XArray datasets, o
 This module is designed to help users instantiate and initialize network architectures.
 
 #### 1. EUGENe's neural network library has an intuitive hierarchy for model architecting
-In EUGENe, we've developed a comprehensive library of neural network layers for regulatory genomics. Building upon PyTorch, we've added several useful layers such as inception and residual layers, and also implemented flexible functions to create common ["blocks"](TODO) and ["towers"](TODO) that are composed of diverse sets of layers arranged in a predefined or adaptable order. 
+In EUGENe, we've developed a comprehensive library of neural network layers for regulatory genomics. Building upon PyTorch, we've added several useful layers such as inception and residual layers, and also implemented flexible functions to create common ["blocks"](https://eugene-tools.readthedocs.io/en/latest/api.html#blocks) and ["towers"](https://eugene-tools.readthedocs.io/en/latest/api.html#towers) that are composed of diverse sets of layers arranged in a predefined or adaptable order. 
 
 ```python
 from eugene.models import Conv1DBlock
@@ -199,7 +199,7 @@ class SmallCNN(nn.Module):
         x = self.dense(x)
         return x
 ```
-For more information on EUGENe's NN library and on model instantiation, check out the [model instantiation tutorial](TODO).
+For more information on EUGENe's NN library and on model instantiation, check out the [model instantiation tutorial](https://github.com/ML4GLand/tutorials/blob/main/eugene/models/instantiating_models.ipynb).
 
 #### 4. Initializing models is easy with EUGENe's model building functions
 After defining a model architecture, EUGENe provides you with the tools to initialize it. The model parameters can be sampled from standard initialization distributions,
@@ -229,7 +229,7 @@ Once initialized, EUGENe can be used to fit the architectures to datasets, with 
 EUGENe's leverages the power of PyTorch Lightning's training features, including multi-GPU training, gradient accumulation, and more. You don't need to know much about PyTorch Lightning to work with EUGENe, but if interested, check out the [PyTorch Lightning documentation](https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html) for more information.
 
 #### 2. Wrap your model in the right LightningModule
-Each EUGENe LightningModule delineates the architecture types it can train and standardizes boilerplate tasks for those architectures. For instance, the primary LightningModule in EUGENe, called [SequenceModule](TODO), is set up to train an architecture that takes in a single tensor (typically one-hot encoded DNA sequences) and delivers a single tensor output. We can wrap any architecture that meets these criteria in a SequenceModule and train it with EUGENe's training module:
+Each EUGENe LightningModule delineates the architecture types it can train and standardizes boilerplate tasks for those architectures. For instance, the primary LightningModule in EUGENe, called [SequenceModule](https://eugene-tools.readthedocs.io/en/latest/api/classes/eugene.models.SequenceModule.html#eugene.models.SequenceModule), is set up to train an architecture that takes in a single tensor (typically one-hot encoded DNA sequences) and delivers a single tensor output. We can wrap any architecture that meets these criteria in a SequenceModule and train it with EUGENe's training module:
 
 ```python
 from eugene import models
@@ -266,7 +266,7 @@ train.fit_sequence_module(
 ```
 
 #### 4. Hyperparameter optimization with RayTune
-We support performing hyperparameter sweeps with RayTune on any EUGENe LightningModule. Though still under active development, we provide a tutorial on how to use RayTune with EUGENe [here](TODO).
+We support performing hyperparameter sweeps with RayTune on any EUGENe LightningModule. Though still under active development, we provide a tutorial on how to use RayTune with EUGENe [here](https://github.com/ML4GLand/tutorials/blob/main/eugene/train/hyperparameter_optimization.ipynb).
 
 #### 5. Fine-tuning
 
@@ -344,7 +344,7 @@ generate_pfms_sdata(
 )
 ```
 
-You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
+You can find a detailed tutorial on how to use these methods and interpret their results [here](https://github.com/ML4GLand/tutorials/blob/main/seqexplainer/filter_interpretation.ipynb).
 
 #### 2. Calculate per nucleotide attributions
 <img src="_static/seqexplainer/seqexplainer_attribute.png" alt="fine tune" width=600>
@@ -358,7 +358,7 @@ def attribute_sdata(
 )
 ```
 
-You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
+You can find a detailed tutorial on how to use these methods and interpret their results [here](https://github.com/ML4GLand/tutorials/blob/main/seqexplainer/attribution_analysis.ipynb).
 
 #### 3. Global importance analysis
 <img src="_static/seqexplainer/seqexplainer_perturb_seqs.png" alt="fine tune" width=600>
@@ -375,7 +375,7 @@ def evolve_sdata(
 )
 ```
 
-You can find a detailed tutorial on how to use these methods and interpret their results [here](TODO).
+You can find a detailed tutorial on how to use these methods and interpret their results [here](https://github.com/ML4GLand/tutorials/blob/main/seqexplainer/sequence_evolution.ipynb).
 
 ### `plot` -- Visualize it all as you go
 This module is designed to help users visualize their data and results from a workflow. We have included several plotting functions that are designed to work with `SeqData` objects and can be broken up into several different categories.

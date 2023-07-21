@@ -23,11 +23,11 @@
  - [What is the EUGENe logo supposed to be?](#what-is-the-eugene-logo-supposed-to-be)
 
 ## I am new to DL for regulatory genomics. Where should I start?
-Welcome to the field! We recommend starting by installing EUGENe using these {doc}`inststructions <installation>`. Once installed, check out the {doc}`basic usage tutorial <basic_usage_tutorial>` for an example of how to run an end-to-end EUGENe workflow. 
+Welcome to the field! We recommend starting by installing EUGENe using these {doc}`instructions <installation>`. Once installed, check out the {doc}`basic usage tutorial <basic_usage_tutorial>` for an example of how to run an end-to-end EUGENe workflow. 
 
-After you've worked through that, we recommend trying to train a model on a different dataset. Use this documentation as well as the [tutorials](TODO) and [use cases](TODO) to guide you through the process. 
+After you've worked through that, we recommend trying to train a model on a different dataset. Use this documentation as well as the [tutorials](https://github.com/ML4GLand/tutorials) and [use cases](https://github.com/ML4GLand/use_cases) to guide you through the process. 
 
-Once your comfortable with the process, navigate to the [awesome-dl4g] repository for the latest resources and publications in the field and check out the "Open questions" section for ideas on projects. You can also post on the [GitHub Discussions](https://github.com/orgs/ML4GLand/discussions) page.
+Once your comfortable with the process, navigate to the [awesome-dl4g](https://github.com/ML4GLand/awesome-dl4g) repository for the latest resources and publications in the field and check out the "Open questions" section for ideas on projects. You can also post on the [GitHub Discussions](https://github.com/orgs/ML4GLand/discussions) page.
 
 Join our Discord server to chat with other users and developers in the community. If you get stuck, feel free to open an issue on the EUGENe GitHub and we'll do our best to help you out.
 
@@ -36,13 +36,13 @@ We have found that most existing frameworks either only modestly reduce the comp
 
 To put it succinctly, these tools do not fully meet the FAIR research software standards. We illustrate a few examples below:
 
- - [Kipoi](https://kipoi.org/)
+ - [Kipoi](https://kipoi.org/)<br>
 Kipoi is the go-to model repository in genomics. It is a a great tool for donwloading models and running inference, but provides limited functionality for data preprocessing, model training or model interpretation. We recommend using Kipoi in tandem with EUGENe. Train models in EUGENe and comparing them to models hosted by Kipoi. If your model performs well and is part of a publication, you can submit it to Kipoi for hosting.
 
- - [Selene](https://selene.flatironinstitute.org/master/index.html)
+ - [Selene](https://selene.flatironinstitute.org/master/index.html)<br>
 Selene is a PyTorch-based deep learning library for sequence-level data. It offers dedicated functionality for training models and for variant effect prediction, but 
 
- - [Janggu]
+ - [Janggu](https://janggu.readthedocs.io/en/latest/readme.html)<br>
 Janggu is a Python package that facilitates deep learning in the context of genomics. We would argue that Janngu is EUGENe's closest competitor when it comes to comprehensiveness in functionality, particularly when it comes to handling data. EUGENe’s data handling matches Janggu's core functionality, but also:
 
    1. is more flexible and interactive than Janggu. Janggu requires that many preprocessing decisions be made prior to loading data in (e.g. the order of the one-hot encoding, sequence bin size, resolution of coverage, etc.). SeqData can do these operations out-of-core (see below) within a notebook interface. This is especially useful for performing exploratory data analyses and for model interpretation (which is often done on smaller subsets of the data).
@@ -63,7 +63,7 @@ As of now, this is mostly true. Data handling is framework agnostic (we worked h
 Our long-term goal for a framework such as EUGENe is for it to be framework agnostic. Stay tuned for updates on this front, but for now, see https://mlcontests.com/state-of-competitive-machine-learning-2022/?utm_source=substack&utm_medium=email#winning-toolkit under “No competition for PyTorch subheading” for a good summary of why we chose PyTorch as our starting backend framework.
 
 ## Can EUGENe be used to train models at base-pair resolution?
-Yes! SeqData by default reads coverage at base-pair resolution and we have recently added BPNet as a "built-in" model architecture that has been shown to work well at base-pair resolution. We are also working on adding more base-pair resolution models to the library and adapting downstream analyses (such as attribution analysis) to work with BPNet (if you just predict the profile they will work fine). See the [BPNet tutorial](TODO) for an example of how to train a BPNet model with EUGENe.
+Yes! SeqData by default reads coverage at base-pair resolution and we have recently added BPNet as a "built-in" model architecture that has been shown to work well at base-pair resolution. We are also working on adding more base-pair resolution models to the library and adapting downstream analyses (such as attribution analysis) to work with BPNet (if you just predict the profile they will work fine). See the [BPNet use case](https://github.com/ML4GLand/use_cases/tree/main/BPNet) for an example of how to train a BPNet model with EUGENe.
 
 ## What are the memory requirements of EUGENe?
 As of the 1.0.0 release, EUGENe can now be used for completely out-of-core training. EUGENe’s effective memory limitation is the memory required to load in a single sequence. That is, as long as a single sequence can fit into both a user’s CPU and GPU RAM, a EUGENe model can be trained on that dataset (in this case with a batch size of 1). In practice, training usually occurs in larger batches, but the principle remains the same.
@@ -85,6 +85,9 @@ Check out the {doc}`contributor's guide <contributing>` for more information on 
 Yes! We hope that EUGENe will grow into a community project that can let you build a network that lasts across jobs and roles. Lifelong employment at a corporation is less and less common. Joining our community will let you build bonds that cross jobs and could help you do your job today better too!
 
 ## What is the EUGENe logo supposed to be?
-Obviously the most important FAQ should be saved for last. The logo is a reference to the character Eugene Fitzherbert from the Disney movie [Tangled](https://www.google.com/search?q=tangled&tbm=isch&sa=X&ved=2ahUKEwiip4i555iAAxWqIUQIHb9QBlcQ0pQJegQIDxAB&biw=1728&bih=1000&dpr=2). The logo is a stylized version of the character's [trademark vest](https://www.google.com/search?q=eugene+fitzherberts+vest&tbm=isch&ved=2ahUKEwjqvOLF55iAAxXyNkQIHY9eAwgQ2-cCegQIABAA&oq=eugene+fitzherberts+vest&gs_lcp=CgNpbWcQAzoKCAAQigUQsQMQQzoFCAAQgAQ6BwgAEIoFEENQ7wRYvQpgiQtoAHAAeACAAUCIAZUDkgEBN5gBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=kc-2ZKqwCfLtkPIPj72NQA&bih=1000&biw=1728), designed by the wonderful [Michelle Franc-Ragsac](https://www.mragsac.com/) formerly of Bioinformatics and Systems Biology program fame at UC San Diego.
+<img src="_static/logos/eugene_logo.png" alt="EUGENe Logo" width=600>
+Obviously the most important FAQ should be saved for last. The logo is a reference to the character [Eugene Fitzherbert](https://www.youtube.com/watch?v=P1IHKm7yolM) from the Disney movie [Tangled](https://www.google.com/search?q=tangled&tbm=isch&sa=X&ved=2ahUKEwiip4i555iAAxWqIUQIHb9QBlcQ0pQJegQIDxAB&biw=1728&bih=1000&dpr=2). The logo is a stylized version of the character's [trademark vest](https://www.google.com/search?q=eugene+fitzherberts+vest&tbm=isch&ved=2ahUKEwjqvOLF55iAAxXyNkQIHY9eAwgQ2-cCegQIABAA&oq=eugene+fitzherberts+vest&gs_lcp=CgNpbWcQAzoKCAAQigUQsQMQQzoFCAAQgAQ6BwgAEIoFEENQ7wRYvQpgiQtoAHAAeACAAUCIAZUDkgEBN5gBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=kc-2ZKqwCfLtkPIPj72NQA&bih=1000&biw=1728), designed by the wonderful [Michelle Franc-Ragsac](https://www.mragsac.com/) formerly of Bioinformatics and Systems Biology program fame at UC San Diego.
 
 We thought this was a fitting analogy for EUGENe, a bioinformatics tool with a good heart and trying to find its place in the world of DL for regulatory genomics.
+
+David Kelley has his kennel of models, Jacob Schreiber has his orchard of models and tools. Dibs on Disney characters for the EUGENe team.

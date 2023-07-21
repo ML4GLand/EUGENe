@@ -57,7 +57,7 @@ def hyperopt_with_tune(
     config : dict
         A dictionary containing the hyperparameter search space,
         model architecture, and training parameters.
-        See the hyperopt tutorial (TODO) for more information.
+        See the hyperopt tutorial for more information.
     sdata : Optional[xr.Dataset], optional
         A SeqData object containing the data to train on, by default None
     seq_var : str, optional
@@ -241,7 +241,7 @@ def hyperopt(
     config : dict
         A dictionary containing the hyperparameter search space,
         model architecture, and training parameters.
-        See the hyperopt tutorial (TODO) for more information.
+        See the hyperopt tutorial for more information.
     sdata : xr.Dataset, optional
         A SeqData object containing the data to train on, by default None
     seq_var : str, optional

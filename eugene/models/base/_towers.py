@@ -8,29 +8,29 @@ from . import _layers as layers
 
 
 class Tower(nn.Module):
-        """A tower of blocks.
+    """A tower of blocks.
 
-        This is modeled after David Kelley's Basenji repo for conv towers
-        but is generalized to any block type.
+    This is modeled after David Kelley's Basenji repo for conv towers
+    but is generalized to any block type.
 
-        Parameters
-        ----------
-        block : Type[nn.Module]
-            The type of block to repeat.
-        repeats : int
-            The number of times to repeat the block.
-        input_size : tuple
-            The input size to the first block.
-        static_block_args : Dict[str, Any]
-            Arguments to initialize blocks that are static across repeats.
-        dynamic_block_args : Dict[str, Any]
-            Arguments to initialize blocks that change across repeats.
-        mults : Dict[str, float]
-            Multipliers for dynamic block arguments.
-        name : str
-            Name of the tower. Useful for pulling out specific towers
-            in a complex model.
-        """
+    Parameters
+    ----------
+    block : Type[nn.Module]
+        The type of block to repeat.
+    repeats : int
+        The number of times to repeat the block.
+    input_size : tuple
+        The input size to the first block.
+    static_block_args : Dict[str, Any]
+        Arguments to initialize blocks that are static across repeats.
+    dynamic_block_args : Dict[str, Any]
+        Arguments to initialize blocks that change across repeats.
+    mults : Dict[str, float]
+        Multipliers for dynamic block arguments.
+    name : str
+        Name of the tower. Useful for pulling out specific towers
+        in a complex model.
+    """
     def __init__(
         self,
         block: Type[nn.Module],
