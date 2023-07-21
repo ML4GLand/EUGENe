@@ -8,6 +8,29 @@ from . import _layers as layers
 
 
 class Tower(nn.Module):
+        """A tower of blocks.
+
+        This is modeled after David Kelley's Basenji repo for conv towers
+        but is generalized to any block type.
+
+        Parameters
+        ----------
+        block : Type[nn.Module]
+            The type of block to repeat.
+        repeats : int
+            The number of times to repeat the block.
+        input_size : tuple
+            The input size to the first block.
+        static_block_args : Dict[str, Any]
+            Arguments to initialize blocks that are static across repeats.
+        dynamic_block_args : Dict[str, Any]
+            Arguments to initialize blocks that change across repeats.
+        mults : Dict[str, float]
+            Multipliers for dynamic block arguments.
+        name : str
+            Name of the tower. Useful for pulling out specific towers
+            in a complex model.
+        """
     def __init__(
         self,
         block: Type[nn.Module],
@@ -18,19 +41,6 @@ class Tower(nn.Module):
         mults: Dict[str, float] = None,
         name: str = "tower",
     ):
-        """A tower of blocks.
-
-        Parameters
-        ----------
-        block : Type[nn.Module]
-        repeats : int
-        static_block_args : Dict[str, Any]
-            Arguments to initialize blocks that are static across repeats.
-        dynamic_block_args : Dict[str, Any]
-            Arguments to initialize blocks that change across repeats.
-        mults : Dict[str, float]
-            Multipliers for dynamic block arguments.
-        """
         super().__init__()
         self.input_size = input_size
         self.repeats = repeats
@@ -72,6 +82,49 @@ class Tower(nn.Module):
 
 
 class Conv1DTower(nn.Module):
+    """Generates a PyTorch module for multiple convolutional layers
+
+    Meant to allow mulitple convolutional blocks to be stacked together.
+    Currently the basis of convolutional architectures in the model zoo.
+    Soon to be deprecated in favor of Conv1D blocks wrapped by a Tower
+
+    Parameters
+    ----------
+    input_len : int
+        Length of the input sequence
+    input_channels : int
+        Number of channels in the input sequence
+    conv_channels : list
+        Number of channels in each convolutional layer
+    conv_kernels : list
+        Size of the kernel in each convolutional layer
+    conv_strides : list
+        Stride of the convolutional layers. Applies the same stride to all layers
+    conv_dilations : list
+        Dilation of the convolutional layers. Applies the same dilation to all layers
+    conv_padding : list
+        Padding of the convolutional layers. Applies the same padding to all layers
+    conv_biases : list
+        Whether to use biases in the convolutional layers. Applies the same setting to all layers
+    activations : list
+        Activation function of the convolutional layers. Applies the same activation to all layers
+    pool_types : list
+        Pooling function of the convolutional layers. Applies the same pooling to all layers
+    pool_kernels : list
+        Size of the kernel in each pooling layer
+    pool_strides : list
+        Stride of the pooling layers. Applies the same stride to all layers
+    pool_dilations : list
+        Dilation of the pooling layers. Applies the same dilation to all layers
+    pool_padding : list
+        Padding of the pooling layers. Applies the same padding to all layers
+    dropout_rates : list
+        Dropout rate of the convolutional layers. Applies the same rate to all layers
+    batchnorm : bool
+        Whether to use batchnorm in the convolutional layers
+    batchnorm_first : bool
+        Whether to use batchnorm before the activation function    
+    """
     def __init__(
         self,
         input_len: int,

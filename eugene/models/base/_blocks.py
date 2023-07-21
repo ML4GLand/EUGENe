@@ -7,6 +7,63 @@ from . import _layers as layers
 
 
 class Conv1DBlock(nn.Module):
+    """Flexible block for convolutional models
+
+    Allows for flexible specification of convolutional layers, pooling layers,
+    normalization layers, activation layers, and dropout layers.
+
+    Parameters
+    ----------
+    input_len : int
+        The length of the input. The last dimension of the input tensor.
+    input_channels : int
+        The number of input channels. The second to last dimension of the input tensor.
+    output_channels : int
+        The number of output channels.
+    conv_kernel : int
+        The size of the convolutional kernel.
+    conv_type : str or callable
+        The type of convolutional layer to use. If a string, must be a key in
+        `eugene.models.base._layers.CONVOLUTION_REGISTRY`. If a callable, must be a
+        subclass of `torch.nn.Module`.
+    conv_stride : int
+        The stride of the convolutional kernel.
+    conv_padding : str or int
+        The padding of the convolutional kernel. See `torch.nn.Conv1d` for more details.
+    conv_dilation : int
+        The dilation of the convolutional kernel.
+    conv_bias : bool
+        Whether or not to include a bias term in the convolutional layer.
+    activation : str or callable
+        The type of activation to use. If a string, must be a key in
+        `eugene.models.base._layers.ACTIVATION_REGISTRY`. If a callable, must be a
+        subclass of `torch.nn.Module`.
+    pool_type : str or callable
+        The type of pooling layer to use. If a string, must be a key in
+        `eugene.models.base._layers.POOLING_REGISTRY`. If a callable, must be a
+        subclass of `torch.nn.Module`.
+    pool_kernel : int
+        The size of the pooling kernel.
+    pool_stride : int
+        The stride of the pooling kernel.
+    pool_padding : int
+        The padding of the pooling kernel.
+    norm_type : str or callable
+        The type of normalization layer to use. If a string, must be a key in
+        `eugene.models.base._layers.NORMALIZER_REGISTRY`. If a callable, must be a
+        subclass of `torch.nn.Module`.
+    norm_dim : int
+        The dimension to normalize over. If `None`, defaults to the number of output
+        channels.
+    dropout_rate : float
+        The dropout rate to use. If `None`, no dropout is used.
+    order : str
+        The order of the layers in the block. Must be a string of the following
+        characters: `conv`, `norm`, `act`, `pool`, `dropout`. For example, the string
+        `conv-norm-act-pool-dropout` would result in a block with a convolutional layer,
+        a normalization layer, an activation layer, a pooling layer, and a dropout layer
+        in that order. If `None`, defaults to `conv-norm-act-pool-dropout`.
+    """
     def __init__(
         self,
         input_len: int,
@@ -124,6 +181,34 @@ class Conv1DBlock(nn.Module):
 
 
 class DenseBlock(nn.Module):
+    """A block for dense layers
+
+    A stack of linear layers with optional activation, batchnorm, and dropout.
+
+    Parameters
+    ----------
+    input_dim : int
+        The dimension of the input.
+    output_dim : int
+        The dimension of the output.
+    hidden_dims : list
+        A list of hidden dimensions. If `None`
+        will be just a single linear layer in the block.
+    activations : str or callable or list
+        The activation function to use. If a string, must be a key in
+        `eugene.models.base._layers.ACTIVATION_REGISTRY`. If a callable, must be a
+        subclass of `torch.nn.Module`. If a list, must be a list of strings or callables
+        of the same length as `hidden_dims`.
+    dropout_rates : float or list
+        The dropout rate to use. If a float, will be the same dropout rate for all
+        layers. If a list, must be a list of floats of the same length as `hidden_dims`.
+    batchnorm : bool
+        Whether or not to use batchnorm.
+    batchnorm_first : bool
+        Whether or not to use batchnorm before the activation function.
+    biases : bool or list
+        Whether or not to use biases.
+    """
     def __init__(
         self,
         input_dim: int,
@@ -225,6 +310,31 @@ class DenseBlock(nn.Module):
 
 
 class RecurrentBlock(nn.Module):
+    """A block for recurrent layers
+
+    A stack of recurrent layers with optional dropout. This block is a wrapper around
+    `torch.nn.RNN`, `torch.nn.LSTM`, and `torch.nn.GRU`.
+
+    Parameters
+    ----------
+    input_dim : int
+        The dimension of the input.
+    hidden_dim : int
+        The dimension of the hidden state.
+    num_layers : int
+        The number of recurrent layers.
+    unit_type : str
+        The type of recurrent unit to use. Must be a key in
+        `eugene.models.base._layers.RECURRENT_REGISTRY`.
+    bidirectional : bool
+        Whether or not to use a bidirectional recurrent layer.
+    dropout_rates : float
+        The dropout rate to use. If `None`, no dropout is used.
+    bias : bool
+        Whether or not to use a bias term.
+    batch_first : bool
+        Whether or not the input is batch first.
+    """
     def __init__(
         self,
         input_dim: int,

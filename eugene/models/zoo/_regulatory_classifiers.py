@@ -7,7 +7,7 @@ from ..base import _towers as towers
 
 
 class DeepSEA(nn.Module):
-    """DeepSEA model implementation in from Zhou et al 2015 in EUGENe
+    """DeepSEA model implementation from Zhou et al 2015 in PyTorch
 
     This is a flexible implementation of the original DeepSEA model. 
     If parameters for the CNN and FCN are not passed in, the model
@@ -77,7 +77,7 @@ class DeepSEA(nn.Module):
 
 
 class Basset(nn.Module):
-    """Basset model implementation in from Kelley et al 2016 in EUGENe
+    """Basset model implementation from Kelley et al 2016 in PyTorch
 
     This is a flexible implementation of the original Basset model.
     If parameters for the CNN and FCN are not passed in, the model
@@ -151,7 +151,7 @@ class Basset(nn.Module):
 
 
 class FactorizedBasset(nn.Module):
-    """Factorized Basset model implementation in from Wnuk et al 2017 in EUGENe
+    """Factorized Basset model implementation from Wnuk et al 2017 in PyTorch
 
     This is a flexible implementation of the original Factorized Basset model.
     If parameters for the CNN and FCN are not passed in, the model
@@ -271,7 +271,7 @@ class FactorizedBasset(nn.Module):
 
 
 class DanQ(nn.Module):
-    """DanQ model from Quang and Xie 2016 in EUGENe
+    """DanQ model from Quang and Xie 2016 in PyTorch
 
     This is a flexible implementation of the original DanQ model.
     If parameters for the CNN and FCN are not passed in, the model
@@ -358,15 +358,7 @@ class DanQ(nn.Module):
 
 
 class Satori(nn.Module):
-    def __init__(
-        self,
-        input_len,
-        output_dim,
-        conv_kwargs: dict = {},
-        mha_kwargs: dict = {},
-        dense_kwargs: dict = {},
-    ):
-        """Satori model from Ullah and Ben-Hur 2021 in EUGENe
+    """Satori model from Ullah and Ben-Hur 2021 in PyTorch
 
         This is a flexible implementation of the original Satori model.
         If parameters for the CNN, MultiHeadAttention, and FCN are not passed in, the model
@@ -394,6 +386,14 @@ class Satori(nn.Module):
             information on what arguments are available. If not specified,
             the default parameters from Ullah and Ben-Hur 2021 will be used.
         """
+    def __init__(
+        self,
+        input_len,
+        output_dim,
+        conv_kwargs: dict = {},
+        mha_kwargs: dict = {},
+        dense_kwargs: dict = {},
+    ):
         super(Satori, self).__init__()
 
         # Set the attrubutes

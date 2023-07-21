@@ -104,8 +104,6 @@ This module is designed to allow users to easily build and initialize several ne
 Blocks are composed to create architectures in EUGENe. You can find all the arguments that would be passed into the `dense_kwargs` and `recurrent_kwargs` arguments of all built-in model in the `DenseBlock` and `RecurrentBlock` classes, respectively. See the [towers section](#towers) for more information on the `conv_kwargs` argument.
 
 ```{eval-rst}
-
-```{eval-rst}
 .. module:: eugene.models
 ```
 
@@ -204,6 +202,8 @@ Arguments for the `cnn_kwargs`, `recurrent_kwargs` and `dense_kwargs` of all mod
    models.zoo.Jores21CNN
    models.zoo.DeepSTARR
    models.zoo.BPNet
+   models.zoo.DeepMEL
+   models.zoo.scBasset
 ```
 
 ### Utilities

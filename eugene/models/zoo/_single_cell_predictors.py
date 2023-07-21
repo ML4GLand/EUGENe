@@ -7,7 +7,109 @@ from ..base import _blocks as blocks
 from ..base import _towers as towers
 
 
+class DeepMEL(nn.Module):
+    """DeepMEL model implementation from Minnoye et al 2020 in PyTorch
+
+    This is a special case of a Hybrid basic model that has been used to 
+    classify results from topic modeling on scATAC-seq data. It is a
+    convolutional-recurrent network with a fully connected layer at the end.
+
+    Parameters
+    ----------
+    input_len : int
+        The length of the input sequence.
+    output_dim : int
+        The dimension of the output.
+    conv_kwargs : dict
+        The keyword arguments for the convolutional layer. These come from the
+        models.Conv1DTower class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from from Minnoye et al 2020 will be used
+    recurrent_kwargs : dict
+        The keyword arguments for the recurrent layer. These come from the
+        models.RecurrentBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from from Minnoye et al 2020 will be used
+    dense_kwargs : dict
+        The keyword arguments for the fully connected layer. These come from the
+        models.DenseBlock class. See the documentation for that class for more
+        information on what arguments are available. If not specified,
+        the default parameters from from Minnoye et al 2020 will be used
+    """
+    def __init__(
+        self,
+        input_len: int,
+        output_dim: int,
+        conv_kwargs: dict = {},
+        recurrent_kwargs: dict = {},
+        dense_kwargs: dict = {}
+    ):
+        super(DeepMEL, self).__init__()
+
+        self.input_len = input_len
+        self.output_dim = output_dim
+        
+        self.conv_kwargs, self.recurrent_kwargs, self.dense_kwargs = self.kwarg_handler(
+            conv_kwargs, recurrent_kwargs, dense_kwargs
+        )
+        self.conv1d_tower = towers.Conv1DTower(**self.conv_kwargs)
+        self.recurrent_block = blocks.RecurrentBlock(
+            input_dim=self.conv1d_tower.out_channels, 
+            **self.recurrent_kwargs
+        )
+        self.dense_block = blocks.DenseBlock(
+            input_dim=self.recurrent_block.out_channels,
+            output_dim=output_dim, 
+            **self.dense_kwargs
+        )
+
+    def forward(self, x, x_rev_comp=None):
+        x = self.conv1d_tower(x)
+        x = x.transpose(1, 2)
+        out, _ = self.recurrent_block(x)
+        out = self.dense_block(out[:, -1, :])
+        return out
+
+    def kwarg_handler(self, conv_kwargs, recurrent_kwargs, dense_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("conv_channels", [128])
+        conv_kwargs.setdefault("conv_kernels", [20])
+        conv_kwargs.setdefault("conv_strides", [1])
+        conv_kwargs.setdefault("conv_padding", "valid")
+        conv_kwargs.setdefault("pool_kernels", [20])
+        conv_kwargs.setdefault("dropout_rates", 0.2)
+        conv_kwargs.setdefault("activations", "relu")
+        conv_kwargs.setdefault("batchnorm", False)
+        recurrent_kwargs.setdefault("unit_type", "lstm")
+        recurrent_kwargs.setdefault("hidden_dim", 128)
+        #recurrent_kwargs.setdefault("dropout_rates", 0.2)
+        recurrent_kwargs.setdefault("bidirectional", True)
+        recurrent_kwargs.setdefault("batch_first", True)
+        dense_kwargs.setdefault("hidden_dims", [256])
+        dense_kwargs.setdefault("dropout_rates", 0.4)
+        dense_kwargs.setdefault("batchnorm", False)
+        return conv_kwargs, recurrent_kwargs, dense_kwargs
+
+
 class scBasset(nn.Module):
+    """scBasset model implementation from Yuan et al 2022 in PyTorch
+
+    WARNING: This model has not been fully tested yet. Use at your own risk.
+
+    Parameters
+    ----------
+    num_cells : int
+        The number of cells in the dataset.
+    num_batches : int
+        The number of batches in the dataset. If not specified, the model will
+        not include batch correction.
+    l1 : float
+        The L1 regularization parameter for the cell layer.
+    l2 : float
+        The L2 regularization parameter for the batch layer.
+    """
     def __init__(self, num_cells, num_batches=None, l1=0.0, l2=0.0):
         super(scBasset, self).__init__()
         self.conv1 = nn.Sequential(
