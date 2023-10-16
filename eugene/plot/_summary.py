@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Union, Sequence, Optional
+from typing import Union, Optional
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -15,7 +15,6 @@ from sklearn.metrics import (
 from scipy.stats import spearmanr, pearsonr, kendalltau
 from ._utils import _plot_seaborn, _save_fig
 from .. import settings
-import xarray as xr
 
 metric_dict = {
     "r2": r2_score,
@@ -295,7 +294,7 @@ def performance_summary(
     with plt.rc_context(rc_context):
         ax = _plot_seaborn(
             scores,
-            vars=metrics,
+            metrics,
             func=sns.boxplot,
             groupby="prediction_groups" if groupby is None else groupby,
             orient=orient,
@@ -304,7 +303,7 @@ def performance_summary(
         if add_swarm:
             _plot_seaborn(
                 scores,
-                vars=metrics,
+                metrics,
                 func=sns.swarmplot,
                 groupby="prediction_groups" if groupby is None else groupby,
                 orient=orient,

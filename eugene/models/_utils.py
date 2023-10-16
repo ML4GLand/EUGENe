@@ -1,9 +1,7 @@
 import importlib
-from typing import List, Tuple, Union
-from pathlib import Path
+from typing import Union
 import os
 from os import PathLike
-import torch
 import yaml
 from .._settings import settings
 
@@ -18,16 +16,13 @@ def get_layer(model, layer_name):
     return dict([*model.named_modules()])[layer_name]
 
 
-def load_config(
-    config_path: Union[str, PathLike],
-    **kwargs
-):
+def load_config(config_path: Union[str, PathLike], **kwargs):
     """Instantiate a module or architecture from a config file
 
     This function is used to instantiate a module or architecture from a
     config file. The config file must be a YAML file with parameters from
     the module or architecture as well as the name of the module or
-    architecture. For example, to instantiate a CNN within a SequenceModule, 
+    architecture. For example, to instantiate a CNN within a SequenceModule,
     the config file might look like this:
 
     ```yaml
@@ -59,11 +54,11 @@ def load_config(
     ```
 
     The `module` parameter is the name of the LightningModule to instantiate in eugene.models.
-    The `arch_name` parameter is the name of the architecture to instantiate in eugene.models.zoo. 
+    The `arch_name` parameter is the name of the architecture to instantiate in eugene.models.zoo.
     The `arch` parameter contains all the arguments for the CNN class in eugene.models.zoo._basic_models
     The conv_kwargs and dense_kwargs are Conv1DTower and DenseBlock respectively in eugene.models.base
-    The parameters task, loss_fxn, optimizer, and optimizer_lr are all arguments for SequenceModule. 
-    
+    The parameters task, loss_fxn, optimizer, and optimizer_lr are all arguments for SequenceModule.
+
     If a "module" parameter is not passed in, this function assumes that we just want to instantiate
     an architecture. For example, to instantiate a CNN, the config file might look like this:
 
@@ -103,7 +98,7 @@ def load_config(
     Returns
     -------
     Union[SequenceModule, ProfileModule, nn.Module]
-    
+
     """
     if "/" not in config_path:
         config_path = os.path.join(settings.config_dir, config_path)
@@ -125,5 +120,6 @@ def load_config(
         arch_name = model_params["arch_name"]
         model_type = getattr(importlib.import_module("eugene.models.zoo"), arch_name)
         model = model_type(**arch)
+        return model
     else:
         raise ValueError("Config file must contain either a 'model' or 'module' key")

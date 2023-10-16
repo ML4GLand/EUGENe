@@ -5,7 +5,7 @@ from .._settings import settings
 from seqdata import get_torch_dataloader
 import xarray as xr
 import torch.nn as nn
-from typing import Union, Optional, List, Dict, Any, Literal
+from typing import Optional, Dict, Any
 
 
 def attribute_sdata(
@@ -61,7 +61,7 @@ def attribute_sdata(
         Suffix to add to the attribution variable name, by default "".
     copy : bool, optional
         Whether to copy the data before adding the attribution variable, by default False.
-    
+
     Returns
     -------
     Optional[xr.Dataset]
@@ -100,7 +100,7 @@ def attribute_sdata(
             model=model,
             inputs=batch[seq_var],
             method=method,
-            reference_type=reference_type,
+            references=reference_type,
             target=target,
             batch_size=batch_size,
             device=device,
