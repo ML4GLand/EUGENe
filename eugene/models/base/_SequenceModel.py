@@ -216,7 +216,7 @@ class SequenceModel(LightningModule, ABC):
         """
         metric_name = DEFAULT_TASK_METRICS[self.task] if metric is None else metric
         metric_kwargs = metric_kwargs if metric_kwargs is not None else DEFAULT_METRIC_KWARGS[self.task]
-        metric = METRIC_REGISTRY[metric_name](num_outputs=self.output_dim, **metric_kwargs)
+        metric = METRIC_REGISTRY[metric_name](num_classes=self.output_dim, **metric_kwargs)
         return metric, metric_kwargs, metric_name
 
     def configure_optimizers(self):

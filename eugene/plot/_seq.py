@@ -6,7 +6,6 @@ import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import seqlogo
 import logomaker as lm
 from vizsequence import viz_sequence
 from tqdm.auto import tqdm
@@ -373,71 +372,6 @@ def multiseq_track_features(
         return ax
     if save is not None:
         _save_fig(save)
-
-
-def _plot_logo_seqlogo(
-    matrix, 
-    **kwargs
-):
-    """
-    Plot a sequence logo of a position frequency matrix (PFM) using the SeqLogo package. 
-    
-    This function is deprecated because there is no easy way to save these as
-    figures because they are not matplotlib axes.
-
-    Parameters
-    ----------
-    matrix : numpy.ndarray
-        The position frequency matrix to plot
-    **kwargs : dict
-        Additional keyword arguments to pass to the SeqLogo object
-    """
-    cpm = seqlogo.CompletePm(pfm=matrix)
-    logo = seqlogo.seqlogo(
-        cpm, 
-        ic_scale=True, 
-        format="png", 
-        **kwargs
-    )
-    display(logo)
-    return logo
-
-
-def filter_viz_seqlogo(
-    sdata, 
-    filter_id: Union[str, list], 
-    uns_key: str = "pfms", 
-    return_logo: bool = False,
-    **kwargs
-):
-    """Plot the logo of the pfm generated for a passed in filter.  
-    
-    This function is deprecated because there is no easy way to save these as
-    figures because they are not matplotlib axes.
-    
-    If a filter_id is given, the logo will be filtered to only show the features that match the filter_id.
-    The uns_key is the key in the sdata.uns dictionary that contains the importance scores.
-    The kwargs are passed to the SeqLogo object. See the SeqLogo documentation for more details.
-
-    Parameters
-    ----------
-    sdata : SeqData
-        The SeqData object to plot the logo for
-    filter_id : str
-        The filter_id to use to filter the logo
-    uns_key : str
-        The key in the sdata.uns dictionary that contains the importance scores
-    **kwargs : dict
-        The keyword arguments to pass to the SeqLogo object
-
-    Returns
-    -------
-    ax : matplotlib.axes._subplots.AxesSubplot
-        The matplotlib axes object
-    """
-    logo = _plot_logo_seqlogo(sdata.uns[uns_key][filter_id], **kwargs)
-    if return_logo:
-        return logo
 
 
 def seq_track(

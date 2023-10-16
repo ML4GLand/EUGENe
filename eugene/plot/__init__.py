@@ -8,7 +8,6 @@ from ._seq import (
     multiseq_track_features,
     seq_track,
     multiseq_track,
-    filter_viz_seqlogo,
     filter_viz,
     multifilter_viz,
     feature_implant_plot,
