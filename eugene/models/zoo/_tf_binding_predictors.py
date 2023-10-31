@@ -105,6 +105,8 @@ class ResidualBind(nn.Module):
     are not passed in, the model will be instantiated with the parameters described 
     in Koo et al 2021.
 
+    This model has not been extensively tested, so use with caution.
+
     Parameters
     ----------
     input_len : int

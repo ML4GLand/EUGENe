@@ -33,7 +33,7 @@ def _plot_binary_confusion_mtx(
     Plot a confusion matrix for binary classification.
 
     This function plots a binary confusion matrix as a seaborn heatmap.
-    Pulls a target and prediction key from seqs_annot and uses the passed in
+    Pulls a target and prediction vars from SeqData and uses the passed in
     threshold to binarize the prediction. The confusion matrix is then plotted
     using seaborn.
 
@@ -98,8 +98,8 @@ def confusion_mtx(
     """
     Plot a confusion matrix for given targets and predictions within SeqData
 
-    Creates a confusion matrix from the given target and prediction keys held
-    in the seqs_annot of the passed in SeqData. The
+    Creates a confusion matrix from the given target and prediction in the
+    the passed in SeqData.
 
     Parameters
     ----------
@@ -155,16 +155,15 @@ def auroc(
     Plot the area under the receiver operating characteristic curve for one or more predictions against
     a one or more targets.
 
-
-    You must pass in the same number of target keys as prediction keys. If you want to compare the same target
-    against multiple predictions, pass in the same target key for each predictions key.
+    You must pass in the same number of target vars as prediction vars. If you want to compare the same target
+    against multiple predictions, pass in the same target var for each predictions var.
 
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
     target_vars : Union[Sequence[str], str]
-        Target keys to use for plotting.
+        target vars to use for plotting.
     prediction_vars : Union[Sequence[str], str]
         Prediction keys to use for plotting.
     labels : Union[Sequence[str], str]
@@ -218,16 +217,15 @@ def auprc(
     Plot the area under the precision recall curve for one or more predictions against
     a one or more targets.
 
-
-    You must pass in the same number of target keys as prediction keys. If you want to compare the same target
-    against multiple predictions, pass in the same target key for each predictions key.
+    You must pass in the same number of target vars as prediction keys. If you want to compare the same target
+    against multiple predictions, pass in the same target var for each prediction var.
 
     Parameters
     ----------
     sdata : SeqData
         SeqData object.
     target_vars : Union[Sequence[str], str]
-        Target keys to use for plotting.
+        target vars to use for plotting.
     prediction_vars : Union[Sequence[str], str]
         Prediction keys to use for plotting.
     labels : Union[Sequence[str], str]

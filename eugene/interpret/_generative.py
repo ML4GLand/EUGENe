@@ -16,11 +16,11 @@ def evolve_seqs_sdata(
     axis_order=("_sequence", "_ohe", "length"),
     add_seqs=True,
     return_seqs: bool = False,
-    device: str = "cpu",
+    device: Optional[str] = None,
     batch_size: int = 128,
     copy: bool = False,
 ) -> Optional[xr.Dataset]:
-    """In silico evolve a set of sequences that are stored in a SeqData object.
+    """In silico evolve a set of sequences that are stored in a SeqData object using a PyTorch nn.Module.
 
     This function is a wrapper around the `evolution` function from the `seqexplainer`
     package. It takes a SeqData object containing sequences and evolves them in silico
@@ -31,7 +31,7 @@ def evolve_seqs_sdata(
     Parameters
     ----------
     model : torch.nn.Module
-        The model to score the sequences with
+        PyTorch nn.Module to evolve the sequences with
     sdata : xr.Dataset
         The SeqData object containing the sequences to evolve
     rounds : int
@@ -39,7 +39,9 @@ def evolve_seqs_sdata(
     seq_var : str, optional
         The name of the sequence variable in the SeqData object, by default "ohe_seq"
     axis_order : tuple, optional
-        The axis order of the sequence variable in the SeqData object, by default ("_sequence", "_ohe", "length")
+        The axis order of the sequence expected by the model. This is used to transpose
+        the sequence data to the correct order before passing it to the model. The keys
+        should be the names of the axes in the SeqData object. By default ("_sequence", "_ohe", "length")
     add_seqs : bool, optional
         Whether to add the evolved sequences to the SeqData object, by default True
     return_seqs : bool, optional
@@ -47,14 +49,15 @@ def evolve_seqs_sdata(
     device : str, optional
         The device to use for scoring the sequences, by default "cpu"
     batch_size : int, optional
-        The batch size to use for scoring the sequences, by default 128
+        The batch size to use for scoring the sequences, by default 128.
     copy : bool, optional
-        Whether to copy the SeqData object before adding the evolved sequences, by default False
+        Whether to copy and return the copy of the SeqData object, by default False.
 
     Returns
     -------
     sdata   
-        The SeqData object with the evolved sequences added
+        The SeqData object with the evolved sequences added to it if `copy` is False. If `return_seqs` is True, the
+        function returns the evolved sequences as a torch.Tensor.
     """
 
     sdata = sdata.copy() if copy else sdata

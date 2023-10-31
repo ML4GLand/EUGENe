@@ -5,6 +5,29 @@ from pytorch_lightning.callbacks import BasePredictionWriter
 
 
 class PredictionWriter(BasePredictionWriter):
+    """Custom prediction writer for PyTorch Lightning trainer.
+
+    Parameters
+    ----------
+
+    output_dir : str
+        Directory to write predictions to.
+    file_label : str
+        Label to append to the file name.
+    write_interval : str, optional
+        When to write predictions. One of "epoch" or "step". Defaults to "epoch".
+    
+
+    Examples
+    --------
+    >>> from eugene.evaluate._utils import PredictionWriter
+    >>> from pytorch_lightning import Trainer
+
+    >>> model = ...
+    >>> dataloader = ...
+    >>> trainer = Trainer(callbacks=[PredictionWriter("predictions", "test")])
+    >>> trainer.predict(model, dataloader)    
+    """
     def __init__(self, output_dir: str, file_label: str, write_interval="epoch"):
         super().__init__(write_interval)
         self.output_dir = output_dir

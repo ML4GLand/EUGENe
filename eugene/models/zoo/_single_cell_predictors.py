@@ -96,7 +96,7 @@ class DeepMEL(nn.Module):
 class scBasset(nn.Module):
     """scBasset model implementation from Yuan et al 2022 in PyTorch
 
-    WARNING: This model has not been fully tested yet. Use at your own risk.
+    This model has not been fully tested yet.
 
     Parameters
     ----------

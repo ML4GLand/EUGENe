@@ -17,6 +17,10 @@ from .base._schedulers import SCHEDULER_REGISTRY
 class ProfileModule(LightningModule):
     """LightningModule class for training models that predict profile data (both shape and count).
 
+    Much of this code was copied and adapted from the bpnet-lite repo 
+    https://github.com/jmschrei/bpnet-lite/blob/a486c45a30df9f1277da42cdfaf25de1692e8dac/bpnetlite/bpnet.py
+    Future EUGENe releases will likely avoid this code duplication by using the bpnet-lite repo as a dependency.
+
     ProfileModules handles BPNet style training, where the model has multiple output tensors (“heads”), 
     can take in optional control inputs, and uses multiple loss functions. We currently support only BPNet
     training without a bias model, but are working on adding support for chromBPNet style training as well.
@@ -134,6 +138,8 @@ class ProfileModule(LightningModule):
         batch_size: int = 128,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Predict the profile and count for a set of sequences.
+
+        See https://github.com/jmschrei/bpnet-lite/blob/a486c45a30df9f1277da42cdfaf25de1692e8dac/bpnetlite/bpnet.py
 
         Parameters
         ----------

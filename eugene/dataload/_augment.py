@@ -3,8 +3,9 @@ from typing import List, Tuple, Union
 import torch
 
 class RandomRC:
-    """Randomly applies a reverse-complement transformation to each sequence in a training batch \\
-        
+    """Copied from https://github.com/p-koo/evoaug/blob/master/evoaug/augment.py
+    
+    Randomly applies a reverse-complement transformation to each sequence in a training batch
     Takes in a user-defined probability, rc_prob. This is applied to each sequence independently.
 
     Parameters

@@ -95,7 +95,7 @@ class DeepSTARR(nn.Module):
 
     This is a flexible implementation of the original DeepSTARR model.
     If parameters for the CNN and FCN are not passed in, the model
-    will be instantiated with the parameters described in Quang and Xie 2016.
+    will be instantiated with the parameters described in the paper.
 
     Parameters
     ----------

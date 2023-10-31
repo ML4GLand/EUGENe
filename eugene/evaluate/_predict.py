@@ -18,29 +18,39 @@ def predictions(
     name: Optional[str] = None,
     version: Optional[str] = "",
     file_label: Optional[str] = "",
-):
-    """Predictions from a model and dataloader.
+) -> pd.DataFrame:
+    """Predictions from a PyTorch LightningModule (pytorch_lightning.LightningModule) and DataLoader (torch.utils.data.DataLoader).
     
-    Simple wrapper around pytorch_lightning.Trainer.predict() that returns a pandas dataframe.
-    Makes use of a custom callback, PredictionWriter, to write predictions to disk if the out_dir
-    argument is provided.
+    Simple wrapper around pytorch_lightning.Trainer.predict() that returns a Pandas DataFrame of 
+    predictions.
+    
+    Makes use of a custom callback, `PredictionWriter`, to write predictions to disk if the `out_dir`
+    argument is provided. The output file will be a tsv file that should include the prediction values
+    followed by the target values (across rows). Sequence ordering will be the same as in the input
+    dataloader.
+
+    Currently, the path to the output file will be /{out_dir}/{name}/{version}/{file_label}_predictions.tsv.
+    Omitting any of these arguments will simply not include them in the path. This was originally done to match
+    PyTorch Lightning's default logging behavior. In future releases, we will allow  users to specify the 
+    full output path and sequence names will be included in the output file as the first column.
 
     Parameters
     ----------
     model : LightningModule
-        Model to predict with.
+        PyTorch LightningModule to predict with.
     dataloader : DataLoader
-        Dataloader to predict with.
+        PyTorch DataLoader to predict with.
     gpus : int, optional
         Number of GPUs to use. If None, uses settings.gpus.
     out_dir : os.PathLike, optional
         Directory to write predictions to. If None, does not write predictions to disk.
+        See name, version, and file_label arguments for more details on where the file will be written.
     name : str, optional
-        Name of the model. If None, uses model.model_name.
+        Name of the model appended file path {name}/{version}/. If None, uses model.model_name.
     version : str, optional
-        Version of the model. If None, uses "".
+        Version of the model appended file path {name}/{version}/. If None, uses "".
     file_label : str, optional
-        Label to add to the file name. If None, uses "".
+        Label to add to the file name in front of "_predictions.tsv". If None, uses "".
     
     Returns
     -------
@@ -85,22 +95,26 @@ def predictions_sequence_module(
     prefix: str = "",
     suffix: str = "",
     copy: bool = False,
-) -> xr.Dataset:
+) -> Optional[xr.Dataset]:
     """Predictions for a SequenceModule model and SeqData
 
-    This is a wrapper around the predictions function that takes a SeqData object and
-    builds a dataloader from it. It also adds the predictions to the SeqData object.
+    This is a wrapper around the `predictions` function. 
+    It builds a dataloader from the input SeqData object that 
+    is compatible with a SequenceModule and feeds it 
+    along with the model to the `predictions` function.
+    
+    It also adds the predictions to the SeqData object.
 
     Parameters
     ----------
     model : LightningModule
         Model to predict with.
     sdata : xr.Dataset, optional
-        SeqData object to predict with. If None, uses the sdata in settings.
+        SeqData object to predict with.
     seq_var : str, optional
-        Key in sdata to use as the sequence. If None, uses "ohe_seq".
+        Key in sdata to use as the input sequence. If None, uses "ohe_seq".
     target_vars : str or list of str, optional
-        Key(s) in sdata to use as the target. If None, uses None.
+        Key(s) in sdata to use as the target.
     gpus : int, optional
         Number of GPUs to use. If None, uses settings.gpus.
     batch_size : int, optional
@@ -108,11 +122,38 @@ def predictions_sequence_module(
     num_workers : int, optional
         Number of workers to use. If None, uses settings.dl_num_workers.
     transforms : dict, optional 
+        Dictionary of functional transforms to apply to the input sequence. If None, no
+        transforms are applied.
+    prefetch_factor : int, optional
+        Number of samples to prefetch into a buffer to speed up dataloading. 
+        If None, uses settings.dl_prefetch_factor.
+    store_only : bool, optional
+        If set to True, does not save predictions to disk.
+    in_memory : bool, optional
+        If set to True, loads the sequence and target variables into memory before
+        creating a dataloader.
+    out_dir : os.PathLike, optional
+        If `store_only`=False, directory to write predictions to. See name, version, and file_label arguments for more details
+        on where the file will be written. If None, uses settings.output_dir.
+    name : str, optional
+        Name of the model appended file path {name}/{version}/. If None, uses model.model_name.
+    version : str, optional
+        Version of the model appended file path {name}/{version}/. If None, uses "".
+    file_label : str, optional
+        Label to add to the file name in front of "_predictions.tsv". If None, uses "".
+    prefix : str, optional
+        Prefix to add to predictions variable name in the input SeqData. If None, uses "".
+    suffix : str, optional
+        Suffix to add to the predictions variable name in the input SeqData. If None, uses "".
+    copy : bool, optional
+        If set to True, returns a copy of the input SeqData object with the predictions. Similar to
+        the behavior of ScanPy's AnnData object.
 
     Returns
     -------
     sdata : xr.Dataset
-        SeqData object with predictions added if copy=True. If copy=False, returns None.
+        SeqData object with predictions added if copy=True. If copy=False, returns None
+        and modifies the input SeqData object in-place.
     """
     sdata = sdata.copy() if copy else sdata
     batch_size = batch_size if batch_size is not None else settings.batch_size
@@ -154,7 +195,6 @@ def predictions_sequence_module(
     )
     pred_cols = preds.columns
     for i, target_var in enumerate(target_vars):
-        # print(f"Adding {prefix}{target_var}_predictions{suffix} to sdata")
         sdata[f"{prefix}{target_var}_predictions{suffix}"] = xr.DataArray(
             preds[pred_cols[i]].values, dims=["_sequence"]
         )
@@ -171,33 +211,51 @@ def train_val_predictions(
     name: Optional[str] = None,
     version: str = "",
 ) -> pd.DataFrame:
-    """Predictions from a model and train/val dataloaders.
+    """Predictions from a model and train/val dataloaders. 
 
-    Same as predictions function, but takes separate train and val dataloaders.
+    Returns a single Pandas DataFrame with predictions from the model
+    where train and val predictions are concatenated along the rows to 
+    match the order of the input dataloaders. Adds a column to the DataFrame
+    called "train_val" that indicates whether the prediction came from the
+    train or val dataloader.
+    
+    Offers the same functionality as the `predictions` function, 
+    but takes separate train and val dataloaders and writes the
+    predictions to disk in separate files (train_predictions.tsv
+    and val_predictions.tsv). The same PredictionWriter callback
+    is used to write the predictions to disk and therefore the same
+    arguments are used to specify the output directory, name, and version.
+
+    This function will also be modified in future releases to allow
+    users to specify the full output path and sequence names will be
+    included in the output file as the first column.
 
     Parameters
     ----------
     model : LightningModule
-        Model to predict with.
+        PyTorch LightningModule to predict with.
     train_dataloader : DataLoader
-        Dataloader to predict with.
+        PyTorch DataLoader to predict with.
     val_dataloader : DataLoader
-        Dataloader to predict with.
+        PyTorch DataLoader to predict with.
     train_var : str, optional
-        Key in sdata to use as the train/val variable. If None, uses "train_val".
+        Key in sdata to use as the train/val variable to split the data 
+        into two dataloaders (True goes to train, False goes to val).
+        If None, expects "train_val".
     gpus : int, optional
         Number of GPUs to use. If None, uses settings.gpus.
     out_dir : os.PathLike, optional
         Directory to write predictions to. If None, does not write predictions to disk.
+        See name, version, and file_label arguments for more details on where the file will be written.
     name : str, optional
-        Name of the model. If None, uses model.model_name.
+        Name of the model appended file path {name}/{version}/. If None, uses model.model_name.
     version : str, optional
-        Version of the model. If None, uses "".
+        Version of the model appended file path {name}/{version}/. If None, uses "".
 
     Returns
     -------
     preds : pd.DataFrame
-        Predictions from the model and dataloader in a pandas dataframe.
+        Predictions from the model and dataloader in a Pandas DataFrame.
     """
     gpus = gpus if gpus is not None else settings.gpus
     model_name = model.model_name
@@ -252,16 +310,20 @@ def train_val_predictions_sequence_module(
     prefix: str = "",
     suffix: str = "",
     copy: bool = False,
-):
-    """Predictions for a SequenceModule model and SeqData
+) -> Optional[xr.Dataset]:
+    """Predictions for a SequenceModule model and SeqData with train/val split.
 
-    This is a wrapper around the predictions function that takes a SeqData object and
-    builds a dataloader from it. It also adds the predictions to the SeqData object.
+    This is a wrapper around the `train_val_predictions` function.
+    It builds PyTorch DataLoaders from the input SeqData object that are
+    compatible with a SequenceModule. The data is split into train and val
+    using the `train_var` argument.
+
+    It also adds the predictions to the SeqData object respecting the train/val split.
 
     Parameters
     ----------
     model : LightningModule
-        Model to predict with.
+        PyTorch LightningModule to predict with.
     sdata : xr.Dataset, optional
         SeqData object to predict with. If None, uses the sdata in settings.
     seq_var : str, optional
@@ -277,7 +339,30 @@ def train_val_predictions_sequence_module(
     num_workers : int, optional
         Number of workers to use. If None, uses settings.dl_num_workers.
     transforms : dict, optional 
-
+        Dictionary of functional transforms to apply to the input sequence. If None, no
+        transforms are applied.
+    prefetch_factor : int, optional
+        Number of samples to prefetch into a buffer to speed up dataloading. 
+        If None, uses settings.dl_prefetch_factor.
+    store_only : bool, optional
+        If set to True, does not save predictions to disk.
+    in_memory : bool, optional
+        If set to True, loads the sequence and target variables into memory before
+        creating a dataloader.
+    out_dir : os.PathLike, optional
+        If `store_only`=False, directory to write predictions to. See name, version, and file_label arguments for more details
+        on where the file will be written. If None, uses settings.output_dir.
+    name : str, optional
+        Name of the model appended file path {name}/{version}/. If None, uses model.model_name.
+    version : str, optional
+        Version of the model appended file path {name}/{version}/. If None, uses "".
+    prefix : str, optional
+        Prefix to add to predictions variable name stored in sdata. If None, uses "".
+    suffix : str, optional
+        Suffix to add to the predictions variable name stored in sdata. If None, uses "".
+    copy : bool, optional
+        If set to True, returns a copy of the input SeqData object with the predictions
+    
     Returns
     -------
     sdata : xr.Dataset
@@ -356,7 +441,6 @@ def train_val_predictions_sequence_module(
     # Add the predictions to the sdata
     pred_cols = ordered_preds.columns
     for i, target_var in enumerate(target_vars):
-        # print(f"Adding {prefix}{target_var}_predictions{suffix} to sdata")
         sdata[f"{prefix}{target_var}_predictions{suffix}"] = xr.DataArray(
             ordered_preds[pred_cols[i]].values, dims=["_sequence"]
         )

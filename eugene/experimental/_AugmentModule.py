@@ -1,4 +1,5 @@
 """
+https://github.com/p-koo/evoaug/blob/master/evoaug/evoaug.py
 Model (implemented in Pytorch Lightning) demonstrating how to use augmentations
 during training. Modified evoaug
 """

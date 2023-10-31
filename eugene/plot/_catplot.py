@@ -19,8 +19,8 @@ def countplot(
     Plots a countplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the counts of observations in a single
-    or multiple columns of seqs_annot within a SeqData. If a groupby is
-    provided then the counts are grouped by the groupby column.
+    or multiple vars within a SeqData. If a groupby is provided then the counts 
+    are grouped by the groupby var.
 
     Parameters
     ----------
@@ -64,8 +64,8 @@ def histplot(
     Plots a histogram of a vars in a SeqData using seaborn.
 
     This function can be used to show the distribution of a single or multiple
-    columns of seqs_annot within a SeqData. If a groupby is provided then the
-    distribution is grouped by the groupby column.
+    vars within a SeqData. If a groupby is provided then the
+    distribution is grouped by the groupby var.
 
     Parameters
     ----------
@@ -107,8 +107,8 @@ def boxplot(
     Plots a boxplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the distribution of a single or multiple
-    columns of seqs_annot within a SeqData. If a groupby is provided then the
-    distribution is grouped by the groupby column.
+    vars within a SeqData. If a groupby is provided then the distribution is grouped 
+    by the groupby var.
 
     Parameters
     ----------
@@ -163,8 +163,8 @@ def violinplot(
     Plots a violinplot of a vars in a SeqData using Seaborn.
 
     This function can be used to show the distribution of a single or multiple
-    columns of seqs_annot within a SeqData as a violin plot. If a groupby is provided
-    then the distribution is grouped by the groupby column.
+    vars within a SeqData as a violin plot. If a groupby is provided
+    then the distribution is grouped by the groupby var.
 
     Parameters
     ----------
@@ -219,11 +219,10 @@ def scatterplot(
     **kwargs
 ) -> Optional[plt.Axes]:
     """
-    Plots a scatterplot of two columns in seqs_annot using Seaborn.
+    Plots a scatterplot of two vars in a SeqData using Seaborn.
 
-    This function can be used to show the relationship between two columns of
-    seqs_annot within a SeqData. If seq_idx is provided then only the sequences
-    with the given indices are plotted.
+    This function can be used to show the relationship between two vars within a SeqData. 
+    If seq_idx is provided then only the sequences with the given indices are plotted.
 
     Parameters
     ----------

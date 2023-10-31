@@ -4,6 +4,10 @@ import torch.nn as nn
 
 
 class WeightDecay(nn.Module):
+    """https://github.com/szymonmaszke/torchlayers/tree/master
+
+    This will be made a dependency in the future.
+    """
     def __init__(self, module, weight_decay, name: str = None):
         if weight_decay <= 0.0:
             raise ValueError(

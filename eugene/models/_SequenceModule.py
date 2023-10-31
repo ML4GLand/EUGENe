@@ -22,8 +22,9 @@ from .base._schedulers import SCHEDULER_REGISTRY
 class SequenceModule(LightningModule):
     """Base LightningModule class for EUGENe that handles models that predict single tensor outputs.
 
-    SequenceModules expect to train an architecture that ingests a single tensor (usually one-hot encoded DNA sequences) as input and 
-    outputs a single tensor. Examples of models that can be trained with SequenceModule include:
+    SequenceModules expect to train an architecture that ingests a single tensor 
+    (usually one-hot encoded DNA sequences) as input and outputs a single tensor. 
+    Examples of models that can be trained with SequenceModule include:
         
         - DeepBind
         - DeepSEA
@@ -33,47 +34,56 @@ class SequenceModule(LightningModule):
 
     And many more!
 
-    The SequenceModule class handles the loss function, optimizer, scheduler, and metric for the model unless otherwise specified. We currently 
-    support custom loss functions, but only a set of pre-defined optimizers, schedulers, and metrics. We are working on adding support for custom
-    optimizers, schedulers, and metrics, but for now you can find the list of supported optimizers, schedulers, and metrics in the documentation.
+    The SequenceModule class handles the loss function, optimizer, scheduler, and metric for the model 
+    unless otherwise specified. We currently support custom loss functions, but only a set of pre-defined optimizers, 
+    schedulers, and metrics. We are working on adding support for custom optimizers, schedulers, and metrics, 
+    but for now you can find the list of supported optimizers, schedulers, and metrics in the documentation.
 
     Parameters
     ----------
     arch : torch.nn.Module
-        The architecture to train. e.g. DeepBind, DeepSEA, DanQ, Basset, DeepSTARR
+        The architecture to train. Can be instantiated using eugene.models.zoo.{architecture}
     task : Literal["regression", "binary_classification", "multiclass_classification", "multilabel_classification"]
         task of the model. SequenceModule currently supports "regression", "binary_classification", "multiclass_classification"
         and "multilabel_classification"
     loss_fxn : Union[str, Callable]
-        loss function to use. If not specified, it will be inferred from the task. e.g. if the task is "regression", the loss function
-        will be set to "mse". Custom loss functions can be passed in as a Callable.
+        loss function to use. If not specified, it will be inferred from the task. 
+        e.g. if the task is "regression", the loss function will be set to "mse". 
+        Custom loss functions can be passed in as a Callable.
     optimizer : Literal["adam", "sgd"]
         optimizer to use. We currently support "adam" and "sgd"
     optimizer_lr : float
-        starting learning rate for the optimizer
+        starting learning rate for the optimizer. By default, it is set to 1e-3
     optimizer_kwargs : dict
         additional arguments to pass to the optimizer
     scheduler : Optional[str]
         scheduler to use. We currently support "reduce_lr_on_plateau"
     scheduler_monitor : str
-        metric to monitor for the scheduler
+        metric to monitor for the scheduler. By default, it is set to "val_loss_epoch" or
+        the validation loss at the end of each epoch.
     scheduler_kwargs : dict
         additional arguments to pass to the scheduler
     metric : Optional[str]
-        metric (other than loss) to track during training. If not specified, it will be inferred from the task. e.g. if the task is "regression", the metric
-        will be set to "r2score". We currently support "r2score", "pearson", "spearman", "explainedvariance", "auroc", "accuracy", "f1score", "precision", and "recall"
+        metric (other than loss) to track during training. 
+        If not specified, it will be inferred from the task. e.g. if the task is "regression", the metric
+        will be set to "r2score". 
+        We currently support "r2score", "pearson", "spearman", "explainedvariance", "auroc", 
+        "accuracy", "f1score", "precision", and "recall"
     metric_kwargs : dict
-        additional arguments to pass to the metric. Note that for many cases, specific metrics and task combinations require specific keyword arguments. For example,
-        "multilable_classifcation" should use "auroc" as the metric, and the "task" keyword argument should be set to "multilabel". See the documentation for more details.
+        additional arguments to pass to the metric. Note that for many cases, specific metrics and task combinations 
+        require specific keyword arguments. For example, "multilable_classifcation" should use "auroc" as the metric, 
+        and the "task" keyword argument should be set to "multilabel". See the documentation of torchmetrics 
+        for more details.
     seed : Optional[int]
         seed to use for reproducibility. If not specified, no seed will be set.
     save_hyperparams : bool
-        whether to save the hyperparameters of the model. If True, the hyperparameters will be saved in the model checkpoint directory
+        whether to save the hyperparameters of the model. If True, the hyperparameters will be saved in the 
+        model checkpoint directory
     arch_name : Optional[str]
         name of the architecture. If not specified, it will be inferred from the architecture class name
     model_name : Optional[str]
-        name of the specific instantiation of the model. If not specified, it will be set to "model". This is useful for keeping track of multiple models
-        that might have the same architecture
+        name of the specific instantiation of the model. If not specified, it will be set to "model". 
+        This is useful for keeping track of multiple models that might have the same architecture
     """
 
     def __init__(
@@ -151,7 +161,7 @@ class SequenceModule(LightningModule):
         """
         return self.arch(x)
 
-    def predict(self, x, batch_size=128, verbose=True):
+    def predict(self, x, batch_size=128, verbose=True) -> torch.Tensor:
         """Predict the output of the model in batches.
 
         Parameters:

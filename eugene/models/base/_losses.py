@@ -31,6 +31,10 @@ def logcosh_loss(y_hat, y):
 
 def MNLLLoss(logps, true_counts):
     """A loss function based on the multinomial negative log-likelihood.
+    
+    Copied from https://github.com/jmschrei/bpnet-lite/blob/a486c45a30df9f1277da42cdfaf25de1692e8dac/bpnetlite/losses.py
+    which was adapted from Alex Tseng.
+    
     This loss function takes in a tensor of normalized log probabilities such
     that the sum of each row is equal to 1 (e.g. from a log softmax) and
     an equal sized tensor of true counts and returns the probability of
@@ -38,13 +42,14 @@ def MNLLLoss(logps, true_counts):
     multinomial distribution. Can accept tensors with 2 or more dimensions
     and averages over all except for the last axis, which is the number
     of categories.
-    Adapted from Alex Tseng.
+
     Parameters
     ----------
     logps: torch.tensor, shape=(n, ..., L)
             A tensor with `n` examples and `L` possible categories.
     true_counts: torch.tensor, shape=(n, ..., L)
             A tensor with `n` examples and `L` possible categories.
+    
     Returns
     -------
     loss: float
@@ -61,12 +66,17 @@ def MNLLLoss(logps, true_counts):
 
 def log1pMSELoss(log_predicted_counts, true_counts):
     """A MSE loss on the log(x+1) of the inputs.
+    
+    Copied from https://github.com/jmschrei/bpnet-lite/blob/a486c45a30df9f1277da42cdfaf25de1692e8dac/bpnetlite/losses.py
+    
     This loss will accept tensors of predicted counts and a vector of true
     counts and return the MSE on the log of the labels. The squared error
     is calculated for each position in the tensor and then averaged, regardless
     of the shape.
+    
     Note: The predicted counts are in log space but the true counts are in the
     original count space.
+    
     Parameters
     ----------
     log_predicted_counts: torch.tensor, shape=(n, ...)

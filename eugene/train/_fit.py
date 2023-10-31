@@ -42,7 +42,7 @@ def fit(
 ) -> Optional[Trainer]:
     """Fit a model using PyTorch Lightning.
 
-    This is a generic fit function that can be used to train any PyTorch LightninngModule. All that's
+    This is a generic fit function that can be used to train any PyTorch LightningModule. All that's
     required is a LightningModule, a training dataloader, and optionally a validation dataloader.
 
     Parameters
@@ -154,9 +154,9 @@ def fit_sequence_module(
     return_trainer: bool = False,
     **kwargs,
 ) -> Optional[Trainer]:
-    """
-    Fit a SequenceModule using PyTorch Lightning. This function is a wrapper around the fit function, but builds
-    the dataloaders from a SeqData object.
+    """Fit a SequenceModule using PyTorch Lightning. 
+    
+    This function is a wrapper around the fit function, but builds the dataloaders from a SeqData object.
 
     Parameters
     ----------
@@ -292,10 +292,3 @@ def fit_sequence_module(
 
     if return_trainer:
         return trainer
-
-
-def fit_profile_module():
-    """
-    Fit a profile module.
-    """
-    pass

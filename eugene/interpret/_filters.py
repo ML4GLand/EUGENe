@@ -19,71 +19,93 @@ from .._settings import settings
 def generate_pfms_sdata(
     model: nn.Module,
     sdata: xr.Dataset,
-    seq_var: str,
     layer_name: str,
-    kernel_size: Optional[int] = None,
+    kernel_size: int,
+    padding: int = 0,
+    num_filters: Optional[int] = None,
+    seq_var: Optional[str] = "ohe_seq",
     activations: Optional[np.ndarray] = None,
     seqs: Optional[np.ndarray] = None,
-    num_seqlets: int = 100,
-    padding: int = 0,
     activation_threshold: Optional[float] = None,
-    num_filters: Optional[int] = None,
+    num_seqlets: int = 100,
     batch_size: Optional[int] = None,
-    device: Optional[str] = None,
     num_workers: Optional[int] = None,
     prefetch_factor: Optional[int] = None,
     transforms: Optional[Dict[str, Any]] = None,
+    device: Optional[str] = None,
     prefix: str = "",
     suffix: str = "",
     copy: bool = False,
 ) -> Optional[xr.Dataset]:
-    """Generate position frequency matrices (PFMs) for a given layer in a PyTorch model.
+    """Generate position frequency matrices (PFMs) from SeqData using a a given convolutional layer of a PyTorch nn.Module. 
+
+    This function wraps the `get_activators_max_seqlets` and `get_pfms` functions from the `seqexplainer` package
+    to generate PFMs for a given layer in a PyTorch nn.Module. The PFMs are stored in the `sdata` object as a new variable.
+
+    You can also bypass the layer activation computation by providing the activations and sequences directly. This can be useful
+    if the outputs you are interested in don't come directly from a named layer in the model. A good example of this is if you use
+    functional ReLU in your model (which I don't recommend). In this case, you can use the `get_layer_outputs` function from the
+    `seqexplainer` package to get the activations for a given layer then pass them throug functional ReLU yourself. You can then
+    pass the activations and sequences to this function to generate the PFMs.
+
+    >>> layer = models.get_layer(model, layer_name)
+    >>> activations = F.relu(layer(seqs))
+
+    Be careful with your padding here! The padding strategy used for the layer you are generating PFMs for will affect the
+    positions of the activations relative to the input sequences. We need to crop from these input seqlets in positions
+    that correspond to high acivations, and if the indeces are not aligned, you will get the wrong sequences. This is corrected for in 
+    the `get_activators_*` functions in the `seqexplainer` package if you pass in the correct padding value here.
+
 
     Parameters
     ----------
     model : torch.nn.Module
         The model to generate PFMs for.
     sdata : xr.Dataset
-        The dataset to use for generating PFMs.
-    seq_var : str
-        The name of the sequence variable in the dataset.
+        The SeqData to use for generating PFMs.
     layer_name : str
-        The name of the layer to generate PFMs for.
+        The name of the layer to generate PFMs for, required regardless of whether you provide the activations and sequences directly 
+        for naming the output variable in the SeqData object.
     kernel_size : int, optional
-        The size of the kernel to use for generating PFMs. If not specified, the kernel size will be inferred from the layer.
+        The size of the kernels in the layer. This should be the same kernel size of the layer you are generating PFMs for.
+    padding : int, optional
+        The amount of padding to use when generating seqlets to be applied to the input sequences. 
+        This should be the same padding value used in the layer you are generating PFMs for.
+    num_filters : int, optional
+        The number of filters to use for generating PFMs. Can be used if you only want to calculate PFMs for the first `num_filters` filters.
+    seq_var : str
+        The name of the sequence variable in the dataset for generating PFMs. By default, this is "ohe_seq".
     activations : torch.Tensor, optional
         The activations to use for generating PFMs. If not specified, the activations will be computed using the dataset and layer.
     seqs : List[str], optional
-        The sequences to use for generating PFMs. If not specified, the sequences will be inferred from the dataset.
-    num_seqlets : int, optional
-        The number of sequencelets to use for generating PFMs.
-    padding : int, optional
-        The amount of padding to use when generating sequencelets.
+        The sequences to use for generating PFMs. If specified with activations, bypasses the activation computation.
     activation_threshold : float, optional
-        The threshold to use for selecting sequencelets based on their activation values.
-    num_filters : int, optional
-        The number of filters to use for generating PFMs. If not specified, all filters will be used.
+        Percentage of the maximum activation to use as a threshold for generating PFMs. All seqlets with activations above this threshold
+        will be used for generating PFMs. If specified, num_seqlets will be ignored.
+    num_seqlets : int, optional
+        The number of seqlets to use for generating PFMs. Only used if `activation_threshold` is not specified.
     batch_size : int, optional
-        The batch size to use when generating PFMs.
-    device : str, optional
-        The device to use for generating PFMs.
+        The batch size for the dataloader created from the the SeqData. If not specified, settings.batch_size will be used.
     num_workers : int, optional
-        The number of workers to use for generating PFMs.
+        The number of workers to use for the dataloader created from the the SeqData. If not specified, settings.dl_num_workers will be used.
     prefetch_factor : int, optional
-        The prefetch factor to use when generating PFMs.
+        The prefetch factor to use for the dataloader created from the the SeqData. If not specified, settings.dl_prefetch_factor will be used.
     transforms : Dict[str, Any], optional
-        The transforms to apply to the dataset.
+        The transforms to use for the dataloader created from the the SeqData. If not specified, no transforms will be used.
+    device : str, optional
+        The device to use for generating PFMs (if activations are not provided). 
+        If not specified, settings.gpus will be used to determine whether to use "cuda" or "cpu".
     prefix : str, optional
-        The prefix to use for the output file.
+        The prefix to use in the SeqData variable name for the PFMs.
     suffix : str, optional
-        The suffix to use for the output file.
+        The suffix to use in the SeqData variable name for the PFMs.
     copy : bool, optional
         Whether to copy the dataset before generating PFMs.
     
     Returns
     -------
-    pfms : np.ndarray
-        The position frequency matrices.
+    Optional[xr.Dataset]
+        The `sdata` object with the PFMs added if `copy` is False.
     """
     # Copy the data if requested
     sdata = sdata.copy() if copy else sdata
@@ -178,37 +200,39 @@ def generate_pfms_sdata(
 def filters_to_meme_sdata(
     sdata: xr.Dataset,
     filters_var: str,
-    filter_inds: Optional[List[int]] = None,
     axis_order: Tuple[str, str, str] = ("_num_kernels", "_ohe", "_kernel_size"),
     output_dir: Optional[str] = None,
     filename: str = "filters.meme",
     alphabet: str = "ACGT",
     bg: Dict[str, float] = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25},
 ) -> None:
-    """Convert position frequency matrices (PFMs) to a MEME motif file.
+    """Save position frequency matrices (PFMs) to a MEME motif file.
+
+    This function wraps the `pfms_to_ppms` and `from_kernel` functions from the `motifdata` package
+    by applying them to a SeqData object. The PFMs are stored in the `sdata` object as a new variable
+    after running the `generate_pfms_sdata` function.
 
     Parameters
     ----------
     sdata : xr.Dataset
         The dataset containing the PFMs.
     filters_var : str
-        The name of the variable containing the PFMs.
-    filter_inds : List[int], optional
-        The indices of the filters to convert to a MEME file. If not specified, all filters will be converted.
+        The name of the variable containing the PFMs. This variable should be in the dataset after running the `generate_pfms_sdata` function.
     axis_order : Tuple[str, str, str], optional
-        The order of the axes in the PFMs. By default, the axes are assumed to be in the order (num_kernels, ohe, kernel_size).
+        The order of the axes in the PFMs. By default, the axes are assumed to be in the order (num_kernels, ohe, kernel_size). This
+        will likely need to be specified if you generated these using the `generate_pfms_sdata` function.
     output_dir : str, optional
         The directory to write the MEME file to. By default, the MEME file will be written to the output directory specified in the settings.
     filename : str, optional
-        The name of the MEME file to write.
+        The name of the MEME file to write. By default, the MEME file will be named "filters.meme".
     alphabet : str, optional
-        The alphabet to use for the MEME file.
+        The alphabet to use for the MEME file. By default, the alphabet is "ACGT".
     bg : Dict[str, float], optional
-        The background frequencies to use for the MEME file.
+        The background frequencies to use for the MEME file. By default, the background frequencies are uniform.
     
     Returns
     -------
-    None
+    None. Writes a MEME file to the specified filename in the specified output directory.
     """
     # Make sure the output directory exists
     output_dir = output_dir if output_dir is not None else settings.output_dir
@@ -221,11 +245,7 @@ def filters_to_meme_sdata(
     except KeyError:
         print("No filters found in sdata. Run generate_pfms_sdata first.")
 
-    # Subset down to the filters you want
-    if filter_inds is None:
-        filter_inds = range(pfms.shape[0])
-
-    #
+    # Make sure the alphabet length matches the second dimension of the pfms
     alphabet_len = len(alphabet)
     if alphabet_len != pfms.shape[1]:
         raise ValueError(

@@ -257,6 +257,10 @@ class TutorialCNN(nn.Module):
     a single convolutional layer of width 21 and with 30 output channels, and a single dense layer with
     30 hidden units. This model is featured in testing and tutorial notebooks.
 
+    Note this model uses the functional ReLU and max pooling layers from PyTorch. These can have
+    unexpected behaviors when used for interpretation so use with caution. Future releases will use a 
+    new tutorial model.
+
     Parameters
     ----------
     input_len : int

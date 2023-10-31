@@ -24,7 +24,7 @@ def _plot_performance_scatter(
     """Plot a scatter plot of the performance of the model on a subset of the sequences.
 
     Classic predicted vs observed scatterplot that will be annotated with r2, mse and spearman correlation.
-    If a groupby key is passed, the scatterplot will be colored according to group.
+    If a groupby var is passed, the scatterplot will be colored according to group.
 
     Parameters
     ----------
@@ -41,7 +41,6 @@ def _plot_performance_scatter(
     Returns
     -------
     
-
     Note
     ----
     This function uses Matplotlib as opposed to Seaborn.
@@ -139,7 +138,7 @@ def performance_scatter(
     """Plot a scatter plot of the performance of the model on a subset of the sequences.
 
     Classic predicted vs observed scatterplot that will be annotated with r2, mse and spearman correlation.
-    If a groupby key is passed, the scatterplot will be colored according to group.
+    If a groupby var is passed, the scatterplot will be colored according to group.
 
     Parameters
     ----------

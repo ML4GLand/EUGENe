@@ -19,10 +19,10 @@ def positional_gia_plot(
 ):
     """Plot a lineplot for each position of the sequence after implanting a feature.
 
-    Assumes that the value corresponding to each seqsm_var in the sdata.uns dictionary
-    has the same shape, namely (L, ) where L are the positions where a feature was implanted
-    and scores were calculated using a model. Plots the scores as a line plot with a 95% CI
-    corresponding to the number of sequences used to make the plot.
+    Assumes that the value corresponding to vars is a numpy array of shape (L, ) where L are the
+    the positions where a feature was implanted and scores were calculated using a model. 
+    Plots the scores as a line plot with a 95% CI corresponding to the number of sequences used to 
+    make the plot.
 
     Parameters
     ----------
@@ -57,7 +57,7 @@ def positional_gia_plot(
 
 
 def distance_cooperativity_gia_plot(
-    sdata: np.ndarray,
+    sdata,
     results_var: str = "cooperativity",
     distance_var: str = "distance",
     col_names: Optional[List[str]] = None,

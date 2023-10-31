@@ -21,20 +21,25 @@ def feature_implant_seq_sdata(
     feature_name: str = "feature",
     encoding: str = "onehot",
     store: bool = True,
-    device: str = "cpu",
+    device: Optional[str] = None,
 ):
-    """Implant a feature into a sequence in an xarray dataset and return the model predictions.
+    """Implant a feature into a single sequence within in a SeqData object and return the model predictions.
+
+    This function wraps the `tile_pattern_seq` function from `seqexplainer` to implant a feature
+    at every position in a sequence. The model predictions are then computed for each implanted sequence
+    and returned. The predictions can optionally be stored in the SeqData object, but are always returned.
 
     Parameters
     ----------
     model : torch.nn.Module
-        The model to use for predictions.
+        PyTorch nn.Module to compute predictions with.
     sdata : xr.Dataset
         The dataset containing the sequence data.
     seq_id : str
-        The ID of the sequence to implant the feature into.
+        The ID of the sequence to implant the feature into. This must be an ID that is present in the
+        SeqData object under the `id_var` key.
     feature : np.ndarray
-        The feature to implant.
+        The feature to implant. Either a one-hot encoded array or a string depending on the `encoding` parameter.
     seq_var : str, optional
         The key for the sequence data in the dataset, by default "ohe_seq".
     id_var : str, optional
@@ -46,7 +51,7 @@ def feature_implant_seq_sdata(
     store : bool, optional
         Whether to store the predictions in the dataset, by default True.
     device : str, optional
-        The device to use for predictions, by default "cpu".
+        The device to use for predictions, inferred from `settings.gpus` if None, by default None.
 
     Returns
     -------
@@ -91,7 +96,11 @@ def positional_gia_sdata(
     device: str = "cpu",
     encoding: str = "onehot",
 ):
-    """Implant a feature into all sequences in an xarray dataset and return the model predictions.
+    """Implant a feature into all sequences in a SeqData object and return the model predictions.
+
+    This function wraps the `feature_implant_seq_sdata` function to implant a feature into all sequences
+    in a SeqData object. The model predictions are then computed for each implanted sequence and returned.
+    The predictions can optionally be stored in the SeqData object, but are always returned.
 
     Parameters
     ----------
@@ -168,6 +177,8 @@ def motif_distance_dependence_gia(
     the center of a set of background sequences, and a second motif is tiled across the background
     at different distances from the first motif. A cooperativity score is calculated for the two motifs
     to quantify the dependence of the model predictions on the distance between the motifs.
+
+    The results are stored directly in the SeqData object.
     
     Parameters
     ----------

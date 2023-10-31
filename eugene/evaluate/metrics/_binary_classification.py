@@ -4,8 +4,7 @@ from sklearn.metrics import roc_auc_score
 
 
 def median_calc(y_true, y_score):
-    """
-    Calculate the median of the scores in y_score for the positive class labels (1) in y_true.
+    """Calculate the median of the scores in y_score for the positive class labels (1) in y_true.
 
     Parameters
     ----------
@@ -31,8 +30,7 @@ def median_calc(y_true, y_score):
 
 
 def auc_calc(y_true, y_score):
-    """
-    Calculate the area under the curve for a binary y_true against scores in y_score.
+    """Calculate the area under the curve for a binary y_true against scores in y_score.
 
     Parameters
     ----------
@@ -52,9 +50,9 @@ def auc_calc(y_true, y_score):
 
 
 def escore(y_true, y_score):
-    """
-    Calculate the E-score for a binary y_true against scores in y_score.
-    The E-score is
+    """Calculate the E-score for a binary y_true against scores in y_score.
+
+    The E-scores are defined in the Supplementary Information of https://www.nature.com/articles/nature12311
 
     Parameters
     ----------

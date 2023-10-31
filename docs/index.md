@@ -27,7 +27,7 @@ EUGENe is a dynamic project and we're constantly improving and adding new featur
 If you use EUGENe for your research, please cite our preprint: [Klie *et al.* bioRxiv 2022](https://www.biorxiv.org/content/10.1101/2022.10.24.513593v2)
 
 # Contributing
-EUGENe is an open-source project and we welcome contributions from the community. If you are interested in contributing, please see the {doc}`contributor's guide <contributing>`.
+EUGENe is an open-source project and we welcome contributions from the community. We are currently developing the v1.0.0 release of the package, which will include a refined and stable API. If you are interested in contributing, please see the {doc}`contributor's guide <contributing>`.
 
 ```{toctree}
 :hidden: true

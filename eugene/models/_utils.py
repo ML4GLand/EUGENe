@@ -1,22 +1,55 @@
 import importlib
-from typing import Union
+from typing import Union, Optional, List, Dict, Any
 import os
 from os import PathLike
 import yaml
 from .._settings import settings
+import torch.nn as nn
+from pytorch_lightning import LightningModule
 
+def list_available_layers(
+    model: nn.Module,
+) -> list:
+    """List all layers in a model
+    
+    Parameters
+    ----------
+    model : nn.Module
+        The PyTorch model to list the layers of (nn.Module)
 
-def list_available_layers(model):
-    """List all layers in a model"""
+    Returns
+    -------
+    list
+        A list of all layers in the model
+    """
     return [name for name, _ in model.named_modules() if len(name) > 0]
 
 
-def get_layer(model, layer_name):
-    """Get a layer from a model by name"""
+def get_layer(
+    model: nn.Module,
+    layer_name,
+) -> Dict[str, nn.Module]:
+    """Get a layer from a model by name
+    
+    Parameters
+    ----------
+    model : nn.Module
+        The PyTorch model to get the layer from
+    layer_name : str
+        The name of the layer to get
+    
+    Returns
+    -------
+    nn.Module
+        The layer from the model
+    """
     return dict([*model.named_modules()])[layer_name]
 
 
-def load_config(config_path: Union[str, PathLike], **kwargs):
+def load_config(
+    config_path: Union[str, PathLike], 
+    **kwargs,
+) -> Union[LightningModule, nn.Module]:
     """Instantiate a module or architecture from a config file
 
     This function is used to instantiate a module or architecture from a
@@ -97,8 +130,8 @@ def load_config(config_path: Union[str, PathLike], **kwargs):
 
     Returns
     -------
-    Union[SequenceModule, ProfileModule, nn.Module]
-
+    LightningModule or nn.Module
+        A LightningModule or nn.Module instance
     """
     if "/" not in config_path:
         config_path = os.path.join(settings.config_dir, config_path)
