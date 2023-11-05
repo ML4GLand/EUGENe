@@ -189,7 +189,10 @@ class Conv1DTower(nn.Module):
             
             # Define output parameters
             self.out_channels = self.conv_channels[-1]
-            self.output_len = get_conv1dblock_output_len(self.layers, input_len=self.input_len)
+            self.output_size = get_output_size(
+                self.layers, (self.input_channels, self.input_len)
+            )
+            self.output_len = self.output_size[1]
             self.flatten_dim = self.output_len * self.out_channels
 
     def forward(self, x):
