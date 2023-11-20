@@ -89,6 +89,8 @@ class SequenceModule(LightningModule):
     def __init__(
         self,
         arch: torch.nn.Module,
+        input_len: Optional[int] = None,
+        output_dim: Optional[int] = None,
         task: Literal["regression", "binary_classification", "multiclass_classification", "multilabel_classification"] = "regression",
         loss_fxn: Union[str, Callable] = "mse",
         optimizer: Literal["adam", "sgd"] = "adam",
@@ -108,8 +110,8 @@ class SequenceModule(LightningModule):
 
         # Set the base attributes of a Sequence model
         self.arch = arch
-        self.input_len = arch.input_len
-        self.output_dim = arch.output_dim
+        self.input_len = input_len if input_len is not None else arch.input_len
+        self.output_dim = output_dim if output_dim is not None else arch.output_dim
 
         # Set the task
         self.task = task

@@ -46,7 +46,7 @@ class EugeneConfig:
         self.rc_context = rc_context
         self.dpi = dpi
         self.batch_size = batch_size
-        self.gpus = 1 if torch.cuda.is_available() else 0 if gpus is None else gpus
+        self.gpus = 1 if torch.cuda.is_available() else gpus
         self.dl_num_workers = dl_num_workers
         self.dl_pin_memory_gpu_training = dl_pin_memory_gpu_training
         self.dataset_dir = dataset_dir
