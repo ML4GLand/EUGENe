@@ -1067,7 +1067,7 @@ class ResidualBind( SequenceModel):
             biases=dense_biases
         )
 
-    def forward(self, x, x_rev=None):
+    def forward(self, x, x_rev_comp=None):
         x = self.conv1d_tower(x)
         x = self.residual_block(x)
         x = self.average_pool(x)
@@ -1510,3 +1510,63 @@ class DeepSTARR( SequenceModel):
         dense_kwargs.setdefault("batchnorm", True)
         dense_kwargs.setdefault("batchnorm_first", True)
         return conv_kwargs, dense_kwargs 
+
+
+class Satori(SequenceModel):
+        
+    def __init__(
+        self, 
+        input_len, 
+        output_dim,
+        strand="ss",
+        task: str = "regression",
+        loss_fxn: str = "mse",
+        conv_kwargs: dict = {},
+        mha_kwargs: dict = {},
+        dense_kwargs: dict = {},
+        **kwargs
+    ):
+        super().__init__(
+            input_len, 
+            output_dim, 
+            strand=strand,
+            task=task,
+            loss_fxn=loss_fxn,
+            **kwargs
+        )
+        self.input_len = input_len
+        self.output_dim = output_dim
+        self.conv_kwargs, self.mha_kwargs, self.dense_kwargs = self.kwarg_handler(conv_kwargs, mha_kwargs, dense_kwargs)
+        self.conv_block = blocks.Conv1DBlock(**self.conv_kwargs)
+        self.mha_layer = layers.MultiHeadAttention(input_dim=self.conv_block.output_size[-1], **self.mha_kwargs)
+        self.flatten = nn.Flatten()
+        self.dense_block = blocks.DenseBlock(input_dim=self.conv_block.output_channels*self.conv_block.output_size[-1], **self.dense_kwargs)
+        
+    def forward(self, x, x_rev_comp=None):
+        x = self.conv_block(x)
+        x = self.mha_layer(x)
+        x = self.flatten(x)
+        x = self.dense_block(x)
+        return x
+    
+    def kwarg_handler(self, conv_kwargs, mha_kwargs, dense_kwargs):
+        """Sets default kwargs for conv and fc modules if not specified"""
+        conv_kwargs.setdefault("input_len", self.input_len)
+        conv_kwargs.setdefault("input_channels", 4)
+        conv_kwargs.setdefault("output_channels", 320)
+        conv_kwargs.setdefault("conv_kernel", 26)
+        conv_kwargs.setdefault("conv_padding", "same")
+        conv_kwargs.setdefault("norm_type", "batchnorm")
+        conv_kwargs.setdefault("activation", "relu")
+        conv_kwargs.setdefault("conv_bias", False)
+        conv_kwargs.setdefault("pool_type", "max")
+        conv_kwargs.setdefault("pool_kernel", 3)
+        conv_kwargs.setdefault("pool_padding", 1)
+        conv_kwargs.setdefault("dropout_rate", 0.2)
+        conv_kwargs.setdefault("order", "conv-norm-act-pool-dropout")
+        mha_kwargs.setdefault("head_dim", 64)
+        mha_kwargs.setdefault("num_heads", 8)
+        mha_kwargs.setdefault("dropout_rate", 0.1)
+        dense_kwargs.setdefault("hidden_dims", [])
+        dense_kwargs.setdefault("output_dim", self.output_dim)
+        return conv_kwargs, mha_kwargs, dense_kwargs

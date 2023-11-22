@@ -8,8 +8,9 @@ from pytorch_lightning import seed_everything
 from ._losses import LOSS_REGISTRY
 from ._optimizers import OPTIMIZER_REGISTRY
 from ._schedulers import SCHEDULER_REGISTRY
-from ._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS
+from ._metrics import METRIC_REGISTRY, DEFAULT_TASK_METRICS, DEFAULT_METRIC_KWARGS, calculate_metric
 from ...preprocess import ascii_decode_seq
+from tqdm.auto import tqdm
 
 
 class SequenceModel(LightningModule, ABC):
@@ -48,7 +49,7 @@ class SequenceModel(LightningModule, ABC):
         optimizer_lr: float = 1e-3,
         optimizer_kwargs: dict = {},
         scheduler: str = None,
-        scheduler_monitor: str = "val_loss",
+        scheduler_monitor: str = "val_loss_epoch",
         scheduler_kwargs: dict = {},
         metric: str = None,
         metric_kwargs: dict = None,
@@ -114,34 +115,45 @@ class SequenceModel(LightningModule, ABC):
             reverse complement of the input sequence
         """
 
-    def predict(self, x, x_rev_comp=None, batch_size=32):
-        """
-        Predict the output of the model in batches
+    def predict(self, x, batch_size=128, verbose=True):
+        """Predict the output of the model in batches.
+
+        Parameters:
+        ----------
+        x : np.ndarray or torch.Tensor
+            input sequence, can be a numpy array or a torch tensor
+        batch_size : int
+            batch size
+        verbose : bool
+            whether to show a progress bar
         """
         with torch.no_grad():
             device = self.device
             self.eval()
             if isinstance(x, np.ndarray):
                 x = torch.from_numpy(x.astype(np.float32))
-            if x_rev_comp is not None and isinstance(x_rev_comp, np.ndarray):
-                x_rev_comp = torch.from_numpy(x_rev_comp.astype(np.float32))
             outs = []
-            for i in range(0, len(x), batch_size):
-                batch = x[i:i+batch_size].to(device)
-                batch_rev_comp = x_rev_comp[i:i+batch_size].to(device) if x_rev_comp is not None else None
-                outs.append(self(batch, x_rev_comp=batch_rev_comp))
+            for _, i in tqdm(
+                enumerate(range(0, len(x), batch_size)),
+                desc="Predicting on batches",
+                total=len(x) // batch_size,
+                disable=not verbose,
+            ):
+                batch = x[i : i + batch_size].to(device)
+                out = self(batch).detach().cpu()
+                outs.append(out)
             return torch.cat(outs)
-    
+
     def _common_step(self, batch, batch_idx, stage: str):
         """Common step for training, validation and test
 
         Parameters:
         ----------
-        batch (tuple):
+        batch: tuple
             batch of data
-        batch_idx (int):
+        batch_idx: int
             index of the batch
-        stage (str):
+        stage: str
             stage of the training
 
         Returns:
@@ -152,52 +164,60 @@ class SequenceModel(LightningModule, ABC):
         # Get and log loss
         ID, x, x_rev_comp, y = batch
         outs = self(x, x_rev_comp).squeeze(dim=1)
-        loss = self.loss_fxn(outs, y) # train
-        #loss = self.loss_fxn(outs, y.squeeze(dim=1)) # predict
+        loss = self.loss_fxn(outs, y)  # train
         return {
             "loss": loss, 
             "ID": ID.detach(), 
             "outs": outs.detach(), 
             "y": y.detach()
         }
-    
+
     def training_step(self, batch, batch_idx):
         """Training step"""
         step_dict = self._common_step(batch, batch_idx, "train")
-        self.log("train_loss", step_dict["loss"])
-        self.train_metric(step_dict["outs"], step_dict["y"].long())
-        self.log(f"train_{self.metric_name}", self.train_metric, on_step=True, on_epoch=True)
+        self.log(
+            "train_loss", step_dict["loss"], on_step=True, on_epoch=False, prog_bar=True
+        )
+        self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
+        calculate_metric(
+            self.train_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
+        )
+        self.log(
+            f"train_{self.metric_name}_epoch",
+            self.train_metric,
+            on_step=False,
+            on_epoch=True,
+        )
         return step_dict
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
         step_dict = self._common_step(batch, batch_idx, "val")
-        self.log("val_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        self.val_metric(step_dict["outs"], step_dict["y"].long())
-        self.log(f"val_{self.metric_name}", self.val_metric, on_step=False, on_epoch=True)
+        self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
+        calculate_metric(
+            self.val_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
+        )
+        self.log(
+            f"val_{self.metric_name}_epoch",
+            self.val_metric,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+        )
 
     def test_step(self, batch, batch_idx):
         """Test step"""
         step_dict = self._common_step(batch, batch_idx, "test")
         self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        self.test_metric(step_dict["outs"], step_dict["y"].long())
-        self.log(f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True)
+        calculate_metric(
+            self.test_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
+        )
+        self.log(
+            f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True
+        )
 
-    def predict_step(self, batch, batch_idx):
-        """Predict step
-
-        Parameters:
-        ----------
-        batch (tuple):
-            batch of data
-        batch_idx (int):
-            index of the batch
-
-        Returns:
-        ----------
-        np.ndarray:
-            predictions with the format ID, prediction, true value
-        """
+    def predict_step(self, batch, batch_idx, dataloader_idx=None):
+        """Predict step"""
         step_dict = self._common_step(batch, batch_idx, "predict")
         ID = np.array([ascii_decode_seq(item) for item in step_dict["ID"].squeeze(dim=1).cpu().numpy()])
         y = step_dict["y"].cpu().numpy()
@@ -206,17 +226,31 @@ class SequenceModel(LightningModule, ABC):
 
     def configure_metrics(self, metric, metric_kwargs):
         """Configure metrics
+        
         Keeping this a function allows for the metric to be reconfigured
-        in inherited classes
-        TODO: add support for multiple metrics
+        in inherited classes TODO: add support for multiple metrics
+        
         Returns:
         ----------
         torchmetrics.Metric:
             metric
         """
         metric_name = DEFAULT_TASK_METRICS[self.task] if metric is None else metric
-        metric_kwargs = metric_kwargs if metric_kwargs is not None else DEFAULT_METRIC_KWARGS[self.task]
-        metric = METRIC_REGISTRY[metric_name](num_classes=self.output_dim, **metric_kwargs)
+        metric_kwargs = (
+            metric_kwargs
+            if metric_kwargs is not None
+            else DEFAULT_METRIC_KWARGS[self.task]
+        )
+        if metric_name in ["accuracy", "auroc", "f1score", "precision", "recall"]:
+                metric = METRIC_REGISTRY[metric_name](
+                num_classes=self.output_dim, **metric_kwargs
+            )
+        elif metric_name in ["r2score", "pearson", "spearman", "explainedvariance"]:
+            metric = METRIC_REGISTRY[metric_name](
+                num_outputs=self.output_dim, **metric_kwargs
+            )
+        else:
+            raise ValueError(f"Metric {metric_name} not supported.")
         return metric, metric_kwargs, metric_name
 
     def configure_optimizers(self):

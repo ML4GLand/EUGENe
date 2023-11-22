@@ -88,7 +88,7 @@ def hyperopt_with_tune(
         raise ValueError("No data provided to train on.")
     logger = TensorBoardLogger(log_dir, name=name, version=version)
     callbacks = []
-    metrics = {"loss": "val_loss"}
+    metrics = {"loss": "val_loss_epoch"}
     callbacks.append(TuneReportCallback(metrics, on="validation_end"))
     trainer = Trainer(
         max_epochs=epochs,
@@ -183,7 +183,7 @@ def hyperopt(
         num_samples=num_samples,
         local_dir=settings.logging_dir,
         keep_checkpoints_num=1,
-        checkpoint_score_attr="min-val_loss",
+        checkpoint_score_attr="min-val_loss_epoch",
         resources_per_trial={
             "cpu": cpus,
             "gpu": gpus
