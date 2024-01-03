@@ -220,42 +220,64 @@ class SequenceModule(LightningModule):
             "train_loss", step_dict["loss"], on_step=True, on_epoch=False, prog_bar=True
         )
         self.log("train_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
-        calculate_metric(
-            self.train_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
+        value = calculate_metric(
+                self.train_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
-        self.log(
-            f"train_{self.metric_name}_epoch",
-            self.train_metric,
-            on_step=False,
-            on_epoch=True,
-        )
+        if value == None:
+            self.log(
+                f"train_{self.metric_name}_epoch",
+                self.train_metric,
+                on_step=False,
+                on_epoch=True,
+            )
+        else:
+            self.log(
+                f"train_{self.metric_name}_epoch",
+                value,
+                on_step=False,
+                on_epoch=True,
+            )
         return step_dict
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
         step_dict = self._common_step(batch, batch_idx, "val")
         self.log("val_loss_epoch", step_dict["loss"], on_step=False, on_epoch=True)
-        calculate_metric(
+        value = calculate_metric(
             self.val_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
-        self.log(
-            f"val_{self.metric_name}_epoch",
-            self.val_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
+        if value == None:
+            self.log(
+                f"val_{self.metric_name}_epoch",
+                self.val_metric,
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+            )
+        else:
+            self.log(
+                f"val_{self.metric_name}_epoch",
+                value,
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+            )
 
     def test_step(self, batch, batch_idx):
         """Test step"""
         step_dict = self._common_step(batch, batch_idx, "test")
         self.log("test_loss", step_dict["loss"], on_step=False, on_epoch=True)
-        calculate_metric(
+        value = calculate_metric(
             self.test_metric, self.metric_name, self.metric_kwargs, step_dict["outs"], step_dict["y"]
         )
-        self.log(
-            f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True
-        )
+        if value == None:
+            self.log(
+                f"test_{self.metric_name}", self.test_metric, on_step=False, on_epoch=True
+            )
+        else:
+            self.log(
+                f"test_{self.metric_name}", value, on_step=False, on_epoch=True
+            )
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         """Predict step"""

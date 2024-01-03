@@ -31,11 +31,13 @@ def fit(
     log_dir: Optional[PathLike] = None,
     name: Optional[str] = None,
     version: Optional[str] = None,
-    early_stopping_metric: str = "val_loss_epoch",
+    early_stopping_monitor: str = "val_loss_epoch",
     early_stopping_patience: int = 5,
+    early_stopping_mode: str = "min",
     early_stopping_verbose: bool = False,
-    model_checkpoint_k: int = 1,
     model_checkpoint_monitor: str = "val_loss_epoch",
+    model_checkpoint_k: int = 1,
+    model_checkpoint_mode: str = "min",
     seed: Optional[int] = None,
     return_trainer: bool = False,
     **kwargs,
@@ -65,8 +67,8 @@ def fit(
         The name of the experiment. Appended to the end of the log directory
     version : str
         The version of the experiment. Appended to the end of the log directory/name
-    early_stopping_metric : str
-        The metric to use for early stopping.
+    early_stopping_monitor : str
+        The monitor to use for early stopping.
     early_stopping_patience : int
         The number of epochs to wait before stopping.
     early_stopping_verbose : bool
@@ -96,13 +98,14 @@ def fit(
             ),
             save_top_k=model_checkpoint_k,
             monitor=model_checkpoint_monitor,
+            mode=model_checkpoint_mode,
         )
         callbacks.append(model_checkpoint_callback)
-    if early_stopping_metric is not None:
+    if early_stopping_monitor is not None:
         early_stopping_callback = EarlyStopping(
-            monitor=early_stopping_metric,
+            monitor=early_stopping_monitor,
             patience=early_stopping_patience,
-            mode="min",
+            mode=early_stopping_mode,
             verbose=early_stopping_verbose,
         )
         callbacks.append(early_stopping_callback)
@@ -145,11 +148,13 @@ def fit_sequence_module(
     log_dir: Optional[PathLike] = None,
     name: Optional[str] = None,
     version: Optional[str] = None,
-    early_stopping_metric: str = "val_loss_epoch",
+    early_stopping_monitor: str = "val_loss_epoch",
     early_stopping_patience: int = 5,
+    early_stopping_mode: str = "min",
     early_stopping_verbose: bool = False,
-    model_checkpoint_k: int = 1,
     model_checkpoint_monitor: str = "val_loss_epoch",
+    model_checkpoint_k: int = 1,
+    model_checkpoint_mode: str = "min",
     seed: Optional[int] = None,
     return_trainer: bool = False,
     **kwargs,
@@ -194,8 +199,8 @@ def fit_sequence_module(
         The name of the experiment.
     version : str
         The version of the experiment.
-    early_stopping_metric : str
-        The metric to use for early stopping.
+    early_stopping_monitor : str
+        The monitor to use for early stopping.
     early_stopping_patience : int
         The number of epochs to wait before stopping.
     early_stopping_verbose : bool
@@ -203,7 +208,7 @@ def fit_sequence_module(
     model_checkpoint_k : int
         The number of models to save.
     model_checkpoint_monitor : str
-        The metric to use for model checkpointing.
+        The monitor to use for model checkpointing.
     seed : int
         The seed to use for reproducibility.
     return_trainer : bool
@@ -280,11 +285,13 @@ def fit_sequence_module(
         log_dir=log_dir,
         name=name,
         version=version,
-        early_stopping_metric=early_stopping_metric,
+        early_stopping_monitor=early_stopping_monitor,
         early_stopping_patience=early_stopping_patience,
+        early_stopping_mode=early_stopping_mode,
         early_stopping_verbose=early_stopping_verbose,
-        model_checkpoint_k=model_checkpoint_k,
         model_checkpoint_monitor=model_checkpoint_monitor,
+        model_checkpoint_k=model_checkpoint_k,
+        model_checkpoint_mode=model_checkpoint_mode,
         seed=seed,
         return_trainer=return_trainer,
         **kwargs,

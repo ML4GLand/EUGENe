@@ -48,6 +48,13 @@ def calculate_metric(metric, metric_name, metric_kwargs, outs, y):
                     y = y.squeeze().long()
                 else:
                     y = torch.argmax(y.squeeze(), dim=1)
+        metric(outs, y)
     else:
         outs = outs.squeeze()
-    metric(outs, y)
+        if len(y.shape) > 1:
+            value = metric(outs, y)
+            value = value.mean()
+            return value
+        else:
+            metric(outs, y)
+        
