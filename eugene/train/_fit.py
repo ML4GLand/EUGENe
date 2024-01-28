@@ -29,13 +29,15 @@ def fit(
     val_dataloader: DataLoader = None,
     seq_transforms: List[str] = None,
     transform_kwargs: dict = {},
-    early_stopping_metric: str = "val_loss_epoch",
     drop_last=True,
     early_stopping_callback: bool = True,
+    early_stopping_metric: str = "val_loss_epoch",
     early_stopping_patience=5,
+    early_stopping_mode: str = "min",
     early_stopping_verbose=False,
     model_checkpoint_k = 1,
     model_checkpoint_monitor: str ="val_loss_epoch",
+    model_checkpoint_mode: str = "min",
     seed: int = None,
     verbosity = None,
     return_trainer: bool = False,
@@ -158,14 +160,15 @@ def fit(
         model_checkpoint_callback = ModelCheckpoint(
             dirpath=logger.log_dir + "/checkpoints", 
             save_top_k=model_checkpoint_k, 
-            monitor=model_checkpoint_monitor
+            monitor=model_checkpoint_monitor,
+            mode=model_checkpoint_mode
         )
         callbacks.append(model_checkpoint_callback)
     if early_stopping_metric is not None:
         early_stopping_callback = EarlyStopping(
             monitor=early_stopping_metric,
             patience=early_stopping_patience,
-            mode="min",
+            mode=early_stopping_mode,
             verbose=early_stopping_verbose,
         )
         callbacks.append(early_stopping_callback)
