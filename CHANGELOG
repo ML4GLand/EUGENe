@@ -1,0 +1,17 @@
+===============
+Release History
+===============
+
+
+Version 0.2.0
+==============
+
+Highlights
+----------
+
+	- Added robustness toward other characters in the nucleotide alphabet.
+	Anything not A, C, G, or T gets ignored. This robustness has been added to
+	PeakGenerator and the command line arguments.
+
+Version 0.1.0
+==============

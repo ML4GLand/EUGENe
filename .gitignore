@@ -1,17 +1,6 @@
 # User-defined
-EUGENe_paper
 archive/
-*/eugene_logs/
-*/eugene_output/
-*/_data/
-
-# Tutorials
-tutorials/tutorial_logs
-tutorials/tutorial_output
-
-# Implement
-implement/datasets/_data/
-implement/models/eugene_logs/
+examples
 
 # Tests
 tests/_output/
