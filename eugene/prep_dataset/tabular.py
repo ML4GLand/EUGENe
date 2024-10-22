@@ -1,324 +1,351 @@
-
 import os
 import logging
-from tqdm.auto import tqdm
-import pandas as pd
-import matplotlib.pyplot as plt
+import argparse
 import numpy as np
+import pandas as pd
+import xarray as xr
+import seqdata as sd
+import seqpro as sp
 
-from typing import Iterable, Optional, Tuple
+from .utils import (
+    merge_parameters,
+    infer_covariate_types,
+    run_continuous_correlations,
+    run_binary_correlations,
+    run_categorical_correlations,
+)
+
+import polygraph.sequence
+from tangermeme.tools.fimo import fimo
+import scanpy as sc
+from anndata import AnnData
+from scipy.io import mmwrite
+
+from sklearn.model_selection import KFold
+from sklearn.decomposition import NMF
+
 
 logger = logging.getLogger("eugene")
 
+default_params = {
+    "seqdata": {
+        "batch_size": 1000,
+        "overwrite": False,
+    }
+}
 
-def single_sample_recipe(
-    frag_file: str,
-    outdir_path: str,
-    sample_name: str = None,
-    min_load_num_fragments: int = 500,
-    sorted_by_barcode: bool = True,
-    chunk_size: int = 2000,
-    save_intermediate: bool = False,
-    min_tsse: int = 4,
-    min_num_fragments: int = 1000,
-    max_num_fragments: int = None,
-    additional_doublets: str = None,
-    metadata: pd.DataFrame = None,
-    bin_size: int = 500,
-    num_features: int = 50000,
-    blacklist_path=None,
-    clustering_resolution: float = 1.0,
-    gene_activity: bool = True,
+
+def main(
+    path_params,
+    path_out,
+    overwrite=False,
 ):
 
-    # Log snapATAC version
-    logger.info(f"Running standard single sample workflow with snapATAC version {snap.__version__}")
+    # Merge with default parameters
+    params = merge_parameters(path_params, default_params)
 
-    # Load in from fragment file into memory
-    logger.info("Loading in data using `import_data` function without file backing")
-    adata = snap.pp.import_data(
-        fragment_file=frag_file,
-        chrom_sizes=snap.genome.hg38,
-        min_num_fragments=min_load_num_fragments,
-        sorted_by_barcode=sorted_by_barcode,
-        chunk_size=chunk_size,
-        n_jobs=-1,
+    # Infer seqpro alphabet
+    if params["seqdata"]["alphabet"] == "DNA":
+        alphabet = sp.DNA
+    elif params["seqdata"]["alphabet"] == "RNA":
+        alphabet = sp.RNA
+
+    # Log parameters
+    logger.info("Parameters:")
+    for key, value in params.items():
+        logger.info(f"  {key}")
+        for key, value in value.items():
+            logger.info(f"    {key}: {value}")
+
+    # Load SeqData
+    out = os.path.join(path_out, f"{params['base']['name']}.seqdata")
+    logger.info(f"Writing to {out}")
+    seq_col = params["seqdata"]["seq_col"]
+    fixed_length = params["seqdata"]["fixed_length"]
+    sdata = sd.read_table(
+        name=params["seqdata"]["seq_col"],
+        out=out,
+        tables=params["seqdata"]["tables"],
+        seq_col=seq_col,
+        fixed_length=fixed_length,
+        batch_size=params["seqdata"]["batch_size"],
+        overwrite=overwrite,
     )
 
-    # Add sample name to barcode with # in between
-    if sample_name is not None:
-        logger.info(f"Adding sample name {sample_name} to barcode")
-        logger.info(f"Before: {adata.obs.index[0]}")
-        adata.obs.index = sample_name + "#" + adata.obs.index
-        logger.info(f"After: {adata.obs.index[0]}")
-        logger.info("If passing in metadata, make sure to add sample name to barcode column as well")
+    # Splits
+    splits = params["splits"]["folds"]
+    random_state = params["splits"]["random_seed"]
 
-    # Plot fragment size distribution
-    logger.info("Plotting fragment size distribution")
-    snap.pl.frag_size_distr(adata, interactive=False, out_file=os.path.join(outdir_path, "frag_size_distr.png"))
+    # Split into folds such that no two decoded seqs are in the same fold
+    seqs_idxs = np.arange(sdata.dims["_sequence"])
+    skf = KFold(n_splits=splits, shuffle=True, random_state=random_state)
+    train_seq_per_fold = {}
+    valid_seq_per_fold = {}
+    for i, (train_seq, valid_seq) in enumerate(skf.split(seqs_idxs)):
+        train_seq_per_fold[i] = [seqs_idxs[j] for j in train_seq] 
+        valid_seq_per_fold[i] = [seqs_idxs[j] for j in valid_seq]
 
-    # Plot TSSe distribution vs number of fragments
-    logger.info("Plotting TSSe distribution vs number of fragments")
-    snap.metrics.tsse(adata, snap.genome.hg38)
-    snap.pl.tsse(adata, interactive=False, out_file=os.path.join(outdir_path, "nfrag_vs_tsse.png"))
+    # Label the folds for each sequence using the idxs
+    for i in range(10):
+        sdata[f"fold_{i}"] = xr.DataArray(np.zeros(sdata.dims["_sequence"], dtype=bool), dims=["_sequence"])
+        sdata[f"fold_{i}"].loc[{"_sequence": train_seq_per_fold[i]}] = True
 
-    # Save the processed data
-    if save_intermediate:
-        logger.info("Saving the qc data prior to filtering")
-        adata.write(os.path.join(outdir_path, f"qc.h5ad"))
+    # Double check that folds make sense
+    sdata[["fold_0", "fold_1", "fold_2", "fold_3", "fold_4", "fold_5", "fold_6", "fold_7", "fold_8", "fold_9"]].to_pandas().describe()
 
-    # Filter out low quality cells
-    logger.info(f"Filtering out low quality cells with tsse<{min_tsse} and min_num_fragments<{min_num_fragments}, max_num_fragments>{max_num_fragments}")
-    adata.obs["log_n_fragment"] = np.log10(adata.obs["n_fragment"] + 1)
-    snap.pp.filter_cells(adata, min_tsse=min_tsse, min_counts=min_num_fragments, max_counts=max_num_fragments)
-
-    # Report number of cells after filtering
-    logger.info(f"Number of cells after filtering: {adata.shape[0]}")
-
-    # Add a 5kb tile matrix
-    logger.info(f"Adding a {bin_size}bp tile matrix")
-    snap.pp.add_tile_matrix(adata, bin_size=bin_size)
-
-    # Select the top accessible features
-    logger.info(f"Selecting the top {num_features} accessible features")
-    snap.pp.select_features(adata, n_features=num_features, blacklist=blacklist_path)
-
-    # Run scrublet
-    logger.info("Running scrublet")
-    snap.pp.scrublet(adata)
-
-    # Filter out doublets
-    logger.info("Filtering out doublets")
-    snap.pp.filter_doublets(adata)
-
-    # Filter out additional doublets if passed in
-    if additional_doublets is not None:
-        logger.info(f"Filtering out additional doublets from {additional_doublets}")
-        additional_doublets = pd.read_csv(additional_doublets, header=None, index_col=0).index
-        adata = adata[~adata.obs.index.isin(additional_doublets)]
-    
-    # Report number of cells after filtering
-    logger.info(f"Number of cells after filtering doublets: {adata.shape[0]}")
-    
-    # Add in metadata if passed in
-    logger.info("Subsetting data to metadata if passed in")
-    if metadata is not None:
-        num_intersecting_cells = len(set(metadata.index).intersection(set(adata.obs.index)))
-        logger.info(f"Number of cells found in metadata: {num_intersecting_cells}")
-
-        # Subset the object to only include cells in the metadata
-        adata = adata[adata.obs.index.isin(metadata.index)]
-        
-        # Add in the metadata
-        adata.obs = adata.obs.merge(metadata, left_index=True, right_index=True, suffixes=("", "_rna"))
-
-        # Check
-        logger.info(f"Number of cells after subsetting to metadata: {adata.shape[0]}")
-
-    # Run the spectral embedding
-    logger.info("Running spectral embedding")
-    snap.tl.spectral(adata)
-
-    # Plot first spectral embedding against log_n_fragment    
-    with plt.rc_context({"figure.figsize": (5, 5)}):
-        sc.pl.embedding(basis="X_spectral", adata=adata, color="log_n_fragment", show=False)
-        plt.savefig(os.path.join(outdir_path, "spectral_embedding.png"))
-        plt.close()
-
-    # Run UMAP
-    logger.info("Running UMAP")
-    snap.tl.umap(adata, use_dims=list(range(1, adata.obsm["X_spectral"].shape[1])))
-
-    # Find nearest neighbor graph
-    logger.info("Finding nearest neighbor graph")
-    snap.pp.knn(adata, use_rep="X_spectral", use_dims=list(range(1, adata.obsm["X_spectral"].shape[1])))
-
-    # Cluster data
-    logger.info(f"Clustering data using Leiden algorithm with resolution {clustering_resolution}")
-    snap.tl.leiden(adata, resolution=clustering_resolution, key_added=f"leiden_{clustering_resolution}")
-
-    # Plot the UMAP with clusters
-    logger.info("Plotting UMAP with clusters")
-    with plt.rc_context({"figure.figsize": (5, 5)}):
-        sc.pl.umap(adata, color=["log_n_fragment", "tsse", f"leiden_{clustering_resolution}"], show=False)
-        plt.savefig(os.path.join(outdir_path, "umap.png"))
-        plt.close()
-
-    # Save updated data
-    logger.info("Saving clustered data")
-    adata.write(os.path.join(outdir_path, f"clustered.h5ad"))
-    adata.obs.to_csv(os.path.join(outdir_path, f"cell_metadata.tsv"), sep="\t")
-
-    # Create a gene matrix
-    if gene_activity:
-        # Creating gene matrix
-        logger.info("Creating gene activity matrix")
-        gene_matrix = snap.pp.make_gene_matrix(adata=adata, gene_anno=snap.genome.hg38)
-
-        # Clean up the gene matrix
-        logger.info("Filtering and normalizing the gene activity matrix")
-        sc.pp.filter_genes(gene_matrix, min_cells=3)
-        sc.pp.normalize_total(gene_matrix)
-        sc.pp.log1p(gene_matrix)
-
-        # Run MAGIC
-        logger.info("Running MAGIC on the gene activity matrix for imputation")
-        sc.external.pp.magic(gene_matrix, solver="approximate")
-
-        # Transfer the UMAP from the original data to the gene matrix
-        gene_matrix.obsm["X_umap"] = adata.obsm["X_umap"]
-
-        # Save the gene matrix
-        logger.info("Saving gene activity matrix")
-        gene_matrix.write(os.path.join(outdir_path, f"gene_matrix.h5ad"))
-
-
-def integrate_recipe(
-    input_h5ad_paths: list,
-    sample_ids: list,
-    outdir_path: str,
-    output_prefix: Optional[str] = "integrated",
-    annotation_key: Optional[str] = None,
-    barcodes_path: Optional[str] = None,
-    n_features: int = 50000,
-    clustering_resolution: float = 1.0,
-    make_gene_matrix: bool = False,
-    filter_genes: int = 3,
-):
-    # Log snapATAC version
-    logger.info(f"Running standard integration workflow with snapATAC version {snap.__version__}")
-
-    # If sample ids are not provided, use the file names
-    if sample_ids is None:
-        logger.info("Sample ids not provided. Using file names.")
-        sample_ids = [os.path.basename(file).split(".")[0] for file in input_h5ad_paths]
-    
-    # Read in each h5ad with scanpy delete the X_spectral and X_umap from the obsm of the AnnData and resave with new name
-    logger.info("Deleting X_spectral and X_umap from obsm of AnnData and resaving.")
-    cell_bcs = []
-    cell_ids = []
-    for path in input_h5ad_paths:
-        adata = sc.read_h5ad(path)
-        del adata.obsm["X_spectral"]
-        del adata.obsm["X_umap"]
-        adata.write_h5ad(path.replace(".h5ad", "_obsm_delete.h5ad"))
-        if annotation_key is not None:
-            cell_ids.extend(adata.obs[annotation_key].tolist())
-            cell_bcs.extend(adata.obs_names.tolist())
-    if annotation_key:
-        cell_id_map = pd.Series(cell_ids, index=cell_bcs)
-
-    # Update the input h5ad paths to the new ones
-    input_h5ad_paths = [file.replace(".h5ad", "_obsm_delete.h5ad") for file in input_h5ad_paths]
-    logger.info(f"Updated input h5ad paths: {input_h5ad_paths}")
-    
-    # Read in barcodes file if provided
-    if barcodes_path is not None:
-        logger.info(f"Reading in barcodes file from {barcodes_path}")
-        if barcodes_path.endswith(".csv"):
-            barcodes = pd.read_csv(barcodes_path, header=None, index_col=0)
-        elif barcodes_path.endswith(".tsv") | barcodes_path.endswith(".txt"):
-            barcodes = pd.read_csv(barcodes_path, header=None, index_col=0, sep="\t")
+    # Save minimal SeqData
+    if os.path.exists(out.replace(".seqdata", ".minimal.seqdata")):
+        if overwrite:
+            import shutil
+            logger.info("Removing existing minimal SeqData")
+            shutil.rmtree(out.replace(".seqdata", ".minimal.seqdata"))
         else:
-            raise ValueError("Barcodes file must be a .csv or .tsv file.")
-        barcodes = barcodes.index.tolist()
-        logger.info(f"Barcodes file read in with {len(barcodes)} barcodes.")
-        logger.info(f"First few barcodes: {barcodes[:5]}")
+            raise ValueError("Minimal SeqData already exists. Set overwrite to true in config to overwrite.")
+    sd.to_zarr(sdata, out.replace(".seqdata", ".minimal.seqdata"))
 
-    # Create the AnnDataset
-    adata_atac_merged_list = []
-    for _, h5ad_file in enumerate(input_h5ad_paths):
-        adata_atac = snap.read(h5ad_file)
-        if barcodes_path is not None:
-            logger.info(f"Subsetting AnnDataset to barcodes in {barcodes_path}")
-            adata_atac.subset(obs_indices=np.where(pd.Index(adata_atac.obs_names).isin(barcodes))[0])
-            logger.info(f"Number of cells after filtering: {adata_atac.shape[0]}")
-        adata_atac_merged_list.append(adata_atac)
-    adatas = [(name, adata) for name, adata in zip(sample_ids, adata_atac_merged_list)]
+    # Add sequence names
+    sdata.coords["_sequence"] = np.array([f"seq_{i}" for i in range(sdata.dims["_sequence"])])
 
-    # Merge into one object
-    logger.info(f"Creating AnnDataset from {adatas} samples.")
-    adata_atac_merged = snap.AnnDataSet(
-        adatas=adatas,
-        filename=os.path.join(outdir_path, f"{output_prefix}.h5ads")
-    )
-    logger.info(f"AnnDataset created at {os.path.join(outdir_path, f'{output_prefix}.h5ads')}")
+    # One-hot encode
+    sdata["ohe"] = xr.DataArray(sp.ohe(sdata[seq_col].values, alphabet=alphabet), dims=["_sequence", "_length", "_alphabet"])
+    sdata.coords["_alphabet"] = alphabet.array
 
-    # Close all the backed anndatas
-    logger.info("Closing all the backed anndatas.")
-    for adata_atac in adata_atac_merged_list:
-        adata_atac.close()
-    adata_atac_merged.close()
+    # Get all covariates that isn't fold, seq_col or ohe
+    covariates = [col for col in sdata.data_vars if col not in [seq_col, "ohe"]]
+    covariates = [col for col in covariates if not col.startswith("fold")]
 
-    # Read in the merged AnnDataset
-    adata_atac_merged = snap.read_dataset(os.path.join(outdir_path, f"{output_prefix}.h5ads"))
-    if annotation_key is not None:
-        logger.info(f"First few merged adata cell ids: {adata_atac_merged.obs_names[:5]}")
-        logger.info(f"First few cell id map entries: {cell_id_map.index[:5]}")
-        mapped_cell_ids = cell_id_map[adata_atac_merged.obs_names].values.tolist()
-        adata_atac_merged.obs[annotation_key] = mapped_cell_ids
+    # Infer the type of each covariate as categorical, binary, continuous (create a dictionary)
+    covariate_types = infer_covariate_types(sdata[covariates].to_pandas())
+
+    # Get the number of sequences and the fixed length of each sequence
+    seqs = sdata[params["seqdata"]["seq_col"]].values
+    dims = seqs.shape
+
+    # Get seqs as 1D array
+    if len(dims) == 2:
+        seqs = seqs.view('S{}'.format(dims[1])).ravel().astype(str)
+
+    # Get targets and metadata
+    if len(params["seqdata"]["target_cols"]) > 0:
+        targets = sdata[params["seqdata"]["target_cols"]].to_pandas()
+    else:    
+        targets = None
+    if len(params["seqdata"]["additional_cols"]) > 0:
+        metadata = sdata[params["seqdata"]["additional_cols"]].to_pandas()
+    else:
+        metadata = None
+
+    ### Basic sequence statistics
+
+    # Sequence length distributions
+    sdata["length"] = xr.DataArray(sp.length(seqs), dims=["_sequence"])
+    covariate_types["length"] = "continuous"
+
+    # Get unique characters in the sequences with numpy
+    unique_chars = np.unique(list("".join(seqs)))
+
+    # Get alphabet and non-alphabet counts
+    sdata["alphabet_cnt"] = xr.DataArray(sp.nucleotide_content(seqs, normalize=False, alphabet=alphabet, length_axis=-1), dims=["_sequence", "_alphabet"])
+    sdata["non_alphabet_cnt"] = sdata["length"] - sdata["alphabet_cnt"].sum(axis=-1)
+    if params["seqdata"]["alphabet"] == "DNA" or params["seqdata"]["alphabet"] == "RNA":
+        sdata["gc_percent"] = sdata["alphabet_cnt"].sel(_alphabet=[b"G", b"C"]).sum(axis=-1) / sdata["length"]
+        covariate_types["gc_percent"] = "continuous"
+
+    ### K-mer distribution analysis
+    ks = params["kmer_analysis"]["k"]
+    normalize = params["kmer_analysis"]["normalize"]
+
+    # Structure of output is nested dictionary with 
+    # level 1 keys: kmer length, level 1 values: dictionary with
+    # level 2 keys: covariate type, level 2 values: dictionary with
+    # level 3 keys: covariate name, level 3 values: pandas DataFrame with stats
+    kmer_res = {}
+    for k in ks:
+
+        # Compute the k-mer frequencies
+        kmers = polygraph.sequence.kmer_frequencies(seqs=seqs.tolist(), k=k, normalize=False)
+
+        # Add the k-mer counts to the seqdata
+        sdata[f"{k}mer_cnt"] = xr.DataArray(kmers.values, dims=["_sequence", f"_{k}mer"])
+        sdata.coords[f"_{k}mer"] = kmers.columns
+
+        # If normalize, normalize the k-mer counts by sequence lengths
+        if normalize:
+            kmers = kmers.div(sdata["length"].values - k + 1, axis=0)
+
+        # Run PCA on the k-mer counts
+        ad = AnnData(kmers, obs=sdata[covariate_types.keys()].to_pandas(), var=sdata[f"_{k}mer"].to_pandas().index.to_frame().drop(f"_{k}mer", axis=1))
+        ad = ad[:, ad.X.sum(0) > 0]
+        sc.pp.pca(ad)
+
+        # For each covariate, run correlations with each k-mer count
+        continuous_res = {}
+        binary_res = {}
+        categorical_res = {}
+        diff_res = {}
+        for covariate, _ in covariate_types.items():
+
+            # For each continuous variable, run correlations with each count
+            if covariate_types[covariate] == "continuous":
+                corrs, pvals = run_continuous_correlations(
+                    cnts=sdata[f"{k}mer_cnt"].values,
+                    covariate=sdata[covariate].values,
+                    method="pearson",
+                )
+                continuous_res[covariate] = pd.DataFrame(
+                    {
+                        f"{k}mer": sdata.coords[f"_{k}mer"].values,
+                        "corr": corrs,
+                        "pval": pvals,
+                    }
+                )
+                continuous_res[covariate] = continuous_res[covariate].sort_values("corr", ascending=False)
+
+            # For each binary variable, run correlations with each count
+            elif covariate_types[covariate] == "binary":
+                covariate_ = sdata[covariate].values
+                covariate_ = covariate_ == covariate_.max()
+                corrs, pvals = run_binary_correlations(
+                    cnts=sdata[f"{k}mer_cnt"].values,
+                    binary=covariate_,
+                    method="mannwhitneyu",
+                )
+                binary_res[covariate] = pd.DataFrame(
+                    {
+                        f"{k}mer": sdata.coords[f"_{k}mer"].values,
+                        "corr": corrs,
+                        "pval": pvals,
+                    }
+                )
+                binary_res[covariate] = binary_res[covariate].sort_values("corr", ascending=False)
+
+            # For each categorical variable, run correlations with each count
+            elif covariate_types[covariate] == "categorical":
+
+                # Run the correlation
+                corrs, pvals = run_categorical_correlations(
+                    cnts=sdata[f"{k}mer_cnt"].values,
+                    categorical=sdata[covariate].values,
+                    method="kruskal",
+                )
+                categorical_res[covariate] = pd.DataFrame(
+                    {
+                        f"{k}mer": sdata.coords[f"_{k}mer"].values,
+                        "corr": corrs,
+                        "pval": pvals,
+                    }
+                )
+                categorical_res[covariate] = categorical_res[covariate].sort_values("corr", ascending=False)
+            
+                # Run the differential analysis
+                sc.tl.rank_genes_groups(
+                    ad,
+                    groupby=covariate,
+                    groups="all",
+                    reference="rest",
+                    rankby_abs=True,
+                    method="wilcoxon",
+                )
+                
+                # Get the variable names
+                diff = pd.DataFrame(ad.uns["rank_genes_groups"]["names"]).melt(var_name="group")
+
+                # Get the statistics
+                diff["score"] = pd.DataFrame(ad.uns["rank_genes_groups"]["scores"]).melt()["value"]
+                diff["padj"] = pd.DataFrame(ad.uns["rank_genes_groups"]["pvals_adj"]).melt()["value"]
+                diff["log2FC"] = pd.DataFrame(ad.uns["rank_genes_groups"]["logfoldchanges"]).melt()["value"]
+                diff_res[covariate] = diff
+
+        # Add to results
+        kmer_res[k] = {
+            "continuous": continuous_res,
+            "binary": binary_res,
+            "categorical": categorical_res,
+            "diff": diff_res,
+        }
+
+
+    ### Motif analysis
+    meme_file = params["motif_analysis"]["motif_database"]
+    sig = float(params["motif_analysis"]["sig"])
+
+    # Perform FIMO
+    X = sp.ohe(seqs, alphabet=alphabet).transpose(0, 2, 1)
+    hits = fimo(meme_file, X) 
+
+    # Count up significant occurences of motif
+    motif_match_df = pd.concat([hit for hit in hits])
+    motif_match_df_ = motif_match_df.loc[motif_match_df["p-value"] < sig]
+    logger.info(f"There are {motif_match_df_.shape[0]} significant motif matches.")
+    motif_match_df_ = motif_match_df.value_counts(subset=['sequence_name', "motif_name"]).reset_index()
+    motif_match_df_.columns = ['sequence_name', "motif_name", 'motif_count']
+    motif_match_df_ = motif_match_df_.pivot(index='sequence_name', columns="motif_name", values='motif_count')
+    motif_count_df = pd.DataFrame(index=range(len(seqs)), columns=motif_match_df_.columns)
+    motif_count_df.loc[motif_match_df_.index.values] = motif_match_df_
+    motif_count_df = motif_count_df.fillna(0)
+
+    # Add to seqdata
+    sdata["motif_cnt"] = xr.DataArray(motif_count_df.values, dims=["_sequence", "_motif"])
+    sdata.coords["_motif"] = motif_count_df.columns.values
+    sdata.attrs["motif_database"] = meme_file
+
+    # If normalize, normalize the motif counts by sequence lengths
+    if normalize:
+        motif_count_df = motif_count_df.div(sdata["length"].values, axis=0)
+
+    # Run PCA on the motif counts
+    ad = AnnData(motif_count_df.values, obs=sdata[covariate_types.keys()].to_pandas(), var=pd.DataFrame(index=sdata.coords["_motif"].values))
+    ad = ad[:, ad.X.sum(0) > 0]
+    sc.pp.pca(ad)
+
+    # normalize counts by sequence length
+    n_components = params["motif_analysis"]["n_components"]
+
+    # Run NMF
+    model = NMF(n_components=n_components, init="random", random_state=0)
+
+    # Obtain W and H matrices
+    W = pd.DataFrame(model.fit_transform(motif_count_df.values))  # seqs x factors
+    H = pd.DataFrame(model.components_)  # factors x motifs
+
+    # Format W and H matrices
+    factors = [f"factor_{i}" for i in range(n_components)]
+    W.index = sdata["_sequence"].values
+    W.columns = factors
+    H.index = factors
+    H.columns = sdata["_motif"].values
+
+    # Add to seqdata
+    sdata["seq_scores"] = xr.DataArray(W.values, dims=["_sequence", "_factor"])
+    sdata["motif_loadings"] = xr.DataArray(H.values, dims=["_factor", "_motif"])
+    sdata.coords["_factor"] = factors
+
+    # Write full SeqData
+    if os.path.exists(out.replace(".seqdata", ".full.seqdata")):
+        if overwrite:
+            # remove the directory
+            import shutil
+            logger.info("Removing existing full SeqData")
+            shutil.rmtree(out.replace(".seqdata", ".full.seqdata"))
+        else:
+            raise ValueError("Full SeqData already exists. Set overwrite to true in config to overwrite.")
+    sd.to_zarr(sdata, out.replace(".seqdata", ".full.seqdata"))
+
+    # Write metadata
+    metadata.to_csv(out.replace(".seqdata", ".metadata.csv"))
+
+    # Write k-mer data
+    for k in ks:
+        kmer_cnt = sdata[f"{k}mer_cnt"].values
+        mmwrite(out.replace(".seqdata", f".{k}mer_cnt.mtx"), kmer_cnt)
+        pd.DataFrame(sdata.coords[f"_{k}mer"].values).to_csv(out.replace(".seqdata", f".{k}mers.tsv.gz"), sep="\t", index=False, header=False, compression="gzip")
+        pd.DataFrame(sdata["_sequence"].values).to_csv(out.replace(".seqdata", f".seqs.tsv.gz"), sep="\t", index=False, header=False, compression="gzip")
+
+    # Write motif data
+    motif_cnt = sdata["motif_cnt"].values
+    mmwrite(out.replace(".seqdata", ".motif_cnt.mtx"), motif_cnt)
+    pd.DataFrame(sdata.coords["_motif"].values).to_csv(out.replace(".seqdata", ".motifs.tsv.gz"), sep="\t", index=False, header=False, compression="gzip")
+
+    # 
+    logger.info("Done!")
     
-    # Select features on the merged dataset
-    logger.info(f"Selecting {n_features} features.")
-    snap.pp.select_features(adata_atac_merged, n_features=n_features)
-
-    # Spectral embedding
-    logger.info("Performing spectral embedding")
-    snap.tl.spectral(adata_atac_merged)
-
-    # Run UMAP
-    logger.info("Running UMAP")
-    snap.tl.umap(adata_atac_merged, use_dims=list(range(1, adata_atac_merged.obsm["X_spectral"].shape[1])))
-
-    # Clustering
-    logger.info("Performing clustering")
-    snap.pp.knn(adata_atac_merged, use_rep="X_spectral", use_dims=list(range(1, adata_atac_merged.obsm["X_spectral"].shape[1])))
-    snap.tl.leiden(adata_atac_merged, resolution=clustering_resolution, key_added=f"leiden_{clustering_resolution}")
-
-    if make_gene_matrix:
-
-        # Create gene matrix
-        logger.info("Creating gene matrix")
-        gene_matrix = snap.pp.make_gene_matrix(
-            adata=adata_atac_merged,
-            gene_anno=snap.genome.hg38
-        )
-
-        # Clean up the gene matrix
-        sc.pp.filter_genes(gene_matrix, min_cells=filter_genes)
-        sc.pp.normalize_total(gene_matrix)
-        sc.pp.log1p(gene_matrix)
-        
-        # Perform imputation with MAGIC
-        logger.info("Performing MAGIC imputation")
-        sc.external.pp.magic(gene_matrix, solver="approximate")
-
-        # Copy over UMAP embedding
-        gene_matrix.obsm["X_umap"] = adata_atac_merged.obsm["X_umap"]
-
-        # Write the gene matrix
-        logger.info("Writing gene matrix")
-        gene_matrix.write(os.path.join(outdir_path, f"{output_prefix}_gene_matrix.h5ad"))
-
-    # Turn into in memory AnnData
-    logger.info("Turning into in memory AnnData")
-    adata_mem = adata_atac_merged.to_adata()
-
-    # Plot first spectral embedding against log_n_fragment
-    with plt.rc_context({"figure.figsize": (5, 5)}):
-        sc.pl.embedding(adata=adata_mem, basis="X_spectral", color="log_n_fragment", show=False)
-        plt.savefig(os.path.join(outdir_path, "spectral_embedding.png"))
-        plt.close()
-        
-    # Plot the UMAP with clusters
-    logger.info("Plotting UMAP with clusters")
-    with plt.rc_context({"figure.figsize": (5, 5)}):
-        sc.pl.umap(adata_mem, color=["log_n_fragment", "tsse", "sample" f"leiden_{clustering_resolution}"], show=False, ncols=2)
-        plt.savefig(os.path.join(outdir_path, "umap.png"))
-        plt.close()
-
-    # Close the file
-    adata_atac_merged.close()
-
-    # Print completion message
-    logger.info("Successfully completed integration of SnapATAC2 samples.")

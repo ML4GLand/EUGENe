@@ -28,6 +28,12 @@ def get_parent_parser() -> argparse.ArgumentParser:
         "If it does not exist, it will be created.",
     )
     parent_parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        help="Including the flag --overwrite will overwrite existing files.",
+    )
+    parent_parser.add_argument(
         "--random-state",
         nargs=None,
         type=int,

@@ -36,25 +36,26 @@ def run_prep_dataset(args: argparse.Namespace):
         # Log the start time.
         logger.info(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         logger.info("Running prep-dataset")
-        
-        # Load parameters
-        logger.info("Loading parameters")
-        with open(args.params_file, "r") as f:
-            params = yaml.safe_load(f)
-        for key, value in params.items():
-            logger.info(f"  {key}: {value}")
-            
-        # Generate main SeqData object
-        logger.info("Loading data")
 
-        # Calculate sequence distributions
-        logger.info("Calculating sequence distributions")
+        # Get params
+        params = args.params_file
+        if params is not None:
+            logger.info(f"Using parameters from {params}")
+        else:
+            logger.info("Using default parameters")
 
-        # Run baseline motif analysis
-        logger.info("Running baseline motif analysis")
+        # Get path_out
+        path_out = args.path_out
+        logger.info(f"Output directory: {path_out}")
 
-        # Split into train and test sets
-        logger.info("Splitting data into train and test sets")
+        # Get overwrite
+        overwrite = args.overwrite
+
+        # Get subcommand
+        if args.command == "tabular":
+            logger.info("Subcommand 'tabular' detected. Preparing tabular dataset...")
+            from eugene.prep_dataset.tabular import main
+            main(params, path_out, overwrite)
 
         # Log the end time
         logger.info("Completed prep-dataset")
